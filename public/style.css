@@ -109,6 +109,18 @@ th small, td small { display: block; font-size: 12px; font-weight: 400; color: v
 #intro { position: fixed; inset: 0; background: rgba(46, 36, 27, 0.55); display: grid; place-items: center; z-index: 10; padding: 16px; }
 #intro[hidden], #panel[hidden], #modal[hidden] { display: none; }
 
+/* Contracts */
+.contracts { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 8px; }
+.contract { border: 1px solid rgba(107, 82, 54, 0.35); border-radius: 6px; padding: 9px 12px; background: rgba(255, 255, 255, 0.35); }
+.contract p { margin: 4px 0 0; font-size: 14px; line-height: 1.35; }
+.contract .row { margin-top: 8px; }
+.c-head { display: flex; justify-content: space-between; gap: 10px; align-items: baseline; }
+.c-title { font-family: var(--display); font-size: 18px; }
+.c-pay { font-weight: 600; color: var(--gold); white-space: nowrap; font-variant-numeric: tabular-nums; }
+.c-patron { font-size: 13px; font-style: italic; color: var(--ink-2); }
+.badge { display: inline-block; min-width: 18px; padding: 0 5px; margin-left: 3px; border-radius: 9px; background: var(--red); color: #fff6e6; font-size: 12px; line-height: 18px; text-align: center; font-weight: 600; }
+.badge[hidden] { display: none; }
+
 /* Destination list */
 .dests { list-style: none; padding: 0; margin: 4px 0 0; display: flex; flex-direction: column; gap: 6px; }
 .dests .dest { width: 100%; min-height: 48px; display: flex; flex-direction: column; align-items: flex-start; gap: 2px; text-align: left; padding: 8px 12px; }

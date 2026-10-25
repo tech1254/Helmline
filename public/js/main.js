@@ -3,6 +3,7 @@ import {
   pointOfSail, compassPoint, bearing, distNm, angleDiff, findPath, clearWater,
 } from './world.js';
 import { GOODS, Market } from './economy.js';
+import * as Contracts from './contracts.js';
 
 // ---- Tunables ---------------------------------------------------------------
 const SAVE_KEY = 'helmline-proto0-v1';
@@ -141,6 +142,10 @@ function load() {
     S = d.S;
     market = new Market(d.market);
     initFog(d.fog);
+    if (!S.contracts) {
+      Contracts.ensureContracts(S);
+      if (PORTS.some((p) => !S.discovered[p.id])) S.contracts.active.push(Contracts.discoveryContract(S));
+    }
     return true;
   } catch (e) {
     return false;
@@ -156,9 +161,12 @@ function newGame() {
     S.seen[pid] = { day: -ago, prices: market.observe(pid) };
   }
   observe('lisbon');
+  Contracts.ensureContracts(S).active.push(Contracts.discoveryContract(S));
+  freshStart = true;
   centerOn(-13, 29, 0.85);
   save();
 }
+let freshStart = false;
 
 // ---- Canvas & camera --------------------------------------------------------
 const canvas = document.getElementById('chart');
@@ -447,9 +455,19 @@ function render() {
   ctx.save();
   ctx.font = 'italic 15px "IM Fell English", Georgia, serif';
   ctx.textBaseline = 'middle';
+  const goals = Contracts.targets(S);
   for (const p of PORTS) {
     if (!S.discovered[p.id]) continue;
     const [sx, sy] = toScreen(p.lon, p.lat);
+    if (goals.has(p.id)) {
+      // a contract waits here: a gold ring that pulses gently
+      const r = 11 + 2 * Math.sin(performance.now() / 300);
+      ctx.beginPath();
+      ctx.arc(sx, sy, r, 0, Math.PI * 2);
+      ctx.lineWidth = 2.5;
+      ctx.strokeStyle = 'rgba(154, 106, 18, 0.9)';
+      ctx.stroke();
+    }
     ctx.beginPath();
     ctx.arc(sx, sy, p.id === hoverPort ? 7 : 5, 0, Math.PI * 2);
     ctx.fillStyle = RED;
@@ -499,6 +517,7 @@ function update(dtSec) {
     S.day += dd;
     S.purse -= SHIP.upkeep * dd;
     market.tick(dd);
+    for (const m of Contracts.checkDeadlines(S)) { toast(m.html, m.kind); log(m.log); }
     if (nm >= rem) {
       sh.lon = tl; sh.lat = ta;
       sh.route.shift();
@@ -633,6 +652,7 @@ function dock(portId) {
     S.unpaidCharts = [];
   }
   toast(msg, 'port');
+  for (const m of Contracts.onDock(S, portId)) { toast(m.html, m.kind); if (m.log) log(m.log); }
   checkMilestones();
   panelMode = 'port';
   renderPanel();
@@ -828,6 +848,10 @@ function renderHud() {
     }
   }
   $('status').textContent = status;
+  const n = S.contracts ? S.contracts.active.length : 0;
+  const badge = $('contracts-count');
+  if (badge.textContent !== String(n)) badge.textContent = n;
+  badge.hidden = !n;
 }
 
 function priceCell(v) {
@@ -839,11 +863,13 @@ function renderPanel() {
   $('btn-ledger').classList.toggle('on', panelMode === 'ledger');
   $('btn-port').classList.toggle('on', panelMode === 'port');
   $('btn-sail').classList.toggle('on', panelMode === 'sail');
+  $('btn-contracts').classList.toggle('on', panelMode === 'contracts');
   if (!panelMode) { el.hidden = true; return; }
   el.hidden = false;
   el.classList.toggle('wide', panelMode === 'ledger');
   if (panelMode === 'port') renderPort(el);
   else if (panelMode === 'sail') renderSail(el);
+  else if (panelMode === 'contracts') renderContracts(el);
   else renderLedger(el);
 }
 
@@ -883,6 +909,56 @@ function renderPort(el) {
     <div class="row"><button class="primary" data-tab="sail">Set sail…</button></div>`;
 }
 
+function contractCard(c, actions) {
+  const g = c.good ? GOODS.find((x) => x.id === c.good) : null;
+  const lines = [];
+  if (c.kind === 'discover') {
+    lines.push(c.text);
+    lines.push(c.stage === 'find' ? '<b>Next:</b> find and anchor at an uncharted port.' : `<b>Next:</b> report to Lisbon. You opened trade with ${PORTS.find((p) => p.id === c.found).name}.`);
+  } else {
+    const src = PORTS.find((p) => p.id === c.source);
+    lines.push(`${g.name} can be bought at ${src.name}.`);
+    if (c.deadline != null) {
+      const left = Math.ceil(c.deadline - S.day);
+      lines.push(`<b>Due</b> ${fmtDate(c.deadline)} <span class="${left < 10 ? 'warn' : 'muted'}">(${left} days left)</span> · in your hold: ${S.cargo[c.good]} / ${c.qty}`);
+    } else {
+      lines.push(`<b>Time allowed:</b> ${c.offeredDays} days`);
+    }
+  }
+  return `<li class="contract">
+      <div class="c-head"><span class="c-title">${c.title}</span><span class="c-pay">${c.reward.toLocaleString()} cz</span></div>
+      <div class="c-patron">${c.patron}</div>
+      ${lines.map((l) => `<p>${l}</p>`).join('')}
+      ${actions ? `<div class="row">${actions}</div>` : ''}
+    </li>`;
+}
+
+function renderContracts(el) {
+  const C = Contracts.ensureContracts(S);
+  const pid = S.ship.docked;
+  const active = C.active.map((c) => contractCard(c, [
+    Contracts.canDeliver(S, c) ? `<button class="primary" data-deliver="${c.id}">Deliver</button>` : '',
+    c.kind === 'deliver' ? `<button data-abandon="${c.id}">Abandon</button>` : '',
+  ].join(''))).join('');
+  let offers = '';
+  if (pid) {
+    const full = C.active.length >= Contracts.MAX_ACTIVE;
+    const list = Contracts.offersAt(S, market, pid);
+    offers = list.length
+      ? list.map((o) => contractCard(o, `<button class="primary" data-accept="${o.id}" ${full ? 'disabled' : ''}>Accept</button>`)).join('')
+      : '<li class="muted">No work posted here this month. Chart more ports to open new trades.</li>';
+  }
+  el.innerHTML = `
+    ${tabs('contracts')}
+    <header><h2>Contracts</h2><button class="close" data-close aria-label="Close">×</button></header>
+    <p class="blurb">Standing: <b>${Contracts.standingTitle(C.standing)}</b> · ${C.done} completed${C.failed ? ` · ${C.failed} failed` : ''}</p>
+    <h3>Your contracts</h3>
+    <ul class="contracts">${active || '<li class="muted">None at the moment.</li>'}</ul>
+    ${pid ? `<h3>Offered at ${PORTS.find((p) => p.id === pid).name}</h3><ul class="contracts">${offers}</ul>
+      <p class="foot">You can hold ${Contracts.MAX_ACTIVE} contracts at once. Offers change every month. Missing a deadline costs standing.</p>`
+      : '<p class="foot">Visit a port to see the work on offer there.</p>'}`;
+}
+
 // A list of charted ports to sail to: easier than tapping a small marker on a phone.
 function renderSail(el) {
   const rows = PORTS.filter((p) => S.discovered[p.id] && p.id !== S.ship.docked).map((p) => {
@@ -910,6 +986,7 @@ function tabs(active) {
   return `<nav class="tabs" role="tablist">
       <button role="tab" data-tab="port" aria-selected="${active === 'port'}" class="${active === 'port' ? 'on' : ''}">Market</button>
       <button role="tab" data-tab="ledger" aria-selected="${active === 'ledger'}" class="${active === 'ledger' ? 'on' : ''}">Ledger</button>
+      <button role="tab" data-tab="contracts" aria-selected="${active === 'contracts'}" class="${active === 'contracts' ? 'on' : ''}">Contracts</button>
       <button role="tab" data-tab="sail" aria-selected="${active === 'sail'}" class="${active === 'sail' ? 'on' : ''}">Set sail</button>
     </nav>`;
 }
@@ -1070,6 +1147,33 @@ $('panel').addEventListener('click', (e) => {
     doSell();
   } else if (t.dataset.tab) {
     panelMode = t.dataset.tab;
+  } else if (t.dataset.accept && pid) {
+    const c = Contracts.accept(S, +t.dataset.accept, pid);
+    if (c) { toast(`Contract taken: <b>${c.title}</b> by ${fmtDate(c.deadline)}.`, 'port'); log(`Took a contract: ${c.title}.`); }
+    else toast(`You can hold at most ${Contracts.MAX_ACTIVE} contracts.`);
+  } else if (t.dataset.deliver && pid) {
+    const c = S.contracts.active.find((x) => x.id === +t.dataset.deliver);
+    if (c && Contracts.canDeliver(S, c)) {
+      const g = GOODS.find((x) => x.id === c.good);
+      confirmDialog({
+        title: `Deliver ${c.qty} ${g.unit} of ${g.name.toLowerCase()}?`,
+        body: `<dl class="facts"><dt>Contract pays</dt><dd>${c.reward.toLocaleString()} cz</dd><dt>Purse after</dt><dd>${Math.floor(S.purse + c.reward).toLocaleString()} cz</dd><dt>Left in the hold</dt><dd>${S.cargo[c.good] - c.qty} ${g.unit}</dd></dl>`,
+        ok: `Deliver for ${c.reward.toLocaleString()} cz`,
+        onOk: () => { const m = Contracts.deliver(S, c); toast(m.html, m.kind); log(m.log); checkMilestones(); },
+      });
+      return;
+    }
+  } else if (t.dataset.abandon) {
+    const c = S.contracts.active.find((x) => x.id === +t.dataset.abandon);
+    if (c) {
+      confirmDialog({
+        title: 'Abandon this contract?',
+        body: `<p><b>${c.title}</b></p><p>${c.patron} will remember it: your standing drops.</p>`,
+        ok: 'Abandon',
+        onOk: () => { Contracts.abandon(S, c); log(`Abandoned a contract: ${c.title}.`); },
+      });
+      return;
+    }
   } else if (t.dataset.sailto) {
     const p = PORTS.find((x) => x.id === t.dataset.sailto);
     const plan = planCourse(p.lon, p.lat, p.id, false);
@@ -1092,6 +1196,7 @@ $('panel').addEventListener('click', (e) => {
 document.querySelectorAll('[data-speed]').forEach((b) => b.addEventListener('click', () => setSpeed(+b.dataset.speed)));
 $('btn-ledger').addEventListener('click', () => togglePanel('ledger'));
 $('btn-sail').addEventListener('click', () => togglePanel('sail'));
+$('btn-contracts').addEventListener('click', () => togglePanel('contracts'));
 $('btn-wind').addEventListener('click', toggleWind);
 $('btn-ship').addEventListener('click', () => centerOn(S.ship.lon, S.ship.lat));
 $('btn-port').addEventListener('click', () => {
@@ -1153,6 +1258,10 @@ function beginPlay() {
   introDone = true;
   if (S.ship.docked) { panelMode = 'port'; renderPanel(); }
   centerOn(S.ship.lon, S.ship.lat);
+  if (freshStart) {
+    freshStart = false;
+    setTimeout(() => toast('Prince Henry has a contract for you: <b>find a new trading partner</b> beyond the known coast.', 'discover'), 600);
+  }
 }
 
 let last = performance.now();

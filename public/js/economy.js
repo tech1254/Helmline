@@ -61,6 +61,10 @@ export class Market {
     return MARKETS[port].k * (good === 'gold' ? GOLD_K : 1);
   }
 
+  basePrice(port, good) {
+    return MARKETS[port].p[good][0];
+  }
+
   mid(port, good) {
     const base = MARKETS[port].p[good][0];
     return base * Math.exp(this.drift[port][good] - this.k(port, good) * this.press[port][good]);
