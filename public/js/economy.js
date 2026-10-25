@@ -2,15 +2,18 @@
 // (buying raises it, selling lowers it) and that pressure fades over weeks.
 // Prices also wander slowly on their own, so old information goes stale.
 
+// spoil: share of the cargo lost per day at sea (faster in the tropics). 0 = keeps forever.
 export const GOODS = [
-  { id: 'wine', name: 'Wine', unit: 'casks' },
-  { id: 'cloth', name: 'Wool cloth', unit: 'bolts' },
-  { id: 'sugar', name: 'Sugar', unit: 'chests' },
-  { id: 'dye', name: 'Orchil dye', unit: 'sacks' },
-  { id: 'gold', name: 'Gold dust', unit: 'pouches' },
-  { id: 'ivory', name: 'Ivory', unit: 'tusks' },
-  { id: 'pepper', name: 'Melegueta pepper', unit: 'sacks' },
+  { id: 'wine', name: 'Wine', unit: 'casks', one: 'cask', spoil: 0.006, rot: 'turned to vinegar' },
+  { id: 'cloth', name: 'Wool cloth', unit: 'bolts', one: 'bolt', spoil: 0.001, rot: 'mildewed' },
+  { id: 'sugar', name: 'Sugar', unit: 'chests', one: 'chest', spoil: 0.002, rot: 'spoiled in the damp' },
+  { id: 'dye', name: 'Orchil dye', unit: 'sacks', one: 'sack', spoil: 0.004, rot: 'rotted' },
+  { id: 'gold', name: 'Gold dust', unit: 'pouches', one: 'pouch', spoil: 0, rot: '' },
+  { id: 'ivory', name: 'Ivory', unit: 'tusks', one: 'tusk', spoil: 0, rot: '' },
+  { id: 'pepper', name: 'Melegueta pepper', unit: 'sacks', one: 'sack', spoil: 0.003, rot: 'gone musty' },
 ];
+
+export const PORTUGUESE_PORTS = ['lisbon', 'lagos', 'funchal'];
 
 // [base price, sold here?]. Every port buys every good; only some sell.
 const MARKETS = {
@@ -39,6 +42,9 @@ export class Market {
   constructor(saved) {
     this.press = {};
     this.drift = {};
+    this.effects = {}; // event multipliers: effects[port][good]
+    this.closedPorts = new Set(); // ports closed by an event
+    this.edge = {}; // standing bonus per port: better prices for a trusted captain
     for (const port of Object.keys(MARKETS)) {
       this.press[port] = {};
       this.drift[port] = {};
@@ -67,15 +73,20 @@ export class Market {
 
   mid(port, good) {
     const base = MARKETS[port].p[good][0];
-    return base * Math.exp(this.drift[port][good] - this.k(port, good) * this.press[port][good]);
+    const ev = this.effects[port]?.[good] ?? 1;
+    return base * ev * Math.exp(this.drift[port][good] - this.k(port, good) * this.press[port][good]);
+  }
+
+  closed(port) {
+    return this.closedPorts.has(port);
   }
 
   buyPrice(port, good) {
-    return Math.max(1, Math.round(this.mid(port, good) * (1 + SPREAD)));
+    return Math.max(1, Math.round(this.mid(port, good) * (1 + SPREAD) * (1 - (this.edge[port] || 0))));
   }
 
   sellPrice(port, good) {
-    return Math.max(1, Math.round(this.mid(port, good) * (1 - SPREAD)));
+    return Math.max(1, Math.round(this.mid(port, good) * (1 - SPREAD) * (1 + (this.edge[port] || 0))));
   }
 
   // Buy up to n units, limited by purse and free hold space. Each unit costs a bit more.

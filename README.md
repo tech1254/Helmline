@@ -11,16 +11,25 @@ An age-of-sail exploration and trade game. This is **Prototype 0**: the West Afr
 - **Seven goods** with reactive prices: trading moves the price, and it recovers over weeks.
 - **Trade ledger:** prices you have actually seen, with their age, and route suggestions based only on that data.
 - **Chart rewards:** the crown pays 150 cz per new port or land group when you return to Lisbon.
+- **Contracts** (from 500 cz): Prince Henry's first commission, then delivery contracts with deadlines.
+- **Standing:** tiers that raise contract pay, improve prices in Portuguese ports and open the Lisbon shipyard.
+- **Market events:** harvests, plagues, blockades and gluts shift prices or close ports; news reaches you in port, late for distant places.
+- **Spoilage:** wine, dye, pepper, sugar and cloth slowly spoil at sea, faster in the tropics.
+- **A second ship:** buy a caravel, hire a captain with navigation and trade skills, and give him a two-port route he runs on his own.
+- **Wait in port**, zoom buttons, Captain's notes for the first voyages, and a How to play screen.
 - Saves to the browser (localStorage).
 
-Not yet included: combat, navigation drift, captains and fleets, dynasty, contracts, events, server saves.
+Not yet included: combat, navigation drift, more than one hired ship, dynasty, server saves.
 
 ## Layout
 
 - `public/` is served as-is by the `helmline` Cloudflare Worker (static assets, no build step).
   - `js/world.js` holds the coastlines, ports, winds and sea-route pathfinding.
   - `js/economy.js` holds goods, base prices and the market model.
-  - `js/main.js` holds rendering, input, the HUD and panels, and saving.
+  - `js/contracts.js` holds contracts and standing.
+  - `js/events.js` holds market events and news.
+  - `js/fleet.js` holds hired ships and captains.
+  - `js/main.js` holds rendering, input, the HUD and panels, time and saving.
 - `wrangler.jsonc` configures the Worker. Pushes to `main` deploy through Cloudflare Workers Builds.
 
 ## Run locally

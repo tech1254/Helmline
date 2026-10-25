@@ -2,8 +2,10 @@ import {
   BOUNDS, COS0, D2R, LANDS, LAND_GROUPS, PORTS, isLand, inBounds, windAt, sailFactor,
   pointOfSail, compassPoint, bearing, distNm, angleDiff, findPath, clearWater,
 } from './world.js';
-import { GOODS, Market } from './economy.js';
+import { GOODS, Market, PORTUGUESE_PORTS } from './economy.js';
 import * as Contracts from './contracts.js';
+import * as Events from './events.js';
+import * as Fleet from './fleet.js';
 
 // ---- Tunables ---------------------------------------------------------------
 const SAVE_KEY = 'helmline-proto0-v1';
@@ -42,6 +44,8 @@ function freshState() {
     trail: [[lis.lon, lis.lat]],
     milestones: [],
     voyages: 0,
+    rot: {}, // spoilage building up in the hold, per good
+    tips: {},
   };
 }
 
@@ -144,6 +148,11 @@ function load() {
     initFog(d.fog);
     if (S.contracts && S.contracts.unlocked === undefined) S.contracts.unlocked = true;
     Contracts.ensureContracts(S);
+    Events.ensureEvents(S);
+    Fleet.ensureFleet(S);
+    S.rot = S.rot || {};
+    S.tips = S.tips || {};
+    syncMarket();
     return true;
   } catch (e) {
     return false;
@@ -158,8 +167,11 @@ function newGame() {
   for (const [pid, ago] of [['lagos', 20], ['funchal', 75], ['lanzarote', 110]]) {
     S.seen[pid] = { day: -ago, prices: market.observe(pid) };
   }
-  observe('lisbon');
   Contracts.ensureContracts(S);
+  Events.ensureEvents(S);
+  Fleet.ensureFleet(S);
+  syncMarket();
+  observe('lisbon');
   centerOn(-13, 29, 0.85);
   save();
 }
@@ -307,11 +319,15 @@ function drawWind() {
 }
 
 function drawShip() {
-  const [sx, sy] = toScreen(S.ship.lon, S.ship.lat);
-  const s = Math.max(0.8, Math.min(1.6, cam.scale / 30));
+  drawShipAt(S.ship.lon, S.ship.lat, S.ship.heading, '#f7f0de', RED, 1);
+}
+
+function drawShipAt(lon, lat, heading, sail, flag, size) {
+  const [sx, sy] = toScreen(lon, lat);
+  const s = Math.max(0.8, Math.min(1.6, cam.scale / 30)) * size;
   ctx.save();
   ctx.translate(sx, sy);
-  ctx.rotate(S.ship.heading * D2R);
+  ctx.rotate(heading * D2R);
   ctx.scale(s, s);
   // hull
   ctx.beginPath();
@@ -329,13 +345,34 @@ function drawShip() {
   ctx.moveTo(-1, -8);
   ctx.quadraticCurveTo(9, -1, 1, 7);
   ctx.closePath();
-  ctx.fillStyle = '#f7f0de';
+  ctx.fillStyle = sail;
   ctx.fill();
   ctx.stroke();
   ctx.beginPath();
   ctx.arc(2, 0, 1.6, 0, Math.PI * 2);
-  ctx.fillStyle = RED;
+  ctx.fillStyle = flag;
   ctx.fill();
+  ctx.restore();
+}
+
+function drawFleet() {
+  const F = S.fleet;
+  if (!F?.ships.length) return;
+  ctx.save();
+  ctx.font = 'italic 12px "IM Fell English", Georgia, serif';
+  ctx.textAlign = 'center';
+  for (const ship of F.ships) {
+    const pos = Fleet.position(S, ship);
+    drawShipAt(pos.lon, pos.lat, pos.heading, '#dbe5ee', '#1e3246', 0.85);
+    if (cam.scale > 22) {
+      const [sx, sy] = toScreen(pos.lon, pos.lat);
+      ctx.lineWidth = 3;
+      ctx.strokeStyle = 'rgba(236,223,192,0.9)';
+      ctx.strokeText(ship.name, sx, sy + 20);
+      ctx.fillStyle = '#1e3246';
+      ctx.fillText(ship.name, sx, sy + 20);
+    }
+  }
   ctx.restore();
 }
 
@@ -483,8 +520,8 @@ function render() {
   }
   ctx.restore();
 
+  drawFleet();
   drawShip();
-
 }
 
 // ---- Simulation -------------------------------------------------------------
@@ -510,10 +547,7 @@ function update(dtSec) {
     const { f } = shipWind();
     const nm = SHIP.knots * 24 * f * dd;
     const rem = distNm(sh.lon, sh.lat, tl, ta);
-    S.day += dd;
-    S.purse -= SHIP.upkeep * dd;
-    market.tick(dd);
-    for (const m of Contracts.checkDeadlines(S)) { toast(m.html, m.kind); log(m.log); }
+    advanceTime(dd, true);
     if (nm >= rem) {
       sh.lon = tl; sh.lat = ta;
       sh.route.shift();
@@ -540,6 +574,69 @@ function update(dtSec) {
       break;
     }
   }
+}
+
+// Show a batch of messages from the game's systems.
+function report(msgs) {
+  for (const m of msgs) { toast(m.html, m.kind); if (m.log) log(m.log); }
+}
+
+// Everything that happens as days pass, at sea or waiting in port.
+function advanceTime(dd, atSea) {
+  S.day += dd;
+  S.purse -= SHIP.upkeep * dd * (atSea ? 1 : 0.5); // half pay while the crew is ashore
+  market.tick(dd);
+  report(Events.tick(S, dd));
+  syncMarket();
+  if (atSea) spoil(dd);
+  report(Fleet.tick(S, market, dd));
+  report(Contracts.checkDeadlines(S));
+}
+
+// Events shape prices and close ports; standing earns better prices in Portuguese ports.
+function syncMarket() {
+  Events.applyToMarket(S, market);
+  const edge = Contracts.perks(S).priceEdge;
+  market.edge = Object.fromEntries(PORTUGUESE_PORTS.map((p) => [p, edge]));
+}
+
+// Perishable cargo slowly spoils at sea, faster in the tropics.
+let rotPending = {};
+let rotClock = 0;
+function spoil(dd) {
+  const heat = S.ship.lat < 26 ? 1.6 : 1;
+  for (const g of GOODS) {
+    const have = S.cargo[g.id];
+    if (!have || !g.spoil) continue;
+    S.rot[g.id] = (S.rot[g.id] || 0) + have * g.spoil * heat * dd;
+    while (S.rot[g.id] >= 1 && S.cargo[g.id] > 0) {
+      S.rot[g.id] -= 1;
+      S.cargo[g.id] -= 1;
+      rotPending[g.id] = (rotPending[g.id] || 0) + 1;
+    }
+    if (!S.cargo[g.id]) { S.rot[g.id] = 0; S.paid[g.id] = 0; }
+  }
+  rotClock += dd;
+  if (rotClock >= 4) flushRot();
+}
+
+function flushRot() {
+  rotClock = 0;
+  for (const [id, n] of Object.entries(rotPending)) {
+    const g = GOODS.find((x) => x.id === id);
+    toast(`${n} ${n === 1 ? g.one : g.unit} of ${g.name.toLowerCase()} ${n === 1 ? 'has' : 'have'} ${g.rot}.`);
+    log(`${n} ${n === 1 ? g.one : g.unit} of ${g.name.toLowerCase()} spoiled at sea.`);
+  }
+  rotPending = {};
+}
+
+function waitInPort(days) {
+  const pid = S.ship.docked;
+  if (!pid) return;
+  for (let i = 0; i < days * 4; i++) advanceTime(0.25, false);
+  observe(pid);
+  report(Events.hearNews(S, pid));
+  toast(`${days === 7 ? 'A week' : `${days} days`} pass${days === 7 ? 'es' : ''} in ${PORTS.find((p) => p.id === pid).name}.`, 'port');
 }
 
 function replan(dest) {
@@ -648,7 +745,11 @@ function dock(portId) {
     S.unpaidCharts = [];
   }
   toast(msg, 'port');
-  for (const m of Contracts.onDock(S, portId)) { toast(m.html, m.kind); if (m.log) log(m.log); }
+  flushRot();
+  report(Contracts.onDock(S, portId));
+  report(Events.hearNews(S, portId));
+  const shut = Events.closure(S, portId);
+  if (shut) toast(`<b>${p.name} is closed:</b> ${Events.template(shut).title.toLowerCase()}. You may anchor, but not trade.`, '');
   checkMilestones();
   panelMode = 'port';
   renderPanel();
@@ -854,6 +955,10 @@ function renderHud() {
     }
   }
   $('status').textContent = status;
+  renderTip();
+  const fleetBtn = !fleetUnlocked(), contractsBtn = !S.contracts?.unlocked;
+  if ($('btn-fleet').hidden !== fleetBtn) $('btn-fleet').hidden = fleetBtn;
+  if ($('btn-contracts').hidden !== contractsBtn) $('btn-contracts').hidden = contractsBtn;
   const n = S.contracts ? S.contracts.active.length : 0;
   const badge = $('contracts-count');
   if (badge.textContent !== String(n)) badge.textContent = n;
@@ -866,6 +971,12 @@ function priceCell(v) {
 
 function renderPanel() {
   const el = $('panel');
+  syncMarket();
+  const fleetOpen = fleetUnlocked();
+  $('btn-fleet').hidden = !fleetOpen;
+  $('btn-fleet').classList.toggle('on', panelMode === 'fleet');
+  $('btn-help').classList.toggle('on', panelMode === 'help');
+  if (panelMode === 'fleet' && !fleetOpen) panelMode = S.ship.docked ? 'port' : null;
   $('btn-ledger').classList.toggle('on', panelMode === 'ledger');
   $('btn-port').classList.toggle('on', panelMode === 'port');
   $('btn-sail').classList.toggle('on', panelMode === 'sail');
@@ -878,6 +989,8 @@ function renderPanel() {
   if (panelMode === 'port') renderPort(el);
   else if (panelMode === 'sail') renderSail(el);
   else if (panelMode === 'contracts') renderContracts(el);
+  else if (panelMode === 'fleet') renderFleet(el);
+  else if (panelMode === 'help') renderHelp(el);
   else renderLedger(el);
 }
 
@@ -887,34 +1000,36 @@ function renderPort(el) {
   const p = PORTS.find((x) => x.id === pid);
   observe(pid);
   const free = SHIP.hold - held();
+  const shut = Events.closure(S, pid);
   const rows = GOODS.map((g) => {
-    const sells = market.sells(pid, g.id);
+    const sells = market.sells(pid, g.id) && !shut;
     const buy = sells ? market.buyPrice(pid, g.id) : null;
     const sell = market.sellPrice(pid, g.id);
     const have = S.cargo[g.id];
     const avg = have ? Math.round(S.paid[g.id] / have) : null;
     const best = bestKnownSale(g.id, pid);
     return `<tr>
-      <th scope="row">${g.name}<small>${best ? `best seen: ${best.price} at ${best.name}` : ''}</small></th>
+      <th scope="row">${g.name}<small>${[best ? `best seen: ${best.price} at ${best.name}` : '', g.spoil ? 'perishable' : ''].filter(Boolean).join(' · ')}</small></th>
       <td class="num">${priceCell(buy)}</td>
       <td class="num">${sell}</td>
       <td class="num">${have || '<span class="muted">0</span>'}${avg ? `<small>paid ~${avg}</small>` : ''}</td>
       <td class="acts">
         ${sells ? `<button data-buy="${g.id}" data-n="1" ${buy > S.purse || !free ? 'disabled' : ''}>+1</button><button data-buy="${g.id}" data-n="10" ${buy > S.purse || !free ? 'disabled' : ''}>+10</button><button data-buy="${g.id}" data-n="max" ${buy > S.purse || !free ? 'disabled' : ''}>Max</button>` : ''}
-        ${have ? `<button data-sell="${g.id}" data-n="1">−1</button><button data-sell="${g.id}" data-n="all">All</button>` : ''}
+        ${have && !shut ? `<button data-sell="${g.id}" data-n="1">−1</button><button data-sell="${g.id}" data-n="all">All</button>` : ''}
       </td></tr>`;
   }).join('');
   el.innerHTML = `
     ${tabs('port')}
     <header><h2>${p.name}</h2><button class="close" data-close aria-label="Close">×</button></header>
     <p class="blurb">${p.blurb}</p>
+    ${shut ? `<p class="banner warn"><b>Closed to trade:</b> ${Events.template(shut).title.toLowerCase()}. Expected to reopen around ${fmtDate(shut.end)}.</p>` : ''}
     <table class="market">
       <thead><tr><th>Good</th><th class="num">Buy</th><th class="num">Sell</th><th class="num">Hold</th><th></th></tr></thead>
       <tbody>${rows}</tbody>
     </table>
     <p class="foot">Hold ${held()} / ${SHIP.hold} · purse ${Math.floor(S.purse).toLocaleString()} cz · upkeep ${SHIP.upkeep} cz a day at sea.<br>
     Buying pushes the price up; selling pushes it down. Prices recover over a few weeks. <i>Max</i> keeps two weeks of wages in the purse.</p>
-    <div class="row"><button class="primary" data-tab="sail">Set sail…</button></div>`;
+    <div class="row"><button data-wait title="Let a week pass: prices recover, news arrives, your fleet sails on. The crew is on half pay ashore.">Wait a week</button><button class="primary" data-tab="sail">Set sail…</button></div>`;
 }
 
 function contractCard(c, actions) {
@@ -941,16 +1056,35 @@ function contractCard(c, actions) {
     </li>`;
 }
 
+function perkList(t) {
+  const out = [];
+  if (t.payMult > 1) out.push(`contracts pay ${Math.round((t.payMult - 1) * 100)}% more`);
+  if (t.payMult < 1) out.push(`contracts pay ${Math.round((1 - t.payMult) * 100)}% less`);
+  if (t.priceEdge) out.push(`${Math.round(t.priceEdge * 100)}% better prices in Portuguese ports`);
+  out.push(`${t.offers} ${t.offers === 1 ? 'offer' : 'offers'} per port`, `up to ${t.maxActive} contracts`);
+  if (t.shipyard) out.push('the Lisbon shipyard will sell you a caravel');
+  return out.join(', ');
+}
+
+function standingBox(C) {
+  const t = Contracts.perks(S), next = Contracts.nextTier(S);
+  return `<div class="standing">
+      <p><b>${t.title}</b> · standing ${C.standing} · ${C.done} completed${C.failed ? `, ${C.failed} failed` : ''}</p>
+      <p class="muted">Now: ${perkList(t)}.</p>
+      ${next ? `<p class="muted">At ${next.min} standing you become <i>${next.title}</i>: ${perkList(next)}.</p>` : ''}
+    </div>`;
+}
+
 function renderContracts(el) {
   const C = Contracts.ensureContracts(S);
   const pid = S.ship.docked;
   const active = C.active.map((c) => contractCard(c, [
-    Contracts.canDeliver(S, c) ? `<button class="primary" data-deliver="${c.id}">Deliver</button>` : '',
+    Contracts.canDeliver(S, c) && !market.closed(pid) ? `<button class="primary" data-deliver="${c.id}">Deliver</button>` : '',
     c.kind === 'deliver' ? `<button data-abandon="${c.id}">Abandon</button>` : '',
   ].join(''))).join('');
   let offers = '';
   if (pid) {
-    const full = C.active.length >= Contracts.MAX_ACTIVE;
+    const full = C.active.length >= Contracts.maxActive(S);
     const list = Contracts.offersAt(S, market, pid);
     offers = list.length
       ? list.map((o) => contractCard(o, `<button class="primary" data-accept="${o.id}" ${full ? 'disabled' : ''}>Accept</button>`)).join('')
@@ -959,11 +1093,11 @@ function renderContracts(el) {
   el.innerHTML = `
     ${tabs('contracts')}
     <header><h2>Contracts</h2><button class="close" data-close aria-label="Close">×</button></header>
-    <p class="blurb">Standing: <b>${Contracts.standingTitle(C.standing)}</b> · ${C.done} completed${C.failed ? ` · ${C.failed} failed` : ''}</p>
+    ${standingBox(C)}
     <h3>Your contracts</h3>
     <ul class="contracts">${active || '<li class="muted">None at the moment.</li>'}</ul>
     ${pid ? `<h3>Offered at ${PORTS.find((p) => p.id === pid).name}</h3><ul class="contracts">${offers}</ul>
-      <p class="foot">You can hold ${Contracts.MAX_ACTIVE} contracts at once. Offers change every month. Missing a deadline costs standing.</p>`
+      <p class="foot">You can hold ${Contracts.maxActive(S)} contracts at once. Offers change every month. Missing a deadline costs standing.</p>`
       : '<p class="foot">Visit a port to see the work on offer there.</p>'}`;
 }
 
@@ -988,6 +1122,113 @@ function renderSail(el) {
     <p class="foot">Times are estimated from today's winds.</p>`;
 }
 
+function fleetUnlocked() {
+  return !!(S.fleet?.ships.length || (S.contracts?.unlocked && Contracts.perks(S).shipyard));
+}
+
+const stars = (n) => '★'.repeat(n) + '☆'.repeat(5 - n);
+
+function portOptions(selected) {
+  return PORTS.filter((p) => S.discovered[p.id]).map((p) => `<option value="${p.id}" ${p.id === selected ? 'selected' : ''}>${p.name}</option>`).join('');
+}
+
+function goodOptions(portId, selected) {
+  const opts = GOODS.filter((g) => market.sells(portId, g.id)).map((g) => `<option value="${g.id}" ${g.id === selected ? 'selected' : ''}>${g.name}</option>`);
+  return `<option value="">Nothing (sail empty)</option>${opts.join('')}`;
+}
+
+function renderFleet(el) {
+  const F = Fleet.ensureFleet(S);
+  const ships = F.ships.map((ship) => {
+    const r = ship.route || {};
+    const a = r.a || ship.at, b = r.b || PORTS.find((p) => S.discovered[p.id] && p.id !== a)?.id;
+    const last = ship.last ? `Last: sold ${ship.last.qty} ${GOODS.find((g) => g.id === ship.last.good).unit} at ${PORTS.find((p) => p.id === ship.last.at).name} for ${ship.last.income.toLocaleString()} cz (${ship.last.profit >= 0 ? '+' : ''}${ship.last.profit.toLocaleString()}).` : 'No voyages yet.';
+    return `<li class="contract" data-ship="${ship.id}">
+        <div class="c-head"><span class="c-title">${ship.name}</span><span class="c-pay">${ship.profit >= 0 ? '+' : ''}${ship.profit.toLocaleString()} cz</span></div>
+        <div class="c-patron">Captain ${ship.captain.name} · navigation ${stars(ship.captain.nav)} · trade ${stars(ship.captain.trade)} · ${Fleet.dailyCost(ship)} cz a day</div>
+        <p>${Fleet.statusText(S, ship)} ${ship.trips} ${ship.trips === 1 ? 'cargo' : 'cargoes'} sold so far.</p>
+        <p class="muted">${last}</p>
+        <div class="route">
+          <label>Buy at <select data-role="a">${portOptions(a)}</select></label>
+          <label>Load <select data-role="ga">${goodOptions(a, r.goodA)}</select></label>
+          <label>Sell at <select data-role="b">${portOptions(b)}</select></label>
+          <label>Load <select data-role="gb">${goodOptions(b, r.goodB)}</select></label>
+        </div>
+        <div class="row">${ship.route ? `<button data-stop="${ship.id}">Stop at next port</button>` : ''}<button class="primary" data-route="${ship.id}">${ship.route ? 'Change route' : 'Start route'}</button></div>
+      </li>`;
+  }).join('');
+  let yard = '';
+  if (Fleet.canBuy(S)) {
+    if (S.ship.docked === 'lisbon') {
+      yard = `<h3>The Lisbon shipyard</h3>
+        <p class="blurb">A caravel like yours costs ${Fleet.SHIP_COST.toLocaleString()} cz. Choose the captain who will sail her.</p>
+        <ul class="contracts">${Fleet.candidates(S).map((c) => `<li class="contract">
+          <div class="c-head"><span class="c-title">Captain ${c.name}</span><span class="c-pay">${c.wage} cz a day</span></div>
+          <p>Navigation ${stars(c.nav)} (faster passages) · Trade ${stars(c.trade)} (better sale prices)</p>
+          <div class="row"><button class="primary" data-hire="${c.id}" ${S.purse < Fleet.SHIP_COST ? 'disabled' : ''}>Buy a caravel and hire him</button></div>
+        </li>`).join('')}</ul>
+        ${S.purse < Fleet.SHIP_COST ? `<p class="foot">You need ${Fleet.SHIP_COST.toLocaleString()} cz in your purse.</p>` : ''}`;
+    } else {
+      yard = `<p class="foot">The Lisbon shipyard will build you a caravel for ${Fleet.SHIP_COST.toLocaleString()} cz.</p>`;
+    }
+  }
+  el.innerHTML = `
+    ${tabs('fleet')}
+    <header><h2>Fleet</h2><button class="close" data-close aria-label="Close">×</button></header>
+    <p class="blurb">Hired captains sail a route between two ports on their own: they buy with your purse, sell in the same markets, and keep at it until you stop them. Each sale moves prices like yours do.</p>
+    ${ships ? `<ul class="contracts">${ships}</ul>` : ''}
+    ${yard}
+    ${F.ships.length ? `<p class="foot">Your fleet only sails while time passes: at sea, or when you wait in port. Captains never spend the last 150 cz of your purse.</p>
+      ${S.ship.docked ? '<div class="row"><button data-wait>Wait a week</button></div>' : ''}` : ''}`;
+}
+
+function renderHelp(el) {
+  el.innerHTML = `
+    <header><h2>How to play</h2><button class="close" data-close aria-label="Close">×</button></header>
+    <h3>Sailing</h3>
+    <ul class="help">
+      <li><b>Set a course:</b> click or tap the sea, a port, or use <i>Sail to…</i>. Shift-click adds a waypoint. You confirm each voyage first.</li>
+      <li><b>Wind:</b> the arrows show where it blows. Running before it is fast; beating into it is slow. Coming home from Africa, swing out to sea and catch the westerlies.</li>
+      <li><b>Map:</b> drag to pan, scroll, pinch or use + and − to zoom. The locate button finds your ship.</li>
+      <li><b>Time:</b> pause or speed up with the buttons, or space and 1, 2, 3. Time only passes at sea, or when you wait in port.</li>
+    </ul>
+    <h3>Trading</h3>
+    <ul class="help">
+      <li><b>Prices move</b> as you buy and sell, and recover over weeks. Contracts and events move them too.</li>
+      <li><b>The ledger</b> remembers only the prices you have seen, and they go stale. News of events reaches you in port, late for distant places.</li>
+      <li><b>Perishables</b> such as wine, dye and pepper slowly spoil at sea, faster in the tropics. Gold and ivory keep.</li>
+      <li><b>Charts:</b> the crown pays ${CHART_REWARD} cz for each new port or island group, on your return to Lisbon.</li>
+    </ul>
+    <h3>Growing</h3>
+    <ul class="help">
+      <li><b>Contracts</b> open up at 500 cz. Completing them builds standing; missing deadlines costs it.</li>
+      <li><b>Standing</b> brings better pay, better prices in Portuguese ports, and the right to buy a second caravel.</li>
+      <li><b>Your fleet:</b> a hired captain runs a trade route for you, paid from your purse.</li>
+    </ul>
+    <p class="foot">Keyboard: space pause · 1 2 3 speed · L ledger · W winds · Esc close. Your game saves in this browser.</p>`;
+}
+
+// Captain's notes: a gentle nudge through the first voyages, until contracts open up.
+function tipText() {
+  if (!S.tips || S.tips.off || S.contracts?.unlocked || !introDone || modal) return null;
+  const sh = S.ship;
+  if (sh.docked) {
+    if (held() === 0 && S.voyages === 0) return 'Buy wine or wool cloth here: both sell for close to double in the Canaries and further south.';
+    if (held() > 0 && S.voyages === 0) return 'Now set sail: tap Sail to…, or a port on the chart. Lanzarote is an easy first run.';
+    if (held() > 0) return 'Sell where the price beats what you paid (shown under Hold). Then load something the next port wants.';
+    return 'Open the Ledger: the harbourmaster suggests runs from the prices you have seen.';
+  }
+  if (S.voyages === 0) return 'The arrows show the wind. Running before it is fast; beating into it is slow.';
+  return 'Reach 500 cruzados and Prince Henry will notice you.';
+}
+
+function renderTip() {
+  const t = tipText();
+  const el = $('tip');
+  el.hidden = !t;
+  if (t && $('tip-text').textContent !== t) $('tip-text').textContent = t;
+}
+
 // Market / Ledger tabs, shown while in port so either is one click away.
 function tabs(active) {
   if (!S.ship.docked) return '';
@@ -995,6 +1236,7 @@ function tabs(active) {
       <button role="tab" data-tab="port" aria-selected="${active === 'port'}" class="${active === 'port' ? 'on' : ''}">Market</button>
       <button role="tab" data-tab="ledger" aria-selected="${active === 'ledger'}" class="${active === 'ledger' ? 'on' : ''}">Ledger</button>
       ${S.contracts?.unlocked ? `<button role="tab" data-tab="contracts" aria-selected="${active === 'contracts'}" class="${active === 'contracts' ? 'on' : ''}">Contracts</button>` : ''}
+      ${fleetUnlocked() ? `<button role="tab" data-tab="fleet" aria-selected="${active === 'fleet'}" class="${active === 'fleet' ? 'on' : ''}">Fleet</button>` : ''}
       <button role="tab" data-tab="sail" aria-selected="${active === 'sail'}" class="${active === 'sail' ? 'on' : ''}">Set sail</button>
     </nav>`;
 }
@@ -1067,6 +1309,8 @@ function renderLedger(el) {
     <header><h2>Trade ledger</h2><button class="close" data-close-ledger aria-label="Close">×</button></header>
     <p class="blurb">Prices as last seen by your ship. <b>Bold</b> is the price to buy, the other is what they pay you. Entries older than two months are faded.</p>
     <div class="scroll"><table class="ledger"><thead><tr><th>Good</th>${head}</tr></thead><tbody>${body}</tbody></table></div>
+    <h3>News</h3>
+    <ul class="news">${Events.knownNews(S).map((n) => `<li><b>${n.t.title}</b> <span class="muted">· ${PORTS.find((p) => p.id === n.port).name} · since ${fmtDate(n.start)}, expected to last until about ${fmtDate(n.end)}</span><br>${n.t.text}</li>`).join('') || '<li class="muted">No news has reached you. Word travels by ship, so you hear it in port.</li>'}</ul>
     <h3>The harbourmaster suggests</h3>
     <ol class="sugg">${sugHtml}</ol>
     <p class="foot">Estimates assume a straight course and calm trading. Winds will change the sailing time.</p>
@@ -1103,6 +1347,10 @@ $('panel').addEventListener('click', (e) => {
   const t = e.target.closest('button');
   if (!t) return;
   const pid = S.ship.docked;
+  if ((t.dataset.buy || t.dataset.sell) && pid && market.closed(pid)) {
+    toast('The port is closed to trade.');
+    return;
+  }
   if (t.dataset.buy && pid) {
     const g = t.dataset.buy;
     const free = SHIP.hold - held();
@@ -1153,6 +1401,35 @@ $('panel').addEventListener('click', (e) => {
       return;
     }
     doSell();
+  } else if (t.hasAttribute('data-wait') && pid) {
+    waitInPort(7);
+  } else if (t.dataset.hire) {
+    const cap = (S.fleet.candidates?.list || []).find((c) => c.id === +t.dataset.hire);
+    if (cap) {
+      confirmDialog({
+        title: `Buy a caravel for Captain ${cap.name}?`,
+        body: `<dl class="facts"><dt>Caravel</dt><dd>${Fleet.SHIP_COST.toLocaleString()} cz</dd><dt>Running cost</dt><dd>${cap.wage + Fleet.SHIP_UPKEEP} cz a day</dd><dt>Purse after</dt><dd>${Math.floor(S.purse - Fleet.SHIP_COST).toLocaleString()} cz</dd></dl><p>Then give him a route between two ports.</p>`,
+        ok: `Buy for ${Fleet.SHIP_COST.toLocaleString()} cz`,
+        onOk: () => {
+          const ship = Fleet.buyShip(S, cap.id);
+          if (ship) { toast(`The <b>${ship.name}</b> is yours, with Captain ${cap.name} in command. Give her a route.`, 'discover'); log(`Bought the ${ship.name}; hired Captain ${cap.name}.`); }
+        },
+      });
+      return;
+    }
+  } else if (t.dataset.route) {
+    const ship = S.fleet.ships.find((x) => x.id === +t.dataset.route);
+    const card = t.closest('[data-ship]');
+    const v = (role) => card.querySelector(`[data-role="${role}"]`).value;
+    const r = { a: v('a'), goodA: v('ga') || null, b: v('b'), goodB: v('gb') || null };
+    if (r.a === r.b) { toast('Pick two different ports.'); return; }
+    if (!r.goodA && !r.goodB) { toast('Choose a cargo for at least one leg.'); return; }
+    report(Fleet.setRoute(S, market, ship, r));
+    toast(`<b>${ship.name}</b> will run ${PORTS.find((p) => p.id === r.a).name} – ${PORTS.find((p) => p.id === r.b).name}.`, 'port');
+  } else if (t.dataset.stop) {
+    const ship = S.fleet.ships.find((x) => x.id === +t.dataset.stop);
+    ship.route = null;
+    toast(`<b>${ship.name}</b> will stop at her next port.`);
   } else if (t.dataset.tab) {
     panelMode = t.dataset.tab;
   } else if (t.dataset.accept && pid) {
@@ -1201,7 +1478,25 @@ $('panel').addEventListener('click', (e) => {
   save();
 });
 
+// Route editor: when a port changes, offer the goods sold there.
+$('panel').addEventListener('change', (e) => {
+  const sel = e.target.closest('select[data-role]');
+  if (!sel) return;
+  const card = sel.closest('[data-ship]');
+  if (sel.dataset.role === 'a') card.querySelector('[data-role="ga"]').innerHTML = goodOptions(sel.value, null);
+  if (sel.dataset.role === 'b') card.querySelector('[data-role="gb"]').innerHTML = goodOptions(sel.value, null);
+});
+
 document.querySelectorAll('[data-speed]').forEach((b) => b.addEventListener('click', () => setSpeed(+b.dataset.speed)));
+$('btn-fleet').addEventListener('click', () => togglePanel('fleet'));
+$('btn-help').addEventListener('click', () => togglePanel('help'));
+$('tip-close').addEventListener('click', () => { S.tips.off = true; renderTip(); save(); });
+function zoomBy(k) {
+  cam.scale *= k;
+  clampCam();
+}
+$('zoom-in').addEventListener('click', () => zoomBy(1.35));
+$('zoom-out').addEventListener('click', () => zoomBy(1 / 1.35));
 $('btn-ledger').addEventListener('click', () => togglePanel('ledger'));
 $('btn-sail').addEventListener('click', () => togglePanel('sail'));
 $('btn-contracts').addEventListener('click', () => togglePanel('contracts'));
@@ -1294,4 +1589,7 @@ startIntro(hasSave);
 requestAnimationFrame(frame);
 
 // Exposed for debugging in the console.
-window.helmline = { get state() { return S; }, market: () => market, setCourse, setSpeed, screenOf: (lon, lat) => toScreen(lon, lat) };
+window.helmline = {
+  get state() { return S; }, market: () => market, setCourse, setSpeed, screenOf: (lon, lat) => toScreen(lon, lat),
+  advance: (days) => { for (let i = 0; i < days * 4; i++) advanceTime(0.25, !S.ship.docked); renderPanel(); },
+};

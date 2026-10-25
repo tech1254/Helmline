@@ -6,10 +6,33 @@
 import { GOODS } from './economy.js';
 import { PORTS, distNm } from './world.js';
 
-export const MAX_ACTIVE = 3;
+// Standing tiers and what each one earns the captain.
+export const TIERS = [
+  { min: 40, title: 'Trusted by the crown', payMult: 1.25, priceEdge: 0.06, maxActive: 4, offers: 3, shipyard: true },
+  { min: 20, title: 'Respected', payMult: 1.15, priceEdge: 0.04, maxActive: 3, offers: 3, shipyard: true },
+  { min: 5, title: 'Known on the quays', payMult: 1.05, priceEdge: 0, maxActive: 3, offers: 2, shipyard: true },
+  { min: -9, title: 'Unknown', payMult: 1, priceEdge: 0, maxActive: 3, offers: 2, shipyard: false },
+  { min: -Infinity, title: 'Unreliable', payMult: 0.9, priceEdge: 0, maxActive: 2, offers: 1, shipyard: false },
+];
+
+export function perks(S) {
+  const n = ensureContracts(S).standing;
+  return TIERS.find((t) => n >= t.min);
+}
+
+export function nextTier(S) {
+  const n = ensureContracts(S).standing;
+  const higher = TIERS.filter((t) => t.min > n && Number.isFinite(t.min));
+  return higher.length ? higher[higher.length - 1] : null;
+}
+
+export function maxActive(S) {
+  return perks(S).maxActive;
+}
+
+export const MAX_ACTIVE = 3; // base limit; see maxActive() for the captain's current one
 export const UNLOCK_PURSE = 500; // contracts open up once the captain has proven himself
 const OFFER_REFRESH_DAYS = 30;
-const OFFERS_PER_PORT = 2;
 const PREMIUM = 1.2; // contracts pay this much over the port's usual price
 const FAIL_PENALTY = 5; // standing lost for a missed deadline or an abandoned contract
 
@@ -44,11 +67,7 @@ export function maybeUnlock(S) {
 }
 
 export function standingTitle(n) {
-  if (n >= 40) return 'Trusted by the crown';
-  if (n >= 20) return 'Respected';
-  if (n >= 5) return 'Known on the quays';
-  if (n <= -10) return 'Unreliable';
-  return 'Unknown';
+  return TIERS.find((t) => n >= t.min).title;
 }
 
 // The opening contract: Prince Henry wants a new trading partner beyond the known coast.
@@ -87,7 +106,8 @@ function makeOffers(S, market, portId) {
     const j = Math.floor(Math.random() * (i + 1));
     [options[i], options[j]] = [options[j], options[i]];
   }
-  return options.slice(0, OFFERS_PER_PORT).map(({ g, src }) => {
+  const perk = perks(S);
+  return options.slice(0, perk.offers).map(({ g, src }) => {
     const qty = g.id === 'gold' ? 3 + Math.floor(Math.random() * 5) : 10 + 5 * Math.floor(Math.random() * 5);
     const nm = distNm(here.lon, here.lat, src.lon, src.lat) * 2;
     const days = Math.round(nm / 75 + 20 + Math.random() * 15);
@@ -100,7 +120,7 @@ function makeOffers(S, market, portId) {
       source: src.id,
       patron: PATRONS[portId],
       title: `Deliver ${qty} ${g.unit} of ${g.name.toLowerCase()} to ${here.name}`,
-      reward: Math.round(qty * market.basePrice(portId, g.id) * PREMIUM),
+      reward: Math.round(qty * market.basePrice(portId, g.id) * PREMIUM * perk.payMult),
       standing: 3,
       offeredDays: days,
     };
@@ -117,7 +137,7 @@ export function offersAt(S, market, portId) {
 
 export function accept(S, offerId, portId) {
   const C = ensureContracts(S);
-  if (C.active.length >= MAX_ACTIVE) return null;
+  if (C.active.length >= maxActive(S)) return null;
   const list = C.offers[portId]?.list || [];
   const i = list.findIndex((o) => o.id === offerId);
   if (i < 0) return null;
