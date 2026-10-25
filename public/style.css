@@ -24,6 +24,8 @@ button {
 button:hover:not(:disabled) { background: #fff7e3; }
 button:disabled { opacity: 0.4; cursor: default; }
 button.on { background: var(--ink); color: var(--paper); }
+button.icon { display: inline-flex; align-items: center; justify-content: center; padding: 4px 8px; min-width: 38px; }
+button.icon svg { display: block; }
 button.primary { background: var(--red); border-color: #6e2219; color: #fff6e6; font-weight: 600; }
 button.primary:hover { background: #b8473a; }
 button.danger { color: var(--red); border-color: var(--red); }

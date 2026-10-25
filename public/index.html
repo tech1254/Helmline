@@ -32,7 +32,14 @@
       <button id="btn-port" title="Market">Market</button>
       <button id="btn-ledger" title="Trade ledger (L)">Ledger</button>
       <button id="btn-wind" class="on" title="Show winds (W)">Winds</button>
-      <button id="btn-ship" title="Centre on your ship">Ship</button>
+      <button id="btn-ship" class="icon" title="Centre on your ship" aria-label="Centre on your ship">
+        <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+          <circle cx="12" cy="12" r="7"></circle>
+          <circle cx="12" cy="12" r="3" fill="currentColor" stroke="none"></circle>
+          <line x1="12" y1="1.5" x2="12" y2="5"></line><line x1="12" y1="19" x2="12" y2="22.5"></line>
+          <line x1="1.5" y1="12" x2="5" y2="12"></line><line x1="19" y1="12" x2="22.5" y2="12"></line>
+        </svg>
+      </button>
     </div>
   </div>
 
