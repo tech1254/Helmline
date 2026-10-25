@@ -424,6 +424,25 @@ function render() {
     ctx.restore();
   }
 
+  // a course being considered in the confirmation dialog
+  if (modal?.preview?.length) {
+    ctx.save();
+    ctx.strokeStyle = 'rgba(162, 55, 43, 0.9)';
+    ctx.lineWidth = 2.2;
+    ctx.setLineDash([8, 6]);
+    ctx.lineDashOffset = -performance.now() / 60;
+    ctx.beginPath();
+    ctx.moveTo(...toScreen(S.ship.lon, S.ship.lat));
+    for (const [x, y] of modal.preview) ctx.lineTo(...toScreen(x, y));
+    ctx.stroke();
+    ctx.setLineDash([]);
+    const [ex, ey] = toScreen(...modal.preview[modal.preview.length - 1]);
+    ctx.beginPath();
+    ctx.arc(ex, ey, 6, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.restore();
+  }
+
   // ports
   ctx.save();
   ctx.font = 'italic 15px "IM Fell English", Georgia, serif';
@@ -561,7 +580,20 @@ function estimateVoyage(route) {
   return { days, nm, cost: Math.ceil(days * SHIP.upkeep) };
 }
 
+// Zoom and pan so every point fits on screen, leaving room for the dialog.
+function frameView(points) {
+  const xs = points.map(([x]) => x * COS0), ys = points.map(([, y]) => -y);
+  const x0 = Math.min(...xs), x1 = Math.max(...xs), y0 = Math.min(...ys), y1 = Math.max(...ys);
+  const narrow = W < 700;
+  const availW = W - (narrow ? 40 : 520), availH = H - (narrow ? 420 : 200);
+  cam.scale = Math.min(cam.scale, Math.max(1, Math.min(availW / Math.max(0.5, x1 - x0), Math.max(80, availH) / Math.max(0.5, y1 - y0))));
+  cam.x = (x0 + x1) / 2 - (narrow ? 0 : 230 / cam.scale);
+  cam.y = (y0 + y1) / 2 + (narrow ? 150 / cam.scale : 0);
+  clampCam();
+}
+
 function confirmVoyage(plan) {
+  frameView([[S.ship.lon, S.ship.lat], ...plan.route]);
   const { days, nm, cost } = estimateVoyage(plan.route);
   const to = plan.dest.port ? PORTS.find((p) => p.id === plan.dest.port).name : 'the mark on the chart';
   const left = Math.floor(S.purse) - cost;
@@ -577,6 +609,8 @@ function confirmVoyage(plan) {
       ${left < 0 ? '<p class="warn">You cannot cover the wages for this passage. The crew will sail on credit, but sell cargo soon.</p>' : ''}
       <p class="fine">Estimated from today's winds. They shift as you sail.</p>`,
     ok: 'Set sail',
+    kind: 'voyage',
+    preview: plan.route,
     onOk: () => applyCourse(plan),
   });
 }
@@ -630,8 +664,9 @@ let hoverPort = null;
 const pointers = new Map();
 let drag = null;
 
+let lastPointerType = 'mouse';
 function portAt(sx, sy) {
-  let best = null, bd = 16;
+  let best = null, bd = lastPointerType === 'mouse' ? 16 : 30; // fingers need a bigger target
   for (const p of PORTS) {
     if (!S.discovered[p.id]) continue;
     const [px, py] = toScreen(p.lon, p.lat);
@@ -642,6 +677,7 @@ function portAt(sx, sy) {
 }
 
 canvas.addEventListener('pointerdown', (e) => {
+  lastPointerType = e.pointerType || 'mouse';
   canvas.setPointerCapture(e.pointerId);
   pointers.set(e.pointerId, { x: e.offsetX, y: e.offsetY });
   if (pointers.size === 1) drag = { x: e.offsetX, y: e.offsetY, camX: cam.x, camY: cam.y, moved: false };
@@ -700,7 +736,12 @@ canvas.addEventListener('wheel', (e) => {
 }, { passive: false });
 
 function chartClick(sx, sy, append) {
-  if (!introDone || modal) return;
+  if (!introDone) return;
+  if (modal) {
+    // While a voyage is being considered, clicking elsewhere re-plots it there.
+    if (modal.kind !== 'voyage') return;
+    closeModal(false);
+  }
   const p = portAt(sx, sy);
   if (p) {
     if (S.ship.docked === p.id) { panelMode = 'port'; renderPanel(); return; }
@@ -797,10 +838,12 @@ function renderPanel() {
   const el = $('panel');
   $('btn-ledger').classList.toggle('on', panelMode === 'ledger');
   $('btn-port').classList.toggle('on', panelMode === 'port');
+  $('btn-sail').classList.toggle('on', panelMode === 'sail');
   if (!panelMode) { el.hidden = true; return; }
   el.hidden = false;
   el.classList.toggle('wide', panelMode === 'ledger');
   if (panelMode === 'port') renderPort(el);
+  else if (panelMode === 'sail') renderSail(el);
   else renderLedger(el);
 }
 
@@ -837,7 +880,28 @@ function renderPort(el) {
     </table>
     <p class="foot">Hold ${held()} / ${SHIP.hold} · purse ${Math.floor(S.purse).toLocaleString()} cz · upkeep ${SHIP.upkeep} cz a day at sea.<br>
     Buying pushes the price up; selling pushes it down. Prices recover over a few weeks. <i>Max</i> keeps two weeks of wages in the purse.</p>
-    <div class="row"><button class="primary" data-close>Set sail</button></div>`;
+    <div class="row"><button class="primary" data-tab="sail">Set sail…</button></div>`;
+}
+
+// A list of charted ports to sail to: easier than tapping a small marker on a phone.
+function renderSail(el) {
+  const rows = PORTS.filter((p) => S.discovered[p.id] && p.id !== S.ship.docked).map((p) => {
+    const plan = planCourse(p.lon, p.lat, p.id, false);
+    if (!plan) return null;
+    const est = estimateVoyage(plan.route);
+    return { p, est };
+  }).filter(Boolean).sort((a, b) => a.est.days - b.est.days);
+  const list = rows.map(({ p, est }) => `
+      <li><button class="dest" data-sailto="${p.id}">
+        <span class="name">${p.name}</span>
+        <span class="meta">about ${Math.max(1, Math.round(est.days))} ${Math.round(est.days) <= 1 ? 'day' : 'days'} · ${Math.round(est.nm).toLocaleString()} nm · ${est.cost} cz wages</span>
+      </button></li>`).join('');
+  el.innerHTML = `
+    ${tabs('sail')}
+    <header><h2>Set a course</h2><button class="close" data-close aria-label="Close">×</button></header>
+    <p class="blurb">Pick a charted port, or tap anywhere on the open sea to sail there. Uncharted waters only appear once you sail into them.</p>
+    <ul class="dests">${list || '<li class="muted">No other ports charted yet.</li>'}</ul>
+    <p class="foot">Times are estimated from today's winds.</p>`;
 }
 
 // Market / Ledger tabs, shown while in port so either is one click away.
@@ -846,6 +910,7 @@ function tabs(active) {
   return `<nav class="tabs" role="tablist">
       <button role="tab" data-tab="port" aria-selected="${active === 'port'}" class="${active === 'port' ? 'on' : ''}">Market</button>
       <button role="tab" data-tab="ledger" aria-selected="${active === 'ledger'}" class="${active === 'ledger' ? 'on' : ''}">Ledger</button>
+      <button role="tab" data-tab="sail" aria-selected="${active === 'sail'}" class="${active === 'sail' ? 'on' : ''}">Set sail</button>
     </nav>`;
 }
 
@@ -1005,6 +1070,11 @@ $('panel').addEventListener('click', (e) => {
     doSell();
   } else if (t.dataset.tab) {
     panelMode = t.dataset.tab;
+  } else if (t.dataset.sailto) {
+    const p = PORTS.find((x) => x.id === t.dataset.sailto);
+    const plan = planCourse(p.lon, p.lat, p.id, false);
+    if (plan) { panelMode = null; confirmVoyage(plan); }
+    else toast('The pilot can find no passage there.');
   } else if (t.hasAttribute('data-ledger')) {
     panelMode = 'ledger';
   } else if (t.hasAttribute('data-close-ledger')) {
@@ -1021,6 +1091,7 @@ $('panel').addEventListener('click', (e) => {
 
 document.querySelectorAll('[data-speed]').forEach((b) => b.addEventListener('click', () => setSpeed(+b.dataset.speed)));
 $('btn-ledger').addEventListener('click', () => togglePanel('ledger'));
+$('btn-sail').addEventListener('click', () => togglePanel('sail'));
 $('btn-wind').addEventListener('click', toggleWind);
 $('btn-ship').addEventListener('click', () => centerOn(S.ship.lon, S.ship.lat));
 $('btn-port').addEventListener('click', () => {
@@ -1029,8 +1100,9 @@ $('btn-port').addEventListener('click', () => {
 
 // ---- Confirmation dialog ----------------------------------------------------
 let modal = null;
-function confirmDialog({ title, body, ok = 'Confirm', onOk }) {
-  modal = { onOk };
+function confirmDialog({ title, body, ok = 'Confirm', onOk, kind = 'trade', preview = null }) {
+  modal = { onOk, kind, preview };
+  $('modal').classList.toggle('aside', kind === 'voyage');
   $('modal-title').textContent = title;
   $('modal-body').innerHTML = body;
   $('modal-ok').textContent = ok;
@@ -1048,7 +1120,6 @@ function closeModal(accept) {
 }
 $('modal-ok').addEventListener('click', () => closeModal(true));
 $('modal-cancel').addEventListener('click', () => closeModal(false));
-$('modal').addEventListener('click', (e) => { if (e.target.id === 'modal') closeModal(false); });
 
 let toastTimer;
 function toast(html, kind = '') {

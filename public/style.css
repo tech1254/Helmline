@@ -107,6 +107,12 @@ th small, td small { display: block; font-size: 12px; font-weight: 400; color: v
 #intro { position: fixed; inset: 0; background: rgba(46, 36, 27, 0.55); display: grid; place-items: center; z-index: 10; padding: 16px; }
 #intro[hidden], #panel[hidden], #modal[hidden] { display: none; }
 
+/* Destination list */
+.dests { list-style: none; padding: 0; margin: 4px 0 0; display: flex; flex-direction: column; gap: 6px; }
+.dests .dest { width: 100%; min-height: 48px; display: flex; flex-direction: column; align-items: flex-start; gap: 2px; text-align: left; padding: 8px 12px; }
+.dests .dest .name { font-family: var(--display); font-size: 19px; }
+.dests .dest .meta { font-size: 13px; color: var(--ink-2); }
+
 /* Panel tabs */
 .tabs { display: flex; gap: 0; margin: -4px 0 10px; border-bottom: 1px solid rgba(107, 82, 54, 0.3); }
 .tabs button { border: 0; border-bottom: 2px solid transparent; border-radius: 0; background: none; padding: 6px 14px 7px; font-size: 15px; color: var(--ink-2); }
@@ -114,8 +120,10 @@ th small, td small { display: block; font-size: 12px; font-weight: 400; color: v
 .tabs button.on { color: var(--ink); border-bottom-color: var(--red); font-weight: 600; background: none; }
 
 /* Confirmation dialog */
-#modal { position: fixed; inset: 0; background: rgba(46, 36, 27, 0.45); display: grid; place-items: center; z-index: 20; padding: 16px; }
-#modal .card { width: min(420px, 100%); background: var(--paper); border: 1px solid var(--ink-2); border-radius: 10px; padding: 20px 22px 16px; box-shadow: var(--shadow); }
+/* The dialog floats over the chart: the chart underneath can still be zoomed and panned. */
+#modal { position: fixed; inset: 0; background: rgba(46, 36, 27, 0.18); display: grid; place-items: center; z-index: 20; padding: 16px; pointer-events: none; }
+#modal.aside { background: transparent; place-items: start; padding: 76px 10px 10px; }
+#modal .card { pointer-events: auto; width: min(420px, 100%); background: var(--paper); border: 1px solid var(--ink-2); border-radius: 10px; padding: 20px 22px 16px; box-shadow: var(--shadow); }
 #modal h2 { font-family: var(--display); font-weight: 400; font-size: 26px; margin: 0 0 10px; line-height: 1.15; }
 #modal p { margin: 8px 0; }
 #modal .fine { font-size: 13px; color: var(--muted); }
@@ -147,6 +155,7 @@ th small, td small { display: block; font-size: 12px; font-weight: 400; color: v
   #panel { top: auto; bottom: 60px; right: 8px; left: 8px; width: auto; max-height: 58vh; }
   #status { font-size: 13px; }
   #toast { bottom: auto; top: 110px; flex-direction: column; }
+  #modal.aside { align-items: end; justify-items: stretch; padding: 10px 8px 60px; }
   .market th small { white-space: normal; }
   .market th, .market td { padding: 4px 3px; font-size: 14px; }
   .market td.acts button { padding: 3px 5px; font-size: 12px; margin-left: 1px; }
