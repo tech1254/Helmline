@@ -1,0 +1,332 @@
+// Geography, ports and winds for Prototype 0: the eastern Atlantic, 1450s.
+// Coordinates are [longitude, latitude] in degrees. Coastlines are hand-simplified.
+
+export const BOUNDS = { west: -32, east: 0, south: 8, north: 44 };
+export const D2R = Math.PI / 180;
+// Equirectangular projection centred near the Canaries.
+export const COS0 = Math.cos(28 * D2R);
+
+function islet(cx, cy, rx, ry, rot = 0, seed = 7, n = 16) {
+  let s = seed * 9973 + 17;
+  const rnd = () => ((s = (s * 16807) % 2147483647) / 2147483647);
+  const pts = [];
+  for (let i = 0; i < n; i++) {
+    const a = (i / n) * Math.PI * 2;
+    const j = 0.84 + rnd() * 0.28;
+    const x = Math.cos(a) * rx * j;
+    const y = Math.sin(a) * ry * j;
+    pts.push([cx + x * Math.cos(rot) - y * Math.sin(rot), cy + x * Math.sin(rot) + y * Math.cos(rot)]);
+  }
+  return pts;
+}
+
+const IBERIA = [
+  [-5.35, 36.15], [-5.6, 36.02], [-6.0, 36.2], [-6.3, 36.55], [-6.4, 36.8], [-6.9, 37.15],
+  [-7.4, 37.18], [-7.9, 36.98], [-8.6, 37.1], [-8.99, 37.02], [-8.8, 37.4], [-8.85, 37.95],
+  [-8.78, 38.3], [-9.2, 38.42], [-9.3, 38.66], [-9.42, 38.7], [-9.5, 38.78], [-9.42, 39.0],
+  [-9.4, 39.36], [-9.07, 39.6], [-8.9, 40.15], [-8.75, 40.7], [-8.68, 41.2], [-8.85, 41.7],
+  [-8.9, 42.1], [-9.05, 42.5], [-9.3, 42.9], [-9.2, 43.2], [-8.3, 43.6], [-7.7, 43.75],
+  [-6.0, 43.6], [-4.0, 43.45], [-1.8, 43.4], [-1.5, 43.5], [-1.3, 44.5], [1.0, 44.5],
+  [1.0, 41.0], [0.0, 40.0], [-0.3, 39.4], [0.1, 38.8], [-0.5, 38.3], [-0.8, 37.6],
+  [-1.6, 37.3], [-2.1, 36.73], [-2.9, 36.75], [-4.4, 36.7], [-5.0, 36.45],
+];
+
+const AFRICA = [
+  [-5.3, 35.9], [-5.9, 35.78], [-6.2, 35.2], [-6.6, 34.6], [-7.0, 33.95], [-7.6, 33.6],
+  [-8.5, 33.25], [-9.25, 32.55], [-9.75, 31.5], [-9.85, 30.6], [-9.6, 30.4], [-9.85, 29.9],
+  [-10.2, 29.35], [-11.1, 28.7], [-12.2, 28.1], [-12.95, 27.95], [-13.4, 27.6], [-14.0, 26.8],
+  [-14.5, 26.15], [-14.9, 25.3], [-15.6, 24.3], [-16.0, 23.6], [-16.35, 22.5], [-16.9, 21.9],
+  [-17.05, 21.0], [-16.9, 20.75], [-16.5, 20.2], [-16.25, 19.6], [-16.5, 19.35], [-16.3, 18.8],
+  [-16.05, 18.0], [-16.2, 17.0], [-16.5, 16.0], [-16.8, 15.3], [-17.18, 14.9], [-17.53, 14.75],
+  [-17.1, 14.55], [-16.9, 14.1], [-16.8, 13.6], [-16.65, 13.45], [-16.75, 13.0], [-16.75, 12.4],
+  [-16.5, 12.1], [-16.0, 11.8], [-15.4, 11.3], [-15.0, 10.8], [-14.6, 10.2], [-14.0, 9.7],
+  [-13.3, 9.0], [-13.1, 8.3], [-12.9, 7.9], [-12.5, 7.0], [2.0, 7.0], [2.0, 36.5],
+  [0.5, 35.9], [-1.2, 35.3], [-2.2, 35.1], [-3.5, 35.2], [-4.6, 35.2],
+];
+
+export const LANDS = [
+  { group: 'iberia', pts: IBERIA },
+  { group: 'africa', pts: AFRICA },
+  { group: 'madeira', pts: islet(-16.95, 32.75, 0.3, 0.1, 0, 1) },
+  { group: 'madeira', pts: islet(-16.33, 33.07, 0.08, 0.05, 0, 2) },
+  { group: 'canaries', pts: islet(-17.86, 28.68, 0.11, 0.2, 0, 3) },
+  { group: 'canaries', pts: islet(-18.0, 27.73, 0.14, 0.08, 0.3, 4) },
+  { group: 'canaries', pts: islet(-17.23, 28.1, 0.1, 0.09, 0, 5) },
+  { group: 'canaries', pts: islet(-16.6, 28.27, 0.36, 0.16, 0.45, 6) },
+  { group: 'canaries', pts: islet(-15.6, 27.95, 0.22, 0.2, 0, 7) },
+  { group: 'canaries', pts: islet(-14.05, 28.4, 0.17, 0.45, 0.6, 8) },
+  { group: 'canaries', pts: islet(-13.65, 29.05, 0.11, 0.28, 0.6, 9) },
+  { group: 'capeverde', pts: islet(-25.15, 17.05, 0.2, 0.11, 0.3, 10) },
+  { group: 'capeverde', pts: islet(-24.95, 16.85, 0.1, 0.07, 0, 11) },
+  { group: 'capeverde', pts: islet(-24.3, 16.6, 0.22, 0.06, -0.2, 12) },
+  { group: 'capeverde', pts: islet(-22.93, 16.73, 0.06, 0.14, 0, 13) },
+  { group: 'capeverde', pts: islet(-22.8, 16.1, 0.17, 0.15, 0, 14) },
+  { group: 'capeverde', pts: islet(-23.17, 15.22, 0.1, 0.1, 0, 15) },
+  { group: 'capeverde', pts: islet(-23.62, 15.08, 0.14, 0.27, 0, 16) },
+  { group: 'capeverde', pts: islet(-24.38, 14.93, 0.12, 0.12, 0, 17) },
+  { group: 'capeverde', pts: islet(-24.7, 14.85, 0.05, 0.05, 0, 18) },
+  { group: 'azores', pts: islet(-31.2, 39.45, 0.09, 0.12, 0, 19) },
+  { group: 'azores', pts: islet(-28.0, 39.05, 0.06, 0.05, 0, 20) },
+  { group: 'azores', pts: islet(-27.2, 38.72, 0.16, 0.09, 0, 21) },
+  { group: 'azores', pts: islet(-28.0, 38.65, 0.27, 0.05, -0.3, 22) },
+  { group: 'azores', pts: islet(-28.7, 38.58, 0.1, 0.07, 0, 23) },
+  { group: 'azores', pts: islet(-28.3, 38.47, 0.23, 0.07, -0.1, 24) },
+  { group: 'azores', pts: islet(-25.5, 37.78, 0.4, 0.08, 0.05, 25) },
+  { group: 'azores', pts: islet(-25.1, 36.97, 0.08, 0.06, 0, 26) },
+];
+
+export const LAND_GROUPS = {
+  iberia: 'Iberia',
+  africa: 'the African coast',
+  madeira: 'Madeira',
+  canaries: 'the Canary Islands',
+  capeverde: 'the Cape Verde Islands',
+  azores: 'the Azores',
+};
+
+for (const l of LANDS) {
+  let w = Infinity, e = -Infinity, s = Infinity, n = -Infinity;
+  for (const [x, y] of l.pts) { w = Math.min(w, x); e = Math.max(e, x); s = Math.min(s, y); n = Math.max(n, y); }
+  l.bbox = { w, e, s, n };
+}
+
+function inPoly(x, y, pts) {
+  let inside = false;
+  for (let i = 0, j = pts.length - 1; i < pts.length; j = i++) {
+    const [xi, yi] = pts[i];
+    const [xj, yj] = pts[j];
+    if ((yi > y) !== (yj > y) && x < ((xj - xi) * (y - yi)) / (yj - yi) + xi) inside = !inside;
+  }
+  return inside;
+}
+
+export function isLand(lon, lat) {
+  for (const l of LANDS) {
+    const b = l.bbox;
+    if (lon < b.w || lon > b.e || lat < b.s || lat > b.n) continue;
+    if (inPoly(lon, lat, l.pts)) return true;
+  }
+  return false;
+}
+
+export function inBounds(lon, lat) {
+  return lon > BOUNDS.west && lon < BOUNDS.east && lat > BOUNDS.south && lat < BOUNDS.north;
+}
+
+export const PORTS = [
+  { id: 'lisbon', name: 'Lisbon', lon: -9.36, lat: 38.6, known: true,
+    blurb: 'Home port. Merchants here pay well for anything from the south, and the crown rewards new charts.' },
+  { id: 'lagos', name: 'Lagos', lon: -8.67, lat: 37.03, known: true,
+    blurb: "Prince Henry's harbour on the Algarve. Wine and cloth are cheap here." },
+  { id: 'funchal', name: 'Funchal', lon: -16.9, lat: 32.6, known: true,
+    blurb: 'Madeira. The new cane fields make sugar cheap.' },
+  { id: 'lanzarote', name: 'Lanzarote', lon: -13.38, lat: 28.92, known: true,
+    blurb: 'A Canary outpost. Islanders gather orchil lichen for red dye.' },
+  { id: 'arguin', name: 'Arguin', lon: -16.95, lat: 20.5, known: false,
+    blurb: 'An island trading post in a shallow bay. Saharan gold reaches the coast here.' },
+  { id: 'gambia', name: 'Gambia River', lon: -16.85, lat: 13.45, known: false,
+    blurb: 'Mandinka traders at the river mouth deal in ivory, pepper and gold.' },
+];
+
+// Nautical miles between two points (flat-earth approximation, fine at this scale).
+export function distNm(aLon, aLat, bLon, bLat) {
+  const midLat = ((aLat + bLat) / 2) * D2R;
+  const dx = (bLon - aLon) * Math.cos(midLat);
+  const dy = bLat - aLat;
+  return 60 * Math.hypot(dx, dy);
+}
+
+// Compass bearing in degrees, 0 = north, 90 = east.
+export function bearing(aLon, aLat, bLon, bLat) {
+  const midLat = ((aLat + bLat) / 2) * D2R;
+  const dx = (bLon - aLon) * Math.cos(midLat);
+  const dy = bLat - aLat;
+  return (Math.atan2(dx, dy) / D2R + 360) % 360;
+}
+
+export function angleDiff(a, b) {
+  const d = Math.abs(((a - b) % 360 + 540) % 360 - 180);
+  return d; // 0..180
+}
+
+const smooth = (e0, e1, x) => {
+  const t = Math.min(1, Math.max(0, (x - e0) / (e1 - e0)));
+  return t * t * (3 - 2 * t);
+};
+
+// Prevailing winds of the 1450s Atlantic, simplified:
+// north-east trades south of ~30°N, Portuguese northerlies along the Iberian coast,
+// westerlies out at sea north of the Azores latitude. Returns where the wind blows FROM.
+export function windAt(lon, lat, day) {
+  const trade = smooth(33, 28, lat); // 1 in the trades
+  const coastal = smooth(-16, -11, lon); // 1 near Iberia/Morocco
+  const tradeFrom = 50 - 32 * smooth(-24, -15, lon); // NNE near Africa, NE offshore
+  const zones = [
+    { from: tradeFrom, w: trade, s: 1.0 },
+    { from: 352, w: (1 - trade) * coastal, s: 0.85 },
+    { from: 278, w: (1 - trade) * (1 - coastal) * smooth(33, 38, lat), s: 1.0 },
+    { from: 15, w: (1 - trade) * (1 - coastal) * (1 - smooth(33, 38, lat)), s: 0.55 }, // lighter northerlies
+  ];
+  let vx = 0, vy = 0;
+  for (const z of zones) {
+    const wob = 10 * Math.sin(day * 0.23 + lon * 0.31) + 7 * Math.sin(day * 0.57 + lat * 0.41);
+    const a = (z.from + wob) * D2R;
+    vx += Math.sin(a) * z.w * z.s;
+    vy += Math.cos(a) * z.w * z.s;
+  }
+  const strength = Math.min(1, Math.hypot(vx, vy)) * (0.9 + 0.1 * Math.sin(day * 0.4 + lon));
+  const from = (Math.atan2(vx, vy) / D2R + 360) % 360;
+  return { from, strength };
+}
+
+// Caravel sailing performance by angle off the wind (0 = straight into it).
+const POLAR = [[0, 0.24], [40, 0.27], [50, 0.5], [65, 0.78], [90, 0.95], [115, 1.0], [140, 0.95], [165, 0.85], [180, 0.8]];
+
+export function sailFactor(offWind) {
+  for (let i = 1; i < POLAR.length; i++) {
+    const [a1, f1] = POLAR[i];
+    const [a0, f0] = POLAR[i - 1];
+    if (offWind <= a1) return f0 + ((offWind - a0) / (a1 - a0)) * (f1 - f0);
+  }
+  return POLAR[POLAR.length - 1][1];
+}
+
+export function pointOfSail(offWind) {
+  if (offWind < 45) return 'Beating to windward';
+  if (offWind < 75) return 'Close-hauled';
+  if (offWind < 110) return 'Beam reach';
+  if (offWind < 150) return 'Broad reach';
+  return 'Running before the wind';
+}
+
+const POINTS = ['N', 'NNE', 'NE', 'ENE', 'E', 'ESE', 'SE', 'SSE', 'S', 'SSW', 'SW', 'WSW', 'W', 'WNW', 'NW', 'NNW'];
+export function compassPoint(deg) {
+  return POINTS[Math.round(((deg % 360) + 360) % 360 / 22.5) % 16];
+}
+
+// ---- Sea-route pathfinding -------------------------------------------------
+// A coarse grid over the chart; each course the player sets is routed around land,
+// then straightened wherever there is clear water. Wind still decides how fast it is.
+export const NAV_CELL = 0.2;
+const NW = Math.round((BOUNDS.east - BOUNDS.west) / NAV_CELL);
+const NH = Math.round((BOUNDS.north - BOUNDS.south) / NAV_CELL);
+let navGrid = null;
+
+function cellCenter(i, j) {
+  return [BOUNDS.west + (i + 0.5) * NAV_CELL, BOUNDS.south + (j + 0.5) * NAV_CELL];
+}
+
+function getNavGrid() {
+  if (navGrid) return navGrid;
+  navGrid = new Uint8Array(NW * NH);
+  for (let j = 0; j < NH; j++) {
+    for (let i = 0; i < NW; i++) {
+      const [x, y] = cellCenter(i, j);
+      const q = NAV_CELL * 0.45;
+      navGrid[j * NW + i] = isLand(x, y) || isLand(x - q, y - q) || isLand(x + q, y - q) || isLand(x - q, y + q) || isLand(x + q, y + q) ? 1 : 0;
+    }
+  }
+  return navGrid;
+}
+
+// True if a straight course between two points stays off the land, with a small margin.
+export function clearWater(aLon, aLat, bLon, bLat, margin = 0.03) {
+  const len = Math.hypot(bLon - aLon, bLat - aLat);
+  const steps = Math.ceil(len / 0.02);
+  const nx = len ? -(bLat - aLat) / len * margin : 0, ny = len ? (bLon - aLon) / len * margin : 0;
+  for (let s = 1; s < steps; s++) {
+    const t = s / steps;
+    const x = aLon + (bLon - aLon) * t, y = aLat + (bLat - aLat) * t;
+    if (isLand(x, y) || isLand(x + nx, y + ny) || isLand(x - nx, y - ny)) return false;
+  }
+  return true;
+}
+
+function nearestSeaCell(lon, lat) {
+  const g = getNavGrid();
+  const ci = Math.floor((lon - BOUNDS.west) / NAV_CELL), cj = Math.floor((lat - BOUNDS.south) / NAV_CELL);
+  for (let r = 0; r < 6; r++) {
+    let best = null, bd = Infinity;
+    for (let dj = -r; dj <= r; dj++) for (let di = -r; di <= r; di++) {
+      const i = ci + di, j = cj + dj;
+      if (i < 0 || j < 0 || i >= NW || j >= NH || g[j * NW + i]) continue;
+      const [x, y] = cellCenter(i, j);
+      const d = Math.hypot(x - lon, y - lat);
+      if (d < bd && clearWater(lon, lat, x, y)) { bd = d; best = j * NW + i; }
+    }
+    if (best !== null) return best;
+  }
+  return null;
+}
+
+// Returns a list of [lon, lat] waypoints from a to b (excluding a), or null if no route.
+export function findPath(aLon, aLat, bLon, bLat) {
+  if (clearWater(aLon, aLat, bLon, bLat)) return [[bLon, bLat]];
+  const g = getNavGrid();
+  const start = nearestSeaCell(aLon, aLat), goal = nearestSeaCell(bLon, bLat);
+  if (start === null || goal === null) return null;
+  const gi = goal % NW, gj = Math.floor(goal / NW);
+  const cost = new Float32Array(NW * NH).fill(Infinity);
+  const from = new Int32Array(NW * NH).fill(-1);
+  const heap = [];
+  const push = (n, f) => {
+    heap.push([f, n]);
+    let c = heap.length - 1;
+    while (c > 0) { const p = (c - 1) >> 1; if (heap[p][0] <= heap[c][0]) break; [heap[p], heap[c]] = [heap[c], heap[p]]; c = p; }
+  };
+  const pop = () => {
+    const top = heap[0], last = heap.pop();
+    if (heap.length) {
+      heap[0] = last;
+      let c = 0;
+      for (;;) {
+        const l = 2 * c + 1, r = l + 1; let m = c;
+        if (l < heap.length && heap[l][0] < heap[m][0]) m = l;
+        if (r < heap.length && heap[r][0] < heap[m][0]) m = r;
+        if (m === c) break;
+        [heap[m], heap[c]] = [heap[c], heap[m]]; c = m;
+      }
+    }
+    return top;
+  };
+  const h = (n) => {
+    const i = n % NW, j = Math.floor(n / NW);
+    const cl = Math.cos((BOUNDS.south + j * NAV_CELL) * D2R);
+    return Math.hypot((i - gi) * cl, j - gj);
+  };
+  cost[start] = 0;
+  push(start, h(start));
+  while (heap.length) {
+    const [, n] = pop();
+    if (n === goal) break;
+    const i = n % NW, j = Math.floor(n / NW);
+    const cl = Math.cos((BOUNDS.south + j * NAV_CELL) * D2R);
+    for (let dj = -1; dj <= 1; dj++) for (let di = -1; di <= 1; di++) {
+      if (!di && !dj) continue;
+      const ni = i + di, nj = j + dj;
+      if (ni < 0 || nj < 0 || ni >= NW || nj >= NH) continue;
+      const m = nj * NW + ni;
+      if (g[m]) continue;
+      if (di && dj && (g[j * NW + ni] || g[nj * NW + i])) continue; // no corner cutting
+      const c = cost[n] + Math.hypot(di * cl, dj);
+      if (c < cost[m]) { cost[m] = c; from[m] = n; push(m, c + h(m)); }
+    }
+  }
+  if (from[goal] === -1 && goal !== start) return null;
+  const cells = [];
+  for (let n = goal; n !== -1; n = from[n]) cells.push(cellCenter(n % NW, Math.floor(n / NW)));
+  cells.reverse();
+  const pts = [[aLon, aLat], ...cells, [bLon, bLat]];
+  // String-pull: skip ahead to the farthest point in clear water.
+  const out = [];
+  let k = 0;
+  while (k < pts.length - 1) {
+    let far = k + 1;
+    for (let m = pts.length - 1; m > k + 1; m--) {
+      if (clearWater(pts[k][0], pts[k][1], pts[m][0], pts[m][1])) { far = m; break; }
+    }
+    out.push(pts[far]);
+    k = far;
+  }
+  return out;
+}
