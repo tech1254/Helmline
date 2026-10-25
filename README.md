@@ -28,3 +28,6 @@ Not yet included: combat, navigation drift, captains and fleets, dynasty, contra
 Any static server works, for example `python3 -m http.server -d public 8000`, or `npm install && npm run dev` for Wrangler.
 
 Keyboard: space pauses, 1/2/3 set the speed, L opens the ledger, W toggles the wind arrows.
+
+
+ 
