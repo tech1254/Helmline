@@ -142,10 +142,8 @@ function load() {
     S = d.S;
     market = new Market(d.market);
     initFog(d.fog);
-    if (!S.contracts) {
-      Contracts.ensureContracts(S);
-      if (PORTS.some((p) => !S.discovered[p.id])) S.contracts.active.push(Contracts.discoveryContract(S));
-    }
+    if (S.contracts && S.contracts.unlocked === undefined) S.contracts.unlocked = true;
+    Contracts.ensureContracts(S);
     return true;
   } catch (e) {
     return false;
@@ -161,12 +159,10 @@ function newGame() {
     S.seen[pid] = { day: -ago, prices: market.observe(pid) };
   }
   observe('lisbon');
-  Contracts.ensureContracts(S).active.push(Contracts.discoveryContract(S));
-  freshStart = true;
+  Contracts.ensureContracts(S);
   centerOn(-13, 29, 0.85);
   save();
 }
-let freshStart = false;
 
 // ---- Canvas & camera --------------------------------------------------------
 const canvas = document.getElementById('chart');
@@ -669,7 +665,17 @@ function observe(portId) {
   S.seen[portId] = { day: S.day, prices: market.observe(portId) };
 }
 
+function unlockContracts() {
+  const m = Contracts.maybeUnlock(S);
+  if (!m) return;
+  toast(m.html, m.kind);
+  log(m.log);
+  renderPanel();
+  save();
+}
+
 function checkMilestones() {
+  unlockContracts();
   for (const m of MILESTONES) {
     if (S.purse >= m && !S.milestones.includes(m)) {
       S.milestones.push(m);
@@ -864,6 +870,8 @@ function renderPanel() {
   $('btn-port').classList.toggle('on', panelMode === 'port');
   $('btn-sail').classList.toggle('on', panelMode === 'sail');
   $('btn-contracts').classList.toggle('on', panelMode === 'contracts');
+  $('btn-contracts').hidden = !S.contracts?.unlocked;
+  if (panelMode === 'contracts' && !S.contracts?.unlocked) panelMode = S.ship.docked ? 'port' : null;
   if (!panelMode) { el.hidden = true; return; }
   el.hidden = false;
   el.classList.toggle('wide', panelMode === 'ledger');
@@ -986,7 +994,7 @@ function tabs(active) {
   return `<nav class="tabs" role="tablist">
       <button role="tab" data-tab="port" aria-selected="${active === 'port'}" class="${active === 'port' ? 'on' : ''}">Market</button>
       <button role="tab" data-tab="ledger" aria-selected="${active === 'ledger'}" class="${active === 'ledger' ? 'on' : ''}">Ledger</button>
-      <button role="tab" data-tab="contracts" aria-selected="${active === 'contracts'}" class="${active === 'contracts' ? 'on' : ''}">Contracts</button>
+      ${S.contracts?.unlocked ? `<button role="tab" data-tab="contracts" aria-selected="${active === 'contracts'}" class="${active === 'contracts' ? 'on' : ''}">Contracts</button>` : ''}
       <button role="tab" data-tab="sail" aria-selected="${active === 'sail'}" class="${active === 'sail' ? 'on' : ''}">Set sail</button>
     </nav>`;
 }
@@ -1258,10 +1266,7 @@ function beginPlay() {
   introDone = true;
   if (S.ship.docked) { panelMode = 'port'; renderPanel(); }
   centerOn(S.ship.lon, S.ship.lat);
-  if (freshStart) {
-    freshStart = false;
-    setTimeout(() => toast('Prince Henry has a contract for you: <b>find a new trading partner</b> beyond the known coast.', 'discover'), 600);
-  }
+  setTimeout(unlockContracts, 600);
 }
 
 let last = performance.now();

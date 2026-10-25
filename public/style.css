@@ -107,7 +107,7 @@ th small, td small { display: block; font-size: 12px; font-weight: 400; color: v
 
 /* Intro */
 #intro { position: fixed; inset: 0; background: rgba(46, 36, 27, 0.55); display: grid; place-items: center; z-index: 10; padding: 16px; }
-#intro[hidden], #panel[hidden], #modal[hidden] { display: none; }
+#intro[hidden], #panel[hidden], #modal[hidden], button[hidden] { display: none; }
 
 /* Contracts */
 .contracts { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 8px; }

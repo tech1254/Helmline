@@ -7,6 +7,7 @@ import { GOODS } from './economy.js';
 import { PORTS, distNm } from './world.js';
 
 export const MAX_ACTIVE = 3;
+export const UNLOCK_PURSE = 500; // contracts open up once the captain has proven himself
 const OFFER_REFRESH_DAYS = 30;
 const OFFERS_PER_PORT = 2;
 const PREMIUM = 1.2; // contracts pay this much over the port's usual price
@@ -25,8 +26,21 @@ const portName = (id) => PORTS.find((p) => p.id === id).name;
 const good = (id) => GOODS.find((g) => g.id === id);
 
 export function ensureContracts(S) {
-  if (!S.contracts) S.contracts = { active: [], offers: {}, done: 0, failed: 0, standing: 0, nextId: 1 };
+  if (!S.contracts) S.contracts = { unlocked: false, active: [], offers: {}, done: 0, failed: 0, standing: 0, nextId: 1 };
   return S.contracts;
+}
+
+// The first time the purse reaches UNLOCK_PURSE, contracts open and Prince Henry offers the first.
+// Returns a message to show, or null.
+export function maybeUnlock(S) {
+  const C = ensureContracts(S);
+  if (C.unlocked || S.purse < UNLOCK_PURSE) return null;
+  C.unlocked = true;
+  if (PORTS.some((p) => !S.discovered[p.id])) {
+    C.active.push(discoveryContract(S));
+    return { html: 'Word of your trading reaches Prince Henry. He has a contract for you: <b>find a new trading partner</b> beyond the known coast.', kind: 'discover', log: 'Prince Henry offered a contract: find a new trading partner.' };
+  }
+  return { html: 'Word of your trading has spread. Merchant houses now offer you <b>contracts</b> in port.', kind: 'discover', log: 'Contracts opened up.' };
 }
 
 export function standingTitle(n) {
@@ -95,6 +109,7 @@ function makeOffers(S, market, portId) {
 
 export function offersAt(S, market, portId) {
   const C = ensureContracts(S);
+  if (!C.unlocked) return [];
   const o = C.offers[portId];
   if (!o || S.day - o.day > OFFER_REFRESH_DAYS) C.offers[portId] = { day: S.day, list: makeOffers(S, market, portId) };
   return C.offers[portId].list;
