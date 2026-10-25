@@ -17,8 +17,8 @@
     <div class="brand">Helmline <span>Prototype 0</span></div>
     <div class="stats">
       <div><small>Date</small><span id="hud-date"></span></div>
-      <div><small>Purse</small><span id="hud-purse"></span></div>
-      <div><small>Hold</small><span id="hud-hold"></span></div>
+      <div class="big"><small>Purse</small><span id="hud-purse"></span></div>
+      <div class="big"><small>Hold</small><span id="hud-hold"></span></div>
     </div>
     <div class="controls">
       <div class="seg" role="group" aria-label="Time">
@@ -37,6 +37,17 @@
   <div id="status" aria-live="polite"></div>
   <aside id="panel" hidden></aside>
   <div id="toast" aria-live="polite"></div>
+
+  <div id="modal" hidden>
+    <div class="card" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+      <h2 id="modal-title"></h2>
+      <div id="modal-body"></div>
+      <div class="row">
+        <button id="modal-cancel">Cancel</button>
+        <button id="modal-ok" class="primary">Confirm</button>
+      </div>
+    </div>
+  </div>
 
   <div id="intro" hidden>
     <div class="card">

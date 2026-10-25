@@ -467,7 +467,7 @@ function shipWind() {
 
 function update(dtSec) {
   const sh = S.ship;
-  if (sh.docked || !sh.route.length || speed === 0) return;
+  if (sh.docked || !sh.route.length || speed === 0 || modal) return;
   let days = dtSec * DAYS_PER_SEC * speed;
   while (days > 0 && sh.route.length) {
     const dd = Math.min(0.05, days);
@@ -515,16 +515,70 @@ function replan(dest) {
   return true;
 }
 
-// Plot a course to a point (optionally a port), appended if `append`.
-function setCourse(lon, lat, portId, append) {
+// Work out a course to a point (optionally a port), appended to the current one if `append`.
+function planCourse(lon, lat, portId, append) {
   const sh = S.ship;
-  const fromLon = append && sh.route.length ? sh.route[sh.route.length - 1][0] : sh.lon;
-  const fromLat = append && sh.route.length ? sh.route[sh.route.length - 1][1] : sh.lat;
+  const keep = append && sh.route.length ? sh.route : [];
+  const fromLon = keep.length ? keep[keep.length - 1][0] : sh.lon;
+  const fromLat = keep.length ? keep[keep.length - 1][1] : sh.lat;
   const path = findPath(fromLon, fromLat, lon, lat);
-  if (!path) { toast('The pilot can find no passage there.'); return; }
-  sh.route = append ? sh.route.concat(path) : path;
-  sh.dest = { lon, lat, port: portId || null };
-  if (sh.docked) undock();
+  if (!path) return null;
+  return { route: keep.concat(path), dest: { lon, lat, port: portId || null } };
+}
+
+function setCourse(lon, lat, portId, append) {
+  const plan = planCourse(lon, lat, portId, append);
+  if (!plan) { toast('The pilot can find no passage there.'); return; }
+  applyCourse(plan);
+}
+
+function applyCourse(plan) {
+  S.ship.route = plan.route;
+  S.ship.dest = plan.dest;
+  if (S.ship.docked) undock();
+}
+
+// Sail the route on paper, with the winds as they stand today, to estimate the passage.
+function estimateVoyage(route) {
+  let lon = S.ship.lon, lat = S.ship.lat, day = S.day, nm = 0;
+  for (const [tl, ta] of route) {
+    for (let guard = 0; guard < 20000; guard++) {
+      const rem = distNm(lon, lat, tl, ta);
+      if (rem < 0.5) break;
+      const b = bearing(lon, lat, tl, ta);
+      const w = windAt(lon, lat, day);
+      const f = sailFactor(angleDiff(b, w.from)) * (0.45 + 0.55 * w.strength);
+      const perDay = SHIP.knots * 24 * f;
+      const step = Math.min(perDay * 0.1, rem);
+      lat += (step * Math.cos(b * D2R)) / 60;
+      lon += (step * Math.sin(b * D2R)) / (60 * Math.cos(lat * D2R));
+      day += step / perDay;
+      nm += step;
+    }
+    lon = tl; lat = ta;
+  }
+  const days = day - S.day;
+  return { days, nm, cost: Math.ceil(days * SHIP.upkeep) };
+}
+
+function confirmVoyage(plan) {
+  const { days, nm, cost } = estimateVoyage(plan.route);
+  const to = plan.dest.port ? PORTS.find((p) => p.id === plan.dest.port).name : 'the mark on the chart';
+  const left = Math.floor(S.purse) - cost;
+  const d = Math.max(1, Math.round(days));
+  confirmDialog({
+    title: S.ship.docked || !S.ship.route.length ? `Set sail for ${to}?` : `Change course for ${to}?`,
+    body: `<dl class="facts">
+        <dt>Passage</dt><dd>about ${d} ${d === 1 ? 'day' : 'days'} · ${Math.round(nm).toLocaleString()} nm</dd>
+        <dt>Arrival</dt><dd>around ${fmtDate(S.day + days)}</dd>
+        <dt>Wages</dt><dd>${cost.toLocaleString()} cz (${SHIP.upkeep} cz a day)</dd>
+        <dt>Purse on arrival</dt><dd class="${left < 0 ? 'warn' : ''}">${left.toLocaleString()} cz</dd>
+      </dl>
+      ${left < 0 ? '<p class="warn">You cannot cover the wages for this passage. The crew will sail on credit, but sell cargo soon.</p>' : ''}
+      <p class="fine">Estimated from today's winds. They shift as you sail.</p>`,
+    ok: 'Set sail',
+    onOk: () => applyCourse(plan),
+  });
 }
 
 function dock(portId) {
@@ -646,11 +700,13 @@ canvas.addEventListener('wheel', (e) => {
 }, { passive: false });
 
 function chartClick(sx, sy, append) {
-  if (!introDone) return;
+  if (!introDone || modal) return;
   const p = portAt(sx, sy);
   if (p) {
     if (S.ship.docked === p.id) { panelMode = 'port'; renderPanel(); return; }
-    setCourse(p.lon, p.lat, p.id, append);
+    const plan = planCourse(p.lon, p.lat, p.id, append);
+    if (!plan) { toast('The pilot can find no passage there.'); return; }
+    confirmVoyage(plan);
     return;
   }
   const [lon, lat] = toWorld(sx, sy);
@@ -659,10 +715,17 @@ function chartClick(sx, sy, append) {
     toast(isRevealed(lon, lat) ? 'That is dry land, captain.' : 'The lookout sees nothing there yet.');
     return;
   }
-  setCourse(lon, lat, null, append);
+  const plan = planCourse(lon, lat, null, append);
+  if (!plan) { toast('The pilot can find no passage there.'); return; }
+  confirmVoyage(plan);
 }
 
 window.addEventListener('keydown', (e) => {
+  if (modal) {
+    if (e.key === 'Escape') closeModal(false);
+    if (e.key === 'Enter') { e.preventDefault(); closeModal(true); }
+    return;
+  }
   if (e.target.closest('input, button') && e.key !== 'Escape') return;
   if (e.key === ' ') { e.preventDefault(); setSpeed(speed === 0 ? lastSpeed : 0); }
   if (e.key === '1') setSpeed(1);
@@ -732,12 +795,13 @@ function priceCell(v) {
 
 function renderPanel() {
   const el = $('panel');
+  $('btn-ledger').classList.toggle('on', panelMode === 'ledger');
+  $('btn-port').classList.toggle('on', panelMode === 'port');
   if (!panelMode) { el.hidden = true; return; }
   el.hidden = false;
   el.classList.toggle('wide', panelMode === 'ledger');
   if (panelMode === 'port') renderPort(el);
   else renderLedger(el);
-  $('btn-ledger').classList.toggle('on', panelMode === 'ledger');
 }
 
 function renderPort(el) {
@@ -764,6 +828,7 @@ function renderPort(el) {
       </td></tr>`;
   }).join('');
   el.innerHTML = `
+    ${tabs('port')}
     <header><h2>${p.name}</h2><button class="close" data-close aria-label="Close">×</button></header>
     <p class="blurb">${p.blurb}</p>
     <table class="market">
@@ -772,7 +837,16 @@ function renderPort(el) {
     </table>
     <p class="foot">Hold ${held()} / ${SHIP.hold} · purse ${Math.floor(S.purse).toLocaleString()} cz · upkeep ${SHIP.upkeep} cz a day at sea.<br>
     Buying pushes the price up; selling pushes it down. Prices recover over a few weeks. <i>Max</i> keeps two weeks of wages in the purse.</p>
-    <div class="row"><button data-ledger>Open ledger</button><button class="primary" data-close>Set sail</button></div>`;
+    <div class="row"><button class="primary" data-close>Set sail</button></div>`;
+}
+
+// Market / Ledger tabs, shown while in port so either is one click away.
+function tabs(active) {
+  if (!S.ship.docked) return '';
+  return `<nav class="tabs" role="tablist">
+      <button role="tab" data-tab="port" aria-selected="${active === 'port'}" class="${active === 'port' ? 'on' : ''}">Market</button>
+      <button role="tab" data-tab="ledger" aria-selected="${active === 'ledger'}" class="${active === 'ledger' ? 'on' : ''}">Ledger</button>
+    </nav>`;
 }
 
 function bestKnownSale(good, exceptPort) {
@@ -839,6 +913,7 @@ function renderLedger(el) {
         About <b>+${s.profit.toLocaleString()} cz</b> on ${s.units} ${s.g.unit}, roughly ${Math.round(s.days)} days of sailing.${s.stale > 60 ? ' <em>Old news: prices may have moved.</em>' : ''}</li>`).join('')
     : '<li class="muted">Visit more ports. The ledger can only reason from prices you have seen with your own eyes.</li>';
   el.innerHTML = `
+    ${tabs('ledger')}
     <header><h2>Trade ledger</h2><button class="close" data-close-ledger aria-label="Close">×</button></header>
     <p class="blurb">Prices as last seen by your ship. <b>Bold</b> is the price to buy, the other is what they pay you. Entries older than two months are faded.</p>
     <div class="scroll"><table class="ledger"><thead><tr><th>Good</th>${head}</tr></thead><tbody>${body}</tbody></table></div>
@@ -848,6 +923,24 @@ function renderLedger(el) {
     <h3>Log</h3>
     <ul class="log">${(S.log || []).slice(-6).reverse().map((l) => `<li><span>${fmtDate(l.day)}</span> ${l.text}</li>`).join('') || '<li class="muted">Nothing yet.</li>'}</ul>
     <div class="row"><button data-reset class="danger">Start a new game</button></div>`;
+}
+
+// Price a trade without making it: run it, then put the market back as it was.
+function quote(fn) {
+  const saved = JSON.stringify(market.press);
+  const r = fn();
+  market.press = JSON.parse(saved);
+  return r;
+}
+
+function tradeFacts(n, total, purseChange, extra) {
+  const each = (total / n).toFixed(1);
+  return `<dl class="facts">
+      <dt>Total</dt><dd>${total.toLocaleString()} cz (about ${each} each)</dd>
+      <dt>Purse after</dt><dd>${Math.floor(S.purse + purseChange).toLocaleString()} cz</dd>
+    </dl>
+    ${extra ? `<p>${extra}</p>` : ''}
+    <p class="fine">Each unit moves the price a little, so the average differs from the listed price.</p>`;
 }
 
 function log(text) {
@@ -867,18 +960,51 @@ $('panel').addEventListener('click', (e) => {
     const n = max ? free : +t.dataset.n;
     // "Max" keeps back two weeks of wages so the crew is paid on the way.
     const budget = Math.floor(S.purse - (max ? Math.min(WAGE_RESERVE, Math.max(0, S.purse - market.buyPrice(pid, g))) : 0));
-    const { bought, cost } = market.buy(pid, g, n, budget, free);
-    S.cargo[g] += bought; S.paid[g] += cost; S.purse -= cost;
-    observe(pid);
+    const doBuy = () => {
+      const { bought, cost } = market.buy(pid, g, n, budget, free);
+      S.cargo[g] += bought; S.paid[g] += cost; S.purse -= cost;
+      observe(pid);
+    };
+    if (n > 1) {
+      const q = quote(() => market.buy(pid, g, n, budget, free));
+      if (!q.bought) { toast('You cannot afford any more of that.'); return; }
+      const good = GOODS.find((x) => x.id === g);
+      confirmDialog({
+        title: `Buy ${q.bought} ${good.unit} of ${good.name.toLowerCase()}?`,
+        body: tradeFacts(q.bought, q.cost, -q.cost, `In the hold after: ${S.cargo[g] + q.bought} ${good.unit}`),
+        ok: `Buy for ${q.cost.toLocaleString()} cz`,
+        onOk: doBuy,
+      });
+      return;
+    }
+    doBuy();
   } else if (t.dataset.sell && pid) {
     const g = t.dataset.sell;
     const n = t.dataset.n === 'all' ? S.cargo[g] : Math.min(+t.dataset.n, S.cargo[g]);
-    const avgCost = S.cargo[g] ? S.paid[g] / S.cargo[g] : 0;
-    const { sold, income } = market.sell(pid, g, n);
-    S.cargo[g] -= sold; S.paid[g] = Math.max(0, S.paid[g] - avgCost * sold); S.purse += income;
-    if (!S.cargo[g]) S.paid[g] = 0;
-    observe(pid);
-    checkMilestones();
+    const doSell = () => {
+      const avgCost = S.cargo[g] ? S.paid[g] / S.cargo[g] : 0;
+      const { sold, income } = market.sell(pid, g, n);
+      S.cargo[g] -= sold; S.paid[g] = Math.max(0, S.paid[g] - avgCost * sold); S.purse += income;
+      if (!S.cargo[g]) S.paid[g] = 0;
+      observe(pid);
+      checkMilestones();
+    };
+    if (n > 1) {
+      const q = quote(() => market.sell(pid, g, n));
+      const good = GOODS.find((x) => x.id === g);
+      const paid = Math.round((S.paid[g] / S.cargo[g]) * n);
+      const profit = q.income - paid;
+      confirmDialog({
+        title: `Sell ${n} ${good.unit} of ${good.name.toLowerCase()}?`,
+        body: tradeFacts(n, q.income, q.income, paid ? `Profit on what you paid: ${profit >= 0 ? '+' : ''}${profit.toLocaleString()} cz` : ''),
+        ok: `Sell for ${q.income.toLocaleString()} cz`,
+        onOk: doSell,
+      });
+      return;
+    }
+    doSell();
+  } else if (t.dataset.tab) {
+    panelMode = t.dataset.tab;
   } else if (t.hasAttribute('data-ledger')) {
     panelMode = 'ledger';
   } else if (t.hasAttribute('data-close-ledger')) {
@@ -900,6 +1026,29 @@ $('btn-ship').addEventListener('click', () => centerOn(S.ship.lon, S.ship.lat));
 $('btn-port').addEventListener('click', () => {
   if (S.ship.docked) { panelMode = 'port'; renderPanel(); } else toast('You can only trade at anchor in a port.');
 });
+
+// ---- Confirmation dialog ----------------------------------------------------
+let modal = null;
+function confirmDialog({ title, body, ok = 'Confirm', onOk }) {
+  modal = { onOk };
+  $('modal-title').textContent = title;
+  $('modal-body').innerHTML = body;
+  $('modal-ok').textContent = ok;
+  $('modal').hidden = false;
+  $('modal-ok').focus();
+}
+function closeModal(accept) {
+  if (!modal) return;
+  const m = modal;
+  modal = null;
+  $('modal').hidden = true;
+  if (accept) m.onOk();
+  renderPanel();
+  save();
+}
+$('modal-ok').addEventListener('click', () => closeModal(true));
+$('modal-cancel').addEventListener('click', () => closeModal(false));
+$('modal').addEventListener('click', (e) => { if (e.target.id === 'modal') closeModal(false); });
 
 let toastTimer;
 function toast(html, kind = '') {
@@ -960,4 +1109,4 @@ startIntro(hasSave);
 requestAnimationFrame(frame);
 
 // Exposed for debugging in the console.
-window.helmline = { get state() { return S; }, market: () => market, setCourse, setSpeed };
+window.helmline = { get state() { return S; }, market: () => market, setCourse, setSpeed, screenOf: (lon, lat) => toScreen(lon, lat) };
