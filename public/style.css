@@ -34,8 +34,10 @@ button.danger { color: var(--red); border-color: var(--red); }
   align-items: center; pointer-events: none;
 }
 #hud > * { pointer-events: auto; }
-.brand { font-family: var(--display); font-size: 26px; color: var(--ink); text-shadow: 0 1px 0 rgba(255,255,255,0.5); }
-.brand span { font-size: 13px; font-family: var(--serif); color: var(--ink-2); font-style: italic; margin-left: 4px; }
+.brand { display: flex; align-items: center; gap: 8px; color: var(--ink); background: rgba(244, 234, 210, 0.92); border: 1px solid var(--ink-2); border-radius: 6px; box-shadow: var(--shadow); padding: 5px 12px 5px 7px; }
+.brand img { display: block; }
+.brand .word { font-family: "IM Fell English SC", var(--display); font-size: 27px; letter-spacing: 0.05em; line-height: 1; }
+.brand .tag { font-size: 13px; font-family: var(--serif); color: var(--ink-2); font-style: italic; align-self: flex-end; margin-bottom: 3px; }
 .stats { display: flex; gap: 2px; background: rgba(244, 234, 210, 0.92); border: 1px solid var(--ink-2); border-radius: 6px; box-shadow: var(--shadow); }
 .stats > div { padding: 4px 12px; display: flex; flex-direction: column; border-left: 1px solid rgba(107, 82, 54, 0.25); }
 .stats > div:first-child { border-left: 0; }
@@ -125,8 +127,12 @@ th small, td small { display: block; font-size: 12px; font-weight: 400; color: v
   max-width: 560px; background: var(--paper); border: 1px solid var(--ink-2); border-radius: 10px; padding: 26px 30px 20px;
   box-shadow: var(--shadow); max-height: calc(100vh - 32px); overflow: auto;
 }
-#intro h1 { font-family: var(--display); font-weight: 400; font-size: 48px; margin: 0; line-height: 1; }
-#intro .sub { font-style: italic; color: var(--ink-2); margin: 6px 0 14px; }
+#intro .lockup { display: flex; flex-direction: column; align-items: center; gap: 6px; margin-bottom: 14px; }
+#intro .lockup img { display: block; }
+#intro h1 { font-family: "IM Fell English SC", var(--display); font-weight: 400; font-size: 56px; margin: 4px 0 0; line-height: 1; letter-spacing: 0.06em; }
+#intro .tagline { display: flex; align-items: center; gap: 12px; margin: 0; font-style: italic; color: var(--ink-2); font-size: 18px; letter-spacing: 0.04em; }
+#intro .tagline span { display: block; width: 44px; height: 1px; background: var(--ink-2); }
+#intro .sub { font-style: italic; color: var(--ink-2); margin: 0 0 10px; text-align: center; }
 #intro ul { padding-left: 18px; line-height: 1.4; }
 #intro li { margin-bottom: 5px; }
 #intro .fine { font-size: 13px; color: var(--muted); text-align: right; margin: 10px 0 0; }

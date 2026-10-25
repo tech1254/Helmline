@@ -7,14 +7,15 @@
   <meta name="description" content="Helmline: an age-of-sail exploration and trade game. Prototype 0.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,600;1,400&family=IM+Fell+English:ital@0;1&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,600;1,400&family=IM+Fell+English:ital@0;1&family=IM+Fell+English+SC&display=swap" rel="stylesheet">
+  <link rel="icon" href="emblem.svg" type="image/svg+xml">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
   <canvas id="chart" aria-label="Sea chart of the eastern Atlantic"></canvas>
 
   <div id="hud">
-    <div class="brand">Helmline <span>Prototype 0</span></div>
+    <div class="brand"><img src="emblem.svg" alt="" width="34" height="34"><span class="word">Helmline</span><span class="tag">Prototype 0</span></div>
     <div class="stats">
       <div><small>Date</small><span id="hud-date"></span></div>
       <div class="big"><small>Purse</small><span id="hud-purse"></span></div>
@@ -51,7 +52,11 @@
 
   <div id="intro" hidden>
     <div class="card">
-      <h1>Helmline</h1>
+      <div class="lockup">
+        <img src="emblem.svg" alt="" width="120" height="120">
+        <h1>Helmline</h1>
+        <p class="tagline"><span aria-hidden="true"></span>Explore · Trade · Endure<span aria-hidden="true"></span></p>
+      </div>
       <p class="sub">Lisbon, the first of March, 1451</p>
       <p>Prince Henry's captains have pushed past Cape Bojador. You own one caravel, the <i>São Cristóvão</i>, and a purse of 300 cruzados. Everything south of the known coast is uncharted.</p>
       <ul>
