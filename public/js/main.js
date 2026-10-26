@@ -1227,7 +1227,7 @@ function perkList(t) {
   if (t.payMult < 1) out.push(`contracts pay ${Math.round((1 - t.payMult) * 100)}% less`);
   if (t.priceEdge) out.push(`${Math.round(t.priceEdge * 100)}% better prices in Portuguese ports`);
   out.push(`${t.offers} ${t.offers === 1 ? 'offer' : 'offers'} per port`, `up to ${t.maxActive} contracts`);
-  if (t.shipyard) out.push('the Lisbon shipyard will sell you a caravel');
+  if (t.maxShips) out.push(`you may command ${t.maxShips} hired ${t.maxShips === 1 ? 'ship' : 'ships'}`);
   return out.join(', ');
 }
 
@@ -1253,7 +1253,7 @@ function renderContracts(el) {
     const list = Contracts.offersAt(S, market, pid);
     offers = list.length
       ? list.map((o) => contractCard(o, `<button class="primary" data-accept="${o.id}" ${full ? 'disabled' : ''}>Accept</button>`)).join('')
-      : '<li class="muted">No work posted here this month. Chart more ports to open new trades.</li>';
+      : `<li class="muted">No work posted here right now.${Contracts.nextOfferDay(S, pid) ? ` New offers around ${fmtDate(Contracts.nextOfferDay(S, pid))}.` : ''} Charting more ports opens more trades.</li>`;
   }
   el.innerHTML = `
     ${tabs('contracts')}
@@ -1323,7 +1323,10 @@ function renderFleet(el) {
       </li>`;
   }).join('');
   let yard = '';
-  if (Fleet.canBuy(S)) {
+  const maxShips = Contracts.perks(S).maxShips;
+  const nextShips = Contracts.TIERS.filter((t) => t.maxShips > maxShips && Number.isFinite(t.min)).pop();
+  const allowance = `<p class="foot">Your standing lets you command ${maxShips} hired ${maxShips === 1 ? 'ship' : 'ships'}; you have ${F.ships.length}.${nextShips ? ` Become <i>${nextShips.title}</i> (standing ${nextShips.min}) to command ${nextShips.maxShips}.` : ''}</p>`;
+  if (Fleet.canBuy(S, maxShips)) {
     if (S.ship.docked === 'lisbon') {
       yard = `<h3>The Lisbon shipyard</h3>
         <p class="blurb">A caravel like yours costs ${Fleet.SHIP_COST.toLocaleString()} cz. Choose the captain who will sail her.</p>
@@ -1337,6 +1340,7 @@ function renderFleet(el) {
       yard = `<p class="foot">The Lisbon shipyard will build you a caravel for ${Fleet.SHIP_COST.toLocaleString()} cz.</p>`;
     }
   }
+  yard += allowance;
   el.innerHTML = `
     ${tabs('fleet')}
     <header><h2>Fleet</h2><button class="close" data-close aria-label="Close">×</button></header>
@@ -1599,7 +1603,7 @@ $('panel').addEventListener('click', (e) => {
         body: `<dl class="facts"><dt>Caravel</dt><dd>${Fleet.SHIP_COST.toLocaleString()} cz</dd><dt>Running cost</dt><dd>${cap.wage + Fleet.SHIP_UPKEEP} cz a day</dd><dt>Purse after</dt><dd>${Math.floor(S.purse - Fleet.SHIP_COST).toLocaleString()} cz</dd></dl><p>Then give him a route between two ports.</p>`,
         ok: `Buy for ${Fleet.SHIP_COST.toLocaleString()} cz`,
         onOk: () => {
-          const ship = Fleet.buyShip(S, cap.id);
+          const ship = Fleet.buyShip(S, cap.id, Contracts.perks(S).maxShips);
           if (ship) { toast(`The <b>${ship.name}</b> is yours, with Captain ${cap.name} in command. Give her a route.`, 'discover'); log(`Bought the ${ship.name}; hired Captain ${cap.name}.`); }
         },
       });
@@ -1810,6 +1814,6 @@ requestAnimationFrame(frame);
 
 // Exposed for debugging in the console.
 window.helmline = {
-  get state() { return S; }, market: () => market, setCourse, setSpeed, screenOf: (lon, lat) => toScreen(lon, lat),
+  get state() { return S; }, market: () => market, offers: (pid) => Contracts.offersAt(S, market, pid), setCourse, setSpeed, screenOf: (lon, lat) => toScreen(lon, lat),
   advance: (days) => { for (let i = 0; i < days * 4; i++) advanceTime(0.25, !S.ship.docked); renderPanel(); },
 };

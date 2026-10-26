@@ -6,7 +6,6 @@ import { PORTS, findPath, windAt, sailFactor, angleDiff, bearing, distNm, D2R } 
 import { GOODS } from './economy.js';
 
 export const SHIP_COST = 1500;
-export const MAX_SHIPS = 1; // extra ships beyond the player's own, for now
 const HOLD = 40;
 const KNOTS = 5;
 export const SHIP_UPKEEP = 2; // cz a day, on top of the captain's wage
@@ -42,14 +41,15 @@ export function candidates(S) {
   return F.candidates.list;
 }
 
-export function canBuy(S) {
-  return ensureFleet(S).ships.length < MAX_SHIPS;
+// How many hired ships the captain may command is set by his standing (see contracts.js).
+export function canBuy(S, maxShips) {
+  return ensureFleet(S).ships.length < maxShips;
 }
 
-export function buyShip(S, captainId) {
+export function buyShip(S, captainId, maxShips) {
   const F = ensureFleet(S);
   const cap = (F.candidates?.list || []).find((c) => c.id === captainId);
-  if (!cap || S.purse < SHIP_COST || !canBuy(S)) return null;
+  if (!cap || S.purse < SHIP_COST || !canBuy(S, maxShips)) return null;
   F.candidates.list = F.candidates.list.filter((c) => c !== cap);
   const used = new Set(F.ships.map((s) => s.name));
   const name = SHIP_NAMES.find((n) => !used.has(n)) || `Caravel ${F.nextId}`;
