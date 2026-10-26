@@ -167,6 +167,9 @@ button.link { border: 0; background: none; padding: 0; color: var(--red); text-d
 button.mini { font-size: 13px; padding: 3px 8px; justify-self: start; }
 .stop > button.mini { align-self: flex-start; }
 .stop-arrow { text-align: center; color: var(--muted); font-size: 13px; line-height: 1; }
+.row.choice { justify-content: stretch; }
+.row.choice button { flex: 1; min-height: 44px; }
+.banner button { margin-left: 8px; }
 
 /* Destination list */
 .dests { list-style: none; padding: 0; margin: 4px 0 0; display: flex; flex-direction: column; gap: 6px; }
