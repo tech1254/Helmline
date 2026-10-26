@@ -20,6 +20,7 @@ An age-of-sail exploration and trade game. This is **Prototype 0**: the West Afr
 - **Time away:** with hired captains and your ship in port, the world moves on while you are gone: a tenth of normal speed for the first 90 days, then tapering (a night or a workday is about 200 days, at most 210). Contract deadlines wait for you. Captains start to stray after 16 hours away (skimming, then going ashore) and standing fades after 24 hours. A summary greets you on return.
 - **Corsairs of Barbary:** encounters off Morocco, the Algarve and the Canaries; run, fight or pay tribute. Afterwards the game pauses to let you hold course or turn back for a shipyard. Notoriety draws more corsairs, caution fewer. Battle damage slows the ship until repaired in Lisbon, Lagos or Funchal.
 - **Notices:** pop-ups stay up long enough to read (longer for longer messages), pause while hovered and close on a tap; every notice is also kept in a feed under the bell, with an unread count.
+- **Feedback:** Report a bug or Suggest an idea from the How to play screen. Reports go to the `feedback` table in D1 (with game details, if the player agrees) and are reviewed nightly into the design doc's backlog.
 - **Wait in port**, zoom buttons, Captain's notes for the first voyages, and a How to play screen.
 - Saves to the browser, and optionally to the cloud with a save code to play across devices.
 
@@ -27,7 +28,7 @@ Not yet included: ship-to-ship combat beyond auto-resolve, navigation drift, dyn
 
 ## Layout
 
-- `src/worker.js` is the Worker: it serves `public/` and answers `/api/saves` for cloud saves, stored in the D1 database `helmline-saves` (schema in `migrations/`). Only a hash of each save code is stored.
+- `src/worker.js` is the Worker: it serves `public/` and answers `/api/saves` for cloud saves and `/api/feedback` for players' reports, stored in the D1 database `helmline-saves` (schema in `migrations/`). Only a hash of each save code is stored.
 - `public/` holds the game's static files (no build step). The game is plain ES modules in `public/js/`:
   - Game rules: `world.js` (coastlines, ports, winds, sea routes), `economy.js` (goods and the market), `contracts.js` (contracts and standing), `events.js` (market events and news), `fleet.js` (hired ships and captains), `accounts.js` (the ledger), `pirates.js` (corsairs), `cloud.js` (the cloud-save API).
   - The game itself: `state.js` (the shared game state), `config.js` (tunable numbers), `save.js`, `cloudsync.js`, `fog.js`, `sim.js` (time passing, time away), `voyage.js` (courses, docking, corsairs).

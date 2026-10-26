@@ -14,6 +14,7 @@ import { cloudSync, loadFromCloud, renderCloudButton, startCloudSave } from './c
 import { cam, centerOn, clampCam } from './view.js';
 import { report } from './sim.js';
 import { checkMilestones, confirmVoyage, observe, planCourse, waitInPort } from './voyage.js';
+import { closeFeedback, feedbackInput, openFeedback, submitFeedback } from './feedback.js';
 import { $, cz, fmtDate, held } from './util.js';
 import { draftFor, renderPanel, renderTip, routeDrafts, routeSummary, setSpeed, togglePanel, toggleWind } from './panels.js';
 import { log, passage, quote, tradeFacts } from './pricebook.js';
@@ -48,6 +49,8 @@ export function initActions() {
   $('panel').addEventListener('click', (e) => {
     const t = e.target.closest('button');
     if (!t || t.closest('form')) return; // forms handle their own submit
+    if (t.dataset.feedback) { openFeedback(t.dataset.feedback); return; }
+    if (t.hasAttribute('data-feedback-close')) { closeFeedback(); return; }
     const pid = S.ship.docked;
     if ((t.dataset.buy || t.dataset.sell) && pid && market.closed(pid)) {
       hint('The port is closed to trade.');
@@ -221,7 +224,9 @@ export function initActions() {
     renderPanel();
     save();
   });
+  $('panel').addEventListener('input', (e) => { feedbackInput(e); });
   $('panel').addEventListener('submit', (e) => {
+    if (e.target.closest('[data-feedback-form]')) { e.preventDefault(); submitFeedback(); return; }
     const form = e.target.closest('[data-cloud-form]');
     if (!form) return;
     e.preventDefault();
@@ -230,6 +235,7 @@ export function initActions() {
     loadFromCloud(code);
   });
   $('panel').addEventListener('change', (e) => {
+    if (feedbackInput(e)) return;
     if (e.target.matches('select[data-ledger-who]')) { ui.ledgerWho = e.target.value; renderPanel(); return; }
     const sel = e.target.closest('select[data-f]');
     if (!sel) return;

@@ -115,7 +115,7 @@ export function initInput() {
       if (e.key === 'Enter' && !ui.modal.locked) { e.preventDefault(); closeModal(true); }
       return;
     }
-    if (e.target.closest('input, button') && e.key !== 'Escape') return;
+    if (e.target.closest('input, textarea, select, button') && e.key !== 'Escape') return;
     if (e.key === ' ') { e.preventDefault(); setSpeed(ui.speed === 0 ? ui.lastSpeed : 0); }
     if (e.key === '1') setSpeed(1);
     if (e.key === '2') setSpeed(2);

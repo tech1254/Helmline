@@ -7,6 +7,8 @@
 //   GET  /api/saves/:code                                         -> { data, version, day, updatedAt }
 //   PUT  /api/saves/:code    { data, day, baseVersion, force? }  -> { version, updatedAt }
 //                            409 { version, day, updatedAt } if another device saved first
+//   POST /api/feedback       { kind: 'bug'|'idea', message, contact?, context? } -> { id }
+//                            429 if one sender has sent too many in the last hour
 
 const MAX_BYTES = 512 * 1024;
 const CODE_ALPHABET = '23456789ABCDEFGHJKLMNPQRSTUVWXYZ'; // no 0/O or 1/I to mistype
@@ -20,6 +22,14 @@ export default {
         return await saves(request, env, url);
       } catch (err) {
         console.error('save API error', err);
+        return json({ error: 'Something went wrong on the server.' }, 500);
+      }
+    }
+    if (url.pathname === '/api/feedback') {
+      try {
+        return await feedback(request, env);
+      } catch (err) {
+        console.error('feedback API error', err);
         return json({ error: 'Something went wrong on the server.' }, 500);
       }
     }
@@ -81,6 +91,38 @@ async function saves(request, env, url) {
   }
 
   return json({ error: 'Method not allowed' }, 405);
+}
+
+// ---- Feedback ---------------------------------------------------------------------
+const FEEDBACK_PER_HOUR = 10;
+const MESSAGE_MAX = 4000;
+
+async function feedback(request, env) {
+  if (request.method !== 'POST') return json({ error: 'Method not allowed' }, 405);
+  const text = await request.text();
+  if (text.length > 20000) return json({ error: 'That is too long to send.' }, 400);
+  let body;
+  try { body = JSON.parse(text); } catch { return json({ error: 'Request is not valid JSON.' }, 400); }
+  const kind = body.kind === 'bug' || body.kind === 'idea' ? body.kind : null;
+  const message = typeof body.message === 'string' ? body.message.trim() : '';
+  if (!kind) return json({ error: 'Say whether this is a bug or an idea.' }, 400);
+  if (message.length < 5) return json({ error: 'Please describe it in a few words.' }, 400);
+  if (message.length > MESSAGE_MAX) return json({ error: `Please keep it under ${MESSAGE_MAX} characters.` }, 400);
+  const contact = typeof body.contact === 'string' ? body.contact.trim().slice(0, 200) || null : null;
+  let context = null;
+  if (body.context && typeof body.context === 'object') {
+    context = JSON.stringify(body.context);
+    if (context.length > 8000) context = context.slice(0, 8000);
+  }
+  // Only a hash of the sender's address is kept, to stop one sender flooding the backlog.
+  const sender = (await hash(`feedback:${request.headers.get('cf-connecting-ip') || 'unknown'}`)).slice(0, 16);
+  const now = Date.now();
+  const recent = await env.DB.prepare('SELECT COUNT(*) AS n FROM feedback WHERE sender = ? AND created_at > ?')
+    .bind(sender, now - 3600000).first();
+  if (recent && recent.n >= FEEDBACK_PER_HOUR) return json({ error: 'Thank you! That is plenty for one hour; please send more later.' }, 429);
+  const res = await env.DB.prepare('INSERT INTO feedback (kind, message, contact, context, sender, created_at) VALUES (?, ?, ?, ?, ?, ?)')
+    .bind(kind, message, contact, context, sender, now).run();
+  return json({ id: res.meta?.last_row_id ?? null }, 201);
 }
 
 async function readBody(request) {

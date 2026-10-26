@@ -18,6 +18,7 @@ import { $, cz, fmtDate, held } from './util.js';
 import { renderLedger } from './ledgerview.js';
 import { renderPrices } from './pricebook.js';
 import { placeToasts, renderNoticeBadge, renderNotices } from './notices.js';
+import { renderFeedback } from './feedback.js';
 
 // ---- HUD & panels -----------------------------------------------------------
 
@@ -101,6 +102,7 @@ export function renderPanel() {
   else if (ui.panelMode === 'fleet') renderFleet(el);
   else if (ui.panelMode === 'help') renderHelp(el);
   else if (ui.panelMode === 'cloud') renderCloud(el);
+  else if (ui.panelMode === 'feedback') renderFeedback(el);
   else if (ui.panelMode === 'ledger') renderLedger(el);
   else if (ui.panelMode === 'notices') renderNotices(el);
   else renderPrices(el);
@@ -346,6 +348,7 @@ export function renderFleet(el) {
 export function renderHelp(el) {
   el.innerHTML = `
     <header><h2>How to play</h2><button class="close" data-close aria-label="Close">×</button></header>
+    <div class="row feedback-entry"><button data-feedback="bug">Report a bug</button><button data-feedback="idea">Suggest an idea</button></div>
     <h3>Sailing</h3>
     <ul class="help">
       <li><b>Set a course:</b> click or tap the sea, a port, or use <i>Sail to…</i>. Shift-click adds a waypoint. You confirm each voyage first.</li>

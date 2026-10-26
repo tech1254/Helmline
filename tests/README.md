@@ -34,6 +34,7 @@ Every test except `corsairs` calms the seas (no random corsair attacks) so its c
 | `old_save` | A save from before events and the fleet still loads |
 | `phone` | Phone layout |
 | `cloud_two_devices` | Cloud save on one device, load on another, conflicts |
+| `feedback` | Report a bug or idea from Help; typing does not trigger shortcuts; the draft survives a reload; reports are stored with or without game details |
 | `captain_prices` | Captains' price notes reach the price book only at ports on their route; the course home from Mina swings out to sea |
 | `routes_file` | The ready-made routes match what the pathfinder plans |
 

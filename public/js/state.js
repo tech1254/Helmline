@@ -22,4 +22,6 @@ export const ui = {
   ledgerWho: 'all',
   lastPushed: null, // the cloud payload last sent, so unchanged games are not re-sent
   cloudClock: 0,
+  feedbackFrom: null, // the panel open before the feedback form
+  feedbackResume: null, // the speed to resume when the form closes, if opening it paused the game
 };
