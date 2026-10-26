@@ -64,12 +64,14 @@ export function buyShip(S, captainId) {
   return ship;
 }
 
-// Time away wears down a captain's loyalty: nothing for the first few hours, then steadily.
+// Time away wears down a captain's loyalty: nothing for a night's sleep or a working day,
+// then steadily.
+export const STRAY_AFTER_HOURS = 16;
 export function strayWhileAway(S, hoursAway) {
   const F = ensureFleet(S);
   const out = [];
-  if (hoursAway <= 4) return out;
-  const loss = Math.min(40, (hoursAway - 4) * 5);
+  if (hoursAway <= STRAY_AFTER_HOURS) return out;
+  const loss = Math.min(40, (hoursAway - STRAY_AFTER_HOURS) * 5);
   for (const ship of F.ships) {
     const before = ship.captain.loyalty ?? 100;
     ship.captain.loyalty = Math.max(0, before - loss);
