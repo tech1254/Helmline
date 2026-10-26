@@ -17,7 +17,7 @@ import { drag } from './input.js';
 import { $, cz, fmtDate, held } from './util.js';
 import { renderLedger } from './ledgerview.js';
 import { renderPrices } from './pricebook.js';
-import { renderNoticeBadge, renderNotices } from './notices.js';
+import { placeToasts, renderNoticeBadge, renderNotices } from './notices.js';
 
 // ---- HUD & panels -----------------------------------------------------------
 
@@ -92,7 +92,7 @@ export function renderPanel() {
   $('btn-contracts').classList.toggle('on', ui.panelMode === 'contracts');
   $('btn-contracts').hidden = !S.contracts?.unlocked;
   if (ui.panelMode === 'contracts' && !S.contracts?.unlocked) ui.panelMode = S.ship.docked ? 'port' : null;
-  if (!ui.panelMode) { el.hidden = true; return; }
+  if (!ui.panelMode) { el.hidden = true; placeToasts(); return; }
   el.hidden = false;
   el.classList.toggle('wide', ui.panelMode === 'prices' || ui.panelMode === 'ledger');
   if (ui.panelMode === 'port') renderPort(el);
@@ -104,6 +104,7 @@ export function renderPanel() {
   else if (ui.panelMode === 'ledger') renderLedger(el);
   else if (ui.panelMode === 'notices') renderNotices(el);
   else renderPrices(el);
+  placeToasts();
 }
 
 export function renderPort(el) {

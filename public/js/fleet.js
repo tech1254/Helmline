@@ -102,7 +102,8 @@ export function dailyCost(ship) {
 // Estimate a passage for a hired captain: today's winds, adjusted for his navigation.
 function planLeg(S, ship, fromId, toId) {
   const a = port(fromId), b = port(toId);
-  const route = findPath(a.lon, a.lat, b.lon, b.lat);
+  // A better navigator plans for the winds; a poor one keeps to the shortest course.
+  const route = findPath(a.lon, a.lat, b.lon, b.lat, (ship.captain.nav - 1) / 4);
   if (!route) return null;
   const path = [[a.lon, a.lat], ...route];
   let day = S.day, total = 0;
@@ -240,6 +241,9 @@ function visit(S, market, ship, fresh = false) {
   const msgs = [];
   const here = ship.at;
   const r = ship.route;
+  // The captain notes the prices as he finds them, for the owner's price book.
+  ship.seen = ship.seen || {};
+  ship.seen[here] = { day: S.day, prices: market.observe(here) };
   if (market.closed(here)) {
     if (ship.status !== 'waiting') msgs.push({ html: `<b>${ship.name}</b> is held outside ${port(here).name}: the port is closed.`, kind: '' });
     ship.status = 'waiting';
@@ -438,4 +442,21 @@ export function statusText(S, ship) {
   if (ship.status === 'loading') return `Waiting in ${port(ship.at).name} for prices to recover, on half pay (${Math.max(0, Math.round(S.day - (ship.waitSince ?? S.day)))} of up to ${MAX_WAIT_DAYS} days).`;
   if (ship.status === 'ashore') return `Ashore in ${port(ship.at).name}: Captain ${ship.captain.name} will not sail until you give him orders there in person.`;
   return r ? `In ${port(ship.at).name}.` : `Idle in ${port(ship.at).name}, awaiting a route.`;
+}
+
+// The owner is in a port on a captain's route: the captain's notes of prices go into the
+// owner's price book wherever they are fresher than his own. Returns the ports updated.
+export function sharePrices(S, portId, ships) {
+  const updated = new Set();
+  for (const ship of ships) {
+    const onRoute = ship.at === portId || (ship.route?.stops || []).some((st) => st.port === portId);
+    if (!onRoute || !ship.seen) continue;
+    for (const [pid, rec] of Object.entries(ship.seen)) {
+      if (!S.seen[pid] || S.seen[pid].day < rec.day) {
+        S.seen[pid] = { day: rec.day, prices: rec.prices, by: ship.name };
+        updated.add(pid);
+      }
+    }
+  }
+  return [...updated];
 }

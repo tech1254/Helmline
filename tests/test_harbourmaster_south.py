@@ -10,11 +10,13 @@ async def main():
         errs=[]; pg.on('pageerror', lambda e: errs.append(str(e)))
         await pg.goto(URL)
         await pg.click('#intro-new'); await pg.wait_for_timeout(300)
+        await pg.evaluate("() => { const p = window.helmline?.state?.pirates; if (p) p.cooldown = 1e9; }")  # calm seas: no random corsairs
         # Reveal every port's prices, as if the captain had seen them all today.
         await pg.evaluate("""() => { const h = window.helmline, S = h.state, m = h.market();
           for (const id of ['lisbon','lagos','funchal','lanzarote','arguin','gambia','serraleoa','cestos','mina']) { S.discovered[id] = true; S.seen[id] = { day: S.day, prices: m.observe(id) }; }
           S.purse = 800; }""")
         await pg.reload(); await pg.click('#intro-continue'); await pg.wait_for_timeout(8000)
+        await pg.evaluate("() => { const p = window.helmline?.state?.pirates; if (p) p.cooldown = 1e9; }")  # calm seas: no random corsairs
         t=await pg.evaluate("() => { const t=performance.now(); document.getElementById('btn-prices').click(); return performance.now()-t; }"); print('first ledger open ms', round(t))
         t0 = await pg.evaluate("() => performance.now()")
         txt = await pg.evaluate("() => [...document.querySelectorAll('#panel h3')].find(h => h.textContent.includes('harbourmaster')).nextElementSibling.innerText")

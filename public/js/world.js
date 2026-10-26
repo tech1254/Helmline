@@ -224,8 +224,11 @@ export function compassPoint(deg) {
 }
 
 // ---- Sea-route pathfinding -------------------------------------------------
-// A coarse grid over the chart; each course the player sets is routed around land,
-// then straightened wherever there is clear water. Wind still decides how fast it is.
+// A coarse grid over the chart. Courses are planned for the least sailing time, not the
+// shortest distance: each step is costed by the caravel's speed on that heading in the
+// prevailing wind there. So a passage home from Guinea swings out to sea to cross the
+// trades on a reach and ride the westerlies in (the volta do mar), and a course straight
+// into the wind is planned as tacks where that is quicker.
 export const NAV_CELL = 0.2;
 const NW = Math.round((BOUNDS.east - BOUNDS.west) / NAV_CELL);
 const NH = Math.round((BOUNDS.north - BOUNDS.south) / NAV_CELL);
@@ -278,30 +281,106 @@ function nearestSeaCell(lon, lat) {
   return null;
 }
 
-// Routes between the same two points never change, so remember recent ones.
+// Routes between the same two points never change, so remember recent ones. Routes between
+// ports, for every level of skill, come ready-made in data/routes.json (see loadRoutes).
 const pathCache = new Map();
 const PATH_CACHE_MAX = 300;
+const portRoutes = new Map();
+export const ROUTE_SKILLS = [0, 0.25, 0.5, 0.75, 1];
+
+export function routeKey(aLon, aLat, bLon, bLat, skill) {
+  return `${aLon.toFixed(3)},${aLat.toFixed(3)}>${bLon.toFixed(3)},${bLat.toFixed(3)}@${skill}`;
+}
+
+// Take the ready-made routes (the object in data/routes.json).
+export function loadRoutes(table) {
+  for (const [k, r] of Object.entries(table?.routes || {})) portRoutes.set(k, r);
+  return portRoutes.size;
+}
 
 // Returns a list of [lon, lat] waypoints from a to b (excluding a), or null if no route.
-export function findPath(aLon, aLat, bLon, bLat) {
-  const key = `${aLon.toFixed(3)},${aLat.toFixed(3)}>${bLon.toFixed(3)},${bLat.toFixed(3)}`;
-  if (pathCache.has(key)) {
-    const hit = pathCache.get(key);
-    return hit && hit.map((pt) => [pt[0], pt[1]]);
-  }
-  const route = computePath(aLon, aLat, bLon, bLat);
+// `skill` is the navigator's grasp of the winds, 0 to 1: a master (1) plans for the least
+// sailing time, a novice (0) for the shortest distance, hugging the coast; between the two,
+// the winds count for less.
+export function findPath(aLon, aLat, bLon, bLat, skill = 1) {
+  skill = Math.round(Math.min(1, Math.max(0, skill)) * 4) / 4;
+  const key = routeKey(aLon, aLat, bLon, bLat, skill);
+  const hit = portRoutes.has(key) ? portRoutes.get(key) : pathCache.get(key);
+  if (hit !== undefined) return hit && hit.map((pt) => [pt[0], pt[1]]);
+  const route = computePath(aLon, aLat, bLon, bLat, skill);
   if (pathCache.size >= PATH_CACHE_MAX) pathCache.delete(pathCache.keys().next().value);
   pathCache.set(key, route);
   return route && route.map((pt) => [pt[0], pt[1]]);
 }
 
-function computePath(aLon, aLat, bLon, bLat) {
-  if (clearWater(aLon, aLat, bLon, bLat)) return [[bLon, bLat]];
+// Plan a route afresh, ignoring every cache (for building and checking data/routes.json).
+export function planRoute(aLon, aLat, bLon, bLat, skill = 1) {
+  return computePath(aLon, aLat, bLon, bLat, skill);
+}
+
+// The prevailing wind in each grid cell: the wind averaged over a spread of days (the daily
+// wobble cancels out). Speed is a share of the best a caravel can make.
+let meanWind = null;
+function getMeanWind() {
+  if (meanWind) return meanWind;
+  const from = new Float32Array(NW * NH), push = new Float32Array(NW * NH);
+  const DAYS = [0, 5.5, 11, 16.5, 23, 31, 44, 57];
+  for (let j = 0; j < NH; j++) {
+    for (let i = 0; i < NW; i++) {
+      const [x, y] = cellCenter(i, j);
+      let vx = 0, vy = 0, st = 0;
+      for (const d of DAYS) {
+        const w = windAt(x, y, d);
+        vx += Math.sin(w.from * D2R); vy += Math.cos(w.from * D2R); st += w.strength;
+      }
+      const n = j * NW + i;
+      from[n] = (Math.atan2(vx, vy) / D2R + 360) % 360;
+      push[n] = 0.45 + 0.55 * st / DAYS.length; // as the ship's speed uses strength
+    }
+  }
+  meanWind = { from, push };
+  return meanWind;
+}
+
+function cellOf(lon, lat) {
+  const i = Math.min(NW - 1, Math.max(0, Math.floor((lon - BOUNDS.west) / NAV_CELL)));
+  const j = Math.min(NH - 1, Math.max(0, Math.floor((lat - BOUNDS.south) / NAV_CELL)));
+  return j * NW + i;
+}
+
+// Speed (share of the best) heading `deg` in the prevailing wind of cell n.
+function speedIn(n, deg) {
+  const W = getMeanWind();
+  return Math.max(0.05, sailFactor(angleDiff(deg, W.from[n])) * W.push[n]);
+}
+
+// Time (in degrees of latitude at full speed) to sail straight from a to b, as a navigator of
+// the given skill reckons it: speed counts for less the less he knows the winds.
+function legTime(a, b, skill = 1) {
+  const nm = distNm(a[0], a[1], b[0], b[1]);
+  if (nm < 1e-6) return 0;
+  const deg = bearing(a[0], a[1], b[0], b[1]);
+  const pieces = Math.max(1, Math.ceil(nm / 12));
+  let t = 0;
+  for (let p = 0; p < pieces; p++) {
+    const f = (p + 0.5) / pieces;
+    t += nm / 60 / pieces / Math.pow(speedIn(cellOf(a[0] + (b[0] - a[0]) * f, a[1] + (b[1] - a[1]) * f), deg), skill);
+  }
+  return t;
+}
+
+const STEPS = [];
+for (let dj = -1; dj <= 1; dj++) for (let di = -1; di <= 1; di++) if (di || dj) STEPS.push([di, dj]);
+
+function computePath(aLon, aLat, bLon, bLat, skill = 1) {
+  // A short hop in clear water goes straight.
+  if (distNm(aLon, aLat, bLon, bLat) < 90 && clearWater(aLon, aLat, bLon, bLat)) return [[bLon, bLat]];
   const g = getNavGrid();
+  const W = getMeanWind();
   const start = nearestSeaCell(aLon, aLat), goal = nearestSeaCell(bLon, bLat);
   if (start === null || goal === null) return null;
   const gi = goal % NW, gj = Math.floor(goal / NW);
-  const cost = new Float64Array(NW * NH).fill(Infinity) // double precision: float rounding on long routes can loop the path;
+  const cost = new Float64Array(NW * NH).fill(Infinity); // double precision: float rounding on long routes can loop the path
   const from = new Int32Array(NW * NH).fill(-1);
   const heap = [];
   const push = (n, f) => {
@@ -324,26 +403,35 @@ function computePath(aLon, aLat, bLon, bLat) {
     }
     return top;
   };
+  // Never more than the true time: the distance left, at the best speed the winds allow.
+  let best = 0;
+  for (let n = 0; n < W.push.length; n++) if (W.push[n] > best) best = W.push[n];
   const h = (n) => {
     const i = n % NW, j = Math.floor(n / NW);
     const cl = Math.cos((BOUNDS.south + j * NAV_CELL) * D2R);
-    return Math.hypot((i - gi) * cl, j - gj);
+    return Math.hypot((i - gi) * cl, j - gj) * NAV_CELL / Math.pow(best, skill);
   };
+  // Each of the eight steps has a fixed heading; its cost is distance over speed there.
+  const dirs = STEPS.map(([di, dj]) => ({ di, dj, deg: (Math.atan2(di, dj) / D2R + 360) % 360 }));
+  const closed = new Uint8Array(NW * NH);
   cost[start] = 0;
   push(start, h(start));
   while (heap.length) {
     const [, n] = pop();
+    if (closed[n]) continue;
+    closed[n] = 1;
     if (n === goal) break;
     const i = n % NW, j = Math.floor(n / NW);
-    const cl = Math.cos((BOUNDS.south + j * NAV_CELL) * D2R);
-    for (let dj = -1; dj <= 1; dj++) for (let di = -1; di <= 1; di++) {
-      if (!di && !dj) continue;
+    const cl = Math.cos((BOUNDS.south + (j + 0.5) * NAV_CELL) * D2R);
+    for (const { di, dj, deg } of dirs) {
       const ni = i + di, nj = j + dj;
       if (ni < 0 || nj < 0 || ni >= NW || nj >= NH) continue;
       const m = nj * NW + ni;
-      if (g[m]) continue;
+      if (g[m] || closed[m]) continue;
       if (di && dj && (g[j * NW + ni] || g[nj * NW + i])) continue; // no corner cutting
-      const c = cost[n] + Math.hypot(di * cl, dj);
+      // the true heading of this step, allowing for the narrower degrees of longitude
+      const hd = (Math.atan2(di * cl, dj) / D2R + 360) % 360;
+      const c = cost[n] + Math.hypot(di * cl, dj) * NAV_CELL / Math.pow((speedIn(n, hd) + speedIn(m, hd)) / 2, skill);
       if (c < cost[m]) { cost[m] = c; from[m] = n; push(m, c + h(m)); }
     }
   }
@@ -352,9 +440,14 @@ function computePath(aLon, aLat, bLon, bLat) {
   for (let n = goal; n !== -1; n = from[n]) cells.push(cellCenter(n % NW, Math.floor(n / NW)));
   cells.reverse();
   const pts = [[aLon, aLat], ...cells, [bLon, bLat]];
-  // String-pull: from each point, reach as far along the path as clear water allows.
-  // Grow the reach in doubling steps, then narrow it down: every segment kept is checked clear.
-  const clear = (a, b) => clearWater(pts[a][0], pts[a][1], pts[b][0], pts[b][1]);
+  // Time along the planned track to each point, for judging shortcuts.
+  const along = [0];
+  for (let q = 1; q < pts.length; q++) along.push(along[q - 1] + legTime(pts[q - 1], pts[q], skill));
+  // String-pull: from each point, reach as far along the track as a straight course stays in
+  // clear water and is no slower than following the track. Grow the reach in doubling steps,
+  // then narrow it down.
+  const ok = (a, b) => b === a + 1 || (legTime(pts[a], pts[b], skill) <= (along[b] - along[a]) * 1.005 &&
+    clearWater(pts[a][0], pts[a][1], pts[b][0], pts[b][1]));
   const last = pts.length - 1;
   const out = [];
   let k = 0;
@@ -362,11 +455,11 @@ function computePath(aLon, aLat, bLon, bLat) {
     let lo = k + 1, hi = null, step = 1;
     while (lo < last) {
       const m = Math.min(last, lo + step);
-      if (clear(k, m)) { lo = m; step *= 2; } else { hi = m; break; }
+      if (ok(k, m)) { lo = m; step *= 2; } else { hi = m; break; }
     }
     while (hi !== null && hi - lo > 1) {
       const mid = (lo + hi) >> 1;
-      if (clear(k, mid)) lo = mid; else hi = mid;
+      if (ok(k, mid)) lo = mid; else hi = mid;
     }
     out.push(pts[lo]);
     k = lo;

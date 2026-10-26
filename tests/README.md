@@ -14,7 +14,7 @@ The runner starts `mock/server.mjs`, a local stand-in for Cloudflare: it runs th
 
 Needs Python 3 with Playwright (`pip install playwright && playwright install chromium`) and Node 22.5 or later (for `node:sqlite`).
 
-A test passes when it exits cleanly and every `ERRORS` line it prints is empty (no JavaScript errors on the page). Most also print what they saw, so `-v` shows whether the numbers look right.
+Every test except `corsairs` calms the seas (no random corsair attacks) so its clicks are not interrupted. A test passes when it exits cleanly and every `ERRORS` line it prints is empty (no JavaScript errors on the page). Most also print what they saw, so `-v` shows whether the numbers look right.
 
 ## What they cover
 
@@ -25,7 +25,7 @@ A test passes when it exits cleanly and every `ERRORS` line it prints is empty (
 | `contract_unlock` | Prince Henry's first contract at 500 cz, kept across a reload |
 | `contracts` | Generated contracts at every port, refills, ship limits by standing |
 | `fleet_routes` | A six-stop route with buy and sell orders, run for 320 days |
-| `corsairs` | Run, fight and pay, hull damage and repairs |
+| `corsairs` | Run, fight and pay; the pause afterwards with Hold course and Turn back; hull damage and repairs |
 | `time_away` | 8 to 30 hours away: catch-up, deadlines, straying captains, fading standing |
 | `harbourmaster`, `harbourmaster_south` | Suggested runs net of wages and spoilage; ledger speed with all nine ports |
 | `ledger`, `ledger_reports` | The books balance; captains' accounts arrive at ports on their routes |
@@ -34,6 +34,8 @@ A test passes when it exits cleanly and every `ERRORS` line it prints is empty (
 | `old_save` | A save from before events and the fleet still loads |
 | `phone` | Phone layout |
 | `cloud_two_devices` | Cloud save on one device, load on another, conflicts |
+| `captain_prices` | Captains' price notes reach the price book only at ports on their route; the course home from Mina swings out to sea |
+| `routes_file` | The ready-made routes match what the pathfinder plans |
 
 The debug hooks the tests use (`window.helmline.dockAt`, `advance`, `away`, `accounts`, `encounter`) are defined at the bottom of `public/js/main.js`.
 
@@ -47,4 +49,17 @@ node tests/sim/fleet_sim.mjs --k 0.75      # markets a quarter deeper
 node tests/sim/fleet_sim.mjs --wage -1     # every captain 1 cz a day cheaper
 ```
 
-Results on 26 October 2026, after captains learned to price loads on the real price curve and hired upkeep fell to 1 cz a day (cash per ship per 200 days): Lisbon cloth ⇄ Gambia pepper +517; Lisbon → Arguin → Lanzarote, best goods +852; Lisbon ⇄ Lanzarote, best goods +121; Lisbon ⇄ Gambia, best goods +1,569. Before: −164, +483, −124 and +1,255.
+Results on 26 October 2026, cash per ship per 200 days:
+
+| Route (captain's navigation) | Before | Smarter loads, upkeep 1 | Plus wind-aware courses |
+| --- | --- | --- | --- |
+| Lisbon cloth ⇄ Gambia pepper (★★★★★) | −164 | +517 | +952 |
+| Lisbon → Arguin → Lanzarote, best goods (★★★★★) | +483 | +852 | +1,550 |
+| Lisbon ⇄ Lanzarote, best goods (★★★) | −124 | +121 | +298 |
+| Lisbon ⇄ Gambia, best goods (★★★) | +1,255 | +1,569 | +1,401 |
+
+`node tests/sim/passages.mjs --skill` shows passage times by navigation stars (Costa da Mina → Lisbon: 86 days at one star, 64 at five).
+
+## Ready-made sea routes
+
+`public/data/routes.json` holds every port-to-port route for each level of navigator skill, so the game never plans them while you play. After changing the coastline, ports, winds or pathfinder, rebuild it with `node tests/tools/build_routes.mjs` (about 20 s); `test_routes_file` fails until you do.

@@ -9,8 +9,9 @@ async def main():
         for w,h,name in ((1280,900,'43-notices'),(390,780,'44-notices-phone')):
             pg = await b.new_page(viewport={'width':w,'height':h})
             errs=[]; pg.on('pageerror', lambda e: errs.append(str(e)))
-            await pg.goto(URL); await pg.evaluate("() => localStorage.clear()"); await pg.reload()
+            await pg.goto(URL); await pg.wait_for_selector('#intro', state='visible'); await pg.evaluate("() => localStorage.clear()"); await pg.reload()
             await pg.click('#intro-new'); await pg.wait_for_timeout(300)
+            await pg.evaluate("() => { const p = window.helmline?.state?.pirates; if (p) p.cooldown = 1e9; }")  # calm seas: no random corsairs
             J = lambda js: pg.evaluate(js)
             await pg.click('[data-close]') if await J("() => !!document.querySelector('[data-close]')") else None
             # A hint (no feed) and two events at once
@@ -26,13 +27,14 @@ async def main():
             await pg.screenshot(path=f'{SP}/{name}-popups.png')
             # tap to dismiss
             n0 = await J("() => document.querySelectorAll('#toast .t:not(.out)').length")
-            if n0: await pg.locator('#toast .t:not(.out)').first.click(); await pg.wait_for_timeout(700)
+            if n0: await pg.evaluate("() => document.querySelector('#toast .t:not(.out)').click()"); await pg.wait_for_timeout(700)
             print('after a tap:', await J("() => document.querySelectorAll('#toast .t').length"), 'of', n0)
             await pg.click('#btn-notices'); await pg.wait_for_timeout(200)
             print('feed:', await J("() => [...document.querySelectorAll('.notices li')].map(l => l.innerText.slice(0,70))"))
             print('badge after open:', await J("() => document.getElementById('notices-count').hidden"))
             await pg.screenshot(path=f'{SP}/{name}.png')
             await pg.reload(); await pg.click('#intro-continue'); await pg.wait_for_timeout(300)
+            await pg.evaluate("() => { const p = window.helmline?.state?.pirates; if (p) p.cooldown = 1e9; }")  # calm seas: no random corsairs
             print('kept after reload:', await J("() => window.helmline.state.notices.length"), '| badge hidden:', await J("() => document.getElementById('notices-count').hidden"))
             print('ERRORS', errs); await pg.close()
         await b.close()

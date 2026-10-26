@@ -11,6 +11,7 @@ async def main():
         J = lambda pg, js: pg.evaluate(js)
         # Device A: new game, buy wine, start a cloud save
         await A.goto(URL); await A.click('#intro-new'); await A.wait_for_timeout(300)
+        await A.evaluate("() => { const p = window.helmline?.state?.pirates; if (p) p.cooldown = 1e9; }")  # calm seas: no random corsairs
         await A.click('[data-buy="wine"][data-n="10"]'); await A.click('#modal-ok')
         await A.click('#btn-cloud'); await A.click('[data-cloud-create]'); await A.wait_for_timeout(500)
         code = await J(A, "() => document.getElementById('cloud-code-text')?.textContent")

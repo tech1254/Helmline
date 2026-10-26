@@ -10,6 +10,7 @@ async def main():
         errs=[]; pg.on('pageerror', lambda e: errs.append(str(e)))
         await pg.goto(URL)
         await pg.click('#intro-new'); await pg.wait_for_timeout(300)
+        await pg.evaluate("() => { const p = window.helmline?.state?.pirates; if (p) p.cooldown = 1e9; }")  # calm seas: no random corsairs
         # Reveal every port's prices, as if the captain had seen them all today.
         await pg.evaluate("""() => { const h = window.helmline, S = h.state, m = h.market();
           for (const id of ['lisbon','lagos','funchal','lanzarote','arguin','gambia']) { S.discovered[id] = true; S.seen[id] = { day: S.day, prices: m.observe(id) }; }

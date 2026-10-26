@@ -7,8 +7,9 @@ async def main():
     async with async_playwright() as p:
         b = await p.chromium.launch(); pg = await b.new_page(viewport={'width':1280,'height':1000})
         errs=[]; pg.on('pageerror', lambda e: errs.append(str(e)))
-        await pg.goto(URL); await pg.evaluate("() => localStorage.clear()"); await pg.reload()
+        await pg.goto(URL); await pg.wait_for_selector('#intro', state='visible'); await pg.evaluate("() => localStorage.clear()"); await pg.reload()
         await pg.click('#intro-new'); await pg.wait_for_timeout(300)
+        await pg.evaluate("() => { const p = window.helmline?.state?.pirates; if (p) p.cooldown = 1e9; }")  # calm seas: no random corsairs
         J = lambda js: pg.evaluate(js)
         await J("() => { const s = window.helmline.state; s.contracts.unlocked = true; s.contracts.standing = 6; s.purse = 9000; for (const k in s.discovered) s.discovered[k] = true; }")
         await pg.click('#btn-port'); await pg.click('#btn-port'); await pg.click('[data-tab="fleet"]'); await pg.click('[data-hire]'); await pg.click('#modal-ok'); await pg.wait_for_timeout(200)

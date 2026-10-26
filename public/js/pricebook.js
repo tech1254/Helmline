@@ -68,7 +68,7 @@ export function renderPrices(el) {
   const ports = PORTS.filter((p) => S.seen[p.id]);
   const head = ports.map((p) => {
     const age = S.day - S.seen[p.id].day;
-    return `<th class="num ${age > 60 ? 'stale' : ''}">${p.name}<small>${ageText(S.seen[p.id].day)}</small></th>`;
+    return `<th class="num ${age > 60 ? 'stale' : ''}">${p.name}<small>${ageText(S.seen[p.id].day)}${S.seen[p.id].by ? `<br>by ${S.seen[p.id].by}` : ''}</small></th>`;
   }).join('');
   const body = GOODS.map((g) => {
     const vals = ports.map((p) => S.seen[p.id].prices[g.id].sell);
@@ -93,7 +93,7 @@ export function renderPrices(el) {
   el.innerHTML = `
     ${tabs('prices')}
     <header><h2>Price book</h2><button class="close" data-close-prices aria-label="Close">×</button></header>
-    <p class="blurb">Prices as last seen by your ship. <b>Bold</b> is the price to buy, the other is what they pay you. Entries older than two months are faded.</p>
+    <p class="blurb">Prices as last seen by your ship, or noted by your captains and passed on when you call at a port on their route. <b>Bold</b> is the price to buy, the other is what they pay you. Entries older than two months are faded.</p>
     <div class="scroll"><table class="pricebook"><thead><tr><th>Good</th>${head}</tr></thead><tbody>${body}</tbody></table></div>
     <h3>News</h3>
     <ul class="news">${Events.knownNews(S).map((n) => `<li><b>${n.t.title}</b> <span class="muted">· ${PORTS.find((p) => p.id === n.port).name} · since ${fmtDate(n.start)}, expected to last until about ${fmtDate(n.end)}</span><br>${n.t.text}</li>`).join('') || '<li class="muted">No news has reached you. Word travels by ship, so you hear it in port.</li>'}</ul>

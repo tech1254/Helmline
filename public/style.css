@@ -101,7 +101,7 @@ th small, td small { display: block; font-size: 12px; font-weight: 400; color: v
 #toast { position: fixed; left: 50%; bottom: calc(max(14px, env(safe-area-inset-bottom)) + 46px); transform: translateX(-50%); display: flex; flex-direction: column-reverse; gap: 6px; align-items: center; pointer-events: none; z-index: 5; }
 #toast .t {
   background: rgba(58, 39, 22, 0.94); color: #f6ecd4; padding: 8px 16px; border-radius: 6px; box-shadow: var(--shadow);
-  font-size: 16px; max-width: min(560px, 92vw); text-align: center; transition: opacity 0.5s, transform 0.5s;
+  font-size: 16px; max-width: min(var(--toast-max, 560px), 92vw); text-align: center; transition: opacity 0.5s, transform 0.5s;
 }
 #toast .t.discover { background: rgba(162, 55, 43, 0.95); }
 #toast .t.out { opacity: 0; transform: translateY(-6px); }
@@ -220,7 +220,7 @@ button.mini { font-size: 13px; padding: 3px 8px; justify-self: start; }
   .controls { margin-left: 0; }
   #panel { top: auto; bottom: 60px; right: 8px; left: 8px; width: auto; max-height: 58vh; }
   #status { font-size: 13px; }
-  #toast { bottom: auto; top: 136px; flex-direction: column; }
+  #toast { bottom: auto; top: 136px; flex-direction: column-reverse; justify-content: flex-end; overflow: hidden; }
   #modal.aside { align-items: end; justify-items: stretch; padding: 10px 8px 60px; }
   #zoom { bottom: 64px; }
   #zoom button { width: 44px; height: 44px; }

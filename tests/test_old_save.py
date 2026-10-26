@@ -11,6 +11,7 @@ async def main():
         await pg.evaluate("""() => { const raw = JSON.parse(localStorage.getItem('helmline-proto0-v1') || 'null'); if (!raw) return;
           delete raw.S.events; delete raw.S.fleet; delete raw.S.rot; delete raw.S.tips; localStorage.setItem('helmline-proto0-v1', JSON.stringify(raw)); }""")
         await pg.reload(); await pg.click('#intro-continue'); await pg.wait_for_timeout(300)
+        await pg.evaluate("() => { const p = window.helmline?.state?.pirates; if (p) p.cooldown = 1e9; }")  # calm seas: no random corsairs
         print('old save loads:', await pg.evaluate("() => ({events: !!window.helmline.state.events, fleet: !!window.helmline.state.fleet, day: Math.round(window.helmline.state.day)})"))
         print('ERRORS', errs); await b.close()
 asyncio.run(main())

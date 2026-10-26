@@ -53,10 +53,25 @@ export function toast(html, kind = '', feed = true) {
 }
 
 // On a phone the pop-ups sit just under the top bar, however many rows it wraps to.
+// Pop-ups never cover the side panel, so they cannot swallow a tap meant for its buttons.
+// On a wide screen they sit over the middle of the open chart, left of the panel; on a phone
+// just under the top bar, with the stack cut off where the panel begins.
 export function placeToasts() {
   const el = $('toast');
-  if (window.innerWidth > 700) { el.style.top = ''; return; }
-  el.style.top = `${Math.round($('hud').getBoundingClientRect().bottom + 8)}px`;
+  const panel = $('panel');
+  const open = !panel.hidden ? panel.getBoundingClientRect() : null;
+  if (window.innerWidth > 700) {
+    el.style.top = ''; el.style.maxHeight = '';
+    const room = open ? open.left : window.innerWidth;
+    el.style.left = `${Math.round(room / 2)}px`;
+    el.style.setProperty('--toast-max', `${Math.max(240, Math.min(560, room - 32))}px`);
+    return;
+  }
+  const top = Math.round($('hud').getBoundingClientRect().bottom + 8);
+  el.style.left = '';
+  el.style.top = `${top}px`;
+  el.style.removeProperty('--toast-max');
+  el.style.maxHeight = open ? `${Math.max(0, Math.round(open.top - top - 8))}px` : '';
 }
 
 export function hint(html, kind = '') {

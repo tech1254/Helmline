@@ -188,7 +188,10 @@ export function advanceTime(dd, atSea, away = false) {
   // A hired ship calling at the port where you lie brings its captain's full accounts.
   if (S.ship.docked) {
     const calling = S.fleet.ships.filter((x, i) => x.at === S.ship.docked && wasAt[i] !== x.at);
-    if (calling.length) Accounts.reveal(S, S.ship.docked, calling);
+    if (calling.length) {
+      Accounts.reveal(S, S.ship.docked, calling);
+      Fleet.sharePrices(S, S.ship.docked, calling);
+    }
   }
   report(Contracts.checkDeadlines(S));
 }

@@ -1,6 +1,6 @@
 // Helmline: start-up, the intro, and the main loop. The game itself lives in the modules.
 
-import { PORTS, findPath } from './world.js';
+import { PORTS, findPath, loadRoutes } from './world.js';
 import * as Contracts from './contracts.js';
 import * as Cloud from './cloud.js';
 import * as Accounts from './accounts.js';
@@ -63,6 +63,8 @@ function frame(t) {
   requestAnimationFrame(frame);
 }
 
+// The sea routes between ports come ready-made; without them they are planned as needed.
+try { loadRoutes(await (await fetch('data/routes.json')).json()); } catch (e) { /* plan them as needed */ }
 initInput();
 initActions();
 initDialog();
@@ -100,6 +102,7 @@ window.helmline = {
   get state() { return S; }, market: () => market, offers: (pid) => Contracts.offersAt(S, market, pid), setCourse, setSpeed, screenOf: (lon, lat) => toScreen(lon, lat),
   away: (minutes) => { S.lastSeen = Date.now() - minutes * 60000; const sum = catchUp(); if (sum) ui.pendingSummary = sum; return sum && { days: sum.days, purse: Math.round(sum.purse), capped: sum.capped }; },
   encounter: (big = false) => { ui.pendingEncounter = { where: 'the Barbary coast', big, strength: big ? 1.35 : 1 }; },
+  route: (lon, lat) => findPath(S.ship.lon, S.ship.lat, lon, lat),
   dockAt: (id) => { if (S.ship.docked) undock(); dock(id); },
   accounts: () => ({ purse: S.purse, known: Accounts.known(S), unaccounted: Accounts.unaccounted(S), pending: S.accounts.pending.reduce((t, e) => t + e.amount, 0), due: S.fleet.ships.reduce((t, x) => t + (x.wagesDue || 0), 0), voyage: S.accounts.voyage?.wages || 0, entries: S.accounts.entries.length }),
   advance: (days) => { for (let i = 0; i < days * 4; i++) advanceTime(0.25, !S.ship.docked); renderPanel(); },

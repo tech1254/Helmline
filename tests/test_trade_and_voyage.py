@@ -10,6 +10,7 @@ async def main():
         errs=[]; pg.on('pageerror', lambda e: errs.append(str(e)))
         await pg.goto(URL)
         await pg.click('#intro-new'); await pg.wait_for_timeout(300)
+        await pg.evaluate("() => { const p = window.helmline?.state?.pirates; if (p) p.cooldown = 1e9; }")  # calm seas: no random corsairs
         title = lambda: pg.evaluate("() => document.querySelector('#panel h2')?.textContent")
         st = lambda: pg.evaluate("() => { const s = window.helmline.state; return {purse: Math.round(s.purse), wine: s.cargo.wine, docked: s.ship.docked, route: s.ship.route.length}; }")
         modal = lambda: pg.evaluate("() => document.getElementById('modal').hidden ? null : document.getElementById('modal-title').textContent + ' | ' + document.getElementById('modal-body').innerText.replace(/\\s+/g,' ')")

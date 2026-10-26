@@ -1,10 +1,12 @@
 // Voyages and port calls: corsairs, planning a course, docking, milestones.
 
 import { COS0, D2R, PORTS, windAt, sailFactor, bearing, distNm, angleDiff, findPath } from './world.js';
+import { GOODS } from './economy.js';
 import * as Contracts from './contracts.js';
 import * as Events from './events.js';
 import * as Accounts from './accounts.js';
 import * as Pirates from './pirates.js';
+import * as Fleet from './fleet.js';
 import { CHART_REWARD, MILESTONES, SHIP } from './config.js';
 import { S, market, ui } from './state.js';
 import { save } from './save.js';
@@ -12,10 +14,10 @@ import { cloudSync } from './cloudsync.js';
 import { H, W, cam, clampCam } from './view.js';
 import { advanceTime, flushRot, report, shipWind } from './sim.js';
 import { $, cz, fmtDate } from './util.js';
-import { renderPanel } from './panels.js';
+import { renderPanel, setSpeed } from './panels.js';
 import { log, passage } from './pricebook.js';
 import { confirmDialog } from './dialog.js';
-import { hint, toast } from './notices.js';
+import { addNotice, hint, toast } from './notices.js';
 
 // ---- Corsairs ----------------------------------------------------------------------
 
@@ -51,10 +53,58 @@ export function openEncounter(enc) {
 
 export function settleEncounter(enc, choice, knots) {
   const r = Pirates.resolve(S, enc, choice, knots);
-  for (const line of r.lines) toast(line, r.kind);
   log(r.lines[r.lines.length - 1]);
+  for (const line of r.lines) addNotice(line, r.kind);
+  afterEncounter(r);
   renderPanel();
   save();
+}
+
+const dayText = (d) => { const n = Math.max(1, Math.round(d)); return `${n} ${n === 1 ? 'day' : 'days'}`; };
+
+// After a brush with the corsairs the game pauses, so the captain can take stock: his hull,
+// his purse, what his contracts still need, and whether to hold his course or turn back.
+function afterEncounter(r) {
+  const resume = ui.speed || ui.lastSpeed || 1;
+  setSpeed(0);
+  const sh = S.ship;
+  const goingTo = sh.dest?.port ? PORTS.find((p) => p.id === sh.dest.port) : null;
+  const left = sh.route.length ? estimateVoyage(sh.route) : null;
+  // the nearest shipyard, by sailing time
+  let yard = null;
+  for (const pid of Pirates.REPAIR_PORTS) {
+    if (pid === sh.dest?.port) continue;
+    const plan = planCourse(PORTS.find((p) => p.id === pid).lon, PORTS.find((p) => p.id === pid).lat, pid, false);
+    if (!plan) continue;
+    const days = estimateVoyage(plan.route).days;
+    if (!yard || days < yard.days) yard = { pid, plan, days };
+  }
+  const held = GOODS.map((g) => (S.cargo[g.id] ? `${S.cargo[g.id]} ${g.unit} of ${g.name.toLowerCase()}` : '')).filter(Boolean);
+  const contracts = (S.contracts?.active || []).map((c) => {
+    const daysLeft = c.deadline == null ? null : Math.floor(c.deadline - S.day);
+    const due = daysLeft == null ? 'no deadline' : `due in ${daysLeft} ${daysLeft === 1 ? 'day' : 'days'}`;
+    return `<li><b>${c.title}</b>: ${due}${c.good && c.qty ? `, you hold ${S.cargo[c.good] || 0} of ${c.qty}` : ''}.</li>`;
+  }).join('');
+  const title = /escaped/i.test(r.lines.join(' ')) ? 'You got away' : /pay the corsairs/i.test(r.lines.join(' ')) ? 'Tribute paid' : r.kind === 'discover' ? 'The corsairs are beaten off' : 'The corsairs have had their way';
+  confirmDialog({
+    title,
+    body: `${r.lines.map((l) => `<p>${l}</p>`).join('')}
+      <dl class="facts">
+        <dt>Hull</dt><dd class="${S.hull < 50 ? 'warn' : ''}">${S.hull}%${S.hull < 100 ? `, sailing at ${Math.round(Pirates.hullFactor(S) * 100)}% speed` : ''}</dd>
+        <dt>Purse</dt><dd>${Math.floor(S.purse).toLocaleString()} cz</dd>
+        <dt>Hold</dt><dd>${held.length ? held.join(', ') : 'empty'}</dd>
+        ${left ? `<dt>${goingTo ? goingTo.name : 'Your mark'}</dt><dd>about ${dayText(left.days)} on</dd>` : ''}
+        ${yard ? `<dt>${PORTS.find((p) => p.id === yard.pid).name} (shipyard)</dt><dd>about ${dayText(yard.days)} back</dd>` : ''}
+      </dl>
+      ${contracts ? `<p class="fine">Your contracts:</p><ul class="help">${contracts}</ul>` : ''}
+      <p class="fine">The game is paused.</p>
+      ${yard ? `<div class="row choice"><button data-modal-action="back">Turn back for ${PORTS.find((p) => p.id === yard.pid).name}</button></div>` : ''}`,
+    ok: left ? 'Hold course' : 'Carry on',
+    cancel: 'Stay paused',
+    kind: 'summary',
+    actions: { back: () => { if (yard) confirmVoyage(yard.plan); } },
+    onOk: () => setSpeed(resume),
+  });
 }
 
 export function waitInPort(days) {
@@ -179,10 +229,14 @@ export function dock(portId) {
   report(Contracts.onDock(S, portId));
   report(Events.hearNews(S, portId));
   const heard = Accounts.reveal(S, portId, S.fleet.ships);
+  const prices = Fleet.sharePrices(S, portId, S.fleet.ships).filter((x) => x !== portId);
+  const priceText = prices.length ? ` Their notes bring fresh prices from ${prices.map((x) => PORTS.find((q) => q.id === x).name).join(', ')} to your price book.` : '';
   if (heard) {
     const net = Math.round(heard.net);
-    toast(`The factor in ${p.name} has accounts from the <b>${heard.ships.join(', ')}</b>: ${heard.count} ${heard.count === 1 ? 'entry' : 'entries'}, ${net >= 0 ? '+' : ''}${net.toLocaleString()} cz, now in your ledger.`, 'port');
+    toast(`The factor in ${p.name} has accounts from the <b>${heard.ships.join(', ')}</b>: ${heard.count} ${heard.count === 1 ? 'entry' : 'entries'}, ${net >= 0 ? '+' : ''}${net.toLocaleString()} cz, now in your ledger.${priceText}`, 'port');
     log(`Accounts from ${heard.ships.join(', ')} received in ${p.name} (${net >= 0 ? '+' : ''}${net} cz).`);
+  } else if (prices.length) {
+    toast(`Your captains' notes bring fresh prices from ${prices.map((x) => PORTS.find((q) => q.id === x).name).join(', ')} to your price book.`, 'port');
   }
   const shut = Events.closure(S, portId);
   if (shut) toast(`<b>${p.name} is closed:</b> ${Events.template(shut).title.toLowerCase()}. You may anchor, but not trade.`, '');

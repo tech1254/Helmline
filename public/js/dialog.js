@@ -7,6 +7,7 @@ import { renderPanel } from './panels.js';
 
 // ---- Confirmation dialog ----------------------------------------------------
 export function confirmDialog({ title, body, ok = 'Confirm', onOk, kind = 'trade', preview = null, actions = {}, cancel = true }) {
+  $('modal-cancel').textContent = typeof cancel === 'string' ? cancel : 'Cancel';
   // With neither OK nor Cancel (a corsair attack), a choice in the body must be made.
   ui.modal = { onOk, kind, preview, actions, locked: !cancel && ok === null };
   $('modal-ok').hidden = ok === null;
