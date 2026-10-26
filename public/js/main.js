@@ -224,12 +224,12 @@ function showConflict(remote) {
 async function loadFromCloud(code, alreadyConfirmed = false) {
   let r;
   try { r = await Cloud.fetchSave(code); } catch (e) { r = { ok: false, error: 'Could not reach the server.' }; }
-  if (!r.ok) { toast(r.status === 404 ? 'No save found for that code. Check it and try again.' : r.error); return; }
+  if (!r.ok) { hint(r.status === 404 ? 'No save found for that code. Check it and try again.' : r.error); return; }
   const go = () => {
     const prev = { S, market };
     if (!applySaveData(JSON.parse(r.data))) {
       S = prev.S; market = prev.market;
-      toast('That save could not be read.');
+      hint('That save could not be read.');
       return;
     }
     Cloud.link(code, r.version);
@@ -257,12 +257,12 @@ async function loadFromCloud(code, alreadyConfirmed = false) {
 async function startCloudSave() {
   try {
     const r = await Cloud.create(payload(), S.day);
-    if (!r.ok) { toast(r.error || 'Could not start a cloud save.'); return; }
+    if (!r.ok) { hint(r.error || 'Could not start a cloud save.'); return; }
     lastPushed = payload();
     toast(`Cloud save started. Your code is <b>${r.code}</b>.`, 'discover');
   } catch (e) {
     Cloud.markFailed(e);
-    toast('Could not reach the server.');
+    hint('Could not reach the server.');
   }
   renderCloudButton();
   renderPanel();
@@ -787,7 +787,7 @@ function update(dtSec) {
 function report(msgs) {
   for (const m of msgs) {
     if (m.log) log(m.log);
-    if (offlineBuffer) offlineBuffer.push(m); else toast(m.html, m.kind);
+    if (offlineBuffer) { offlineBuffer.push(m); addNotice(m.html, m.kind); } else toast(m.html, m.kind);
   }
 }
 
@@ -995,7 +995,7 @@ function waitInPort(days) {
   for (let i = 0; i < days * 4; i++) advanceTime(0.25, false);
   observe(pid);
   report(Events.hearNews(S, pid));
-  toast(`${days === 7 ? 'A week' : `${days} days`} pass${days === 7 ? 'es' : ''} in ${PORTS.find((p) => p.id === pid).name}.`, 'port');
+  hint(`${days === 7 ? 'A week' : `${days} days`} pass${days === 7 ? 'es' : ''} in ${PORTS.find((p) => p.id === pid).name}.`, 'port');
 }
 
 function replan(dest) {
@@ -1018,7 +1018,7 @@ function planCourse(lon, lat, portId, append) {
 
 function setCourse(lon, lat, portId, append) {
   const plan = planCourse(lon, lat, portId, append);
-  if (!plan) { toast('The pilot can find no passage there.'); return; }
+  if (!plan) { hint('The pilot can find no passage there.'); return; }
   applyCourse(plan);
 }
 
@@ -1243,18 +1243,18 @@ function chartClick(sx, sy, append) {
   if (p) {
     if (S.ship.docked === p.id) { panelMode = 'port'; renderPanel(); return; }
     const plan = planCourse(p.lon, p.lat, p.id, append);
-    if (!plan) { toast('The pilot can find no passage there.'); return; }
+    if (!plan) { hint('The pilot can find no passage there.'); return; }
     confirmVoyage(plan);
     return;
   }
   const [lon, lat] = toWorld(sx, sy);
-  if (!inBounds(lon, lat)) { toast('That lies beyond the edge of the chart.'); return; }
+  if (!inBounds(lon, lat)) { hint('That lies beyond the edge of the chart.'); return; }
   if (isLand(lon, lat)) {
-    toast(isRevealed(lon, lat) ? 'That is dry land, captain.' : 'The lookout sees nothing there yet.');
+    hint(isRevealed(lon, lat) ? 'That is dry land, captain.' : 'The lookout sees nothing there yet.');
     return;
   }
   const plan = planCourse(lon, lat, null, append);
-  if (!plan) { toast('The pilot can find no passage there.'); return; }
+  if (!plan) { hint('The pilot can find no passage there.'); return; }
   confirmVoyage(plan);
 }
 
@@ -1271,6 +1271,7 @@ window.addEventListener('keydown', (e) => {
   if (e.key === '3') setSpeed(4);
   if (e.key === 'p' || e.key === 'P') togglePanel('prices');
   if (e.key === 'l' || e.key === 'L') togglePanel('ledger');
+  if (e.key === 'n' || e.key === 'N') togglePanel('notices');
   if (e.key === 'w' || e.key === 'W') toggleWind();
   if (e.key === 'Escape' && panelMode && !S.ship.docked) { panelMode = null; renderPanel(); }
 });
@@ -1348,6 +1349,8 @@ function renderPanel() {
   $('btn-fleet').classList.toggle('on', panelMode === 'fleet');
   $('btn-help').classList.toggle('on', panelMode === 'help');
   $('btn-cloud').classList.toggle('on', panelMode === 'cloud');
+  $('btn-notices').classList.toggle('on', panelMode === 'notices');
+  renderNoticeBadge();
   if (panelMode === 'fleet' && !fleetOpen) panelMode = S.ship.docked ? 'port' : null;
   $('btn-prices').classList.toggle('on', panelMode === 'prices');
   $('btn-ledger').classList.toggle('on', panelMode === 'ledger');
@@ -1366,6 +1369,7 @@ function renderPanel() {
   else if (panelMode === 'help') renderHelp(el);
   else if (panelMode === 'cloud') renderCloud(el);
   else if (panelMode === 'ledger') renderLedger(el);
+  else if (panelMode === 'notices') renderNotices(el);
   else renderPrices(el);
 }
 
@@ -1636,7 +1640,7 @@ function renderHelp(el) {
       <li><b>On this device</b> your game saves by itself as you play.</li>
       <li><b>Cloud save:</b> tap the cloud button to get a save code. Enter it on another device to continue there; both stay in sync. A green dot means synced, red means it needs attention.</li>
     </ul>
-    <p class="foot">Keyboard: space pause · 1 2 3 speed · P price book · L ledger · W winds · Esc close.</p>`;
+    <p class="foot">Keyboard: space pause · 1 2 3 speed · P price book · L ledger · N notices · W winds · Esc close.</p>`;
 }
 
 // Captain's notes: a gentle nudge through the first voyages, until contracts open up.
@@ -1904,7 +1908,7 @@ $('panel').addEventListener('click', (e) => {
   if (!t || t.closest('form')) return; // forms handle their own submit
   const pid = S.ship.docked;
   if ((t.dataset.buy || t.dataset.sell) && pid && market.closed(pid)) {
-    toast('The port is closed to trade.');
+    hint('The port is closed to trade.');
     return;
   }
   if (t.dataset.buy && pid) {
@@ -1922,7 +1926,7 @@ $('panel').addEventListener('click', (e) => {
     };
     if (n > 1) {
       const q = quote(() => market.buy(pid, g, n, budget, free));
-      if (!q.bought) { toast('You cannot afford any more of that.'); return; }
+      if (!q.bought) { hint('You cannot afford any more of that.'); return; }
       const good = GOODS.find((x) => x.id === g);
       confirmDialog({
         title: `Buy ${q.bought} ${good.unit} of ${good.name.toLowerCase()}?`,
@@ -1971,7 +1975,7 @@ $('panel').addEventListener('click', (e) => {
     cloudSync(true);
     return;
   } else if (t.hasAttribute('data-cloud-copy')) {
-    navigator.clipboard?.writeText(Cloud.cloud.code).then(() => toast('Save code copied.'), () => toast(`Your code: <b>${Cloud.cloud.code}</b>`));
+    navigator.clipboard?.writeText(Cloud.cloud.code).then(() => hint('Save code copied.'), () => hint(`Your code: <b>${Cloud.cloud.code}</b>`));
     return;
   } else if (t.hasAttribute('data-cloud-unlink')) {
     confirmDialog({
@@ -2019,7 +2023,7 @@ $('panel').addEventListener('click', (e) => {
     const ship = S.fleet.ships.find((x) => x.id === +t.dataset.route);
     const d = draftFor(ship);
     const problem = routeProblem(d);
-    if (problem) { toast(problem); keepDetailsOpen(ship.id); return; }
+    if (problem) { hint(problem); keepDetailsOpen(ship.id); return; }
     report(Fleet.setRoute(S, market, ship, d));
     delete routeDrafts[ship.id];
     toast(`<b>${ship.name}</b> will run ${routeSummary(ship.route)}`, 'port');
@@ -2033,7 +2037,7 @@ $('panel').addEventListener('click', (e) => {
   } else if (t.dataset.accept && pid) {
     const c = Contracts.accept(S, +t.dataset.accept, pid);
     if (c) { toast(`Contract taken: <b>${c.title}</b> by ${fmtDate(c.deadline)}.`, 'port'); log(`Took a contract: ${c.title}.`); }
-    else toast(`You can hold at most ${Contracts.MAX_ACTIVE} contracts.`);
+    else hint(`You can hold at most ${Contracts.MAX_ACTIVE} contracts.`);
   } else if (t.dataset.deliver && pid) {
     const c = S.contracts.active.find((x) => x.id === +t.dataset.deliver);
     if (c && Contracts.canDeliver(S, c)) {
@@ -2061,14 +2065,14 @@ $('panel').addEventListener('click', (e) => {
     const p = PORTS.find((x) => x.id === t.dataset.sailto);
     const plan = planCourse(p.lon, p.lat, p.id, false);
     if (plan) { panelMode = null; confirmVoyage(plan); }
-    else toast('The pilot can find no passage there.');
+    else hint('The pilot can find no passage there.');
   } else if (t.hasAttribute('data-prices')) {
     panelMode = 'prices';
   } else if (t.hasAttribute('data-close-prices') || t.hasAttribute('data-close-ledger')) {
     panelMode = S.ship.docked ? 'port' : null;
   } else if (t.hasAttribute('data-close')) {
     panelMode = null;
-    if (S.ship.docked) toast('Click anywhere on the chart, or a port, to set your course.');
+    if (S.ship.docked) hint('Click anywhere on the chart, or a port, to set your course.');
   } else if (t.hasAttribute('data-reset')) {
     if (confirm('Abandon this voyage and start again from Lisbon in 1451?')) { newGame(); panelMode = 'port'; setSpeed(1); }
   }
@@ -2081,7 +2085,7 @@ $('panel').addEventListener('submit', (e) => {
   if (!form) return;
   e.preventDefault();
   const code = form.elements.code.value.trim();
-  if (code.replace(/[^A-Za-z0-9]/g, '').length !== 12) { toast('A save code has 12 letters and numbers, like 7KQ2-MX9P-4TRD.'); return; }
+  if (code.replace(/[^A-Za-z0-9]/g, '').length !== 12) { hint('A save code has 12 letters and numbers, like 7KQ2-MX9P-4TRD.'); return; }
   loadFromCloud(code);
 });
 
@@ -2138,12 +2142,13 @@ $('zoom-in').addEventListener('click', () => zoomBy(1.35));
 $('zoom-out').addEventListener('click', () => zoomBy(1 / 1.35));
 $('btn-prices').addEventListener('click', () => togglePanel('prices'));
 $('btn-ledger').addEventListener('click', () => togglePanel('ledger'));
+$('btn-notices').addEventListener('click', () => togglePanel('notices'));
 $('btn-sail').addEventListener('click', () => togglePanel('sail'));
 $('btn-contracts').addEventListener('click', () => togglePanel('contracts'));
 $('btn-wind').addEventListener('click', toggleWind);
 $('btn-ship').addEventListener('click', () => centerOn(S.ship.lon, S.ship.lat));
 $('btn-port').addEventListener('click', () => {
-  if (S.ship.docked) { panelMode = 'port'; renderPanel(); } else toast('You can only trade at anchor in a port.');
+  if (S.ship.docked) { panelMode = 'port'; renderPanel(); } else hint('You can only trade at anchor in a port.');
 });
 
 // ---- Confirmation dialog ----------------------------------------------------
@@ -2180,16 +2185,80 @@ $('modal-body').addEventListener('click', (e) => {
 });
 
 let toastTimer;
-function toast(html, kind = '') {
+// Notices: everything that happens is kept in a feed (the bell), and shown briefly as a
+// pop-up. Pop-ups stay up long enough to read, pause while hovered, and close on a tap.
+// Hints about the controls ("That is dry land") are pop-ups only.
+const NOTICES_MAX = 150;
+function addNotice(html, kind = '', day = S.day) {
+  S.notices = S.notices || [];
+  S.noticeSeq = (S.noticeSeq || 0) + 1;
+  S.notices.push({ id: S.noticeSeq, day, html, kind });
+  if (S.notices.length > NOTICES_MAX) S.notices.splice(0, S.notices.length - NOTICES_MAX);
+  if (panelMode === 'notices') { S.noticesRead = S.noticeSeq; renderPanel(); }
+  renderNoticeBadge();
+}
+
+function unreadNotices() {
+  return (S?.notices || []).filter((n) => n.id > (S.noticesRead || 0)).length;
+}
+
+function renderNoticeBadge() {
+  const n = unreadNotices();
+  const b = $('notices-count');
+  b.hidden = !n;
+  b.textContent = n > 99 ? '99+' : n;
+  $('btn-notices').title = n ? `Notices: ${n} unread` : 'Notices';
+}
+
+function toast(html, kind = '', feed = true) {
+  if (feed && S) addNotice(html, kind);
+  placeToasts();
   const el = $('toast');
   const item = document.createElement('div');
   item.className = `t ${kind}`;
   item.innerHTML = html;
   el.appendChild(item);
-  while (el.children.length > 3) el.firstChild.remove();
-  clearTimeout(toastTimer);
-  setTimeout(() => item.classList.add('out'), 4200);
-  setTimeout(() => item.remove(), 4800);
+  while (el.children.length > 4) el.firstChild.remove();
+  // Long enough to read: about 3.5 s plus 60 ms a character, 5 to 14 s.
+  const chars = item.textContent.length;
+  let left = Math.min(14000, Math.max(5000, 3500 + 60 * chars));
+  let started = performance.now(), timer = null;
+  const close = () => { item.classList.add('out'); setTimeout(() => item.remove(), 600); };
+  const run = () => { started = performance.now(); timer = setTimeout(close, left); };
+  item.addEventListener('mouseenter', () => { clearTimeout(timer); left -= performance.now() - started; });
+  item.addEventListener('mouseleave', () => { left = Math.max(left, 1500); run(); });
+  item.addEventListener('click', () => { clearTimeout(timer); close(); });
+  run();
+}
+
+// On a phone the pop-ups sit just under the top bar, however many rows it wraps to.
+function placeToasts() {
+  const el = $('toast');
+  if (window.innerWidth > 700) { el.style.top = ''; return; }
+  el.style.top = `${Math.round($('hud').getBoundingClientRect().bottom + 8)}px`;
+}
+window.addEventListener('resize', placeToasts);
+placeToasts();
+
+function hint(html, kind = '') {
+  toast(html, kind, false);
+}
+
+function renderNotices(el) {
+  S.noticesRead = S.noticeSeq || 0;
+  renderNoticeBadge();
+  const list = (S.notices || []).slice().reverse();
+  let lastDay = null;
+  const items = list.map((n) => {
+    const d = fmtDate(n.day);
+    const head = d !== lastDay ? `<li class="day">${d}</li>` : '';
+    lastDay = d;
+    return `${head}<li class="n ${n.kind}">${n.html}</li>`;
+  }).join('');
+  el.innerHTML = `
+    ${tabs('notices')}
+    <header><h2>Notices</h2><button class="close" data-close aria-label="Close">×</button></header>
+    <ul class="notices">${items || '<li class="muted">Nothing yet. News, arrivals and your captains\' reports will appear here.</li>'}</ul>`;
 }
 
 // ---- Intro & loop -----------------------------------------------------------

@@ -253,3 +253,14 @@ button.mini { font-size: 13px; padding: 3px 8px; justify-self: start; }
   .accounts th, .accounts td { padding: 4px 3px; font-size: 14px; }
   .accounts .when { white-space: normal; width: 74px; }
 }
+
+/* Notices */
+#toast .t { pointer-events: auto; cursor: pointer; }
+#btn-notices { position: relative; }
+#btn-notices .dot-badge { position: absolute; top: -6px; right: -6px; margin: 0; min-width: 18px; padding: 0 4px; font-size: 11px; line-height: 17px; }
+.notices { list-style: none; margin: 0; padding: 0; }
+.notices li.day { font-size: 13px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; margin: 12px 0 4px; }
+.notices li.day:first-child { margin-top: 0; }
+.notices li.n { padding: 7px 10px; margin-bottom: 5px; border-left: 3px solid var(--ink-2); background: rgba(255, 255, 255, 0.35); border-radius: 0 4px 4px 0; font-size: 15px; line-height: 1.35; }
+.notices li.n.discover { border-left-color: var(--red); }
+.notices li.n.port { border-left-color: var(--good); }

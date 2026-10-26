@@ -19,6 +19,7 @@ An age-of-sail exploration and trade game. This is **Prototype 0**: the West Afr
 - **Hired ships:** buy caravels (how many depends on standing), hire captains with navigation and trade skills, and give each a route of up to six stops with buy and sell orders at each, which they run on their own.
 - **Time away:** with hired captains and your ship in port, the world moves on while you are gone: a tenth of normal speed for the first 90 days, then tapering (a night or a workday is about 200 days, at most 210). Contract deadlines wait for you. Captains start to stray after 16 hours away (skimming, then going ashore) and standing fades after 24 hours. A summary greets you on return.
 - **Corsairs of Barbary:** encounters off Morocco, the Algarve and the Canaries; run, fight or pay tribute. Notoriety draws more corsairs, caution fewer. Battle damage slows the ship until repaired in Lisbon, Lagos or Funchal.
+- **Notices:** pop-ups stay up long enough to read (longer for longer messages), pause while hovered and close on a tap; every notice is also kept in a feed under the bell, with an unread count.
 - **Wait in port**, zoom buttons, Captain's notes for the first voyages, and a How to play screen.
 - Saves to the browser, and optionally to the cloud with a save code to play across devices.
 
@@ -41,7 +42,7 @@ Not yet included: ship-to-ship combat beyond auto-resolve, navigation drift, mor
 
 Any static server works, for example `python3 -m http.server -d public 8000`, or `npm install && npm run dev` for Wrangler.
 
-Keyboard: space pauses, 1/2/3 set the speed, P opens the price book, L the ledger, W toggles the wind arrows.
+Keyboard: space pauses, 1/2/3 set the speed, P opens the price book, L the ledger, N the notices, W toggles the wind arrows.
 
 
  
