@@ -12,6 +12,11 @@ const KNOTS = 5;
 export const SHIP_UPKEEP = 2; // cz a day, on top of the captain's wage
 const RESERVE = 150; // a captain never spends the last of the purse
 const MARGIN = 0.8; // he pays at most 80% of what he expects to sell for
+// Loyalty: a captain left alone too long starts to stray.
+export const LOYALTY_SKIM = 50; // below this he keeps part of each sale
+export const LOYALTY_DESERT = 20; // below this he goes ashore and stops sailing
+const SKIM_SHARE = 0.15;
+const LOYALTY_REGAIN_PER_DAY = 0.3; // while the owner is playing
 const CANDIDATE_DAYS = 30;
 
 const SHIP_NAMES = ['Santa Clara', 'São Jorge', 'Bom Jesus', 'Espírito Santo', 'Santa Maria', 'São Gabriel'];
@@ -35,7 +40,7 @@ export function candidates(S) {
     for (let i = 0; i < 3; i++) {
       const nav = 1 + Math.floor(Math.random() * 5);
       const trade = 1 + Math.floor(Math.random() * 5);
-      list.push({ id: F.nextId++, name: `${pick(FIRST)} ${pick(LAST)}`, nav, trade, wage: 1 + Math.round((nav + trade) / 3) });
+      list.push({ id: F.nextId++, name: `${pick(FIRST)} ${pick(LAST)}`, nav, trade, wage: 1 + Math.round((nav + trade) / 3), loyalty: 100 });
     }
     F.candidates = { day: S.day, list };
   }
@@ -57,6 +62,28 @@ export function buyShip(S, captainId) {
   F.ships.push(ship);
   S.purse -= SHIP_COST;
   return ship;
+}
+
+// Time away wears down a captain's loyalty: nothing for the first few hours, then steadily.
+export function strayWhileAway(S, hoursAway) {
+  const F = ensureFleet(S);
+  const out = [];
+  if (hoursAway <= 4) return out;
+  const loss = Math.min(40, (hoursAway - 4) * 5);
+  for (const ship of F.ships) {
+    const before = ship.captain.loyalty ?? 100;
+    ship.captain.loyalty = Math.max(0, before - loss);
+    out.push({ name: ship.name, captain: ship.captain.name, before: Math.round(before), after: Math.round(ship.captain.loyalty) });
+  }
+  return out;
+}
+
+export function loyaltyText(l) {
+  const n = Math.round(l ?? 100);
+  if (n >= 80) return `loyal (${n})`;
+  if (n >= LOYALTY_SKIM) return `restless (${n})`;
+  if (n >= LOYALTY_DESERT) return `straying (${n}): keeps part of each sale`;
+  return `disloyal (${n}): about to go ashore`;
 }
 
 export function dailyCost(ship) {
@@ -94,6 +121,9 @@ function planLeg(S, ship, fromId, toId) {
 
 export function setRoute(S, market, ship, route) {
   ship.route = route;
+  // Orders given in person, in the same port, steady a wavering captain.
+  if (S.ship.docked && S.ship.docked === ship.at) ship.captain.loyalty = Math.max(ship.captain.loyalty ?? 100, 60);
+  if (ship.status === 'ashore' && S.ship.docked === ship.at) ship.status = 'idle';
   const msgs = [];
   if (route && (ship.status === 'idle' || ship.status === 'waiting')) msgs.push(...arrive(S, market, ship, true));
   return msgs;
@@ -113,17 +143,26 @@ function arrive(S, market, ship, fresh = false) {
   if (ship.cargo) {
     const g = good(ship.cargo.good);
     const { income } = market.sell(here, ship.cargo.good, ship.cargo.qty);
-    const paid = Math.round(income * (1 + 0.02 * ship.captain.trade)); // a good trader haggles
+    const gross = Math.round(income * (1 + 0.02 * ship.captain.trade)); // a good trader haggles
+    const skim = (ship.captain.loyalty ?? 100) < LOYALTY_SKIM ? Math.round(gross * SKIM_SHARE) : 0;
+    const paid = gross - skim;
     const profit = paid - ship.cargo.paid;
     S.purse += paid;
+    if (skim) parts.push(`Captain ${ship.captain.name} kept ${skim} cz for himself`);
     ship.profit += profit;
     ship.trips++;
     ship.last = { day: S.day, at: here, good: g.id, qty: ship.cargo.qty, income: paid, profit };
     parts.push(`sold ${ship.cargo.qty} ${g.unit} of ${g.name.toLowerCase()} for ${paid.toLocaleString()} cz (${profit >= 0 ? '+' : ''}${profit.toLocaleString()})`);
     ship.cargo = null;
   }
+  if (r && (ship.captain.loyalty ?? 100) < LOYALTY_DESERT) {
+    ship.route = null;
+    ship.status = 'ashore';
+    msgs.push({ html: `<b>${ship.name}</b>: Captain ${ship.captain.name} has gone ashore in ${port(here).name} and will not sail until you come and give him orders.`, kind: '', log: `Captain ${ship.captain.name} went ashore in ${port(here).name}.` });
+    return msgs;
+  }
   if (!r) {
-    ship.status = 'idle';
+    ship.status = ship.status === 'ashore' ? 'ashore' : 'idle';
     if (parts.length) msgs.push({ html: `<b>${ship.name}</b> at ${port(here).name}: ${parts.join('. ')}. Awaiting orders.`, kind: 'port', log: `${ship.name} ${parts.join('; ')} at ${port(here).name}.` });
     return msgs;
   }
@@ -176,11 +215,13 @@ function spoilOnArrival(ship, days, lat) {
   return { lost, g };
 }
 
-export function tick(S, market, days) {
+export function tick(S, market, days, ownerPresent = true) {
   const F = ensureFleet(S);
   const msgs = [];
   for (const ship of F.ships) {
     S.purse -= dailyCost(ship) * days;
+    if (ship.captain.loyalty == null) ship.captain.loyalty = 100;
+    if (ownerPresent) ship.captain.loyalty = Math.min(100, ship.captain.loyalty + LOYALTY_REGAIN_PER_DAY * days);
     if (ship.status === 'sailing' && ship.leg && S.day >= ship.leg.start + ship.leg.days) {
       const leg = ship.leg;
       ship.at = leg.to;
@@ -219,5 +260,6 @@ export function statusText(S, ship) {
     return `Bound for ${port(ship.leg.to).name} with ${load}, about ${left} ${left === 1 ? 'day' : 'days'} out.`;
   }
   if (ship.status === 'waiting') return `Waiting outside ${port(ship.at).name} for the port to reopen.`;
+  if (ship.status === 'ashore') return `Ashore in ${port(ship.at).name}: Captain ${ship.captain.name} will not sail until you give him orders there in person.`;
   return r ? `In ${port(ship.at).name}.` : `Idle in ${port(ship.at).name}, awaiting a route.`;
 }

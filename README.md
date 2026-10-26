@@ -16,6 +16,7 @@ An age-of-sail exploration and trade game. This is **Prototype 0**: the West Afr
 - **Market events:** harvests, plagues, blockades and gluts shift prices or close ports; news reaches you in port, late for distant places.
 - **Spoilage:** wine, dye, pepper, sugar and cloth slowly spoil at sea, faster in the tropics.
 - **A second ship:** buy a caravel, hire a captain with navigation and trade skills, and give him a two-port route he runs on his own.
+- **Time away:** with hired captains and your ship in port, the world moves on at a tenth of normal speed while you are gone (up to 90 days per absence). Long absences make captains disloyal (skimming, then going ashore) and slowly erode standing. A summary greets you on return.
 - **Wait in port**, zoom buttons, Captain's notes for the first voyages, and a How to play screen.
 - Saves to the browser, and optionally to the cloud with a save code to play across devices.
 

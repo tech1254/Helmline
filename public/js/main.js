@@ -18,6 +18,11 @@ const CHART_REWARD = 150; // paid by the crown in Lisbon per newly charted land 
 const MILESTONES = [1000, 2500, 5000, 10000];
 const WAGE_RESERVE = 14 * SHIP.upkeep;
 const START_DATE = new Date(Date.UTC(1451, 2, 1));
+// While the player is away, the world moves on at a tenth of normal speed (if he has hired
+// captains and his own ship is in port), up to a cap so the calendar can't run off overnight.
+const OFFLINE_RATE = 0.1; // a tenth of normal speed (tune in the playtest pass)
+const OFFLINE_CAP_DAYS = 90;
+const OFFLINE_MIN_SECONDS = 60;
 
 // ---- Fog of war -------------------------------------------------------------
 const FOG_CELL = 0.2;
@@ -138,6 +143,7 @@ function payload() {
 }
 
 function save() {
+  if (S) S.lastSeen = Date.now();
   try {
     localStorage.setItem(SAVE_KEY, payload());
   } catch (e) { /* storage unavailable: play on without saving */ }
@@ -205,7 +211,9 @@ async function loadFromCloud(code, alreadyConfirmed = false) {
       return;
     }
     Cloud.link(code, r.version);
-    lastPushed = r.data;
+    lastPushed = null;
+    const sum = catchUp();
+    if (sum) pendingSummary = sum;
     remoteAhead = null;
     save();
     panelMode = S.ship.docked ? 'port' : null;
@@ -740,18 +748,101 @@ function update(dtSec) {
 
 // Show a batch of messages from the game's systems.
 function report(msgs) {
-  for (const m of msgs) { toast(m.html, m.kind); if (m.log) log(m.log); }
+  for (const m of msgs) {
+    if (m.log) log(m.log);
+    if (offlineBuffer) offlineBuffer.push(m); else toast(m.html, m.kind);
+  }
+}
+
+// ---- Time away ------------------------------------------------------------------
+let offlineBuffer = null; // messages collected while catching up, shown as one summary
+let pendingSummary = null;
+
+function catchUp() {
+  if (!S) return null;
+  const seen = S.lastSeen;
+  S.lastSeen = Date.now();
+  if (!seen) return null;
+  const awaySec = (Date.now() - seen) / 1000;
+  if (awaySec < OFFLINE_MIN_SECONDS || !S.fleet?.ships.length || !S.ship.docked) return null;
+  const want = awaySec * DAYS_PER_SEC * OFFLINE_RATE;
+  const days = Math.min(OFFLINE_CAP_DAYS, want);
+  const before = { purse: S.purse, day: S.day, ships: Object.fromEntries(S.fleet.ships.map((x) => [x.id, { trips: x.trips, profit: x.profit, cargo: x.cargo?.paid || 0 }])) };
+  // Long absences: captains stray (so they may skim or go ashore during it), and Lisbon's
+  // merchants start to forget you.
+  const hours = awaySec / 3600;
+  const strayed = Fleet.strayWhileAway(S, hours);
+  let standingLost = 0;
+  if (hours > 12 && S.contracts?.unlocked) {
+    standingLost = Math.min(5, Math.floor((hours - 12) / 12) + 1);
+    S.contracts.standing -= standingLost;
+    log(`Away too long: standing fell by ${standingLost}.`);
+  }
+  const wages = days * (SHIP.upkeep * 0.5 + S.fleet.ships.reduce((n, x) => n + Fleet.dailyCost(x), 0));
+  offlineBuffer = [];
+  let msgs;
+  try {
+    const steps = Math.max(1, Math.ceil(days * 4));
+    for (let i = 0; i < steps; i++) advanceTime(days / steps, false, true);
+    observe(S.ship.docked);
+    report(Events.hearNews(S, S.ship.docked));
+  } finally {
+    msgs = offlineBuffer;
+    offlineBuffer = null;
+  }
+  const ships = S.fleet.ships.map((x) => {
+    const b = before.ships[x.id] || { trips: 0, profit: 0, cargo: 0 };
+    return { name: x.name, trips: x.trips - b.trips, profit: x.profit - b.profit, cargoChange: (x.cargo?.paid || 0) - b.cargo, status: Fleet.statusText(S, x) };
+  });
+  log(`Away ${awayText(awaySec)}: ${Math.round(days)} days passed; purse ${S.purse - before.purse >= 0 ? '+' : ''}${Math.round(S.purse - before.purse)} cz.`);
+  save();
+  const sales = ships.reduce((n, x) => n + x.profit, 0);
+  const cargo = ships.reduce((n, x) => n + x.cargoChange, 0);
+  return { awaySec, days, capped: want > OFFLINE_CAP_DAYS, purse: S.purse - before.purse, sales, wages, cargo, ships, msgs, strayed, standingLost };
+}
+
+function awayText(sec) {
+  const m = Math.round(sec / 60);
+  if (m < 60) return `${m} min`;
+  const h = Math.floor(m / 60);
+  if (h < 48) return `${h} h ${m % 60} min`;
+  return `${Math.round(h / 24)} days`;
+}
+
+function showSummary(sum) {
+  const strip = (h) => h.replace(/<[^>]+>/g, '');
+  const pick = sum.msgs.filter((m) => !/^<b>[^<]+<\/b> at /.test(m.html)).slice(-6); // fleet trades are summed up above
+  confirmDialog({
+    title: 'While you were away',
+    body: `<dl class="facts">
+        <dt>Away</dt><dd>${awayText(sum.awaySec)}</dd>
+        <dt>Time passed</dt><dd>${Math.round(sum.days)} days, to ${fmtDate(S.day)}</dd>
+        <dt>Profit on cargoes sold</dt><dd>${sum.sales >= 0 ? '+' : ''}${Math.round(sum.sales).toLocaleString()} cz</dd>
+        <dt>Wages and upkeep</dt><dd>−${Math.round(sum.wages).toLocaleString()} cz</dd>
+        ${Math.abs(sum.cargo) >= 1 ? `<dt>${sum.cargo > 0 ? 'Cargo loaded for the next run' : 'Cargo from before, now sold'}</dt><dd>${sum.cargo > 0 ? '−' : '+'}${Math.abs(Math.round(sum.cargo)).toLocaleString()} cz</dd>` : ''}
+        <dt>Purse</dt><dd class="${sum.purse < 0 ? 'warn' : ''}">${sum.purse >= 0 ? '+' : ''}${Math.round(sum.purse).toLocaleString()} cz</dd>
+      </dl>
+      ${sum.capped ? `<p class="fine">That is the most that passes in one absence (${OFFLINE_CAP_DAYS} days). The world moves at a tenth of its usual pace while you are gone.</p>` : '<p class="fine">The world moves at a tenth of its usual pace while you are gone.</p>'}
+      ${sum.strayed.length ? `<p class="warn">Your captains missed you: ${sum.strayed.map((x) => `Captain ${x.captain} is now ${Fleet.loyaltyText(x.after)}`).join('; ')}.</p>` : ''}
+      ${sum.standingLost ? `<p class="warn">The merchants of Lisbon are starting to forget you: standing −${sum.standingLost}.</p>` : ''}
+      <ul class="help">${sum.ships.map((x) => `<li><b>${x.name}:</b> ${x.trips} ${x.trips === 1 ? 'cargo' : 'cargoes'} sold, ${x.profit >= 0 ? '+' : ''}${x.profit.toLocaleString()} cz. ${x.status}</li>`).join('')}
+        ${pick.map((m) => `<li>${strip(m.html)}</li>`).join('')}</ul>`,
+    ok: 'Carry on',
+    cancel: false,
+    kind: 'summary',
+    onOk: () => {},
+  });
 }
 
 // Everything that happens as days pass, at sea or waiting in port.
-function advanceTime(dd, atSea) {
+function advanceTime(dd, atSea, away = false) {
   S.day += dd;
   S.purse -= SHIP.upkeep * dd * (atSea ? 1 : 0.5); // half pay while the crew is ashore
   market.tick(dd);
   report(Events.tick(S, dd));
   syncMarket();
   if (atSea) spoil(dd);
-  report(Fleet.tick(S, market, dd));
+  report(Fleet.tick(S, market, dd, !away));
   report(Contracts.checkDeadlines(S));
 }
 
@@ -1310,7 +1401,7 @@ function renderFleet(el) {
     const last = ship.last ? `Last: sold ${ship.last.qty} ${GOODS.find((g) => g.id === ship.last.good).unit} at ${PORTS.find((p) => p.id === ship.last.at).name} for ${ship.last.income.toLocaleString()} cz (${ship.last.profit >= 0 ? '+' : ''}${ship.last.profit.toLocaleString()}).` : 'No voyages yet.';
     return `<li class="contract" data-ship="${ship.id}">
         <div class="c-head"><span class="c-title">${ship.name}</span><span class="c-pay">${ship.profit >= 0 ? '+' : ''}${ship.profit.toLocaleString()} cz</span></div>
-        <div class="c-patron">Captain ${ship.captain.name} · navigation ${stars(ship.captain.nav)} · trade ${stars(ship.captain.trade)} · ${Fleet.dailyCost(ship)} cz a day</div>
+        <div class="c-patron">Captain ${ship.captain.name} · navigation ${stars(ship.captain.nav)} · trade ${stars(ship.captain.trade)} · ${Fleet.dailyCost(ship)} cz a day · ${Fleet.loyaltyText(ship.captain.loyalty)}</div>
         <p>${Fleet.statusText(S, ship)} ${ship.trips} ${ship.trips === 1 ? 'cargo' : 'cargoes'} sold so far.</p>
         <p class="muted">${last}</p>
         <div class="route">
@@ -1369,6 +1460,7 @@ function renderHelp(el) {
       <li><b>Contracts</b> open up at 500 cz. Completing them builds standing; missing deadlines costs it.</li>
       <li><b>Standing</b> brings better pay, better prices in Portuguese ports, and the right to buy a second caravel.</li>
       <li><b>Your fleet:</b> a hired captain runs a trade route for you, paid from your purse.</li>
+      <li><b>Time away:</b> if you have hired captains and your own ship is in port, the world moves on at a tenth of its usual pace while you are gone, up to ${OFFLINE_CAP_DAYS} days per absence. Stay away for hours and captains grow disloyal (skimming, then going ashore), and after half a day your standing starts to fade.</li>
     </ul>
     <h3>Saving</h3>
     <ul class="help">
@@ -1706,8 +1798,9 @@ $('btn-port').addEventListener('click', () => {
 
 // ---- Confirmation dialog ----------------------------------------------------
 let modal = null;
-function confirmDialog({ title, body, ok = 'Confirm', onOk, kind = 'trade', preview = null, actions = {} }) {
+function confirmDialog({ title, body, ok = 'Confirm', onOk, kind = 'trade', preview = null, actions = {}, cancel = true }) {
   modal = { onOk, kind, preview, actions };
+  $('modal-cancel').hidden = !cancel;
   $('modal').classList.toggle('aside', kind === 'voyage');
   $('modal-title').textContent = title;
   $('modal-body').innerHTML = body;
@@ -1773,6 +1866,7 @@ function beginPlay() {
   if (S.ship.docked) { panelMode = 'port'; renderPanel(); }
   centerOn(S.ship.lon, S.ship.lat);
   setTimeout(unlockContracts, 600);
+  if (startSummary) { pendingSummary = startSummary; startSummary = null; }
 }
 
 let last = performance.now();
@@ -1781,6 +1875,7 @@ function frame(t) {
   const dt = Math.min(0.1, (t - last) / 1000);
   last = t;
   if (introDone) update(dt);
+  if (pendingSummary && !modal && introDone) { const sm = pendingSummary; pendingSummary = null; showSummary(sm); }
   saveClock += dt;
   if (saveClock > 5 && introDone) { saveClock = 0; save(); }
   cloudClock += dt;
@@ -1794,6 +1889,10 @@ window.addEventListener('resize', () => { resize(); clampCam(); });
 window.addEventListener('beforeunload', () => introDone && save());
 document.addEventListener('visibilitychange', () => {
   if (document.visibilityState === 'hidden' && introDone) { save(); cloudSync(); }
+  if (document.visibilityState === 'visible' && introDone) {
+    const sum = catchUp();
+    if (sum) { pendingSummary = sum; renderPanel(); }
+  }
 });
 
 resize();
@@ -1803,6 +1902,7 @@ if (!hasSave) newGame();
 if (Cloud.cloud.code && hasSave) lastPushed = null;
 renderCloudButton();
 checkCloudOnStart();
+let startSummary = catchUp();
 centerOn(-13, 29, 0.85);
 setSpeed(1);
 startIntro(hasSave);
@@ -1811,5 +1911,6 @@ requestAnimationFrame(frame);
 // Exposed for debugging in the console.
 window.helmline = {
   get state() { return S; }, market: () => market, setCourse, setSpeed, screenOf: (lon, lat) => toScreen(lon, lat),
+  away: (minutes) => { S.lastSeen = Date.now() - minutes * 60000; const sum = catchUp(); if (sum) pendingSummary = sum; return sum && { days: sum.days, purse: Math.round(sum.purse), capped: sum.capped }; },
   advance: (days) => { for (let i = 0; i < days * 4; i++) advanceTime(0.25, !S.ship.docked); renderPanel(); },
 };
