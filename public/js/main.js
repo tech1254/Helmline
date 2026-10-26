@@ -6,6 +6,7 @@ import { GOODS, Market, PORTUGUESE_PORTS } from './economy.js';
 import * as Contracts from './contracts.js';
 import * as Events from './events.js';
 import * as Fleet from './fleet.js';
+import * as Cloud from './cloud.js';
 
 // ---- Tunables ---------------------------------------------------------------
 const SAVE_KEY = 'helmline-proto0-v1';
@@ -132,9 +133,13 @@ function revealAt(lon, lat, r, quiet = false) {
 }
 
 // ---- Save / load ------------------------------------------------------------
+function payload() {
+  return JSON.stringify({ S, market: market.toJSON(), fog: fogToString() });
+}
+
 function save() {
   try {
-    localStorage.setItem(SAVE_KEY, JSON.stringify({ S, market: market.toJSON(), fog: fogToString() }));
+    localStorage.setItem(SAVE_KEY, payload());
   } catch (e) { /* storage unavailable: play on without saving */ }
 }
 
@@ -142,10 +147,167 @@ function load() {
   try {
     const raw = localStorage.getItem(SAVE_KEY);
     if (!raw) return false;
-    const d = JSON.parse(raw);
+    return applySaveData(JSON.parse(raw));
+  } catch (e) {
+    return false;
+  }
+}
+
+// ---- Cloud saves ---------------------------------------------------------------
+let lastPushed = null; // the payload last sent, so unchanged games are not re-sent
+let cloudBusy = false;
+let cloudClock = 0;
+let remoteAhead = null; // a newer cloud save found at start-up
+
+async function cloudSync(force = false) {
+  if (!Cloud.cloud.code || cloudBusy || !introDone) return;
+  if (Cloud.cloud.status === 'conflict' && !force) return;
+  const data = payload();
+  if (data === lastPushed && !force) return;
+  cloudBusy = true;
+  try {
+    const r = await Cloud.push(data, S.day, force);
+    if (r.ok) lastPushed = data;
+    else if (r.conflict) showConflict(r.conflict);
+  } catch (e) {
+    Cloud.markFailed(e);
+  } finally {
+    cloudBusy = false;
+    renderCloudButton();
+    if (panelMode === 'cloud') renderPanel();
+  }
+}
+
+function showConflict(remote) {
+  confirmDialog({
+    title: 'This voyage moved on another device',
+    body: `<dl class="facts">
+        <dt>Other device</dt><dd>${fmtDate(remote.day || 0)}, saved ${timeAgo(remote.updatedAt)}</dd>
+        <dt>This device</dt><dd>${fmtDate(S.day)}</dd>
+      </dl>
+      <p>Which voyage do you want to keep? The other one will be replaced.</p>
+      <p><button data-modal-action="keep-local">Keep this device's voyage</button></p>`,
+    ok: "Load the other device's",
+    onOk: () => loadFromCloud(Cloud.cloud.code, true),
+    actions: { 'keep-local': () => cloudSync(true) },
+  });
+}
+
+async function loadFromCloud(code, alreadyConfirmed = false) {
+  let r;
+  try { r = await Cloud.fetchSave(code); } catch (e) { r = { ok: false, error: 'Could not reach the server.' }; }
+  if (!r.ok) { toast(r.status === 404 ? 'No save found for that code. Check it and try again.' : r.error); return; }
+  const go = () => {
+    const prev = { S, market };
+    if (!applySaveData(JSON.parse(r.data))) {
+      S = prev.S; market = prev.market;
+      toast('That save could not be read.');
+      return;
+    }
+    Cloud.link(code, r.version);
+    lastPushed = r.data;
+    remoteAhead = null;
+    save();
+    panelMode = S.ship.docked ? 'port' : null;
+    centerOn(S.ship.lon, S.ship.lat);
+    renderPanel();
+    renderCloudButton();
+    toast(`Loaded your voyage from the cloud: <b>${fmtDate(S.day)}</b>.`, 'port');
+  };
+  if (alreadyConfirmed) { go(); return; }
+  confirmDialog({
+    title: 'Load this cloud save?',
+    body: `<dl class="facts"><dt>Cloud save</dt><dd>${fmtDate(r.day || 0)}, saved ${timeAgo(r.updatedAt)}</dd><dt>This device</dt><dd>${fmtDate(S.day)}</dd></dl>
+      <p>The voyage on this device will be replaced, and the two devices will stay in sync from now on.</p>`,
+    ok: 'Load it',
+    onOk: go,
+  });
+}
+
+async function startCloudSave() {
+  try {
+    const r = await Cloud.create(payload(), S.day);
+    if (!r.ok) { toast(r.error || 'Could not start a cloud save.'); return; }
+    lastPushed = payload();
+    toast(`Cloud save started. Your code is <b>${r.code}</b>.`, 'discover');
+  } catch (e) {
+    Cloud.markFailed(e);
+    toast('Could not reach the server.');
+  }
+  renderCloudButton();
+  renderPanel();
+}
+
+// At start-up: is the cloud copy ahead of this device?
+async function checkCloudOnStart() {
+  if (!Cloud.cloud.code) return;
+  try {
+    const r = await Cloud.fetchSave();
+    if (!r.ok) { if (r.status === 404) Cloud.markFailed({ message: 'The cloud save no longer exists.' }); renderCloudButton(); return; }
+    if (r.version > Cloud.cloud.version) {
+      remoteAhead = r;
+      if (!introDone) {
+        $('intro-cloud').hidden = false;
+        $('intro-cloud').textContent = `Continue from the cloud (${fmtDate(r.day || 0)})`;
+        $('intro-continue').textContent = 'Continue on this device';
+      }
+    }
+  } catch (e) {
+    Cloud.markFailed(e);
+  }
+  renderCloudButton();
+}
+
+function timeAgo(ms) {
+  if (!ms) return 'never';
+  const m = Math.round((Date.now() - ms) / 60000);
+  if (m < 1) return 'just now';
+  if (m < 60) return `${m} min ago`;
+  const h = Math.round(m / 60);
+  if (h < 24) return `${h} h ago`;
+  return `${Math.round(h / 24)} days ago`;
+}
+
+function renderCloudButton() {
+  const b = $('btn-cloud');
+  const st = Cloud.cloud.status;
+  b.classList.toggle('linked', st === 'idle' || st === 'syncing');
+  b.classList.toggle('problem', st === 'error' || st === 'conflict');
+  b.title = st === 'off' ? 'Cloud save: off' : st === 'error' ? `Cloud save: ${Cloud.cloud.error}` : st === 'conflict' ? 'Cloud save: played on another device' : `Cloud save: synced ${timeAgo(Cloud.cloud.lastSync)}`;
+}
+
+function renderCloud(el) {
+  const c = Cloud.cloud;
+  const loadForm = `<form class="code-form" data-cloud-form>
+      <label for="cloud-code">Save code from another device</label>
+      <div class="code-row"><input id="cloud-code" name="code" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="XXXX-XXXX-XXXX" maxlength="20"><button class="primary" type="submit">Load</button></div>
+    </form>`;
+  let body;
+  if (!c.code) {
+    body = `<p class="blurb">Keep one voyage in step across your devices. A cloud save gets a code: enter it on your phone or another computer, and both stay in sync.</p>
+      <div class="row" style="justify-content:flex-start"><button class="primary" data-cloud-create>Start a cloud save</button></div>
+      <h3>Already have a code?</h3>${loadForm}`;
+  } else {
+    const state = { idle: `Synced ${timeAgo(c.lastSync)}.`, syncing: 'Syncing…', error: `Not synced: ${c.error}`, conflict: 'This voyage was also played on another device.' }[c.status] || '';
+    body = `<p class="blurb">This voyage is saved to the cloud. Enter the code on another device to continue there.</p>
+      <div class="save-code"><span id="cloud-code-text">${c.code}</span><button data-cloud-copy>Copy</button></div>
+      <p class="${c.status === 'error' || c.status === 'conflict' ? 'warn' : 'muted'}">${state}</p>
+      <p class="foot">Keep the code private: anyone with it can load or overwrite this voyage. The game syncs about every 30 seconds while you play, and whenever you reach port.</p>
+      <div class="row"><button data-cloud-unlink>Stop syncing this device</button><button class="primary" data-cloud-sync>Sync now</button></div>
+      <h3>Switch to a different save</h3>${loadForm}`;
+  }
+  el.innerHTML = `
+    <header><h2>Cloud save</h2><button class="close" data-close aria-label="Close">×</button></header>
+    ${body}`;
+}
+
+// Bring a saved game (from this device or the cloud) into play.
+function applySaveData(d) {
+  try {
     S = d.S;
     market = new Market(d.market);
     initFog(d.fog);
+    fogDirty = true;
     if (S.contracts && S.contracts.unlocked === undefined) S.contracts.unlocked = true;
     Contracts.ensureContracts(S);
     Events.ensureEvents(S);
@@ -754,6 +916,7 @@ function dock(portId) {
   panelMode = 'port';
   renderPanel();
   save();
+  cloudSync();
 }
 
 function undock() {
@@ -976,6 +1139,7 @@ function renderPanel() {
   $('btn-fleet').hidden = !fleetOpen;
   $('btn-fleet').classList.toggle('on', panelMode === 'fleet');
   $('btn-help').classList.toggle('on', panelMode === 'help');
+  $('btn-cloud').classList.toggle('on', panelMode === 'cloud');
   if (panelMode === 'fleet' && !fleetOpen) panelMode = S.ship.docked ? 'port' : null;
   $('btn-ledger').classList.toggle('on', panelMode === 'ledger');
   $('btn-port').classList.toggle('on', panelMode === 'port');
@@ -991,6 +1155,7 @@ function renderPanel() {
   else if (panelMode === 'contracts') renderContracts(el);
   else if (panelMode === 'fleet') renderFleet(el);
   else if (panelMode === 'help') renderHelp(el);
+  else if (panelMode === 'cloud') renderCloud(el);
   else renderLedger(el);
 }
 
@@ -1205,7 +1370,12 @@ function renderHelp(el) {
       <li><b>Standing</b> brings better pay, better prices in Portuguese ports, and the right to buy a second caravel.</li>
       <li><b>Your fleet:</b> a hired captain runs a trade route for you, paid from your purse.</li>
     </ul>
-    <p class="foot">Keyboard: space pause · 1 2 3 speed · L ledger · W winds · Esc close. Your game saves in this browser.</p>`;
+    <h3>Saving</h3>
+    <ul class="help">
+      <li><b>On this device</b> your game saves by itself as you play.</li>
+      <li><b>Cloud save:</b> tap the cloud button to get a save code. Enter it on another device to continue there; both stay in sync. A green dot means synced, red means it needs attention.</li>
+    </ul>
+    <p class="foot">Keyboard: space pause · 1 2 3 speed · L ledger · W winds · Esc close.</p>`;
 }
 
 // Captain's notes: a gentle nudge through the first voyages, until contracts open up.
@@ -1345,7 +1515,7 @@ function log(text) {
 
 $('panel').addEventListener('click', (e) => {
   const t = e.target.closest('button');
-  if (!t) return;
+  if (!t || t.closest('form')) return; // forms handle their own submit
   const pid = S.ship.docked;
   if ((t.dataset.buy || t.dataset.sell) && pid && market.closed(pid)) {
     toast('The port is closed to trade.');
@@ -1401,6 +1571,24 @@ $('panel').addEventListener('click', (e) => {
       return;
     }
     doSell();
+  } else if (t.hasAttribute('data-cloud-create')) {
+    startCloudSave();
+    return;
+  } else if (t.hasAttribute('data-cloud-sync')) {
+    Cloud.cloud.status = Cloud.cloud.status === 'conflict' ? 'idle' : Cloud.cloud.status;
+    cloudSync(true);
+    return;
+  } else if (t.hasAttribute('data-cloud-copy')) {
+    navigator.clipboard?.writeText(Cloud.cloud.code).then(() => toast('Save code copied.'), () => toast(`Your code: <b>${Cloud.cloud.code}</b>`));
+    return;
+  } else if (t.hasAttribute('data-cloud-unlink')) {
+    confirmDialog({
+      title: 'Stop syncing this device?',
+      body: `<p>Your voyage stays on this device and in the cloud, but they will no longer stay in step. You can link again with the code <b>${Cloud.cloud.code}</b>.</p>`,
+      ok: 'Stop syncing',
+      onOk: () => { Cloud.unlink(); renderCloudButton(); },
+    });
+    return;
   } else if (t.hasAttribute('data-wait') && pid) {
     waitInPort(7);
   } else if (t.dataset.hire) {
@@ -1478,6 +1666,15 @@ $('panel').addEventListener('click', (e) => {
   save();
 });
 
+$('panel').addEventListener('submit', (e) => {
+  const form = e.target.closest('[data-cloud-form]');
+  if (!form) return;
+  e.preventDefault();
+  const code = form.elements.code.value.trim();
+  if (code.replace(/[^A-Za-z0-9]/g, '').length !== 12) { toast('A save code has 12 letters and numbers, like 7KQ2-MX9P-4TRD.'); return; }
+  loadFromCloud(code);
+});
+
 // Route editor: when a port changes, offer the goods sold there.
 $('panel').addEventListener('change', (e) => {
   const sel = e.target.closest('select[data-role]');
@@ -1490,6 +1687,7 @@ $('panel').addEventListener('change', (e) => {
 document.querySelectorAll('[data-speed]').forEach((b) => b.addEventListener('click', () => setSpeed(+b.dataset.speed)));
 $('btn-fleet').addEventListener('click', () => togglePanel('fleet'));
 $('btn-help').addEventListener('click', () => togglePanel('help'));
+$('btn-cloud').addEventListener('click', () => togglePanel('cloud'));
 $('tip-close').addEventListener('click', () => { S.tips.off = true; renderTip(); save(); });
 function zoomBy(k) {
   cam.scale *= k;
@@ -1508,8 +1706,8 @@ $('btn-port').addEventListener('click', () => {
 
 // ---- Confirmation dialog ----------------------------------------------------
 let modal = null;
-function confirmDialog({ title, body, ok = 'Confirm', onOk, kind = 'trade', preview = null }) {
-  modal = { onOk, kind, preview };
+function confirmDialog({ title, body, ok = 'Confirm', onOk, kind = 'trade', preview = null, actions = {} }) {
+  modal = { onOk, kind, preview, actions };
   $('modal').classList.toggle('aside', kind === 'voyage');
   $('modal-title').textContent = title;
   $('modal-body').innerHTML = body;
@@ -1528,6 +1726,13 @@ function closeModal(accept) {
 }
 $('modal-ok').addEventListener('click', () => closeModal(true));
 $('modal-cancel').addEventListener('click', () => closeModal(false));
+$('modal-body').addEventListener('click', (e) => {
+  const b = e.target.closest('[data-modal-action]');
+  if (!b || !modal) return;
+  const fn = modal.actions?.[b.dataset.modalAction];
+  closeModal(false);
+  fn?.();
+});
 
 let toastTimer;
 function toast(html, kind = '') {
@@ -1550,6 +1755,12 @@ function startIntro(hasSave) {
   $('intro').hidden = false;
 }
 $('intro-continue').addEventListener('click', () => beginPlay());
+$('intro-cloud').addEventListener('click', () => {
+  const r = remoteAhead;
+  beginPlay();
+  if (r) loadFromCloud(Cloud.cloud.code, true);
+});
+$('intro-code').addEventListener('click', () => { beginPlay(); panelMode = 'cloud'; renderPanel(); });
 $('intro-new').addEventListener('click', () => {
   if ($('intro-continue').hidden === false && !confirm('Start over? Your saved voyage will be lost.')) return;
   newGame();
@@ -1572,6 +1783,8 @@ function frame(t) {
   if (introDone) update(dt);
   saveClock += dt;
   if (saveClock > 5 && introDone) { saveClock = 0; save(); }
+  cloudClock += dt;
+  if (cloudClock > 30 && introDone) { cloudClock = 0; cloudSync(); }
   render();
   renderHud();
   requestAnimationFrame(frame);
@@ -1579,10 +1792,17 @@ function frame(t) {
 
 window.addEventListener('resize', () => { resize(); clampCam(); });
 window.addEventListener('beforeunload', () => introDone && save());
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'hidden' && introDone) { save(); cloudSync(); }
+});
 
 resize();
+Cloud.loadMeta();
 const hasSave = load();
 if (!hasSave) newGame();
+if (Cloud.cloud.code && hasSave) lastPushed = null;
+renderCloudButton();
+checkCloudOnStart();
 centerOn(-13, 29, 0.85);
 setSpeed(1);
 startIntro(hasSave);

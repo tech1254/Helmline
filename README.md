@@ -17,13 +17,14 @@ An age-of-sail exploration and trade game. This is **Prototype 0**: the West Afr
 - **Spoilage:** wine, dye, pepper, sugar and cloth slowly spoil at sea, faster in the tropics.
 - **A second ship:** buy a caravel, hire a captain with navigation and trade skills, and give him a two-port route he runs on his own.
 - **Wait in port**, zoom buttons, Captain's notes for the first voyages, and a How to play screen.
-- Saves to the browser (localStorage).
+- Saves to the browser, and optionally to the cloud with a save code to play across devices.
 
-Not yet included: combat, navigation drift, more than one hired ship, dynasty, server saves.
+Not yet included: combat, navigation drift, more than one hired ship, dynasty.
 
 ## Layout
 
-- `public/` is served as-is by the `helmline` Cloudflare Worker (static assets, no build step).
+- `src/worker.js` is the Worker: it serves `public/` and answers `/api/saves` for cloud saves, stored in the D1 database `helmline-saves` (schema in `migrations/`). Only a hash of each save code is stored.
+- `public/` holds the game's static files (no build step).
   - `js/world.js` holds the coastlines, ports, winds and sea-route pathfinding.
   - `js/economy.js` holds goods, base prices and the market model.
   - `js/contracts.js` holds contracts and standing.

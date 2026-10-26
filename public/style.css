@@ -33,7 +33,7 @@ button.danger { color: var(--red); border-color: var(--red); }
 /* HUD */
 #hud {
   position: fixed; top: max(10px, env(safe-area-inset-top)); left: 10px; right: 10px; display: flex; flex-wrap: wrap; gap: 8px 14px;
-  align-items: center; pointer-events: none;
+  align-items: center; pointer-events: none; z-index: 6; /* the top bar stays reachable above panels */
 }
 #hud > * { pointer-events: auto; }
 .brand { display: flex; align-items: center; gap: 8px; color: var(--ink); background: rgba(244, 234, 210, 0.92); border: 1px solid var(--ink-2); border-radius: 6px; box-shadow: var(--shadow); padding: 5px 12px 5px 7px; }
@@ -64,6 +64,7 @@ button.danger { color: var(--red); border-color: var(--red); }
 #panel {
   position: fixed; top: 76px; right: 10px; width: min(520px, calc(100vw - 20px)); max-height: calc(100vh - 140px); overflow: auto;
   background: var(--paper); border: 1px solid var(--ink-2); border-radius: 8px; box-shadow: var(--shadow); padding: 14px 16px 16px;
+  z-index: 4; /* above the zoom buttons and tips */
   background-image: linear-gradient(rgba(255,255,255,0.25), rgba(0,0,0,0.02));
 }
 #panel.wide { width: min(720px, calc(100vw - 20px)); }
@@ -140,6 +141,18 @@ th small, td small { display: block; font-size: 12px; font-weight: 400; color: v
 #tip[hidden] { display: none; }
 #tip .tip-label { display: block; font-family: var(--display); color: var(--gold); font-size: 14px; }
 #tip-close { position: absolute; top: 2px; right: 2px; border: 0; background: none; font-size: 18px; padding: 2px 6px; color: var(--ink-2); }
+
+/* Cloud save */
+#btn-cloud { position: relative; }
+#btn-cloud .dot { position: absolute; top: 4px; right: 4px; width: 7px; height: 7px; border-radius: 50%; background: transparent; }
+#btn-cloud.linked .dot { background: var(--good); }
+#btn-cloud.problem .dot { background: var(--red); }
+.save-code { display: flex; align-items: center; gap: 10px; margin: 8px 0 4px; }
+.save-code span { font-family: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace; font-size: 22px; letter-spacing: 0.08em; background: rgba(255,255,255,0.5); border: 1px dashed var(--ink-2); border-radius: 6px; padding: 6px 12px; }
+.code-form label { display: block; font-size: 14px; color: var(--ink-2); margin-bottom: 4px; }
+.code-row { display: flex; gap: 8px; }
+.code-row input { flex: 1; min-width: 0; font: inherit; font-family: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace; font-size: 17px; letter-spacing: 0.06em; text-transform: uppercase; padding: 8px 10px; border: 1px solid var(--ink-2); border-radius: 4px; background: #fffaf0; color: var(--ink); min-height: 44px; }
+button.link { border: 0; background: none; padding: 0; color: var(--red); text-decoration: underline; font-size: inherit; }
 
 /* Destination list */
 .dests { list-style: none; padding: 0; margin: 4px 0 0; display: flex; flex-direction: column; gap: 6px; }

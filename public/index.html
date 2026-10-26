@@ -42,6 +42,12 @@
           <line x1="1.5" y1="12" x2="5" y2="12"></line><line x1="19" y1="12" x2="22.5" y2="12"></line>
         </svg>
       </button>
+      <button id="btn-cloud" class="icon" title="Cloud save" aria-label="Cloud save">
+        <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round">
+          <path d="M7 18h10.5a4 4 0 0 0 .6-7.95A6 6 0 0 0 6.4 9.2 4.5 4.5 0 0 0 7 18z"></path>
+        </svg>
+        <span class="dot" aria-hidden="true"></span>
+      </button>
       <button id="btn-help" class="icon" title="How to play" aria-label="How to play">?</button>
     </div>
   </div>
@@ -86,10 +92,11 @@
         <li><b>The crown pays</b> for new charts when you return to Lisbon.</li>
       </ul>
       <div class="row">
+        <button id="intro-cloud" class="primary" hidden>Continue from the cloud</button>
         <button id="intro-continue" class="primary">Continue voyage</button>
         <button id="intro-new" class="primary">Weigh anchor</button>
       </div>
-      <p class="fine">Drag to pan, scroll or pinch to zoom. Your game saves in this browser.</p>
+      <p class="fine">Drag to pan, scroll or pinch to zoom. Your game saves in this browser. Playing on another device? <button id="intro-code" class="link">Load a save code</button></p>
     </div>
   </div>
 

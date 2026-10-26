@@ -2,7 +2,19 @@
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "helmline",
   "compatibility_date": "2026-06-01",
+  // The Worker answers /api/* (cloud saves); everything else is served from ./public.
+  "main": "src/worker.js",
   "assets": {
-    "directory": "./public"
-  }
+    "directory": "./public",
+    "binding": "ASSETS"
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "helmline-saves",
+      "database_id": "b3414af8-ddda-4a78-8b5f-9f1ea08d60fa",
+      "migrations_dir": "migrations"
+    }
+  ],
+  "observability": { "enabled": true }
 }
