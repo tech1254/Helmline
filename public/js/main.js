@@ -901,7 +901,13 @@ function advanceTime(dd, atSea, away = false) {
       if (enc) pendingEncounter = enc;
     }
   }
+  const wasAt = S.fleet.ships.map((x) => x.at);
   report(Fleet.tick(S, market, dd, !away));
+  // A hired ship calling at the port where you lie brings its captain's full accounts.
+  if (S.ship.docked) {
+    const calling = S.fleet.ships.filter((x, i) => x.at === S.ship.docked && wasAt[i] !== x.at);
+    if (calling.length) Accounts.reveal(S, S.ship.docked, calling);
+  }
   report(Contracts.checkDeadlines(S));
 }
 
@@ -1104,8 +1110,7 @@ function dock(portId) {
   flushRot();
   report(Contracts.onDock(S, portId));
   report(Events.hearNews(S, portId));
-  const here = S.fleet.ships.filter((x) => x.at === portId && x.status !== 'sailing');
-  const heard = Accounts.reveal(S, portId, here);
+  const heard = Accounts.reveal(S, portId, S.fleet.ships);
   if (heard) {
     const net = Math.round(heard.net);
     toast(`The factor in ${p.name} has accounts from the <b>${heard.ships.join(', ')}</b>: ${heard.count} ${heard.count === 1 ? 'entry' : 'entries'}, ${net >= 0 ? '+' : ''}${net.toLocaleString()} cz, now in your ledger.`, 'port');
@@ -1623,7 +1628,7 @@ function renderHelp(el) {
       <li><b>Contracts</b> open up at 500 cz. Completing them builds standing; missing deadlines costs it.</li>
       <li><b>Standing</b> brings better pay, better prices in Portuguese ports, and the right to buy a second caravel.</li>
       <li><b>Your fleet:</b> a hired captain runs a trade route for you, paid from your purse.</li>
-      <li><b>The ledger</b> accounts for every cruzado in and out. Your own dealings are entered at once. A hired captain's are entered only when you call at a port where he has traded, so until then part of your purse is not yet accounted for.</li>
+      <li><b>The ledger</b> accounts for every cruzado in and out. Your own dealings are entered at once. A hired captain's are entered when you are in any port on his route, so until then part of your purse is not yet accounted for.</li>
       <li><b>Time away:</b> if you have hired captains and your own ship is in port, the world moves on while you are gone: at a tenth of its usual pace at first, more slowly after a few weeks, up to ${OFFLINE_MAX_DAYS} days. Contract deadlines wait for you. A night's sleep or a working day is safe; stay away longer than ${Fleet.STRAY_AFTER_HOURS} hours and captains start to stray (skimming, then going ashore), and after ${STANDING_FADES_AFTER_HOURS} hours your standing starts to fade.</li>
     </ul>
     <h3>Saving</h3>
@@ -1740,7 +1745,8 @@ function renderLedger(el) {
         <tfoot><tr><th scope="row">Net</th><td class="num">${cz(sum(year))}</td><td class="num">${cz(sum(A.totals))}</td></tr></tfoot></table>`
     : '<p class="muted">Nothing entered yet.</p>';
   const whoName = (e) => (e.who === 'you' ? 'Your ship' : e.ship || 'Hired ship');
-  const list = A.entries.filter((e) => ledgerWho === 'all' || String(e.who) === ledgerWho).slice(-80).reverse();
+  const list = A.entries.filter((e) => ledgerWho === 'all' || String(e.who) === ledgerWho)
+    .sort((x, y) => Math.floor(y.heard) - Math.floor(x.heard) || y.day - x.day || y.id - x.id).slice(0, 80);
   const options = [['all', 'All ships'], ['you', 'Your ship'], ...ships.map((x) => [String(x.id), x.name])];
   const entries = list.length
     ? `<table class="accounts entries"><tbody>${list.map((e) => {
@@ -1753,15 +1759,16 @@ function renderLedger(el) {
   el.innerHTML = `
     ${tabs('ledger')}
     <header><h2>Ledger</h2><button class="close" data-close-ledger aria-label="Close">×</button></header>
-    <p class="blurb">Money in and out of your purse. Your own dealings are entered at once. A hired captain's are entered when you call at a port where he has traded and the factor there hands you his accounts.</p>
+    <p class="blurb">Money in and out of your purse. Your own dealings are entered at once. A hired captain's are entered when you are in any port on his route: the factor there hands you everything he has done since his last report.</p>
     <dl class="facts">
       <dt>Purse</dt><dd>${cz(S.purse, false)}</dd>
       <dt>Brought forward ${fmtDate(A.openDay)}</dt><dd>${cz(A.opening, false)}</dd>
       <dt>Entered since then</dt><dd>${cz(known - A.opening)}</dd>
       ${voyage >= 0.5 ? `<dt>Wages this voyage so far</dt><dd>${cz(-voyage)}</dd>` : ''}
+      ${Accounts.captainWagesRunning(S) >= 0.5 ? `<dt>Hired crews' wages since their last report</dt><dd>${cz(-Accounts.captainWagesRunning(S))}</dd>` : ''}
       ${Math.abs(unacc) >= 1 ? `<dt>Not yet accounted for</dt><dd class="${unacc < 0 ? 'out' : 'in'}">${cz(unacc)}</dd>` : ''}
     </dl>
-    ${Math.abs(unacc) >= 1 ? `<p class="fine">${unacc < 0 ? 'Your purse is lighter' : 'Your purse is heavier'} than your books say: your hired captains have been trading and drawing pay, and you have not yet seen their accounts. Call at the ports on their routes to collect them.</p>` : ''}
+    ${Math.abs(unacc) >= 1 ? `<p class="fine">${unacc < 0 ? 'Your purse is lighter' : 'Your purse is heavier'} than your books say: your hired captains have been trading and drawing pay, and you have not yet seen their accounts. Call at any port on a captain's route to collect his accounts.</p>` : ''}
     <h3>Totals</h3>
     ${totals}
     <h3>Entries</h3>

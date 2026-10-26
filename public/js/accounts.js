@@ -87,21 +87,32 @@ export function closeVoyage(S, portId) {
   post(A, { who: 'you', kind: 'wages', port: portId, from: v.from, days: S.day - v.start, amount: -v.wages, day: S.day, heard: S.day });
 }
 
-// The owner docks: the factor here has word of every hired ship that has traded in this
-// port since he last called. Ships lying here now report wages run up in port too.
-export function reveal(S, portId, shipsHere = []) {
+// The factor in any port a hired captain trades in keeps his accounts. When the owner
+// is in such a port (dropping anchor there, or lying there when the captain calls),
+// he is handed everything that captain has done since his last report, wherever it
+// happened, and the wages run up to that day.
+export function trades(ship, portId) {
+  return ship.at === portId || (ship.route?.stops || []).some((st) => st.port === portId);
+}
+
+export function reveal(S, portId, ships = []) {
   const A = ensureAccounts(S);
-  for (const ship of shipsHere) bookCaptainWages(S, ship, 'in port');
-  const now = [], later = [];
-  for (const e of A.pending) (e.port === portId ? now : later).push(e);
-  if (!now.length) return null;
-  A.pending = later;
   const names = new Set();
-  for (const e of now) {
-    post(A, { ...e, heard: S.day, heardAt: portId });
-    names.add(e.ship);
+  let count = 0, net = 0;
+  for (const ship of ships) {
+    if (!trades(ship, portId)) continue;
+    bookCaptainWages(S, ship, 'to date');
+    const mine = A.pending.filter((e) => e.who === ship.id);
+    if (!mine.length) continue;
+    A.pending = A.pending.filter((e) => e.who !== ship.id);
+    for (const e of mine) {
+      post(A, { ...e, heard: S.day, heardAt: portId });
+      net += e.amount;
+    }
+    count += mine.length;
+    names.add(ship.name);
   }
-  return { count: now.length, ships: [...names], net: now.reduce((s, e) => s + e.amount, 0) };
+  return count ? { count, ships: [...names], net } : null;
 }
 
 export function known(S) {
@@ -109,11 +120,17 @@ export function known(S) {
   return A.opening + Object.values(A.totals).reduce((s, v) => s + v, 0);
 }
 
-// What the purse says, less what the books say, less this voyage's wages so far:
+// What the purse says, less what the books say, less wages known to be running:
 // the dealings of hired captains not yet heard of.
 export function unaccounted(S) {
   const A = ensureAccounts(S);
-  return S.purse - known(S) + (A.voyage ? A.voyage.wages : 0);
+  return S.purse - known(S) + (A.voyage ? A.voyage.wages : 0) + captainWagesRunning(S);
+}
+
+// Wages the hired crews have drawn since their last report. You know their rates, so
+// these are not a mystery; they are entered with the captain's next accounts.
+export function captainWagesRunning(S) {
+  return (S.fleet?.ships || []).reduce((t, x) => t + (x.wagesDue || 0), 0);
 }
 
 // Sums by kind for entries heard of since `sinceDay`.
