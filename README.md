@@ -4,10 +4,10 @@ An age-of-sail exploration and trade game. This is **Prototype 0**: the West Afr
 
 ## What's in the prototype
 
-- **Chart:** a portolan-style map from the Azores to the Gambia. Everything outside the known coast is fogged and clears as you sail.
+- **Chart:** a portolan-style map from the Azores and Iberia down to the Gulf of Guinea. Everything outside the known coast is fogged and clears as you sail.
 - **One caravel**, hold 40, about 5 knots, 3 cruzados a day in wages at sea.
-- **Winds:** north-east trades in the south, northerlies off Portugal, westerlies out at sea. Sailing home against the trades is slow; swinging out to sea (the *volta do mar*) is usually faster.
-- **Six ports:** Lisbon, Lagos, Funchal, Lanzarote (known at the start), Arguin and the Gambia River (to be discovered).
+- **Winds:** north-east trades in the south, northerlies off Portugal, westerlies out at sea, light south-westerlies and calms in the Gulf of Guinea. Sailing home against the trades is slow; swinging out to sea (the *volta do mar*) is usually faster.
+- **Nine ports:** Lisbon, Lagos, Funchal, Lanzarote (known at the start); Arguin, the Gambia River, Serra Leoa, Rio dos Cestos (the Grain Coast) and the Costa da Mina (to be discovered).
 - **Seven goods** with reactive prices: trading moves the price, and it recovers over weeks.
 - **Trade ledger:** prices you have actually seen, with their age, and route suggestions based only on that data.
 - **Chart rewards:** the crown pays 150 cz per new port or land group when you return to Lisbon.
