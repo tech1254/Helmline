@@ -783,7 +783,7 @@ function catchUp() {
     S.contracts.standing -= standingLost;
     log(`Away too long: standing fell by ${standingLost}.`);
   }
-  const wages = days * (SHIP.upkeep * 0.5 + S.fleet.ships.reduce((n, x) => n + Fleet.dailyCost(x), 0));
+  const wages = days * S.fleet.ships.reduce((n, x) => n + Fleet.dailyCost(x), 0); // your own crew is paid off in port
   // Contracts wait for the captain: time away never makes one lapse.
   let contractsHeld = 0;
   for (const c of S.contracts?.active || []) {
@@ -854,7 +854,7 @@ function showSummary(sum) {
 // Everything that happens as days pass, at sea or waiting in port.
 function advanceTime(dd, atSea, away = false) {
   S.day += dd;
-  S.purse -= SHIP.upkeep * dd * (atSea ? 1 : 0.5); // half pay while the crew is ashore
+  if (atSea) S.purse -= SHIP.upkeep * dd; // the crew is paid for the voyage; in port they are paid off
   market.tick(dd);
   report(Events.tick(S, dd));
   syncMarket();
@@ -1302,7 +1302,7 @@ function renderPort(el) {
     </table>
     <p class="foot">Hold ${held()} / ${SHIP.hold} · purse ${Math.floor(S.purse).toLocaleString()} cz · upkeep ${SHIP.upkeep} cz a day at sea.<br>
     Buying pushes the price up; selling pushes it down. Prices recover over a few weeks. <i>Max</i> keeps two weeks of wages in the purse.</p>
-    <div class="row"><button data-wait title="Let a week pass: prices recover, news arrives, your fleet sails on. The crew is on half pay ashore.">Wait a week</button><button class="primary" data-tab="sail">Set sail…</button></div>`;
+    <div class="row"><button data-wait title="Let a week pass: prices recover, news arrives, your fleet sails on. Your crew draws no wages in port; hired captains are still paid.">Wait a week</button><button class="primary" data-tab="sail">Set sail…</button></div>`;
 }
 
 function contractCard(c, actions) {
