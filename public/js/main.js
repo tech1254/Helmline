@@ -1,5 +1,5 @@
 import {
-  BOUNDS, COS0, D2R, LANDS, LAND_GROUPS, PORTS, isLand, inBounds, windAt, sailFactor,
+  BOUNDS, OLD_BOUNDS, COS0, D2R, LANDS, LAND_GROUPS, PORTS, isLand, inBounds, windAt, sailFactor,
   pointOfSail, compassPoint, bearing, distNm, angleDiff, findPath, clearWater,
 } from './world.js';
 import { GOODS, Market, PORTUGUESE_PORTS } from './economy.js';
@@ -62,11 +62,24 @@ function freshState() {
   };
 }
 
-function initFog(saved) {
+function initFog(saved, savedBounds) {
   fog = new Uint8Array(FW * FH).fill(1);
   if (saved) {
     const bin = atob(saved);
-    for (let i = 0; i < fog.length && i < bin.length; i++) fog[i] = bin.charCodeAt(i);
+    const b = savedBounds || OLD_BOUNDS; // saves from before the chart grew have no bounds
+    const ow = Math.round((b.east - b.west) / FOG_CELL), oh = Math.round((b.north - b.south) / FOG_CELL);
+    if (ow === FW && oh === FH && b.west === BOUNDS.west && b.south === BOUNDS.south) {
+      for (let i = 0; i < fog.length && i < bin.length; i++) fog[i] = bin.charCodeAt(i);
+    } else {
+      // Copy each charted cell of the old chart onto the same place on the new one.
+      for (let j = 0; j < oh; j++) {
+        for (let i = 0; i < ow; i++) {
+          if (bin.charCodeAt(j * ow + i) !== 0) continue;
+          const k = fogIdx(b.west + (i + 0.5) * FOG_CELL, b.south + (j + 0.5) * FOG_CELL);
+          if (k >= 0) fog[k] = 0;
+        }
+      }
+    }
     return;
   }
   // Known to Portuguese pilots by 1451: Iberia, Morocco to Cape Bojador, Madeira, the Canaries.
@@ -146,7 +159,7 @@ function revealAt(lon, lat, r, quiet = false) {
 
 // ---- Save / load ------------------------------------------------------------
 function payload() {
-  return JSON.stringify({ S, market: market.toJSON(), fog: fogToString() });
+  return JSON.stringify({ S, market: market.toJSON(), fog: fogToString(), fogBounds: BOUNDS });
 }
 
 function save() {
@@ -321,7 +334,7 @@ function applySaveData(d) {
   try {
     S = d.S;
     market = new Market(d.market);
-    initFog(d.fog);
+    initFog(d.fog, d.fogBounds);
     fogDirty = true;
     if (S.contracts && S.contracts.unlocked === undefined) S.contracts.unlocked = true;
     Contracts.ensureContracts(S);
@@ -2124,6 +2137,10 @@ if (Cloud.cloud.code && hasSave) lastPushed = null;
 renderCloudButton();
 checkCloudOnStart();
 let startSummary = catchUp();
+// Build the sea grid and the routes from here to each charted port while the intro is read.
+setTimeout(() => {
+  for (const p of PORTS) if (S.discovered[p.id] && p.id !== S.ship.docked) findPath(S.ship.lon, S.ship.lat, p.lon, p.lat);
+}, 300);
 centerOn(-13, 29, 0.85);
 setSpeed(1);
 startIntro(hasSave);

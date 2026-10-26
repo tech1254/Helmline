@@ -23,6 +23,9 @@ const MARKETS = {
   lanzarote: { k: 0.035, p: { wine: [17], cloth: [19], sugar: [18], dye: [9, 1], gold: [95], ivory: [38], pepper: [30] } },
   arguin:    { k: 0.03,  p: { wine: [22], cloth: [26], sugar: [20], dye: [16], gold: [68, 1], ivory: [34], pepper: [26] } },
   gambia:    { k: 0.03,  p: { wine: [25], cloth: [30], sugar: [22], dye: [18], gold: [78, 1], ivory: [18, 1], pepper: [12, 1] } },
+  serraleoa: { k: 0.03,  p: { wine: [24], cloth: [31], sugar: [23], dye: [19], gold: [85], ivory: [15, 1], pepper: [11, 1] } },
+  cestos:    { k: 0.035, p: { wine: [26], cloth: [32], sugar: [24], dye: [20], gold: [90], ivory: [24], pepper: [7, 1] } },
+  mina:      { k: 0.025, p: { wine: [30], cloth: [40], sugar: [26], dye: [22], gold: [52, 1], ivory: [21, 1], pepper: [16] } },
 };
 
 const GOLD_K = 1.6; // gold is scarce: each pouch moves the price more

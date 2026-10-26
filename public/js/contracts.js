@@ -42,6 +42,9 @@ export const PATRONS = {
   lanzarote: 'The governor of Lanzarote',
   arguin: 'The factor at Arguin',
   gambia: 'The Mandinka traders',
+  serraleoa: 'The Temne chiefs',
+  cestos: 'The headmen of the Grain Coast',
+  mina: 'The Akan gold traders',
 };
 
 const portName = (id) => PORTS.find((p) => p.id === id).name;

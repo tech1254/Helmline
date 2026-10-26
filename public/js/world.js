@@ -1,7 +1,9 @@
 // Geography, ports and winds for Prototype 0: the eastern Atlantic, 1450s.
 // Coordinates are [longitude, latitude] in degrees. Coastlines are hand-simplified.
 
-export const BOUNDS = { west: -32, east: 0, south: 8, north: 44 };
+export const BOUNDS = { west: -32, east: 4, south: 2, north: 44 };
+// The chart before the Gulf of Guinea was added, for reading older saves.
+export const OLD_BOUNDS = { west: -32, east: 0, south: 8, north: 44 };
 export const D2R = Math.PI / 180;
 // Equirectangular projection centred near the Canaries.
 export const COS0 = Math.cos(28 * D2R);
@@ -27,7 +29,7 @@ const IBERIA = [
   [-9.4, 39.36], [-9.07, 39.6], [-8.9, 40.15], [-8.75, 40.7], [-8.68, 41.2], [-8.85, 41.7],
   [-8.9, 42.1], [-9.05, 42.5], [-9.3, 42.9], [-9.2, 43.2], [-8.3, 43.6], [-7.7, 43.75],
   [-6.0, 43.6], [-4.0, 43.45], [-1.8, 43.4], [-1.5, 43.5], [-1.3, 44.5], [1.0, 44.5],
-  [1.0, 41.0], [0.0, 40.0], [-0.3, 39.4], [0.1, 38.8], [-0.5, 38.3], [-0.8, 37.6],
+  [4.5, 44.5], [4.5, 43.45], [3.6, 43.5], [3.0, 43.1], [3.2, 42.3], [3.2, 41.9], [2.2, 41.35], [1.0, 41.05], [0.0, 40.0], [-0.3, 39.4], [0.1, 38.8], [-0.5, 38.3], [-0.8, 37.6],
   [-1.6, 37.3], [-2.1, 36.73], [-2.9, 36.75], [-4.4, 36.7], [-5.0, 36.45],
 ];
 
@@ -40,7 +42,12 @@ const AFRICA = [
   [-16.05, 18.0], [-16.2, 17.0], [-16.5, 16.0], [-16.8, 15.3], [-17.18, 14.9], [-17.53, 14.75],
   [-17.1, 14.55], [-16.9, 14.1], [-16.8, 13.6], [-16.65, 13.45], [-16.75, 13.0], [-16.75, 12.4],
   [-16.5, 12.1], [-16.0, 11.8], [-15.4, 11.3], [-15.0, 10.8], [-14.6, 10.2], [-14.0, 9.7],
-  [-13.3, 9.0], [-13.1, 8.3], [-12.9, 7.9], [-12.5, 7.0], [2.0, 7.0], [2.0, 36.5],
+  [-13.3, 9.0], [-13.1, 8.3], [-12.9, 7.9],
+  // Sierra Leone to the Gulf of Guinea
+  [-12.5, 7.45], [-11.9, 7.0], [-11.4, 6.75], [-10.8, 6.35], [-10.3, 6.0], [-9.6, 5.5], [-9.0, 5.05],
+  [-8.3, 4.6], [-7.7, 4.37], [-7.0, 4.4], [-6.0, 4.65], [-5.0, 5.1], [-4.0, 5.25], [-3.2, 5.1],
+  [-2.5, 4.9], [-2.0, 4.75], [-1.4, 5.05], [-0.5, 5.4], [0.5, 5.75], [1.2, 6.1], [2.3, 6.35],
+  [3.4, 6.4], [4.5, 6.2], [4.5, 36.8], [2.0, 36.5],
   [0.5, 35.9], [-1.2, 35.3], [-2.2, 35.1], [-3.5, 35.2], [-4.6, 35.2],
 ];
 
@@ -73,6 +80,9 @@ export const LANDS = [
   { group: 'azores', pts: islet(-28.3, 38.47, 0.23, 0.07, -0.1, 24) },
   { group: 'azores', pts: islet(-25.5, 37.78, 0.4, 0.08, 0.05, 25) },
   { group: 'azores', pts: islet(-25.1, 36.97, 0.08, 0.06, 0, 26) },
+  { group: 'iberia', pts: islet(2.95, 39.6, 0.4, 0.22, 0.2, 27) },
+  { group: 'iberia', pts: islet(4.1, 39.95, 0.2, 0.08, 0.2, 28) },
+  { group: 'iberia', pts: islet(1.42, 38.98, 0.16, 0.12, 0.6, 29) },
 ];
 
 export const LAND_GROUPS = {
@@ -126,6 +136,12 @@ export const PORTS = [
     blurb: 'An island trading post in a shallow bay. Saharan gold reaches the coast here.' },
   { id: 'gambia', name: 'Gambia River', lon: -16.85, lat: 13.45, known: false,
     blurb: 'Mandinka traders at the river mouth deal in ivory, pepper and gold.' },
+  { id: 'serraleoa', name: 'Serra Leoa', lon: -13.45, lat: 8.55, known: false,
+    blurb: 'A great harbour under the Lion Mountains. The Temne trade ivory and pepper for cloth.' },
+  { id: 'cestos', name: 'Rio dos Cestos', lon: -9.75, lat: 5.3, known: false,
+    blurb: 'The Grain Coast, named for the melegueta pepper its people sell cheaply by the basket.' },
+  { id: 'mina', name: 'Costa da Mina', lon: -1.4, lat: 4.85, known: false,
+    blurb: 'The Gold Coast. Akan traders bring gold dust down from the forests and pay richly for cloth.' },
 ];
 
 // Nautical miles between two points (flat-earth approximation, fine at this scale).
@@ -158,14 +174,17 @@ const smooth = (e0, e1, x) => {
 // north-east trades south of ~30°N, Portuguese northerlies along the Iberian coast,
 // westerlies out at sea north of the Azores latitude. Returns where the wind blows FROM.
 export function windAt(lon, lat, day) {
-  const trade = smooth(33, 28, lat); // 1 in the trades
+  const north = 1 - smooth(33, 28, lat); // 1 north of the trades
+  const guinea = smooth(9.5, 5, lat); // 1 in the Gulf of Guinea
+  const trade = (1 - north) * (1 - guinea); // 1 in the trades
   const coastal = smooth(-16, -11, lon); // 1 near Iberia/Morocco
   const tradeFrom = 50 - 32 * smooth(-24, -15, lon); // NNE near Africa, NE offshore
   const zones = [
     { from: tradeFrom, w: trade, s: 1.0 },
-    { from: 352, w: (1 - trade) * coastal, s: 0.85 },
-    { from: 278, w: (1 - trade) * (1 - coastal) * smooth(33, 38, lat), s: 1.0 },
-    { from: 15, w: (1 - trade) * (1 - coastal) * (1 - smooth(33, 38, lat)), s: 0.55 }, // lighter northerlies
+    { from: 352, w: north * coastal, s: 0.85 },
+    { from: 278, w: north * (1 - coastal) * smooth(33, 38, lat), s: 1.0 },
+    { from: 15, w: north * (1 - coastal) * (1 - smooth(33, 38, lat)), s: 0.55 }, // lighter northerlies
+    { from: 220, w: guinea, s: 0.5 }, // Gulf of Guinea: light south-westerlies, calms offshore
   ];
   let vx = 0, vy = 0;
   for (const z of zones) {
@@ -259,14 +278,30 @@ function nearestSeaCell(lon, lat) {
   return null;
 }
 
+// Routes between the same two points never change, so remember recent ones.
+const pathCache = new Map();
+const PATH_CACHE_MAX = 300;
+
 // Returns a list of [lon, lat] waypoints from a to b (excluding a), or null if no route.
 export function findPath(aLon, aLat, bLon, bLat) {
+  const key = `${aLon.toFixed(3)},${aLat.toFixed(3)}>${bLon.toFixed(3)},${bLat.toFixed(3)}`;
+  if (pathCache.has(key)) {
+    const hit = pathCache.get(key);
+    return hit && hit.map((pt) => [pt[0], pt[1]]);
+  }
+  const route = computePath(aLon, aLat, bLon, bLat);
+  if (pathCache.size >= PATH_CACHE_MAX) pathCache.delete(pathCache.keys().next().value);
+  pathCache.set(key, route);
+  return route && route.map((pt) => [pt[0], pt[1]]);
+}
+
+function computePath(aLon, aLat, bLon, bLat) {
   if (clearWater(aLon, aLat, bLon, bLat)) return [[bLon, bLat]];
   const g = getNavGrid();
   const start = nearestSeaCell(aLon, aLat), goal = nearestSeaCell(bLon, bLat);
   if (start === null || goal === null) return null;
   const gi = goal % NW, gj = Math.floor(goal / NW);
-  const cost = new Float32Array(NW * NH).fill(Infinity);
+  const cost = new Float64Array(NW * NH).fill(Infinity) // double precision: float rounding on long routes can loop the path;
   const from = new Int32Array(NW * NH).fill(-1);
   const heap = [];
   const push = (n, f) => {
@@ -317,16 +352,24 @@ export function findPath(aLon, aLat, bLon, bLat) {
   for (let n = goal; n !== -1; n = from[n]) cells.push(cellCenter(n % NW, Math.floor(n / NW)));
   cells.reverse();
   const pts = [[aLon, aLat], ...cells, [bLon, bLat]];
-  // String-pull: skip ahead to the farthest point in clear water.
+  // String-pull: from each point, reach as far along the path as clear water allows.
+  // Grow the reach in doubling steps, then narrow it down: every segment kept is checked clear.
+  const clear = (a, b) => clearWater(pts[a][0], pts[a][1], pts[b][0], pts[b][1]);
+  const last = pts.length - 1;
   const out = [];
   let k = 0;
-  while (k < pts.length - 1) {
-    let far = k + 1;
-    for (let m = pts.length - 1; m > k + 1; m--) {
-      if (clearWater(pts[k][0], pts[k][1], pts[m][0], pts[m][1])) { far = m; break; }
+  while (k < last) {
+    let lo = k + 1, hi = null, step = 1;
+    while (lo < last) {
+      const m = Math.min(last, lo + step);
+      if (clear(k, m)) { lo = m; step *= 2; } else { hi = m; break; }
     }
-    out.push(pts[far]);
-    k = far;
+    while (hi !== null && hi - lo > 1) {
+      const mid = (lo + hi) >> 1;
+      if (clear(k, mid)) lo = mid; else hi = mid;
+    }
+    out.push(pts[lo]);
+    k = lo;
   }
   return out;
 }
