@@ -154,6 +154,10 @@ th small, td small { display: block; font-size: 12px; font-weight: 400; color: v
 .code-row input { flex: 1; min-width: 0; font: inherit; font-family: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace; font-size: 17px; letter-spacing: 0.06em; text-transform: uppercase; padding: 8px 10px; border: 1px solid var(--ink-2); border-radius: 4px; background: #fffaf0; color: var(--ink); min-height: 44px; }
 button.link { border: 0; background: none; padding: 0; color: var(--red); text-decoration: underline; font-size: inherit; }
 
+.row.choice { justify-content: stretch; }
+.row.choice button { flex: 1; min-height: 44px; }
+.banner button { margin-left: 8px; }
+
 /* Destination list */
 .dests { list-style: none; padding: 0; margin: 4px 0 0; display: flex; flex-direction: column; gap: 6px; }
 .dests .dest { width: 100%; min-height: 48px; display: flex; flex-direction: column; align-items: flex-start; gap: 2px; text-align: left; padding: 8px 12px; }

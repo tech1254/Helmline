@@ -7,6 +7,7 @@ import * as Contracts from './contracts.js';
 import * as Events from './events.js';
 import * as Fleet from './fleet.js';
 import * as Cloud from './cloud.js';
+import * as Pirates from './pirates.js';
 
 // ---- Tunables ---------------------------------------------------------------
 const SAVE_KEY = 'helmline-proto0-v1';
@@ -47,6 +48,7 @@ function freshState() {
     voyages: 0,
     rot: {}, // spoilage building up in the hold, per good
     tips: {},
+    hull: 100,
   };
 }
 
@@ -314,6 +316,7 @@ function applySaveData(d) {
     Fleet.ensureFleet(S);
     S.rot = S.rot || {};
     S.tips = S.tips || {};
+    Pirates.ensurePirates(S);
     syncMarket();
     return true;
   } catch (e) {
@@ -332,6 +335,7 @@ function newGame() {
   Contracts.ensureContracts(S);
   Events.ensureEvents(S);
   Fleet.ensureFleet(S);
+  Pirates.ensurePirates(S);
   syncMarket();
   observe('lisbon');
   centerOn(-13, 29, 0.85);
@@ -627,6 +631,17 @@ function render() {
     ctx.restore();
   }
 
+  // corsair waters, marked as a period chart would
+  if (isRevealed(-9.5, 33.5)) {
+    ctx.save();
+    const [cx, cy] = toScreen(-11.6, 33.2);
+    ctx.font = `italic ${Math.round(Math.max(12, Math.min(20, cam.scale * 0.45)))}px "IM Fell English", Georgia, serif`;
+    ctx.fillStyle = 'rgba(162, 55, 43, 0.75)';
+    ctx.textAlign = 'center';
+    ctx.fillText('Corsairs of Barbary', cx, cy);
+    ctx.restore();
+  }
+
   // a course being considered in the confirmation dialog
   if (modal?.preview?.length) {
     ctx.save();
@@ -694,7 +709,7 @@ function shipWind() {
   const w = windAt(S.ship.lon, S.ship.lat, S.day);
   const off = angleDiff(S.ship.heading, w.from);
   const f = sailFactor(off) * (0.45 + 0.55 * w.strength);
-  return { w, off, f, knots: SHIP.knots * f };
+  return { w, off, f, knots: SHIP.knots * Pirates.hullFactor(S) * f };
 }
 
 function update(dtSec) {
@@ -707,7 +722,7 @@ function update(dtSec) {
     const [tl, ta] = sh.route[0];
     sh.heading = bearing(sh.lon, sh.lat, tl, ta);
     const { f } = shipWind();
-    const nm = SHIP.knots * 24 * f * dd;
+    const nm = SHIP.knots * Pirates.hullFactor(S) * 24 * f * dd;
     const rem = distNm(sh.lon, sh.lat, tl, ta);
     advanceTime(dd, true);
     if (nm >= rem) {
@@ -750,7 +765,13 @@ function advanceTime(dd, atSea) {
   market.tick(dd);
   report(Events.tick(S, dd));
   syncMarket();
-  if (atSea) spoil(dd);
+  if (atSea) {
+    spoil(dd);
+    if (!modal && !pendingEncounter) {
+      const enc = Pirates.roll(S, dd, S.ship.lon, S.ship.lat);
+      if (enc) pendingEncounter = enc;
+    }
+  }
   report(Fleet.tick(S, market, dd));
   report(Contracts.checkDeadlines(S));
 }
@@ -790,6 +811,47 @@ function flushRot() {
     log(`${n} ${n === 1 ? g.one : g.unit} of ${g.name.toLowerCase()} spoiled at sea.`);
   }
   rotPending = {};
+}
+
+// ---- Corsairs ----------------------------------------------------------------------
+let pendingEncounter = null;
+
+function openEncounter(enc) {
+  const { knots } = shipWind();
+  const o = Pirates.odds(S, enc, knots);
+  const pct = (x) => `${Math.round(x * 100)}%`;
+  const t = Pirates.tribute(S, enc);
+  confirmDialog({
+    title: enc.big ? 'A great corsair galley!' : 'Corsairs!',
+    body: `<p>${enc.big ? 'A big Barbary galley, packed with fighting men,' : 'A Barbary galley, oars flashing,'} is closing on you off ${enc.where}.</p>
+      <dl class="facts">
+        <dt>Run for it</dt><dd>${pct(o.run)} chance to escape at ${knots.toFixed(1)} kn</dd>
+        <dt>Fight</dt><dd>${pct(o.fight)} chance to win${S.hull < 100 ? `, hull at ${S.hull}%` : ''}</dd>
+        <dt>Pay tribute</dt><dd>${t} cz, and they let you pass</dd>
+      </dl>
+      <p class="fine">Fighting makes your name feared, and corsairs seek you out. Avoiding fights makes the seas around you calmer.</p>
+      <div class="row choice">
+        <button data-modal-action="pay">Pay ${t} cz</button>
+        <button data-modal-action="fight">Fight</button>
+        <button class="primary" data-modal-action="run">Run</button>
+      </div>`,
+    ok: null,
+    cancel: false,
+    kind: 'encounter',
+    actions: {
+      run: () => settleEncounter(enc, 'run', knots),
+      fight: () => settleEncounter(enc, 'fight', knots),
+      pay: () => settleEncounter(enc, 'pay', knots),
+    },
+  });
+}
+
+function settleEncounter(enc, choice, knots) {
+  const r = Pirates.resolve(S, enc, choice, knots);
+  for (const line of r.lines) toast(line, r.kind);
+  log(r.lines[r.lines.length - 1]);
+  renderPanel();
+  save();
 }
 
 function waitInPort(days) {
@@ -841,7 +903,7 @@ function estimateVoyage(route) {
       const b = bearing(lon, lat, tl, ta);
       const w = windAt(lon, lat, day);
       const f = sailFactor(angleDiff(b, w.from)) * (0.45 + 0.55 * w.strength);
-      const perDay = SHIP.knots * 24 * f;
+      const perDay = SHIP.knots * Pirates.hullFactor(S) * 24 * f;
       const step = Math.min(perDay * 0.1, rem);
       lat += (step * Math.cos(b * D2R)) / 60;
       lon += (step * Math.sin(b * D2R)) / (60 * Math.cos(lat * D2R));
@@ -1054,7 +1116,7 @@ function chartClick(sx, sy, append) {
 window.addEventListener('keydown', (e) => {
   if (modal) {
     if (e.key === 'Escape') closeModal(false);
-    if (e.key === 'Enter') { e.preventDefault(); closeModal(true); }
+    if (e.key === 'Enter' && !modal.locked) { e.preventDefault(); closeModal(true); }
     return;
   }
   if (e.target.closest('input, button') && e.key !== 'Escape') return;
@@ -1112,7 +1174,7 @@ function renderHud() {
       let nm = 0, lon = sh.lon, lat = sh.lat;
       for (const [x, y] of sh.route) { nm += distNm(lon, lat, x, y); lon = x; lat = y; }
       const dest = sh.dest?.port ? PORTS.find((p) => p.id === sh.dest.port).name : 'the mark';
-      status = `${windTxt} · heading ${compassPoint(sh.heading)} · ${pointOfSail(off)} · ${knots.toFixed(1)} kn · ${Math.round(nm)} nm to ${dest}`;
+      status = `${windTxt} · heading ${compassPoint(sh.heading)} · ${pointOfSail(off)} · ${knots.toFixed(1)} kn${S.hull < 100 ? ` · hull ${S.hull}%` : ''} · ${Math.round(nm)} nm to ${dest}`;
     } else {
       status = `${windTxt} · hove to · click the chart to set a course`;
     }
@@ -1187,6 +1249,8 @@ function renderPort(el) {
     ${tabs('port')}
     <header><h2>${p.name}</h2><button class="close" data-close aria-label="Close">×</button></header>
     <p class="blurb">${p.blurb}</p>
+    ${S.hull < 100 ? `<p class="banner ${S.hull < 50 ? 'warn' : ''}"><b>Hull ${S.hull}%</b> · ${S.hull < 50 ? 'badly damaged, ' : ''}sailing at ${Math.round(Pirates.hullFactor(S) * 100)}% speed.
+      ${Pirates.REPAIR_PORTS.includes(pid) ? `<button data-repair ${S.purse < Pirates.repairCost(S) ? 'disabled' : ''}>Repair for ${Pirates.repairCost(S)} cz</button>` : 'The shipwrights of Lisbon, Lagos and Funchal can repair her.'}</p>` : ''}
     ${shut ? `<p class="banner warn"><b>Closed to trade:</b> ${Events.template(shut).title.toLowerCase()}. Expected to reopen around ${fmtDate(shut.end)}.</p>` : ''}
     <table class="market">
       <thead><tr><th>Good</th><th class="num">Buy</th><th class="num">Sell</th><th class="num">Hold</th><th></th></tr></thead>
@@ -1362,6 +1426,7 @@ function renderHelp(el) {
       <li><b>Prices move</b> as you buy and sell, and recover over weeks. Contracts and events move them too.</li>
       <li><b>The ledger</b> remembers only the prices you have seen, and they go stale. News of events reaches you in port, late for distant places.</li>
       <li><b>Perishables</b> such as wine, dye and pepper slowly spoil at sea, faster in the tropics. Gold and ivory keep.</li>
+      <li><b>Corsairs</b> prowl off Morocco, the Algarve and the Canaries. When challenged, run, fight or pay. Fighting makes your name feared and draws more of them; avoiding fights calms the seas. Battle damage slows you until a shipwright in Lisbon, Lagos or Funchal repairs it.</li>
       <li><b>Charts:</b> the crown pays ${CHART_REWARD} cz for each new port or island group, on your return to Lisbon.</li>
     </ul>
     <h3>Growing</h3>
@@ -1484,6 +1549,8 @@ function renderLedger(el) {
     <h3>The harbourmaster suggests</h3>
     <ol class="sugg">${sugHtml}</ol>
     <p class="foot">Estimates assume a straight course and calm trading. Winds will change the sailing time.</p>
+    <h3>Your name at sea</h3>
+    <p class="muted">${Pirates.reputationText(S)}</p>
     <h3>Log</h3>
     <ul class="log">${(S.log || []).slice(-6).reverse().map((l) => `<li><span>${fmtDate(l.day)}</span> ${l.text}</li>`).join('') || '<li class="muted">Nothing yet.</li>'}</ul>
     <div class="row"><button data-reset class="danger">Start a new game</button></div>`;
@@ -1571,6 +1638,10 @@ $('panel').addEventListener('click', (e) => {
       return;
     }
     doSell();
+  } else if (t.hasAttribute('data-repair') && pid) {
+    const cost = Pirates.repair(S);
+    toast(`The shipwrights make her sound again for ${cost} cz.`, 'port');
+    log(`Repaired the hull for ${cost} cz.`);
   } else if (t.hasAttribute('data-cloud-create')) {
     startCloudSave();
     return;
@@ -1706,17 +1777,20 @@ $('btn-port').addEventListener('click', () => {
 
 // ---- Confirmation dialog ----------------------------------------------------
 let modal = null;
-function confirmDialog({ title, body, ok = 'Confirm', onOk, kind = 'trade', preview = null, actions = {} }) {
-  modal = { onOk, kind, preview, actions };
+function confirmDialog({ title, body, ok = 'Confirm', onOk, kind = 'trade', preview = null, actions = {}, cancel = true }) {
+  modal = { onOk, kind, preview, actions, locked: !cancel };
+  $('modal-ok').hidden = ok === null;
+  $('modal-cancel').hidden = !cancel;
   $('modal').classList.toggle('aside', kind === 'voyage');
   $('modal-title').textContent = title;
   $('modal-body').innerHTML = body;
-  $('modal-ok').textContent = ok;
+  if (ok !== null) $('modal-ok').textContent = ok;
   $('modal').hidden = false;
-  $('modal-ok').focus();
+  (ok !== null ? $('modal-ok') : $('modal-body').querySelector('button.primary'))?.focus();
 }
-function closeModal(accept) {
+function closeModal(accept, viaAction = false) {
   if (!modal) return;
+  if (modal.locked && !viaAction) return; // a choice must be made
   const m = modal;
   modal = null;
   $('modal').hidden = true;
@@ -1730,7 +1804,7 @@ $('modal-body').addEventListener('click', (e) => {
   const b = e.target.closest('[data-modal-action]');
   if (!b || !modal) return;
   const fn = modal.actions?.[b.dataset.modalAction];
-  closeModal(false);
+  closeModal(false, true);
   fn?.();
 });
 
@@ -1781,6 +1855,7 @@ function frame(t) {
   const dt = Math.min(0.1, (t - last) / 1000);
   last = t;
   if (introDone) update(dt);
+  if (pendingEncounter && !modal && introDone) { const e = pendingEncounter; pendingEncounter = null; openEncounter(e); }
   saveClock += dt;
   if (saveClock > 5 && introDone) { saveClock = 0; save(); }
   cloudClock += dt;
@@ -1811,5 +1886,6 @@ requestAnimationFrame(frame);
 // Exposed for debugging in the console.
 window.helmline = {
   get state() { return S; }, market: () => market, setCourse, setSpeed, screenOf: (lon, lat) => toScreen(lon, lat),
+  encounter: (big = false) => { pendingEncounter = { where: 'the Barbary coast', big, strength: big ? 1.35 : 1 }; },
   advance: (days) => { for (let i = 0; i < days * 4; i++) advanceTime(0.25, !S.ship.docked); renderPanel(); },
 };

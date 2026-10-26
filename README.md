@@ -16,10 +16,11 @@ An age-of-sail exploration and trade game. This is **Prototype 0**: the West Afr
 - **Market events:** harvests, plagues, blockades and gluts shift prices or close ports; news reaches you in port, late for distant places.
 - **Spoilage:** wine, dye, pepper, sugar and cloth slowly spoil at sea, faster in the tropics.
 - **A second ship:** buy a caravel, hire a captain with navigation and trade skills, and give him a two-port route he runs on his own.
+- **Corsairs of Barbary:** encounters off Morocco, the Algarve and the Canaries; run, fight or pay tribute. Notoriety draws more corsairs, caution fewer. Battle damage slows the ship until repaired in Lisbon, Lagos or Funchal.
 - **Wait in port**, zoom buttons, Captain's notes for the first voyages, and a How to play screen.
 - Saves to the browser, and optionally to the cloud with a save code to play across devices.
 
-Not yet included: combat, navigation drift, more than one hired ship, dynasty.
+Not yet included: ship-to-ship combat beyond auto-resolve, navigation drift, more than one hired ship, dynasty.
 
 ## Layout
 
