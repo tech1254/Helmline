@@ -13,5 +13,29 @@ async def main():
         await pg.screenshot(path=sys.argv[1]+'/23-phone.png')
         await pg.tap('#btn-help'); await pg.wait_for_timeout(200)
         await pg.screenshot(path=sys.argv[1]+'/24-phone-help.png')
+        await pg.tap('[data-close]'); await pg.wait_for_timeout(200)
+        # A long time-away summary on a small phone: it must fit, scroll, and close.
+        small = await b.new_context(viewport={'width': 360, 'height': 640}, device_scale_factor=2, has_touch=True, is_mobile=True)
+        q = await small.new_page(); q.on('pageerror', lambda e: errs.append(str(e)))
+        await q.goto(URL); await q.wait_for_selector('#intro', state='visible'); await q.tap('#intro-new'); await q.wait_for_timeout(300)
+        await q.evaluate("""() => { const h = window.helmline, s = h.state; s.pirates.cooldown = 1e9; s.purse = 9000; s.contracts.unlocked = true; s.contracts.standing = 25;
+            s.fleet.ships.push({ id: 99, name: 'Santa Clara', captain: { id: 99, name: 'Nuno Gomes', nav: 4, trade: 3, wage: 3, loyalty: 100 }, at: 'lisbon', status: 'idle', route: null, leg: null, hold: {}, profit: 0, trips: 0, last: null }); }""")
+        await q.evaluate("""() => { const m = []; for (let i = 0; i < 14; i++) m.push({ html: `News: item ${i}. A long line of news from a distant port, to make the summary run on.`, kind: '' });
+            window.__long = m; }""")
+        await q.evaluate("() => window.helmline.away(600)")
+        await q.wait_for_timeout(300)
+        # pad the summary body to well beyond the screen
+        await q.evaluate("""() => { const b = document.getElementById('modal-body'); b.insertAdjacentHTML('beforeend', '<ul class="help">' + window.__long.map(m => `<li>${m.html}</li>`).join('') + '</ul>'); }""")
+        await q.wait_for_timeout(100)
+        geo = await q.evaluate("""() => { const c = document.querySelector('#modal .card').getBoundingClientRect(), ok = document.getElementById('modal-ok').getBoundingClientRect(), body = document.getElementById('modal-body');
+            return { cardBottom: Math.round(c.bottom), screen: innerHeight, okBottom: Math.round(ok.bottom), scrolls: body.scrollHeight > body.clientHeight, visible: !document.getElementById('modal').hidden }; }""")
+        print('long summary on a 640 px phone:', geo)
+        if not geo['visible'] or geo['cardBottom'] > geo['screen'] or geo['okBottom'] > geo['screen'] or not geo['scrolls']:
+            errs.append(f'summary does not fit and scroll: {geo}')
+        await q.screenshot(path=sys.argv[1]+'/45-phone-summary.png')
+        await q.tap('#modal-ok'); await q.wait_for_timeout(200)
+        closed = await q.evaluate("() => document.getElementById('modal').hidden")
+        print('Carry on tapped, closed:', closed)
+        if not closed: errs.append('could not close the summary on a phone')
         print('ERRORS', errs); await b.close()
 asyncio.run(main())
