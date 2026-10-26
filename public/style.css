@@ -68,7 +68,7 @@ button.danger { color: var(--red); border-color: var(--red); }
   background-image: linear-gradient(rgba(255,255,255,0.25), rgba(0,0,0,0.02));
 }
 #panel.wide { width: min(720px, calc(100vw - 20px)); }
-.ledger th, .ledger td { padding: 5px 5px; font-size: 15px; }
+.pricebook th, .pricebook td { padding: 5px 5px; font-size: 15px; }
 #panel header { display: flex; justify-content: space-between; align-items: baseline; }
 #panel h2 { font-family: var(--display); font-weight: 400; font-size: 28px; margin: 0; }
 #panel h3 { font-family: var(--display); font-weight: 400; font-size: 19px; margin: 16px 0 6px; }
@@ -86,11 +86,11 @@ th small, td small { display: block; font-size: 12px; font-weight: 400; color: v
 .market td.acts { text-align: right; white-space: nowrap; }
 .market td.acts button { padding: 3px 7px; font-size: 13px; margin-left: 2px; }
 .scroll { overflow-x: auto; }
-.ledger td.hi { color: var(--gold); font-weight: 600; }
-.ledger td.lo { color: var(--good); }
-.ledger .stale { opacity: 0.45; }
-.ledger thead th { white-space: normal; max-width: 92px; line-height: 1.15; vertical-align: bottom; }
-.ledger thead th small { white-space: normal; }
+.pricebook td.hi { color: var(--gold); font-weight: 600; }
+.pricebook td.lo { color: var(--good); }
+.pricebook .stale { opacity: 0.45; }
+.pricebook thead th { white-space: normal; max-width: 92px; line-height: 1.15; vertical-align: bottom; }
+.pricebook thead th small { white-space: normal; }
 .sugg { padding-left: 20px; margin: 0; }
 .sugg li { margin-bottom: 6px; line-height: 1.35; }
 .log { list-style: none; padding: 0; margin: 0; font-size: 14px; }
@@ -234,4 +234,22 @@ button.mini { font-size: 13px; padding: 3px 8px; justify-self: start; }
   .market td.acts button { padding: 3px 5px; font-size: 12px; margin-left: 1px; }
   .market td.acts button[data-n="1"][data-buy] { display: none; }
   #panel h2 { font-size: 24px; }
+}
+
+/* Ledger */
+.accounts { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+.accounts th, .accounts td { padding: 5px 6px; font-size: 15px; border-bottom: 1px solid rgba(107, 82, 54, 0.18); vertical-align: top; text-align: left; }
+.accounts th.num, .accounts td.num { text-align: right; white-space: nowrap; }
+.accounts tfoot th, .accounts tfoot td { font-weight: 600; border-top: 1px solid var(--ink-2); border-bottom: 0; }
+.accounts .in { color: var(--good); }
+.accounts .out, .facts dd.out { color: var(--red); }
+.accounts small { display: block; color: var(--muted); font-size: 13px; }
+.accounts .when { white-space: nowrap; width: 1%; }
+.accounts .who { font-weight: 600; }
+.who-filter { display: flex; align-items: center; gap: 8px; margin: 2px 0 8px; font-size: 14px; color: var(--ink-2); }
+.who-filter select { font: inherit; font-size: 14px; color: var(--ink); background: var(--paper); border: 1px solid var(--ink-2); border-radius: 4px; padding: 4px 6px; min-height: 34px; }
+.accounts thead th { white-space: normal; font-size: 12px; line-height: 1.15; vertical-align: bottom; }
+@media (max-width: 520px) {
+  .accounts th, .accounts td { padding: 4px 3px; font-size: 14px; }
+  .accounts .when { white-space: normal; width: 74px; }
 }

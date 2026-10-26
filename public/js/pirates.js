@@ -1,3 +1,4 @@
+import * as Accounts from './accounts.js';
 // Barbary corsairs: the first danger at sea.
 // Corsair galleys from the Moroccan coast raided shipping and the Algarve in the 1450s.
 // In their waters the captain may be challenged: run, fight or pay tribute.
@@ -77,6 +78,7 @@ export function resolve(S, enc, choice, knots) {
   if (choice === 'pay') {
     const t = tribute(S, enc);
     S.purse -= t;
+    Accounts.record(S, { kind: 'corsairs', amount: -t, port: null, text: `Tribute to corsairs off ${enc.where}` });
     P.caution += 3;
     P.paid++;
     out.lines.push(`You pay the corsairs ${t} cz to go in peace.`);
@@ -105,6 +107,7 @@ function fight(S, enc, p) {
     const loot = Math.round((80 + Math.random() * 170) * enc.strength);
     const dmg = Math.round(5 + Math.random() * 12);
     S.purse += loot;
+    Accounts.record(S, { kind: 'corsairs', amount: loot, port: null, text: `Taken from a corsair galley off ${enc.where}` });
     S.hull = Math.max(10, S.hull - dmg);
     P.notoriety += 4;
     P.won++;
@@ -125,6 +128,7 @@ function fight(S, enc, p) {
     const cash = Math.round(Math.min(300, Math.max(0, S.purse) * 0.2));
     const dmg = Math.round(20 + Math.random() * 15);
     S.purse -= cash;
+    Accounts.record(S, { kind: 'corsairs', amount: -cash, port: null, text: `Seized by corsairs off ${enc.where}` });
     S.hull = Math.max(10, S.hull - dmg);
     P.notoriety += 2;
     P.lost++;
@@ -141,6 +145,7 @@ export function repairCost(S) {
 export function repair(S) {
   const cost = repairCost(S);
   S.purse -= cost;
+  Accounts.record(S, { kind: 'repairs', amount: -cost, text: 'Hull repaired' });
   S.hull = 100;
   return cost;
 }

@@ -7,6 +7,7 @@ import * as Contracts from './contracts.js';
 import * as Events from './events.js';
 import * as Fleet from './fleet.js';
 import * as Cloud from './cloud.js';
+import * as Accounts from './accounts.js';
 import * as Pirates from './pirates.js';
 
 // ---- Tunables ---------------------------------------------------------------
@@ -344,6 +345,7 @@ function applySaveData(d) {
     S.rot = S.rot || {};
     S.tips = S.tips || {};
     Pirates.ensurePirates(S);
+    Accounts.ensureAccounts(S);
     syncMarket();
     return true;
   } catch (e) {
@@ -363,6 +365,7 @@ function newGame() {
   Events.ensureEvents(S);
   Fleet.ensureFleet(S);
   Pirates.ensurePirates(S);
+  Accounts.ensureAccounts(S);
   syncMarket();
   observe('lisbon');
   centerOn(-13, 29, 0.85);
@@ -884,7 +887,10 @@ function showSummary(sum) {
 // Everything that happens as days pass, at sea or waiting in port.
 function advanceTime(dd, atSea, away = false) {
   S.day += dd;
-  if (atSea) S.purse -= SHIP.upkeep * dd; // the crew is paid for the voyage; in port they are paid off
+  if (atSea) { // the crew is paid for the voyage; in port they are paid off
+    S.purse -= SHIP.upkeep * dd;
+    Accounts.accrueWages(S, SHIP.upkeep * dd, S.ship.lastPort);
+  }
   market.tick(dd);
   report(Events.tick(S, dd));
   syncMarket();
@@ -1084,10 +1090,12 @@ function dock(portId) {
   sh.lon = p.lon; sh.lat = p.lat;
   S.voyages++;
   observe(portId);
+  Accounts.closeVoyage(S, portId);
   let msg = `Dropped anchor at <b>${p.name}</b>.`;
   if (portId === 'lisbon' && S.unpaidCharts.length) {
     const reward = S.unpaidCharts.length * CHART_REWARD;
     S.purse += reward;
+    Accounts.record(S, { kind: 'charts', amount: reward, text: `Charts of ${S.unpaidCharts.join(', ')}` });
     msg = `The crown buys your charts of ${S.unpaidCharts.join(', ')} for <b>${reward} cz</b>.`;
     log(`Sold charts to the crown for ${reward} cz.`);
     S.unpaidCharts = [];
@@ -1096,6 +1104,13 @@ function dock(portId) {
   flushRot();
   report(Contracts.onDock(S, portId));
   report(Events.hearNews(S, portId));
+  const here = S.fleet.ships.filter((x) => x.at === portId && x.status !== 'sailing');
+  const heard = Accounts.reveal(S, portId, here);
+  if (heard) {
+    const net = Math.round(heard.net);
+    toast(`The factor in ${p.name} has accounts from the <b>${heard.ships.join(', ')}</b>: ${heard.count} ${heard.count === 1 ? 'entry' : 'entries'}, ${net >= 0 ? '+' : ''}${net.toLocaleString()} cz, now in your ledger.`, 'port');
+    log(`Accounts from ${heard.ships.join(', ')} received in ${p.name} (${net >= 0 ? '+' : ''}${net} cz).`);
+  }
   const shut = Events.closure(S, portId);
   if (shut) toast(`<b>${p.name} is closed:</b> ${Events.template(shut).title.toLowerCase()}. You may anchor, but not trade.`, '');
   checkMilestones();
@@ -1106,6 +1121,7 @@ function dock(portId) {
 }
 
 function undock() {
+  S.ship.lastPort = S.ship.docked;
   S.ship.docked = null;
   if (panelMode === 'port') panelMode = null;
   renderPanel();
@@ -1248,6 +1264,7 @@ window.addEventListener('keydown', (e) => {
   if (e.key === '1') setSpeed(1);
   if (e.key === '2') setSpeed(2);
   if (e.key === '3') setSpeed(4);
+  if (e.key === 'p' || e.key === 'P') togglePanel('prices');
   if (e.key === 'l' || e.key === 'L') togglePanel('ledger');
   if (e.key === 'w' || e.key === 'W') toggleWind();
   if (e.key === 'Escape' && panelMode && !S.ship.docked) { panelMode = null; renderPanel(); }
@@ -1255,7 +1272,7 @@ window.addEventListener('keydown', (e) => {
 
 // ---- HUD & panels -----------------------------------------------------------
 const $ = (id) => document.getElementById(id);
-let panelMode = null; // 'port' | 'ledger' | null
+let panelMode = null; // 'port' | 'prices' | 'ledger' | 'contracts' | 'fleet' | 'sail' | 'help' | 'cloud' | null
 let lastSpeed = 1;
 
 function setSpeed(v) {
@@ -1327,6 +1344,7 @@ function renderPanel() {
   $('btn-help').classList.toggle('on', panelMode === 'help');
   $('btn-cloud').classList.toggle('on', panelMode === 'cloud');
   if (panelMode === 'fleet' && !fleetOpen) panelMode = S.ship.docked ? 'port' : null;
+  $('btn-prices').classList.toggle('on', panelMode === 'prices');
   $('btn-ledger').classList.toggle('on', panelMode === 'ledger');
   $('btn-port').classList.toggle('on', panelMode === 'port');
   $('btn-sail').classList.toggle('on', panelMode === 'sail');
@@ -1335,14 +1353,15 @@ function renderPanel() {
   if (panelMode === 'contracts' && !S.contracts?.unlocked) panelMode = S.ship.docked ? 'port' : null;
   if (!panelMode) { el.hidden = true; return; }
   el.hidden = false;
-  el.classList.toggle('wide', panelMode === 'ledger');
+  el.classList.toggle('wide', panelMode === 'prices' || panelMode === 'ledger');
   if (panelMode === 'port') renderPort(el);
   else if (panelMode === 'sail') renderSail(el);
   else if (panelMode === 'contracts') renderContracts(el);
   else if (panelMode === 'fleet') renderFleet(el);
   else if (panelMode === 'help') renderHelp(el);
   else if (panelMode === 'cloud') renderCloud(el);
-  else renderLedger(el);
+  else if (panelMode === 'ledger') renderLedger(el);
+  else renderPrices(el);
 }
 
 function renderPort(el) {
@@ -1594,7 +1613,7 @@ function renderHelp(el) {
     <h3>Trading</h3>
     <ul class="help">
       <li><b>Prices move</b> as you buy and sell, and recover over weeks. Contracts and events move them too.</li>
-      <li><b>The ledger</b> remembers only the prices you have seen, and they go stale. News of events reaches you in port, late for distant places.</li>
+      <li><b>The price book</b> remembers only the prices you have seen, and they go stale. News of events reaches you in port, late for distant places.</li>
       <li><b>Perishables</b> such as wine, dye and pepper slowly spoil at sea, faster in the tropics. Gold and ivory keep.</li>
       <li><b>Corsairs</b> prowl off Morocco, the Algarve and the Canaries. When challenged, run, fight or pay. Fighting makes your name feared and draws more of them; avoiding fights calms the seas. Battle damage slows you until a shipwright in Lisbon, Lagos or Funchal repairs it.</li>
       <li><b>Charts:</b> the crown pays ${CHART_REWARD} cz for each new port or island group, on your return to Lisbon.</li>
@@ -1604,6 +1623,7 @@ function renderHelp(el) {
       <li><b>Contracts</b> open up at 500 cz. Completing them builds standing; missing deadlines costs it.</li>
       <li><b>Standing</b> brings better pay, better prices in Portuguese ports, and the right to buy a second caravel.</li>
       <li><b>Your fleet:</b> a hired captain runs a trade route for you, paid from your purse.</li>
+      <li><b>The ledger</b> accounts for every cruzado in and out. Your own dealings are entered at once. A hired captain's are entered only when you call at a port where he has traded, so until then part of your purse is not yet accounted for.</li>
       <li><b>Time away:</b> if you have hired captains and your own ship is in port, the world moves on while you are gone: at a tenth of its usual pace at first, more slowly after a few weeks, up to ${OFFLINE_MAX_DAYS} days. Contract deadlines wait for you. A night's sleep or a working day is safe; stay away longer than ${Fleet.STRAY_AFTER_HOURS} hours and captains start to stray (skimming, then going ashore), and after ${STANDING_FADES_AFTER_HOURS} hours your standing starts to fade.</li>
     </ul>
     <h3>Saving</h3>
@@ -1611,7 +1631,7 @@ function renderHelp(el) {
       <li><b>On this device</b> your game saves by itself as you play.</li>
       <li><b>Cloud save:</b> tap the cloud button to get a save code. Enter it on another device to continue there; both stay in sync. A green dot means synced, red means it needs attention.</li>
     </ul>
-    <p class="foot">Keyboard: space pause · 1 2 3 speed · L ledger · W winds · Esc close.</p>`;
+    <p class="foot">Keyboard: space pause · 1 2 3 speed · P price book · L ledger · W winds · Esc close.</p>`;
 }
 
 // Captain's notes: a gentle nudge through the first voyages, until contracts open up.
@@ -1622,7 +1642,7 @@ function tipText() {
     if (held() === 0 && S.voyages === 0) return 'Buy wine or wool cloth here: both sell for close to double in the Canaries and further south.';
     if (held() > 0 && S.voyages === 0) return 'Now set sail: tap Sail to…, or a port on the chart. Lanzarote is an easy first run.';
     if (held() > 0) return 'Sell where the price beats what you paid (shown under Hold). Then load something the next port wants.';
-    return 'Open the Ledger: the harbourmaster suggests runs from the prices you have seen.';
+    return 'Open the Price book: the harbourmaster suggests runs from the prices you have seen.';
   }
   if (S.voyages === 0) return 'The arrows show the wind. Running before it is fast; beating into it is slow.';
   return 'Reach 500 cruzados and Prince Henry will notice you.';
@@ -1635,11 +1655,12 @@ function renderTip() {
   if (t && $('tip-text').textContent !== t) $('tip-text').textContent = t;
 }
 
-// Market / Ledger tabs, shown while in port so either is one click away.
+// Market, Price book and other tabs, shown while in port so either is one click away.
 function tabs(active) {
   if (!S.ship.docked) return '';
   return `<nav class="tabs" role="tablist">
       <button role="tab" data-tab="port" aria-selected="${active === 'port'}" class="${active === 'port' ? 'on' : ''}">Market</button>
+      <button role="tab" data-tab="prices" aria-selected="${active === 'prices'}" class="${active === 'prices' ? 'on' : ''}">Price book</button>
       <button role="tab" data-tab="ledger" aria-selected="${active === 'ledger'}" class="${active === 'ledger' ? 'on' : ''}">Ledger</button>
       ${S.contracts?.unlocked ? `<button role="tab" data-tab="contracts" aria-selected="${active === 'contracts'}" class="${active === 'contracts' ? 'on' : ''}">Contracts</button>` : ''}
       ${fleetUnlocked() ? `<button role="tab" data-tab="fleet" aria-selected="${active === 'fleet'}" class="${active === 'fleet' ? 'on' : ''}">Fleet</button>` : ''}
@@ -1663,7 +1684,7 @@ function ageText(day) {
 }
 
 // Work out the sea routes between charted ports in the background, one every few
-// milliseconds, so the ledger and the captains find them ready instead of pausing.
+// milliseconds, so the price book and the captains find them ready instead of pausing.
 let warmQueue = [], warmTimer = null;
 function warmRoutes() {
   warmQueue = [];
@@ -1679,8 +1700,77 @@ function warmStep() {
   warmTimer = setTimeout(warmStep, 40);
 }
 
+// ---- Ledger ----------------------------------------------------------------------
+let ledgerWho = 'all';
+const portName = (id) => (id ? PORTS.find((p) => p.id === id)?.name || id : 'At sea');
+const cz = (n, sign = true) => {
+  const v = Math.round(n);
+  return `${sign && v > 0 ? '+' : v < 0 ? '−' : ''}${Math.abs(v).toLocaleString()} cz`;
+};
+
+function entryText(e) {
+  const g = e.good && GOODS.find((x) => x.id === e.good);
+  const lot = g ? `${e.qty} ${e.qty === 1 ? g.one : g.unit} of ${g.name.toLowerCase()}` : '';
+  if (e.kind === 'sale') return `Sold ${lot}`;
+  if (e.kind === 'purchase') return `Bought ${lot}`;
+  if (e.kind === 'wages') {
+    if (e.who === 'you') {
+      const d = Math.max(1, Math.round(e.days || 0));
+      return `Crew wages, ${d} ${d === 1 ? 'day' : 'days'} at sea${e.from ? ` from ${portName(e.from)}` : ''}`;
+    }
+    return `Wages and upkeep, ${e.text}`;
+  }
+  return e.text || Accounts.KINDS[e.kind] || e.kind;
+}
+
+function renderLedger(el) {
+  const A = Accounts.ensureAccounts(S);
+  const ships = S.fleet.ships;
+  if (ledgerWho !== 'all' && ledgerWho !== 'you' && !ships.some((x) => String(x.id) === ledgerWho) && !A.entries.some((e) => String(e.who) === ledgerWho)) ledgerWho = 'all';
+  const known = Accounts.known(S);
+  const voyage = A.voyage ? A.voyage.wages : 0;
+  const unacc = Accounts.unaccounted(S);
+  const year = Accounts.totalsSince(S, S.day - 365);
+  const kinds = Object.keys(Accounts.KINDS).filter((k) => A.totals[k] || year[k]);
+  const row = (k) => `<tr><th scope="row">${Accounts.KINDS[k]}</th><td class="num ${(year[k] || 0) < 0 ? 'out' : 'in'}">${year[k] ? cz(year[k]) : '–'}</td><td class="num ${(A.totals[k] || 0) < 0 ? 'out' : 'in'}">${A.totals[k] ? cz(A.totals[k]) : '–'}</td></tr>`;
+  const sum = (o) => kinds.reduce((t, k) => t + (o[k] || 0), 0);
+  const totals = kinds.length
+    ? `<table class="accounts"><thead><tr><th></th><th class="num">Last 12 months</th><th class="num">All time</th></tr></thead>
+        <tbody>${kinds.map(row).join('')}</tbody>
+        <tfoot><tr><th scope="row">Net</th><td class="num">${cz(sum(year))}</td><td class="num">${cz(sum(A.totals))}</td></tr></tfoot></table>`
+    : '<p class="muted">Nothing entered yet.</p>';
+  const whoName = (e) => (e.who === 'you' ? 'Your ship' : e.ship || 'Hired ship');
+  const list = A.entries.filter((e) => ledgerWho === 'all' || String(e.who) === ledgerWho).slice(-80).reverse();
+  const options = [['all', 'All ships'], ['you', 'Your ship'], ...ships.map((x) => [String(x.id), x.name])];
+  const entries = list.length
+    ? `<table class="accounts entries"><tbody>${list.map((e) => {
+        const late = e.who !== 'you' && Math.floor(e.heard) > Math.floor(e.day);
+        return `<tr><td class="when">${fmtDate(e.day)}<small>${portName(e.port)}</small></td>
+          <td>${ledgerWho === 'all' ? `<span class="who">${whoName(e)}</span> ` : ''}${entryText(e)}${late ? `<small>Heard in ${portName(e.heardAt)}, ${fmtDate(e.heard)}</small>` : ''}</td>
+          <td class="num ${e.amount < 0 ? 'out' : 'in'}">${cz(e.amount)}</td></tr>`;
+      }).join('')}</tbody></table>`
+    : '<p class="muted">No entries yet.</p>';
+  el.innerHTML = `
+    ${tabs('ledger')}
+    <header><h2>Ledger</h2><button class="close" data-close-ledger aria-label="Close">×</button></header>
+    <p class="blurb">Money in and out of your purse. Your own dealings are entered at once. A hired captain's are entered when you call at a port where he has traded and the factor there hands you his accounts.</p>
+    <dl class="facts">
+      <dt>Purse</dt><dd>${cz(S.purse, false)}</dd>
+      <dt>Brought forward ${fmtDate(A.openDay)}</dt><dd>${cz(A.opening, false)}</dd>
+      <dt>Entered since then</dt><dd>${cz(known - A.opening)}</dd>
+      ${voyage >= 0.5 ? `<dt>Wages this voyage so far</dt><dd>${cz(-voyage)}</dd>` : ''}
+      ${Math.abs(unacc) >= 1 ? `<dt>Not yet accounted for</dt><dd class="${unacc < 0 ? 'out' : 'in'}">${cz(unacc)}</dd>` : ''}
+    </dl>
+    ${Math.abs(unacc) >= 1 ? `<p class="fine">${unacc < 0 ? 'Your purse is lighter' : 'Your purse is heavier'} than your books say: your hired captains have been trading and drawing pay, and you have not yet seen their accounts. Call at the ports on their routes to collect them.</p>` : ''}
+    <h3>Totals</h3>
+    ${totals}
+    <h3>Entries</h3>
+    ${ships.length || A.entries.some((e) => e.who !== 'you') ? `<label class="who-filter">Show <select data-ledger-who>${options.map(([v, t]) => `<option value="${v}" ${v === ledgerWho ? 'selected' : ''}>${t}</option>`).join('')}</select></label>` : ''}
+    <div class="scroll">${entries}</div>`;
+}
+
 // Sea passages for the harbourmaster's reckoning: the real route through the winds,
-// cached for a few days since he reasons from the same chart each time the ledger opens.
+// cached for a few days since he reasons from the same chart each time the price book opens.
 const passageCache = new Map();
 function passage(from, to, startDay) {
   const key = `${from.lon.toFixed(1)},${from.lat.toFixed(1)}>${to.id}@${Math.floor(startDay / 5)}`;
@@ -1735,7 +1825,7 @@ function suggestions() {
   return out.filter((s) => s.profit > 0).sort((x, y) => y.score - x.score).slice(0, 4);
 }
 
-function renderLedger(el) {
+function renderPrices(el) {
   const ports = PORTS.filter((p) => S.seen[p.id]);
   const head = ports.map((p) => {
     const age = S.day - S.seen[p.id].day;
@@ -1760,17 +1850,17 @@ function renderLedger(el) {
         <small class="muted">${s.gross.toLocaleString()} cz on the trade, less ${s.wages.toLocaleString()} wages${s.spoilage ? ` and ${s.spoilage.toLocaleString()} for spoilage (${s.lost < 0.75 ? `under one ${s.g.one}` : `about ${Math.round(s.lost)} ${Math.round(s.lost) > 1 ? s.g.unit : s.g.one}`})` : ''}.</small>${s.stale > 60 ? ' <em>Old news: prices may have moved.</em>' : ''}</li>`).join('')
     : Object.keys(S.seen).length > 1
       ? '<li class="muted">No run you know of pays once wages and spoilage are counted. Visit more ports, or wait for prices to move.</li>'
-      : '<li class="muted">Visit more ports. The ledger can only reason from prices you have seen with your own eyes.</li>';
+      : '<li class="muted">Visit more ports. The price book can only reason from prices you have seen with your own eyes.</li>';
   el.innerHTML = `
-    ${tabs('ledger')}
-    <header><h2>Trade ledger</h2><button class="close" data-close-ledger aria-label="Close">×</button></header>
+    ${tabs('prices')}
+    <header><h2>Price book</h2><button class="close" data-close-prices aria-label="Close">×</button></header>
     <p class="blurb">Prices as last seen by your ship. <b>Bold</b> is the price to buy, the other is what they pay you. Entries older than two months are faded.</p>
-    <div class="scroll"><table class="ledger"><thead><tr><th>Good</th>${head}</tr></thead><tbody>${body}</tbody></table></div>
+    <div class="scroll"><table class="pricebook"><thead><tr><th>Good</th>${head}</tr></thead><tbody>${body}</tbody></table></div>
     <h3>News</h3>
     <ul class="news">${Events.knownNews(S).map((n) => `<li><b>${n.t.title}</b> <span class="muted">· ${PORTS.find((p) => p.id === n.port).name} · since ${fmtDate(n.start)}, expected to last until about ${fmtDate(n.end)}</span><br>${n.t.text}</li>`).join('') || '<li class="muted">No news has reached you. Word travels by ship, so you hear it in port.</li>'}</ul>
     <h3>The harbourmaster suggests</h3>
     <ol class="sugg">${sugHtml}</ol>
-    <p class="foot">Estimates assume a straight course and calm trading. Winds will change the sailing time.</p>
+    <p class="foot">Estimates use today's winds along the sea route, and allow for prices moving as you trade.</p>
     <h3>Your name at sea</h3>
     <p class="muted">${Pirates.reputationText(S)}</p>
     <h3>Log</h3>
@@ -1820,6 +1910,7 @@ $('panel').addEventListener('click', (e) => {
     const doBuy = () => {
       const { bought, cost } = market.buy(pid, g, n, budget, free);
       S.cargo[g] += bought; S.paid[g] += cost; S.purse -= cost;
+      Accounts.record(S, { kind: 'purchase', good: g, qty: bought, amount: -cost });
       observe(pid);
     };
     if (n > 1) {
@@ -1842,6 +1933,7 @@ $('panel').addEventListener('click', (e) => {
       const avgCost = S.cargo[g] ? S.paid[g] / S.cargo[g] : 0;
       const { sold, income } = market.sell(pid, g, n);
       S.cargo[g] -= sold; S.paid[g] = Math.max(0, S.paid[g] - avgCost * sold); S.purse += income;
+      Accounts.record(S, { kind: 'sale', good: g, qty: sold, amount: income });
       if (!S.cargo[g]) S.paid[g] = 0;
       observe(pid);
       checkMilestones();
@@ -1963,9 +2055,9 @@ $('panel').addEventListener('click', (e) => {
     const plan = planCourse(p.lon, p.lat, p.id, false);
     if (plan) { panelMode = null; confirmVoyage(plan); }
     else toast('The pilot can find no passage there.');
-  } else if (t.hasAttribute('data-ledger')) {
-    panelMode = 'ledger';
-  } else if (t.hasAttribute('data-close-ledger')) {
+  } else if (t.hasAttribute('data-prices')) {
+    panelMode = 'prices';
+  } else if (t.hasAttribute('data-close-prices') || t.hasAttribute('data-close-ledger')) {
     panelMode = S.ship.docked ? 'port' : null;
   } else if (t.hasAttribute('data-close')) {
     panelMode = null;
@@ -1988,6 +2080,7 @@ $('panel').addEventListener('submit', (e) => {
 
 // Route editor: keep the draft in step with the selects.
 $('panel').addEventListener('change', (e) => {
+  if (e.target.matches('select[data-ledger-who]')) { ledgerWho = e.target.value; renderPanel(); return; }
   const sel = e.target.closest('select[data-f]');
   if (!sel) return;
   const card = sel.closest('[data-ship]');
@@ -2036,6 +2129,7 @@ function zoomBy(k) {
 }
 $('zoom-in').addEventListener('click', () => zoomBy(1.35));
 $('zoom-out').addEventListener('click', () => zoomBy(1 / 1.35));
+$('btn-prices').addEventListener('click', () => togglePanel('prices'));
 $('btn-ledger').addEventListener('click', () => togglePanel('ledger'));
 $('btn-sail').addEventListener('click', () => togglePanel('sail'));
 $('btn-contracts').addEventListener('click', () => togglePanel('contracts'));
@@ -2170,5 +2264,7 @@ window.helmline = {
   get state() { return S; }, market: () => market, offers: (pid) => Contracts.offersAt(S, market, pid), setCourse, setSpeed, screenOf: (lon, lat) => toScreen(lon, lat),
   away: (minutes) => { S.lastSeen = Date.now() - minutes * 60000; const sum = catchUp(); if (sum) pendingSummary = sum; return sum && { days: sum.days, purse: Math.round(sum.purse), capped: sum.capped }; },
   encounter: (big = false) => { pendingEncounter = { where: 'the Barbary coast', big, strength: big ? 1.35 : 1 }; },
+  dockAt: (id) => { if (S.ship.docked) undock(); dock(id); },
+  accounts: () => ({ purse: S.purse, known: Accounts.known(S), unaccounted: Accounts.unaccounted(S), pending: S.accounts.pending.reduce((t, e) => t + e.amount, 0), due: S.fleet.ships.reduce((t, x) => t + (x.wagesDue || 0), 0), voyage: S.accounts.voyage?.wages || 0, entries: S.accounts.entries.length }),
   advance: (days) => { for (let i = 0; i < days * 4; i++) advanceTime(0.25, !S.ship.docked); renderPanel(); },
 };

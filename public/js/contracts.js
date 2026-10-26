@@ -1,3 +1,4 @@
+import * as Accounts from './accounts.js';
 // Contracts: jobs from the crown and the merchant houses that give each voyage a goal.
 // Two kinds for now:
 //  - discover: chart and anchor at a port no one in Lisbon trades with yet, then report home.
@@ -259,6 +260,7 @@ function complete(S, c, what) {
   C.done++;
   C.standing += c.standing;
   S.purse += c.reward;
+  Accounts.record(S, { kind: 'contract', amount: c.reward, text: `${c.title} (${c.patron})` });
   return { html: `${what}: <b>+${c.reward.toLocaleString()} cz</b>.`, kind: 'discover', log: `Contract done: ${c.title} (+${c.reward} cz).` };
 }
 

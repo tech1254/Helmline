@@ -9,7 +9,8 @@ An age-of-sail exploration and trade game. This is **Prototype 0**: the West Afr
 - **Winds:** north-east trades in the south, northerlies off Portugal, westerlies out at sea, light south-westerlies and calms in the Gulf of Guinea. Sailing home against the trades is slow; swinging out to sea (the *volta do mar*) is usually faster.
 - **Nine ports:** Lisbon, Lagos, Funchal, Lanzarote (known at the start); Arguin, the Gambia River, Serra Leoa, Rio dos Cestos (the Grain Coast) and the Costa da Mina (to be discovered).
 - **Seven goods** with reactive prices: trading moves the price, and it recovers over weeks.
-- **Trade ledger:** prices you have actually seen, with their age, and route suggestions based only on that data, reckoned net of wages for the real passage and expected spoilage.
+- **Price book:** prices you have actually seen, with their age, and route suggestions based only on that data, reckoned net of wages for the real passage and expected spoilage.
+- **Ledger:** every cruzado in and out, with totals by kind. Your own dealings are entered at once; a hired captain's only when you call at a port where he has traded, so until then part of the purse is "not yet accounted for".
 - **Chart rewards:** the crown pays 150 cz per new port or land group when you return to Lisbon.
 - **Contracts** (from 500 cz): Prince Henry's first commission, then delivery contracts with deadlines.
 - **Standing:** tiers that raise contract pay, improve prices in Portuguese ports and open the Lisbon shipyard.
@@ -32,6 +33,7 @@ Not yet included: ship-to-ship combat beyond auto-resolve, navigation drift, mor
   - `js/contracts.js` holds contracts and standing.
   - `js/events.js` holds market events and news.
   - `js/fleet.js` holds hired ships and captains.
+  - `js/accounts.js` holds the ledger.
   - `js/main.js` holds rendering, input, the HUD and panels, time and saving.
 - `wrangler.jsonc` configures the Worker. Pushes to `main` deploy through Cloudflare Workers Builds.
 
@@ -39,7 +41,7 @@ Not yet included: ship-to-ship combat beyond auto-resolve, navigation drift, mor
 
 Any static server works, for example `python3 -m http.server -d public 8000`, or `npm install && npm run dev` for Wrangler.
 
-Keyboard: space pauses, 1/2/3 set the speed, L opens the ledger, W toggles the wind arrows.
+Keyboard: space pauses, 1/2/3 set the speed, P opens the price book, L the ledger, W toggles the wind arrows.
 
 
  

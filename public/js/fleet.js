@@ -4,6 +4,7 @@
 
 import { PORTS, findPath, windAt, sailFactor, angleDiff, bearing, distNm, D2R } from './world.js';
 import { GOODS } from './economy.js';
+import * as Accounts from './accounts.js';
 
 export const SHIP_COST = 1500;
 const HOLD = 40;
@@ -66,6 +67,7 @@ export function buyShip(S, captainId, maxShips) {
   const ship = { id: F.nextId++, name, captain: cap, at: 'lisbon', status: 'idle', route: null, leg: null, hold: {}, profit: 0, trips: 0, last: null };
   F.ships.push(ship);
   S.purse -= SHIP_COST;
+  Accounts.record(S, { kind: 'ships', amount: -SHIP_COST, text: `Bought the caravel ${name} and hired Captain ${cap.name}` });
   return ship;
 }
 
@@ -253,6 +255,7 @@ function visit(S, market, ship, fresh = false) {
       const res = market.sell(here, g, lot.qty);
       const gross = Math.round(res.income * (1 + 0.02 * ship.captain.trade)); // a good trader haggles
       income += gross;
+      Accounts.captain(S, ship, { kind: 'sale', good: g, qty: lot.qty, amount: gross });
       profit += gross - lot.paid;
       sold.push(`${lot.qty} ${lot.qty === 1 ? good(g).one : good(g).unit} of ${good(g).name.toLowerCase()}`);
       delete h[g];
@@ -266,7 +269,10 @@ function visit(S, market, ship, fresh = false) {
     ship.trips++;
     ship.last = { day: S.day, at: here, text: sold.join(', '), income: income - skim, profit };
     parts.push(`sold ${sold.join(', ')} for ${(income - skim).toLocaleString()} cz (${profit >= 0 ? '+' : ''}${profit.toLocaleString()})`);
-    if (skim) parts.push(`Captain ${ship.captain.name} kept ${skim} cz for himself`);
+    if (skim) {
+      parts.push(`Captain ${ship.captain.name} kept ${skim} cz for himself`);
+      Accounts.captain(S, ship, { kind: 'skim', amount: -skim, text: `Captain ${ship.captain.name} kept back part of the takings` });
+    }
   }
   if (r && (ship.captain.loyalty ?? 100) < LOYALTY_DESERT) {
     ship.route = null;
@@ -314,6 +320,7 @@ function buyAndSail(S, market, ship, parts = [], fresh = false) {
     }
     if (qty) {
       S.purse -= cost;
+      Accounts.captain(S, ship, { kind: 'purchase', good: g, qty, amount: -cost });
       addToHold(ship, g, qty, cost);
       boughtAny = true;
       parts.push(`loaded ${qty} ${good(g).unit} of ${good(g).name.toLowerCase()} for ${cost.toLocaleString()} cz`);
@@ -344,6 +351,7 @@ function sailOn(S, ship, parts, fresh) {
   const next = ship.route.stops[ship.route.next].port;
   const leg = planLeg(S, ship, ship.at, next);
   if (!leg) { ship.status = 'idle'; return msgs; }
+  Accounts.bookCaptainWages(S, ship, 'in port');
   ship.leg = leg;
   ship.status = 'sailing';
   if (parts.length || fresh) {
@@ -376,6 +384,7 @@ export function tick(S, market, days, ownerPresent = true) {
     upgradeShip(ship);
     const pay = dailyCost(ship) * (ship.status === 'sailing' ? 1 : IDLE_PAY) * days;
     S.purse -= pay;
+    Accounts.accrueCaptainWages(ship, pay);
     F.wagesPaid = (F.wagesPaid || 0) + pay;
     if (ship.captain.loyalty == null) ship.captain.loyalty = 100;
     if (ownerPresent) ship.captain.loyalty = Math.min(100, ship.captain.loyalty + LOYALTY_REGAIN_PER_DAY * days);
@@ -383,6 +392,7 @@ export function tick(S, market, days, ownerPresent = true) {
       const leg = ship.leg;
       ship.at = leg.to;
       ship.leg = null;
+      Accounts.bookCaptainWages(S, ship, `passage from ${port(leg.from).name}`);
       const lost = spoilOnArrival(ship, leg.days, (port(leg.from).lat + port(leg.to).lat) / 2);
       if (lost.length) msgs.push({ html: `<b>${ship.name}</b>: ${lost.join(', ')} on the passage.`, kind: '' });
       msgs.push(...visit(S, market, ship));
