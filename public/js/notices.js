@@ -1,0 +1,86 @@
+// Notices: pop-ups and the feed under the bell.
+
+import { S, ui } from './state.js';
+import { resize } from './view.js';
+import { $, fmtDate } from './util.js';
+import { renderPanel, tabs } from './panels.js';
+
+export let toastTimer;
+// Notices: everything that happens is kept in a feed (the bell), and shown briefly as a
+// pop-up. Pop-ups stay up long enough to read, pause while hovered, and close on a tap.
+// Hints about the controls ("That is dry land") are pop-ups only.
+export const NOTICES_MAX = 150;
+export function addNotice(html, kind = '', day = S.day) {
+  S.notices = S.notices || [];
+  S.noticeSeq = (S.noticeSeq || 0) + 1;
+  S.notices.push({ id: S.noticeSeq, day, html, kind });
+  if (S.notices.length > NOTICES_MAX) S.notices.splice(0, S.notices.length - NOTICES_MAX);
+  if (ui.panelMode === 'notices') { S.noticesRead = S.noticeSeq; renderPanel(); }
+  renderNoticeBadge();
+}
+
+export function unreadNotices() {
+  return (S?.notices || []).filter((n) => n.id > (S.noticesRead || 0)).length;
+}
+
+export function renderNoticeBadge() {
+  const n = unreadNotices();
+  const b = $('notices-count');
+  b.hidden = !n;
+  b.textContent = n > 99 ? '99+' : n;
+  $('btn-notices').title = n ? `Notices: ${n} unread` : 'Notices';
+}
+
+export function toast(html, kind = '', feed = true) {
+  if (feed && S) addNotice(html, kind);
+  placeToasts();
+  const el = $('toast');
+  const item = document.createElement('div');
+  item.className = `t ${kind}`;
+  item.innerHTML = html;
+  el.appendChild(item);
+  while (el.children.length > 4) el.firstChild.remove();
+  // Long enough to read: about 3.5 s plus 60 ms a character, 5 to 14 s.
+  const chars = item.textContent.length;
+  let left = Math.min(14000, Math.max(5000, 3500 + 60 * chars));
+  let started = performance.now(), timer = null;
+  const close = () => { item.classList.add('out'); setTimeout(() => item.remove(), 600); };
+  const run = () => { started = performance.now(); timer = setTimeout(close, left); };
+  item.addEventListener('mouseenter', () => { clearTimeout(timer); left -= performance.now() - started; });
+  item.addEventListener('mouseleave', () => { left = Math.max(left, 1500); run(); });
+  item.addEventListener('click', () => { clearTimeout(timer); close(); });
+  run();
+}
+
+// On a phone the pop-ups sit just under the top bar, however many rows it wraps to.
+export function placeToasts() {
+  const el = $('toast');
+  if (window.innerWidth > 700) { el.style.top = ''; return; }
+  el.style.top = `${Math.round($('hud').getBoundingClientRect().bottom + 8)}px`;
+}
+
+export function hint(html, kind = '') {
+  toast(html, kind, false);
+}
+
+export function renderNotices(el) {
+  S.noticesRead = S.noticeSeq || 0;
+  renderNoticeBadge();
+  const list = (S.notices || []).slice().reverse();
+  let lastDay = null;
+  const items = list.map((n) => {
+    const d = fmtDate(n.day);
+    const head = d !== lastDay ? `<li class="day">${d}</li>` : '';
+    lastDay = d;
+    return `${head}<li class="n ${n.kind}">${n.html}</li>`;
+  }).join('');
+  el.innerHTML = `
+    ${tabs('notices')}
+    <header><h2>Notices</h2><button class="close" data-close aria-label="Close">×</button></header>
+    <ul class="notices">${items || '<li class="muted">Nothing yet. News, arrivals and your captains\' reports will appear here.</li>'}</ul>`;
+}
+
+export function initNotices() {
+  window.addEventListener('resize', placeToasts);
+  placeToasts();
+}

@@ -23,19 +23,18 @@ An age-of-sail exploration and trade game. This is **Prototype 0**: the West Afr
 - **Wait in port**, zoom buttons, Captain's notes for the first voyages, and a How to play screen.
 - Saves to the browser, and optionally to the cloud with a save code to play across devices.
 
-Not yet included: ship-to-ship combat beyond auto-resolve, navigation drift, more than one hired ship, dynasty.
+Not yet included: ship-to-ship combat beyond auto-resolve, navigation drift, dynasty.
 
 ## Layout
 
 - `src/worker.js` is the Worker: it serves `public/` and answers `/api/saves` for cloud saves, stored in the D1 database `helmline-saves` (schema in `migrations/`). Only a hash of each save code is stored.
-- `public/` holds the game's static files (no build step).
-  - `js/world.js` holds the coastlines, ports, winds and sea-route pathfinding.
-  - `js/economy.js` holds goods, base prices and the market model.
-  - `js/contracts.js` holds contracts and standing.
-  - `js/events.js` holds market events and news.
-  - `js/fleet.js` holds hired ships and captains.
-  - `js/accounts.js` holds the ledger.
-  - `js/main.js` holds rendering, input, the HUD and panels, time and saving.
+- `public/` holds the game's static files (no build step). The game is plain ES modules in `public/js/`:
+  - Game rules: `world.js` (coastlines, ports, winds, sea routes), `economy.js` (goods and the market), `contracts.js` (contracts and standing), `events.js` (market events and news), `fleet.js` (hired ships and captains), `accounts.js` (the ledger), `pirates.js` (corsairs), `cloud.js` (the cloud-save API).
+  - The game itself: `state.js` (the shared game state), `config.js` (tunable numbers), `save.js`, `cloudsync.js`, `fog.js`, `sim.js` (time passing, time away), `voyage.js` (courses, docking, corsairs).
+  - Drawing and input: `view.js` (canvas and camera), `render.js`, `input.js`.
+  - Interface: `panels.js` (HUD, market, contracts, sail, fleet, help), `pricebook.js`, `ledgerview.js`, `notices.js`, `dialog.js`, `actions.js` (what the buttons do), `util.js`.
+  - `main.js` starts everything up and runs the main loop.
+- `tests/` holds the browser tests and a local stand-in for Cloudflare; see `tests/README.md`.
 - `wrangler.jsonc` configures the Worker. Pushes to `main` deploy through Cloudflare Workers Builds.
 
 ## Run locally
