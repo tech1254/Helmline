@@ -36,3 +36,15 @@ A test passes when it exits cleanly and every `ERRORS` line it prints is empty (
 | `cloud_two_devices` | Cloud save on one device, load on another, conflicts |
 
 The debug hooks the tests use (`window.helmline.dockAt`, `advance`, `away`, `accounts`, `encounter`) are defined at the bottom of `public/js/main.js`.
+
+## Fleet simulator
+
+`node tests/sim/fleet_sim.mjs` runs the real fleet, market and events code headless (no browser) and reports what hired captains earn over a night away (200 days), averaged over many runs: cash, cargo still aboard, sales, purchases and wages per route. Use it before changing any economy number.
+
+```
+node tests/sim/fleet_sim.mjs --days 200 --runs 60
+node tests/sim/fleet_sim.mjs --k 0.75      # markets a quarter deeper
+node tests/sim/fleet_sim.mjs --wage -1     # every captain 1 cz a day cheaper
+```
+
+Results on 26 October 2026, after captains learned to price loads on the real price curve and hired upkeep fell to 1 cz a day (cash per ship per 200 days): Lisbon cloth ⇄ Gambia pepper +517; Lisbon → Arguin → Lanzarote, best goods +852; Lisbon ⇄ Lanzarote, best goods +121; Lisbon ⇄ Gambia, best goods +1,569. Before: −164, +483, −124 and +1,255.

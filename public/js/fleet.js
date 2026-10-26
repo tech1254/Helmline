@@ -9,7 +9,7 @@ import * as Accounts from './accounts.js';
 export const SHIP_COST = 1500;
 const HOLD = 40;
 const KNOTS = 5;
-export const SHIP_UPKEEP = 2; // cz a day, on top of the captain's wage
+export const SHIP_UPKEEP = 1; // cz a day, on top of the captain's wage (tuned 26 Oct 2026 with tests/sim)
 const RESERVE = 150; // a captain never spends the last of the purse
 const MARGIN = 0.8; // he pays at most 80% of what he expects to sell for
 // Loyalty: a captain left alone too long starts to stray.
@@ -206,19 +206,23 @@ function saleStop(route, from, g) {
   return null;
 }
 
-// Price a cargo without buying it: units bought one at a time while each should still sell at
-// a profit where it is next sold, allowing for the price there falling as he sells.
-function quoteLoad(S, market, here, salePort, g, maxUnits) {
-  const target = market.sellPrice(salePort, g) * (1 - 0.006 * maxUnits / 2);
+// Price a cargo without buying it: units bought one at a time while each should still sell
+// at a profit where it is next sold. Every unit sold there lowers the price for the next by
+// that market's depth, so the captain reckons each unit against the price it will really
+// fetch. `margin` is the most he pays as a share of that: below 1 to cover wages and rot.
+function quoteLoad(S, market, here, salePort, g, maxUnits, margin = MARGIN) {
+  const top = market.sellPrice(salePort, g);
+  const k = market.k(salePort, g);
   const saved = market.press[here][g];
   let qty = 0, cost = 0, profit = 0;
   while (qty < maxUnits) {
     const price = market.buyPrice(here, g);
-    if (price > target * MARGIN || S.purse - cost - price < RESERVE) break;
+    const fetch = top * Math.exp(-k * qty);
+    if (price > fetch * margin || S.purse - cost - price < RESERVE) break;
     market.press[here][g] -= 0.5; // as a real purchase would
     qty++;
     cost += price;
-    profit += target - price;
+    profit += fetch - price;
   }
   market.press[here][g] = saved;
   return { qty, cost, profit };
@@ -314,9 +318,12 @@ function buyAndSail(S, market, ship, parts = [], fresh = false) {
       g = best.good;
       ({ bought: qty, cost } = market.buy(here, g, best.qty, best.cost, free));
     } else if (market.sells(here, g)) {
-      // A standing order: the captain buys what he is told, keeping back the purse reserve.
-      ({ bought: qty, cost } = market.buy(here, g, units, Math.max(0, Math.floor(S.purse - RESERVE)), free));
-      if (!qty) parts.push(`could not afford ${good(g).name.toLowerCase()}`);
+      // A standing order: the captain buys what he is told, but not at a loss: he stops
+      // when a unit would no longer fetch what it costs where it is next sold.
+      const salePort = saleStop(r, r.next, g);
+      const q = salePort && salePort !== here ? quoteLoad(S, market, here, salePort, g, units, 1) : { qty: units, cost: Infinity };
+      if (q.qty) ({ bought: qty, cost } = market.buy(here, g, q.qty, Math.max(0, Math.floor(S.purse - RESERVE)), free));
+      if (!qty) parts.push(S.purse - market.buyPrice(here, g) < RESERVE ? `could not afford ${good(g).name.toLowerCase()}` : `found ${good(g).name.toLowerCase()} too dear to carry without loss`);
     }
     if (qty) {
       S.purse -= cost;
