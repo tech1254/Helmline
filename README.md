@@ -15,7 +15,7 @@ An age-of-sail exploration and trade game. This is **Prototype 0**: the West Afr
 - **Standing:** tiers that raise contract pay, improve prices in Portuguese ports and open the Lisbon shipyard.
 - **Market events:** harvests, plagues, blockades and gluts shift prices or close ports; news reaches you in port, late for distant places.
 - **Spoilage:** wine, dye, pepper, sugar and cloth slowly spoil at sea, faster in the tropics.
-- **A second ship:** buy a caravel, hire a captain with navigation and trade skills, and give him a two-port route he runs on his own.
+- **Hired ships:** buy caravels (how many depends on standing), hire captains with navigation and trade skills, and give each a route of up to six stops with buy and sell orders at each, which they run on their own.
 - **Time away:** with hired captains and your ship in port, the world moves on while you are gone: a tenth of normal speed for the first 90 days, then tapering (a night or a workday is about 200 days, at most 210). Contract deadlines wait for you. Captains start to stray after 16 hours away (skimming, then going ashore) and standing fades after 24 hours. A summary greets you on return.
 - **Wait in port**, zoom buttons, Captain's notes for the first voyages, and a How to play screen.
 - Saves to the browser, and optionally to the cloud with a save code to play across devices.

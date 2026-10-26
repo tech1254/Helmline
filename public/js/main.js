@@ -772,7 +772,7 @@ function catchUp() {
   if (awaySec < OFFLINE_MIN_SECONDS || !S.fleet?.ships.length || !S.ship.docked) return null;
   const want = awaySec * DAYS_PER_SEC * OFFLINE_RATE;
   const days = offlineDays(want);
-  const before = { purse: S.purse, day: S.day, ships: Object.fromEntries(S.fleet.ships.map((x) => [x.id, { trips: x.trips, profit: x.profit, cargo: x.cargo?.paid || 0 }])) };
+  const before = { purse: S.purse, day: S.day, ships: Object.fromEntries(S.fleet.ships.map((x) => [x.id, { trips: x.trips, profit: x.profit, cargo: Fleet.holdPaid(x) }])) };
   // Long absences: captains stray (so they may skim or go ashore during it), and Lisbon's
   // merchants start to forget you.
   const hours = awaySec / 3600;
@@ -802,7 +802,7 @@ function catchUp() {
   }
   const ships = S.fleet.ships.map((x) => {
     const b = before.ships[x.id] || { trips: 0, profit: 0, cargo: 0 };
-    return { name: x.name, trips: x.trips - b.trips, profit: x.profit - b.profit, cargoChange: (x.cargo?.paid || 0) - b.cargo, status: Fleet.statusText(S, x) };
+    return { name: x.name, trips: x.trips - b.trips, profit: x.profit - b.profit, cargoChange: Fleet.holdPaid(x) - b.cargo, status: Fleet.statusText(S, x) };
   });
   log(`Away ${awayText(awaySec)}: ${Math.round(days)} days passed; purse ${S.purse - before.purse >= 0 ? '+' : ''}${Math.round(S.purse - before.purse)} cz.`);
   save();
@@ -1406,30 +1406,71 @@ function portOptions(selected) {
   return PORTS.filter((p) => S.discovered[p.id]).map((p) => `<option value="${p.id}" ${p.id === selected ? 'selected' : ''}>${p.name}</option>`).join('');
 }
 
-function goodOptions(portId, selected) {
-  const sel = selected === undefined ? 'best' : selected == null ? 'none' : selected; // old routes: null meant nothing
-  const opts = GOODS.filter((g) => market.sells(portId, g.id)).map((g) => `<option value="${g.id}" ${g.id === sel ? 'selected' : ''}>${g.name} only</option>`);
-  return `<option value="best" ${sel === 'best' ? 'selected' : ''}>Best available (captain's choice)</option>${opts.join('')}<option value="none" ${sel === 'none' ? 'selected' : ''}>Nothing (sail empty)</option>`;
+// Route editor. Each ship card edits a draft route; the captain only gets it on Start/Change.
+const routeDrafts = {};
+
+function draftFor(ship) {
+  if (!routeDrafts[ship.id]) {
+    const other = PORTS.find((p) => S.discovered[p.id] && p.id !== ship.at)?.id || ship.at;
+    routeDrafts[ship.id] = JSON.parse(JSON.stringify(ship.route?.stops ? { stops: ship.route.stops } : Fleet.simpleRoute(ship.at, other)));
+  }
+  return routeDrafts[ship.id];
+}
+
+function orderGoodOptions(order, portId) {
+  if (order.act === 'sell') {
+    return `<option value="all" ${order.good === 'all' ? 'selected' : ''}>Everything aboard</option>` +
+      GOODS.map((g) => `<option value="${g.id}" ${order.good === g.id ? 'selected' : ''}>${g.name}</option>`).join('');
+  }
+  return `<option value="best" ${order.good === 'best' ? 'selected' : ''}>Best available (captain's choice)</option>` +
+    GOODS.filter((g) => market.sells(portId, g.id)).map((g) => `<option value="${g.id}" ${order.good === g.id ? 'selected' : ''}>${g.name}</option>`).join('');
+}
+
+function routeEditor(ship) {
+  const d = draftFor(ship);
+  const stops = d.stops.map((st, i) => `
+      <div class="stop" data-stop-i="${i}">
+        <div class="stop-head">
+          <span class="stop-n">${i + 1}</span>
+          <select data-f="port" aria-label="Stop ${i + 1} port">${portOptions(st.port)}</select>
+          ${d.stops.length > 2 ? `<button class="mini" data-draft="del-stop" aria-label="Remove stop ${i + 1}">Remove</button>` : ''}
+        </div>
+        ${st.orders.map((o, j) => `
+          <div class="order" data-order-j="${j}">
+            <select data-f="act" aria-label="Order"><option value="sell" ${o.act === 'sell' ? 'selected' : ''}>Sell</option><option value="buy" ${o.act === 'buy' ? 'selected' : ''}>Buy</option></select>
+            <select data-f="good" aria-label="Good">${orderGoodOptions(o, st.port)}</select>
+            ${o.act === 'buy' ? `<select data-f="pct" aria-label="Share of the hold">${[25, 50, 75, 100].map((n) => `<option value="${n}" ${o.pct === n ? 'selected' : ''}>${n}% of hold</option>`).join('')}</select>` : '<span></span>'}
+            <button class="mini" data-draft="del-order" aria-label="Remove order">×</button>
+          </div>`).join('')}
+        ${st.orders.length < Fleet.MAX_ORDERS ? '<button class="mini" data-draft="add-order">+ Order</button>' : ''}
+      </div>`).join('<div class="stop-arrow" aria-hidden="true">↓</div>');
+  return `<div class="route-editor">
+      ${stops}
+      <div class="stop-arrow" aria-hidden="true">↺ back to stop 1</div>
+      <div class="row" style="justify-content:flex-start">${d.stops.length < Fleet.MAX_STOPS ? '<button class="mini" data-draft="add-stop">+ Add stop</button>' : ''}<button class="mini" data-draft="simple">Reset to two ports</button></div>
+    </div>`;
+}
+
+function routeSummary(route) {
+  if (!route?.stops) return '';
+  return route.stops.map((st) => PORTS.find((p) => p.id === st.port).name).join(' → ') + ' → …';
 }
 
 function renderFleet(el) {
   const F = Fleet.ensureFleet(S);
   const ships = F.ships.map((ship) => {
-    const r = ship.route || {};
-    const a = r.a || ship.at, b = r.b || PORTS.find((p) => S.discovered[p.id] && p.id !== a)?.id;
-    const last = ship.last ? `Last: sold ${ship.last.qty} ${GOODS.find((g) => g.id === ship.last.good).unit} at ${PORTS.find((p) => p.id === ship.last.at).name} for ${ship.last.income.toLocaleString()} cz (${ship.last.profit >= 0 ? '+' : ''}${ship.last.profit.toLocaleString()}).` : 'No voyages yet.';
+    const last = ship.last ? `Last: at ${PORTS.find((p) => p.id === ship.last.at).name} sold ${ship.last.text || 'cargo'} for ${ship.last.income.toLocaleString()} cz (${ship.last.profit >= 0 ? '+' : ''}${ship.last.profit.toLocaleString()}).` : 'No voyages yet.';
     return `<li class="contract" data-ship="${ship.id}">
         <div class="c-head"><span class="c-title">${ship.name}</span><span class="c-pay">${ship.profit >= 0 ? '+' : ''}${ship.profit.toLocaleString()} cz</span></div>
         <div class="c-patron">Captain ${ship.captain.name} · navigation ${stars(ship.captain.nav)} · trade ${stars(ship.captain.trade)} · ${Fleet.dailyCost(ship)} cz a day at sea, half in port · ${Fleet.loyaltyText(ship.captain.loyalty)}</div>
-        <p>${Fleet.statusText(S, ship)} ${ship.trips} ${ship.trips === 1 ? 'cargo' : 'cargoes'} sold so far.</p>
+        <p>${Fleet.statusText(S, ship)} ${ship.trips} ${ship.trips === 1 ? 'sale' : 'sales'} so far.</p>
+        ${ship.route ? `<p class="muted">Route: ${routeSummary(ship.route)}</p>` : ''}
         <p class="muted">${last}</p>
-        <div class="route">
-          <label>Buy at <select data-role="a">${portOptions(a)}</select></label>
-          <label>Load <select data-role="ga">${goodOptions(a, ship.route ? r.goodA : undefined)}</select></label>
-          <label>Sell at <select data-role="b">${portOptions(b)}</select></label>
-          <label>Load <select data-role="gb">${goodOptions(b, ship.route ? r.goodB : undefined)}</select></label>
-        </div>
-        <div class="row">${ship.route ? `<button data-stop="${ship.id}">Stop at next port</button>` : ''}<button class="primary" data-route="${ship.id}">${ship.route ? 'Change route' : 'Start route'}</button></div>
+        <details ${ship.route ? '' : 'open'}><summary>${ship.route ? 'Edit route' : 'Set a route'}</summary>
+          ${routeEditor(ship)}
+          <p class="foot">Stops are visited in order, then back to the first. Orders run top to bottom, so sell before you buy to make room. "Best available" picks what pays most where it will next be sold; a named good is bought whatever the price.</p>
+        </details>
+        <div class="row">${ship.route ? `<button data-halt="${ship.id}">Stop at next port</button>` : ''}<button class="primary" data-route="${ship.id}">${ship.route ? 'Change route' : 'Start route'}</button></div>
       </li>`;
   }).join('');
   let yard = '';
@@ -1454,7 +1495,7 @@ function renderFleet(el) {
   el.innerHTML = `
     ${tabs('fleet')}
     <header><h2>Fleet</h2><button class="close" data-close aria-label="Close">×</button></header>
-    <p class="blurb">Hired captains sail a route between two ports on their own: they buy with your purse, sell in the same markets, and keep at it until you stop them. Each sale moves prices like yours do.</p>
+    <p class="blurb">Hired captains sail a loop of ports on their own, following your orders at each stop: they buy with your purse, sell in the same markets, and keep at it until you stop them. Each sale moves prices like yours do.</p>
     ${ships ? `<ul class="contracts">${ships}</ul>` : ''}
     ${yard}
     ${F.ships.length ? `<p class="foot">Your fleet only sails while time passes: at sea, or when you wait in port. Captains never spend the last 150 cz of your purse.</p>
@@ -1720,17 +1761,35 @@ $('panel').addEventListener('click', (e) => {
       });
       return;
     }
+  } else if (t.dataset.draft) {
+    const card = t.closest('[data-ship]');
+    const ship = S.fleet.ships.find((x) => x.id === +card.dataset.ship);
+    const d = draftFor(ship);
+    const i = +(t.closest('[data-stop-i]')?.dataset.stopI ?? -1);
+    const j = +(t.closest('[data-order-j]')?.dataset.orderJ ?? -1);
+    const act = t.dataset.draft;
+    if (act === 'add-stop') {
+      const lastPort = d.stops[d.stops.length - 1].port;
+      const nextPort = PORTS.find((p) => S.discovered[p.id] && p.id !== lastPort && p.id !== d.stops[0].port)?.id || PORTS.find((p) => S.discovered[p.id] && p.id !== lastPort).id;
+      d.stops.push({ port: nextPort, orders: [{ act: 'sell', good: 'all' }] });
+    } else if (act === 'del-stop' && d.stops.length > 2) d.stops.splice(i, 1);
+    else if (act === 'add-order') d.stops[i].orders.push({ act: 'buy', good: 'best', pct: 50 });
+    else if (act === 'del-order') d.stops[i].orders.splice(j, 1);
+    else if (act === 'simple') { delete routeDrafts[ship.id]; routeDrafts[ship.id] = Fleet.simpleRoute(d.stops[0].port, d.stops[1].port); }
+    renderPanel();
+    keepDetailsOpen(ship.id);
+    return;
   } else if (t.dataset.route) {
     const ship = S.fleet.ships.find((x) => x.id === +t.dataset.route);
-    const card = t.closest('[data-ship]');
-    const v = (role) => card.querySelector(`[data-role="${role}"]`).value;
-    const r = { a: v('a'), goodA: v('ga'), b: v('b'), goodB: v('gb') };
-    if (r.a === r.b) { toast('Pick two different ports.'); return; }
-    if (r.goodA === 'none' && r.goodB === 'none') { toast('Choose a cargo for at least one leg.'); return; }
-    report(Fleet.setRoute(S, market, ship, r));
-    toast(`<b>${ship.name}</b> will run ${PORTS.find((p) => p.id === r.a).name} – ${PORTS.find((p) => p.id === r.b).name}.`, 'port');
-  } else if (t.dataset.stop) {
-    const ship = S.fleet.ships.find((x) => x.id === +t.dataset.stop);
+    const d = draftFor(ship);
+    const problem = routeProblem(d);
+    if (problem) { toast(problem); keepDetailsOpen(ship.id); return; }
+    report(Fleet.setRoute(S, market, ship, d));
+    delete routeDrafts[ship.id];
+    toast(`<b>${ship.name}</b> will run ${routeSummary(ship.route)}`, 'port');
+  } else if (t.dataset.halt) {
+    const ship = S.fleet.ships.find((x) => x.id === +t.dataset.halt);
+    delete routeDrafts[ship.id];
     ship.route = null;
     toast(`<b>${ship.name}</b> will stop at her next port.`);
   } else if (t.dataset.tab) {
@@ -1790,14 +1849,44 @@ $('panel').addEventListener('submit', (e) => {
   loadFromCloud(code);
 });
 
-// Route editor: when a port changes, offer the goods sold there.
+// Route editor: keep the draft in step with the selects.
 $('panel').addEventListener('change', (e) => {
-  const sel = e.target.closest('select[data-role]');
+  const sel = e.target.closest('select[data-f]');
   if (!sel) return;
   const card = sel.closest('[data-ship]');
-  if (sel.dataset.role === 'a') card.querySelector('[data-role="ga"]').innerHTML = goodOptions(sel.value, undefined);
-  if (sel.dataset.role === 'b') card.querySelector('[data-role="gb"]').innerHTML = goodOptions(sel.value, undefined);
+  const ship = S.fleet.ships.find((x) => x.id === +card.dataset.ship);
+  const d = draftFor(ship);
+  const st = d.stops[+sel.closest('[data-stop-i]').dataset.stopI];
+  const o = sel.closest('[data-order-j]') ? st.orders[+sel.closest('[data-order-j]').dataset.orderJ] : null;
+  if (sel.dataset.f === 'port') {
+    st.port = sel.value;
+    for (const x of st.orders) if (x.act === 'buy' && x.good !== 'best' && !market.sells(st.port, x.good)) x.good = 'best';
+  } else if (sel.dataset.f === 'act') {
+    o.act = sel.value;
+    o.good = o.act === 'sell' ? 'all' : 'best';
+    if (o.act === 'buy') o.pct = o.pct || 50; else delete o.pct;
+  } else if (sel.dataset.f === 'good') o.good = sel.value;
+  else if (sel.dataset.f === 'pct') o.pct = +sel.value;
+  renderPanel();
+  keepDetailsOpen(ship.id);
 });
+
+function keepDetailsOpen(shipId) {
+  const det = document.querySelector(`[data-ship="${shipId}"] details`);
+  if (det) det.open = true;
+}
+
+function routeProblem(d) {
+  if (d.stops.length < 2) return 'A route needs at least two stops.';
+  for (let i = 0; i < d.stops.length; i++) {
+    if (d.stops[i].port === d.stops[(i + 1) % d.stops.length].port) return `Stops ${i + 1} and ${((i + 1) % d.stops.length) + 1} are the same port. Pick another, or remove one.`;
+  }
+  if (!d.stops.some((st) => st.orders.some((o) => o.act === 'buy'))) return 'Add at least one Buy order somewhere on the route.';
+  if (!d.stops.some((st) => st.orders.some((o) => o.act === 'sell'))) return 'Add at least one Sell order, or the captain will never sell his cargo.';
+  const total = d.stops.map((st) => st.orders.filter((o) => o.act === 'buy').reduce((n, o) => n + o.pct, 0));
+  if (total.some((n) => n > 100)) return 'One stop buys more than 100% of the hold.';
+  return null;
+}
 
 document.querySelectorAll('[data-speed]').forEach((b) => b.addEventListener('click', () => setSpeed(+b.dataset.speed)));
 $('btn-fleet').addEventListener('click', () => togglePanel('fleet'));

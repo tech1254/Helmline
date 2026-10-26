@@ -1,4 +1,4 @@
-// The fleet: extra caravels run by hired captains on a trade route between two ports.
+// The fleet: extra caravels run by hired captains on trade routes of two or more stops.
 // They sail the same winds and trade in the same markets as the player, so their
 // buying and selling moves real prices. Money comes from, and goes to, the player's purse.
 
@@ -32,6 +32,7 @@ const pick = (a) => a[Math.floor(Math.random() * a.length)];
 
 export function ensureFleet(S) {
   if (!S.fleet) S.fleet = { ships: [], candidates: null, nextId: 1 };
+  for (const ship of S.fleet.ships) upgradeShip(ship);
   return S.fleet;
 }
 
@@ -62,7 +63,7 @@ export function buyShip(S, captainId, maxShips) {
   F.candidates.list = F.candidates.list.filter((c) => c !== cap);
   const used = new Set(F.ships.map((s) => s.name));
   const name = SHIP_NAMES.find((n) => !used.has(n)) || `Caravel ${F.nextId}`;
-  const ship = { id: F.nextId++, name, captain: cap, at: 'lisbon', status: 'idle', route: null, leg: null, cargo: null, profit: 0, trips: 0, last: null };
+  const ship = { id: F.nextId++, name, captain: cap, at: 'lisbon', status: 'idle', route: null, leg: null, hold: {}, profit: 0, trips: 0, last: null };
   F.ships.push(ship);
   S.purse -= SHIP_COST;
   return ship;
@@ -125,18 +126,111 @@ function planLeg(S, ship, fromId, toId) {
   return { from: fromId, to: toId, start: S.day, days: Math.max(1, (day - S.day) * navFactor), path, cum, total };
 }
 
+// ---- Routes ---------------------------------------------------------------------------
+// A route is a loop of stops. At each stop the captain carries out its orders in turn, then
+// sails for the next stop, and from the last back to the first:
+//   { act: 'sell', good: 'all' | <good id> }
+//   { act: 'buy',  good: 'best' | <good id>, pct: 25 | 50 | 75 | 100 }  (share of the whole hold)
+// 'best' lets the captain pick whatever pays most at the stop where it will next be sold.
+export const MAX_STOPS = 6;
+export const MAX_ORDERS = 4;
+export const HOLD_SIZE = HOLD;
+
+export function simpleRoute(a, b) {
+  const orders = () => [{ act: 'sell', good: 'all' }, { act: 'buy', good: 'best', pct: 100 }];
+  return { stops: [{ port: a, orders: orders() }, { port: b, orders: orders() }], next: 0 };
+}
+
+// Routes saved before multi-stop routes existed: two ports and one cargo choice each.
+function normalizeRoute(r) {
+  if (!r || r.stops) return r;
+  const buy = (g) => (g == null || g === 'none' ? [] : [{ act: 'buy', good: g, pct: 100 }]);
+  return {
+    stops: [
+      { port: r.a, orders: [{ act: 'sell', good: 'all' }, ...buy(r.goodA)] },
+      { port: r.b, orders: [{ act: 'sell', good: 'all' }, ...buy(r.goodB)] },
+    ],
+    next: 0,
+  };
+}
+
+// The hold can carry several goods: { good: { qty, paid } }.
+function holdOf(ship) {
+  if (!ship.hold) {
+    ship.hold = {};
+    if (ship.cargo) ship.hold[ship.cargo.good] = { qty: ship.cargo.qty, paid: ship.cargo.paid };
+    ship.cargo = null;
+  }
+  return ship.hold;
+}
+export const holdUsed = (ship) => Object.values(holdOf(ship)).reduce((n, x) => n + x.qty, 0);
+export const holdPaid = (ship) => Object.values(holdOf(ship)).reduce((n, x) => n + x.paid, 0);
+export function holdText(ship) {
+  const items = Object.entries(holdOf(ship)).filter(([, x]) => x.qty > 0)
+    .map(([g, x]) => `${x.qty} ${x.qty === 1 ? good(g).one : good(g).unit} of ${good(g).name.toLowerCase()}`);
+  if (!items.length) return 'an empty hold';
+  return items.length === 1 ? items[0] : `${items.slice(0, -1).join(', ')} and ${items[items.length - 1]}`;
+}
+
+export function upgradeShip(ship) {
+  holdOf(ship);
+  ship.route = normalizeRoute(ship.route);
+}
+
 export function setRoute(S, market, ship, route) {
+  upgradeShip(ship);
+  route = normalizeRoute(JSON.parse(JSON.stringify(route)));
+  const here = route.stops.findIndex((st) => st.port === ship.at);
+  route.next = here >= 0 ? here : 0;
   ship.route = route;
   // Orders given in person, in the same port, steady a wavering captain.
   if (S.ship.docked && S.ship.docked === ship.at) ship.captain.loyalty = Math.max(ship.captain.loyalty ?? 100, 60);
   if (ship.status === 'ashore' && S.ship.docked === ship.at) ship.status = 'idle';
   const msgs = [];
-  if (route && (ship.status === 'idle' || ship.status === 'waiting' || ship.status === 'loading')) { ship.waitSince = null; msgs.push(...arrive(S, market, ship, true)); }
+  if (['idle', 'waiting', 'loading'].includes(ship.status)) {
+    ship.waitSince = null;
+    msgs.push(...(here >= 0 ? visit(S, market, ship, true) : sailOn(S, ship, [], true)));
+  }
   return msgs;
 }
 
-// The ship is in port (`ship.at`): sell, buy, and head off on the next leg.
-function arrive(S, market, ship, fresh = false) {
+// The first stop after `from` (going round the loop) where this good would be sold.
+function saleStop(route, from, g) {
+  const n = route.stops.length;
+  for (let k = 1; k <= n; k++) {
+    const st = route.stops[(from + k) % n];
+    if (st.orders.some((o) => o.act === 'sell' && (o.good === 'all' || o.good === g))) return st.port;
+  }
+  return null;
+}
+
+// Price a cargo without buying it: units bought one at a time while each should still sell at
+// a profit where it is next sold, allowing for the price there falling as he sells.
+function quoteLoad(S, market, here, salePort, g, maxUnits) {
+  const target = market.sellPrice(salePort, g) * (1 - 0.006 * maxUnits / 2);
+  const saved = market.press[here][g];
+  let qty = 0, cost = 0, profit = 0;
+  while (qty < maxUnits) {
+    const price = market.buyPrice(here, g);
+    if (price > target * MARGIN || S.purse - cost - price < RESERVE) break;
+    market.press[here][g] -= 0.5; // as a real purchase would
+    qty++;
+    cost += price;
+    profit += target - price;
+  }
+  market.press[here][g] = saved;
+  return { qty, cost, profit };
+}
+
+function addToHold(ship, g, qty, cost) {
+  const h = holdOf(ship);
+  h[g] = h[g] || { qty: 0, paid: 0 };
+  h[g].qty += qty;
+  h[g].paid += cost;
+}
+
+// Arrive at the current stop: sell as ordered, then buy and sail on.
+function visit(S, market, ship, fresh = false) {
   const msgs = [];
   const here = ship.at;
   const r = ship.route;
@@ -146,20 +240,33 @@ function arrive(S, market, ship, fresh = false) {
     return msgs;
   }
   const parts = [];
-  if (ship.cargo) {
-    const g = good(ship.cargo.good);
-    const { income } = market.sell(here, ship.cargo.good, ship.cargo.qty);
-    const gross = Math.round(income * (1 + 0.02 * ship.captain.trade)); // a good trader haggles
-    const skim = (ship.captain.loyalty ?? 100) < LOYALTY_SKIM ? Math.round(gross * SKIM_SHARE) : 0;
-    const paid = gross - skim;
-    const profit = paid - ship.cargo.paid;
-    S.purse += paid;
-    if (skim) parts.push(`Captain ${ship.captain.name} kept ${skim} cz for himself`);
+  const stop = r ? r.stops[r.next] : null;
+  // Sell. With no route, the captain sells everything and waits for orders.
+  const sellOrders = stop ? stop.orders.filter((o) => o.act === 'sell') : [{ act: 'sell', good: 'all' }];
+  const h = holdOf(ship);
+  const sold = [];
+  let income = 0, profit = 0;
+  for (const o of sellOrders) {
+    for (const g of o.good === 'all' ? Object.keys(h) : [o.good]) {
+      const lot = h[g];
+      if (!lot || lot.qty <= 0) continue;
+      const res = market.sell(here, g, lot.qty);
+      const gross = Math.round(res.income * (1 + 0.02 * ship.captain.trade)); // a good trader haggles
+      income += gross;
+      profit += gross - lot.paid;
+      sold.push(`${lot.qty} ${lot.qty === 1 ? good(g).one : good(g).unit} of ${good(g).name.toLowerCase()}`);
+      delete h[g];
+    }
+  }
+  if (sold.length) {
+    const skim = (ship.captain.loyalty ?? 100) < LOYALTY_SKIM ? Math.round(income * SKIM_SHARE) : 0;
+    S.purse += income - skim;
+    profit -= skim;
     ship.profit += profit;
     ship.trips++;
-    ship.last = { day: S.day, at: here, good: g.id, qty: ship.cargo.qty, income: paid, profit };
-    parts.push(`sold ${ship.cargo.qty} ${g.unit} of ${g.name.toLowerCase()} for ${paid.toLocaleString()} cz (${profit >= 0 ? '+' : ''}${profit.toLocaleString()})`);
-    ship.cargo = null;
+    ship.last = { day: S.day, at: here, text: sold.join(', '), income: income - skim, profit };
+    parts.push(`sold ${sold.join(', ')} for ${(income - skim).toLocaleString()} cz (${profit >= 0 ? '+' : ''}${profit.toLocaleString()})`);
+    if (skim) parts.push(`Captain ${ship.captain.name} kept ${skim} cz for himself`);
   }
   if (r && (ship.captain.loyalty ?? 100) < LOYALTY_DESERT) {
     ship.route = null;
@@ -172,105 +279,101 @@ function arrive(S, market, ship, fresh = false) {
     if (parts.length) msgs.push({ html: `<b>${ship.name}</b> at ${port(here).name}: ${parts.join('. ')}. Awaiting orders.`, kind: 'port', log: `${ship.name} ${parts.join('; ')} at ${port(here).name}.` });
     return msgs;
   }
-  msgs.push(...loadAndSail(S, market, ship, parts, fresh));
+  msgs.push(...buyAndSail(S, market, ship, parts, fresh));
   return msgs;
 }
 
-// What the captain may load on this leg: 'best' (his choice), a good's id, or 'none'.
-// Routes saved before 'best' existed used null for "nothing".
-function legChoice(r, here) {
-  const c = here === r.a ? r.goodA : here === r.b ? r.goodB : 'none';
-  return c == null ? 'none' : c;
-}
-
-// Price a cargo without buying it: units bought one at a time while each should still sell at
-// a profit at the next port, allowing for the price there falling as he sells.
-function quoteLoad(S, market, here, next, g) {
-  const target = market.sellPrice(next, g) * (1 - 0.006 * HOLD / 2);
-  const saved = market.press[here][g];
-  let qty = 0, cost = 0, profit = 0;
-  while (qty < HOLD) {
-    const price = market.buyPrice(here, g);
-    if (price > target * MARGIN || S.purse - cost - price < RESERVE) break;
-    market.press[here][g] -= 0.5; // as a real purchase would
-    qty++;
-    cost += price;
-    profit += target - price;
-  }
-  market.press[here][g] = saved;
-  return { qty, cost, profit };
-}
-
-function bestCargo(S, market, here, next, choice) {
-  const options = choice === 'best'
-    ? GOODS.filter((g) => market.sells(here, g.id)).map((g) => g.id)
-    : choice !== 'none' && market.sells(here, choice) ? [choice] : [];
-  let best = null;
-  for (const g of options) {
-    const q = quoteLoad(S, market, here, next, g);
-    if (q.qty && (!best || q.profit > best.profit)) best = { good: g, ...q };
-  }
-  return best;
-}
-
-// Load the best cargo going and sail; or, if nothing pays, wait in port a while on half pay.
-function loadAndSail(S, market, ship, parts = [], fresh = false) {
+// Carry out the stop's buy orders; if every 'best' order found nothing worth carrying and the
+// hold is empty, wait a while on half pay for prices to recover. Then sail for the next stop.
+function buyAndSail(S, market, ship, parts = [], fresh = false) {
   const msgs = [];
   const here = ship.at, r = ship.route;
-  const next = here === r.a ? r.b : r.a;
-  const choice = legChoice(r, here);
-  const pick = choice === 'none' ? null : bestCargo(S, market, here, next, choice);
-  if (pick) {
-    const { bought, cost } = market.buy(here, pick.good, pick.qty, pick.cost, HOLD);
-    if (bought) {
-      S.purse -= cost;
-      ship.cargo = { good: pick.good, qty: bought, paid: cost, loaded: S.day };
-      parts.push(`loaded ${bought} ${good(pick.good).unit} of ${good(pick.good).name.toLowerCase()} for ${cost.toLocaleString()} cz`);
+  const stop = r.stops[r.next];
+  const buys = stop.orders.filter((o) => o.act === 'buy');
+  let boughtAny = false, bestFailed = false;
+  for (const o of buys) {
+    const free = HOLD - holdUsed(ship);
+    const units = Math.min(free, Math.round(HOLD * (o.pct || 100) / 100));
+    if (units <= 0) continue;
+    let g = o.good, qty = 0, cost = 0;
+    if (g === 'best') {
+      let best = null;
+      for (const cand of GOODS.filter((x) => market.sells(here, x.id)).map((x) => x.id)) {
+        const salePort = saleStop(r, r.next, cand);
+        if (!salePort || salePort === here) continue;
+        const q = quoteLoad(S, market, here, salePort, cand, units);
+        if (q.qty && (!best || q.profit > best.profit)) best = { good: cand, ...q };
+      }
+      if (!best) { bestFailed = true; continue; }
+      g = best.good;
+      ({ bought: qty, cost } = market.buy(here, g, best.qty, best.cost, free));
+    } else if (market.sells(here, g)) {
+      // A standing order: the captain buys what he is told, keeping back the purse reserve.
+      ({ bought: qty, cost } = market.buy(here, g, units, Math.max(0, Math.floor(S.purse - RESERVE)), free));
+      if (!qty) parts.push(`could not afford ${good(g).name.toLowerCase()}`);
     }
-  } else if (choice !== 'none') {
+    if (qty) {
+      S.purse -= cost;
+      addToHold(ship, g, qty, cost);
+      boughtAny = true;
+      parts.push(`loaded ${qty} ${good(g).unit} of ${good(g).name.toLowerCase()} for ${cost.toLocaleString()} cz`);
+    }
+  }
+  if (bestFailed && !boughtAny && holdUsed(ship) === 0) {
     if (ship.waitSince == null) ship.waitSince = S.day;
     if (S.day - ship.waitSince < MAX_WAIT_DAYS) {
       const first = ship.status !== 'loading';
       ship.status = 'loading';
       ship.nextCheck = S.day + 1;
       if (first) {
-        const what = choice === 'best' ? 'nothing here pays for the run' : `${good(choice).name.toLowerCase()} is too dear to turn a profit`;
-        parts.push(`${what}, so he waits on half pay for prices to recover`);
+        parts.push('nothing here pays for the run, so he waits on half pay for prices to recover');
         msgs.push({ html: `<b>${ship.name}</b> at ${port(here).name}: ${parts.join('. ')}.`, kind: 'port', log: `${ship.name}: ${parts.join('; ')} at ${port(here).name}.` });
       }
       return msgs;
     }
-    parts.push(S.purse - RESERVE < 20 ? 'could not afford a cargo, so sailed empty' : `waited ${Math.round(S.day - ship.waitSince)} days for better prices, then sailed empty`);
+    parts.push(`waited ${Math.round(S.day - ship.waitSince)} days for better prices, then sailed empty`);
   }
   ship.waitSince = null;
-  const leg = planLeg(S, ship, here, next);
+  r.next = (r.next + 1) % r.stops.length;
+  msgs.push(...sailOn(S, ship, parts, fresh));
+  return msgs;
+}
+
+function sailOn(S, ship, parts, fresh) {
+  const msgs = [];
+  const next = ship.route.stops[ship.route.next].port;
+  const leg = planLeg(S, ship, ship.at, next);
   if (!leg) { ship.status = 'idle'; return msgs; }
   ship.leg = leg;
   ship.status = 'sailing';
   if (parts.length || fresh) {
-    const what = parts.length ? parts.join('. ') : 'sailing empty';
-    msgs.push({ html: `<b>${ship.name}</b> at ${port(here).name}: ${what}. Bound for ${port(next).name}, about ${Math.round(leg.days)} days.`, kind: 'port', log: `${ship.name}: ${what} at ${port(here).name}.` });
+    const what = parts.length ? parts.join('. ') : `sailing with ${holdText(ship)}`;
+    msgs.push({ html: `<b>${ship.name}</b> at ${port(ship.at).name}: ${what}. Bound for ${port(next).name}, about ${Math.round(leg.days)} days.`, kind: 'port', log: `${ship.name}: ${what} at ${port(ship.at).name}.` });
   }
   return msgs;
 }
 
 // Spoilage aboard a hired ship, worked out on arrival from the time at sea.
 function spoilOnArrival(ship, days, lat) {
-  if (!ship.cargo) return null;
-  const g = good(ship.cargo.good);
-  if (!g.spoil) return null;
   const heat = lat < 26 ? 1.6 : 1;
-  const lost = Math.min(ship.cargo.qty, Math.floor(ship.cargo.qty * (1 - Math.exp(-g.spoil * heat * days)) + Math.random()));
-  if (lost <= 0) return null;
-  ship.cargo.qty -= lost;
-  if (!ship.cargo.qty) ship.cargo = null;
-  return { lost, g };
+  const out = [];
+  for (const [g, lot] of Object.entries(holdOf(ship))) {
+    const gd = good(g);
+    if (!gd.spoil || lot.qty <= 0) continue;
+    const lost = Math.min(lot.qty, Math.floor(lot.qty * (1 - Math.exp(-gd.spoil * heat * days)) + Math.random()));
+    if (lost <= 0) continue;
+    lot.qty -= lost; // what was paid stays paid
+    if (!lot.qty) delete holdOf(ship)[g];
+    out.push(`${lost} ${lost === 1 ? gd.one : gd.unit} of ${gd.name.toLowerCase()} ${gd.rot}`);
+  }
+  return out;
 }
 
 export function tick(S, market, days, ownerPresent = true) {
   const F = ensureFleet(S);
   const msgs = [];
   for (const ship of F.ships) {
+    upgradeShip(ship);
     const pay = dailyCost(ship) * (ship.status === 'sailing' ? 1 : IDLE_PAY) * days;
     S.purse -= pay;
     F.wagesPaid = (F.wagesPaid || 0) + pay;
@@ -281,12 +384,12 @@ export function tick(S, market, days, ownerPresent = true) {
       ship.at = leg.to;
       ship.leg = null;
       const lost = spoilOnArrival(ship, leg.days, (port(leg.from).lat + port(leg.to).lat) / 2);
-      if (lost) msgs.push({ html: `<b>${ship.name}</b>: ${lost.lost} ${lost.lost === 1 ? lost.g.one : lost.g.unit} of ${lost.g.name.toLowerCase()} ${lost.g.rot} on the passage.`, kind: '' });
-      msgs.push(...arrive(S, market, ship));
+      if (lost.length) msgs.push({ html: `<b>${ship.name}</b>: ${lost.join(', ')} on the passage.`, kind: '' });
+      msgs.push(...visit(S, market, ship));
     } else if (ship.status === 'waiting' && !market.closed(ship.at)) {
-      msgs.push(...arrive(S, market, ship));
+      msgs.push(...visit(S, market, ship));
     } else if (ship.status === 'loading' && ship.route && S.day >= (ship.nextCheck ?? 0)) {
-      msgs.push(...loadAndSail(S, market, ship));
+      msgs.push(...buyAndSail(S, market, ship));
     }
   }
   return msgs;
@@ -312,8 +415,7 @@ export function statusText(S, ship) {
   const r = ship.route;
   if (ship.status === 'sailing' && ship.leg) {
     const left = Math.max(0, Math.ceil(ship.leg.start + ship.leg.days - S.day));
-    const load = ship.cargo ? `${ship.cargo.qty} ${good(ship.cargo.good).unit} of ${good(ship.cargo.good).name.toLowerCase()}` : 'an empty hold';
-    return `Bound for ${port(ship.leg.to).name} with ${load}, about ${left} ${left === 1 ? 'day' : 'days'} out.`;
+    return `Bound for ${port(ship.leg.to).name} with ${holdText(ship)}, about ${left} ${left === 1 ? 'day' : 'days'} out.`;
   }
   if (ship.status === 'waiting') return `Waiting outside ${port(ship.at).name} for the port to reopen.`;
   if (ship.status === 'loading') return `Waiting in ${port(ship.at).name} for prices to recover, on half pay (${Math.max(0, Math.round(S.day - (ship.waitSince ?? S.day)))} of up to ${MAX_WAIT_DAYS} days).`;
