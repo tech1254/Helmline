@@ -9,7 +9,7 @@ An age-of-sail exploration and trade game. This is **Prototype 0**: the West Afr
 - **Winds:** north-east trades in the south, northerlies off Portugal, westerlies out at sea. Sailing home against the trades is slow; swinging out to sea (the *volta do mar*) is usually faster.
 - **Six ports:** Lisbon, Lagos, Funchal, Lanzarote (known at the start), Arguin and the Gambia River (to be discovered).
 - **Seven goods** with reactive prices: trading moves the price, and it recovers over weeks.
-- **Trade ledger:** prices you have actually seen, with their age, and route suggestions based only on that data.
+- **Trade ledger:** prices you have actually seen, with their age, and route suggestions based only on that data, reckoned net of wages for the real passage and expected spoilage.
 - **Chart rewards:** the crown pays 150 cz per new port or land group when you return to Lisbon.
 - **Contracts** (from 500 cz): Prince Henry's first commission, then delivery contracts with deadlines.
 - **Standing:** tiers that raise contract pay, improve prices in Portuguese ports and open the Lisbon shipyard.

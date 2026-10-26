@@ -832,8 +832,8 @@ function applyCourse(plan) {
 }
 
 // Sail the route on paper, with the winds as they stand today, to estimate the passage.
-function estimateVoyage(route) {
-  let lon = S.ship.lon, lat = S.ship.lat, day = S.day, nm = 0;
+function estimateVoyage(route, from = S.ship, startDay = S.day) {
+  let lon = from.lon, lat = from.lat, day = startDay, nm = 0, hot = 0;
   for (const [tl, ta] of route) {
     for (let guard = 0; guard < 20000; guard++) {
       const rem = distNm(lon, lat, tl, ta);
@@ -846,12 +846,13 @@ function estimateVoyage(route) {
       lat += (step * Math.cos(b * D2R)) / 60;
       lon += (step * Math.sin(b * D2R)) / (60 * Math.cos(lat * D2R));
       day += step / perDay;
+      if (lat < 26) hot += step / perDay;
       nm += step;
     }
     lon = tl; lat = ta;
   }
-  const days = day - S.day;
-  return { days, nm, cost: Math.ceil(days * SHIP.upkeep) };
+  const days = day - startDay;
+  return { days, nm, hot, cost: Math.ceil(days * SHIP.upkeep) };
 }
 
 // Zoom and pan so every point fits on screen, leaving room for the dialog.
@@ -1430,9 +1431,30 @@ function ageText(day) {
   return d <= 0 ? 'today' : d === 1 ? '1 day ago' : `${d} days ago`;
 }
 
+// Sea passages for the harbourmaster's reckoning: the real route through the winds,
+// cached for a few days since he reasons from the same chart each time the ledger opens.
+const passageCache = new Map();
+function passage(from, to, startDay) {
+  const key = `${from.lon.toFixed(1)},${from.lat.toFixed(1)}>${to.id}@${Math.floor(startDay / 5)}`;
+  if (passageCache.has(key)) return passageCache.get(key);
+  let est = null;
+  if (distNm(from.lon, from.lat, to.lon, to.lat) < 1) est = { days: 0, nm: 0, hot: 0 };
+  else {
+    const route = findPath(from.lon, from.lat, to.lon, to.lat);
+    if (route) est = estimateVoyage(route, from, startDay);
+  }
+  if (passageCache.size > 300) passageCache.clear();
+  passageCache.set(key, est);
+  return est;
+}
+
+// Trade runs the captain could make from what he has seen: buy at A, carry to B.
+// Net of wages for the whole passage (getting to A, then A to B) and of the cargo
+// he can expect to lose to rot on the way.
 function suggestions() {
   const out = [];
   const seen = Object.entries(S.seen);
+  const here = { lon: S.ship.lon, lat: S.ship.lat };
   for (const g of GOODS) {
     for (const [a, ra] of seen) {
       const buy = ra.prices[g.id].buy;
@@ -1440,19 +1462,29 @@ function suggestions() {
       for (const [b, rb] of seen) {
         if (a === b) continue;
         const sell = rb.prices[g.id].sell;
-        const margin = sell - buy;
-        if (margin <= 2) continue;
+        if (sell - buy <= 2) continue;
         const pa = PORTS.find((p) => p.id === a), pb = PORTS.find((p) => p.id === b);
-        const units = Math.min(SHIP.hold, Math.max(1, Math.floor(Math.max(S.purse, 50) / buy)));
-        const profit = Math.round(margin * units * 0.7); // allow for prices moving as you trade
-        const nm = distNm(S.ship.lon, S.ship.lat, pa.lon, pa.lat) + distNm(pa.lon, pa.lat, pb.lon, pb.lat);
-        const days = Math.max(1, nm / 100);
+        const toA = passage(here, pa, S.day);
+        if (!toA) continue;
+        const run = passage(pa, pb, S.day + toA.days);
+        if (!run) continue;
+        const days = Math.max(1, toA.days + run.days);
+        const wages = Math.round(days * SHIP.upkeep);
+        const budget = Math.max(S.purse - wages, 50);
+        const units = Math.min(SHIP.hold, Math.max(1, Math.floor(budget / buy)));
+        // Prices move as you trade: you pay more for each unit and get less for each sold.
+        const gross = (sell - buy) * units * 0.7;
+        // Expected rot on the run from A to B, faster in the tropics.
+        const rotDays = run.days + 0.6 * run.hot;
+        const lost = g.spoil ? units * (1 - Math.exp(-g.spoil * rotDays)) : 0;
+        const spoilage = Math.round(lost * sell * 0.9);
+        const profit = Math.round(gross - wages - spoilage);
         const stale = Math.max(S.day - ra.day, S.day - rb.day);
-        out.push({ g, pa, pb, buy, sell, units, profit, days, stale, score: (profit - days * SHIP.upkeep) / days, ageA: ra.day, ageB: rb.day });
+        out.push({ g, pa, pb, buy, sell, units, gross: Math.round(gross), wages, spoilage, lost, profit, days, stale, score: profit / days, ageA: ra.day, ageB: rb.day, here: toA.days < 0.05 });
       }
     }
   }
-  return out.filter((s) => s.score > 0).sort((x, y) => y.score - x.score).slice(0, 4);
+  return out.filter((s) => s.profit > 0).sort((x, y) => y.score - x.score).slice(0, 4);
 }
 
 function renderLedger(el) {
@@ -1476,8 +1508,11 @@ function renderLedger(el) {
   const sug = suggestions();
   const sugHtml = sug.length
     ? sug.map((s) => `<li><b>${s.g.name}:</b> buy at ${s.pa.name} (${s.buy}, seen ${ageText(s.ageA)}), sell at ${s.pb.name} (${s.sell}, seen ${ageText(s.ageB)}).
-        About <b>+${s.profit.toLocaleString()} cz</b> on ${s.units} ${s.g.unit}, roughly ${Math.round(s.days)} days of sailing.${s.stale > 60 ? ' <em>Old news: prices may have moved.</em>' : ''}</li>`).join('')
-    : '<li class="muted">Visit more ports. The ledger can only reason from prices you have seen with your own eyes.</li>';
+        About <b>+${s.profit.toLocaleString()} cz</b> clear on ${s.units} ${s.g.unit}, about ${Math.max(1, Math.round(s.days))} days${s.here ? '' : `, counting the passage to ${s.pa.name}`}.
+        <small class="muted">${s.gross.toLocaleString()} cz on the trade, less ${s.wages.toLocaleString()} wages${s.spoilage ? ` and ${s.spoilage.toLocaleString()} for spoilage (${s.lost < 0.75 ? `under one ${s.g.one}` : `about ${Math.round(s.lost)} ${Math.round(s.lost) > 1 ? s.g.unit : s.g.one}`})` : ''}.</small>${s.stale > 60 ? ' <em>Old news: prices may have moved.</em>' : ''}</li>`).join('')
+    : Object.keys(S.seen).length > 1
+      ? '<li class="muted">No run you know of pays once wages and spoilage are counted. Visit more ports, or wait for prices to move.</li>'
+      : '<li class="muted">Visit more ports. The ledger can only reason from prices you have seen with your own eyes.</li>';
   el.innerHTML = `
     ${tabs('ledger')}
     <header><h2>Trade ledger</h2><button class="close" data-close-ledger aria-label="Close">×</button></header>
