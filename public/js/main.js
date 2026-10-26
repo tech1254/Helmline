@@ -783,7 +783,7 @@ function catchUp() {
     S.contracts.standing -= standingLost;
     log(`Away too long: standing fell by ${standingLost}.`);
   }
-  const wages = days * S.fleet.ships.reduce((n, x) => n + Fleet.dailyCost(x), 0); // your own crew is paid off in port
+  const paidBefore = S.fleet.wagesPaid || 0; // your own crew is paid off in port; only captains draw pay
   // Contracts wait for the captain: time away never makes one lapse.
   let contractsHeld = 0;
   for (const c of S.contracts?.active || []) {
@@ -806,6 +806,7 @@ function catchUp() {
   });
   log(`Away ${awayText(awaySec)}: ${Math.round(days)} days passed; purse ${S.purse - before.purse >= 0 ? '+' : ''}${Math.round(S.purse - before.purse)} cz.`);
   save();
+  const wages = (S.fleet.wagesPaid || 0) - paidBefore;
   const sales = ships.reduce((n, x) => n + x.profit, 0);
   const cargo = ships.reduce((n, x) => n + x.cargoChange, 0);
   return { awaySec, days, capped: days >= OFFLINE_MAX_DAYS, slowed: want > OFFLINE_FULL_DAYS, purse: S.purse - before.purse, sales, wages, cargo, ships, msgs, strayed, standingLost, contractsHeld };
@@ -1406,8 +1407,9 @@ function portOptions(selected) {
 }
 
 function goodOptions(portId, selected) {
-  const opts = GOODS.filter((g) => market.sells(portId, g.id)).map((g) => `<option value="${g.id}" ${g.id === selected ? 'selected' : ''}>${g.name}</option>`);
-  return `<option value="">Nothing (sail empty)</option>${opts.join('')}`;
+  const sel = selected === undefined ? 'best' : selected == null ? 'none' : selected; // old routes: null meant nothing
+  const opts = GOODS.filter((g) => market.sells(portId, g.id)).map((g) => `<option value="${g.id}" ${g.id === sel ? 'selected' : ''}>${g.name} only</option>`);
+  return `<option value="best" ${sel === 'best' ? 'selected' : ''}>Best available (captain's choice)</option>${opts.join('')}<option value="none" ${sel === 'none' ? 'selected' : ''}>Nothing (sail empty)</option>`;
 }
 
 function renderFleet(el) {
@@ -1418,14 +1420,14 @@ function renderFleet(el) {
     const last = ship.last ? `Last: sold ${ship.last.qty} ${GOODS.find((g) => g.id === ship.last.good).unit} at ${PORTS.find((p) => p.id === ship.last.at).name} for ${ship.last.income.toLocaleString()} cz (${ship.last.profit >= 0 ? '+' : ''}${ship.last.profit.toLocaleString()}).` : 'No voyages yet.';
     return `<li class="contract" data-ship="${ship.id}">
         <div class="c-head"><span class="c-title">${ship.name}</span><span class="c-pay">${ship.profit >= 0 ? '+' : ''}${ship.profit.toLocaleString()} cz</span></div>
-        <div class="c-patron">Captain ${ship.captain.name} · navigation ${stars(ship.captain.nav)} · trade ${stars(ship.captain.trade)} · ${Fleet.dailyCost(ship)} cz a day · ${Fleet.loyaltyText(ship.captain.loyalty)}</div>
+        <div class="c-patron">Captain ${ship.captain.name} · navigation ${stars(ship.captain.nav)} · trade ${stars(ship.captain.trade)} · ${Fleet.dailyCost(ship)} cz a day at sea, half in port · ${Fleet.loyaltyText(ship.captain.loyalty)}</div>
         <p>${Fleet.statusText(S, ship)} ${ship.trips} ${ship.trips === 1 ? 'cargo' : 'cargoes'} sold so far.</p>
         <p class="muted">${last}</p>
         <div class="route">
           <label>Buy at <select data-role="a">${portOptions(a)}</select></label>
-          <label>Load <select data-role="ga">${goodOptions(a, r.goodA)}</select></label>
+          <label>Load <select data-role="ga">${goodOptions(a, ship.route ? r.goodA : undefined)}</select></label>
           <label>Sell at <select data-role="b">${portOptions(b)}</select></label>
-          <label>Load <select data-role="gb">${goodOptions(b, r.goodB)}</select></label>
+          <label>Load <select data-role="gb">${goodOptions(b, ship.route ? r.goodB : undefined)}</select></label>
         </div>
         <div class="row">${ship.route ? `<button data-stop="${ship.id}">Stop at next port</button>` : ''}<button class="primary" data-route="${ship.id}">${ship.route ? 'Change route' : 'Start route'}</button></div>
       </li>`;
@@ -1705,7 +1707,7 @@ $('panel').addEventListener('click', (e) => {
     if (cap) {
       confirmDialog({
         title: `Buy a caravel for Captain ${cap.name}?`,
-        body: `<dl class="facts"><dt>Caravel</dt><dd>${Fleet.SHIP_COST.toLocaleString()} cz</dd><dt>Running cost</dt><dd>${cap.wage + Fleet.SHIP_UPKEEP} cz a day</dd><dt>Purse after</dt><dd>${Math.floor(S.purse - Fleet.SHIP_COST).toLocaleString()} cz</dd></dl><p>Then give him a route between two ports.</p>`,
+        body: `<dl class="facts"><dt>Caravel</dt><dd>${Fleet.SHIP_COST.toLocaleString()} cz</dd><dt>Running cost</dt><dd>${cap.wage + Fleet.SHIP_UPKEEP} cz a day at sea, half that in port</dd><dt>Purse after</dt><dd>${Math.floor(S.purse - Fleet.SHIP_COST).toLocaleString()} cz</dd></dl><p>Then give him a route between two ports.</p>`,
         ok: `Buy for ${Fleet.SHIP_COST.toLocaleString()} cz`,
         onOk: () => {
           const ship = Fleet.buyShip(S, cap.id);
@@ -1718,9 +1720,9 @@ $('panel').addEventListener('click', (e) => {
     const ship = S.fleet.ships.find((x) => x.id === +t.dataset.route);
     const card = t.closest('[data-ship]');
     const v = (role) => card.querySelector(`[data-role="${role}"]`).value;
-    const r = { a: v('a'), goodA: v('ga') || null, b: v('b'), goodB: v('gb') || null };
+    const r = { a: v('a'), goodA: v('ga'), b: v('b'), goodB: v('gb') };
     if (r.a === r.b) { toast('Pick two different ports.'); return; }
-    if (!r.goodA && !r.goodB) { toast('Choose a cargo for at least one leg.'); return; }
+    if (r.goodA === 'none' && r.goodB === 'none') { toast('Choose a cargo for at least one leg.'); return; }
     report(Fleet.setRoute(S, market, ship, r));
     toast(`<b>${ship.name}</b> will run ${PORTS.find((p) => p.id === r.a).name} – ${PORTS.find((p) => p.id === r.b).name}.`, 'port');
   } else if (t.dataset.stop) {
@@ -1789,8 +1791,8 @@ $('panel').addEventListener('change', (e) => {
   const sel = e.target.closest('select[data-role]');
   if (!sel) return;
   const card = sel.closest('[data-ship]');
-  if (sel.dataset.role === 'a') card.querySelector('[data-role="ga"]').innerHTML = goodOptions(sel.value, null);
-  if (sel.dataset.role === 'b') card.querySelector('[data-role="gb"]').innerHTML = goodOptions(sel.value, null);
+  if (sel.dataset.role === 'a') card.querySelector('[data-role="ga"]').innerHTML = goodOptions(sel.value, undefined);
+  if (sel.dataset.role === 'b') card.querySelector('[data-role="gb"]').innerHTML = goodOptions(sel.value, undefined);
 });
 
 document.querySelectorAll('[data-speed]').forEach((b) => b.addEventListener('click', () => setSpeed(+b.dataset.speed)));

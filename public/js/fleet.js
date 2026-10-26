@@ -17,6 +17,10 @@ export const LOYALTY_SKIM = 50; // below this he keeps part of each sale
 export const LOYALTY_DESERT = 20; // below this he goes ashore and stops sailing
 const SKIM_SHARE = 0.15;
 const LOYALTY_REGAIN_PER_DAY = 0.3; // while the owner is playing
+// With nothing worth loading, a captain waits in port on half pay for prices to recover,
+// rechecking daily, before giving up and sailing empty.
+const MAX_WAIT_DAYS = 12;
+export const IDLE_PAY = 0.5;
 const CANDIDATE_DAYS = 30;
 
 const SHIP_NAMES = ['Santa Clara', 'São Jorge', 'Bom Jesus', 'Espírito Santo', 'Santa Maria', 'São Gabriel'];
@@ -127,7 +131,7 @@ export function setRoute(S, market, ship, route) {
   if (S.ship.docked && S.ship.docked === ship.at) ship.captain.loyalty = Math.max(ship.captain.loyalty ?? 100, 60);
   if (ship.status === 'ashore' && S.ship.docked === ship.at) ship.status = 'idle';
   const msgs = [];
-  if (route && (ship.status === 'idle' || ship.status === 'waiting')) msgs.push(...arrive(S, market, ship, true));
+  if (route && (ship.status === 'idle' || ship.status === 'waiting' || ship.status === 'loading')) { ship.waitSince = null; msgs.push(...arrive(S, market, ship, true)); }
   return msgs;
 }
 
@@ -168,31 +172,77 @@ function arrive(S, market, ship, fresh = false) {
     if (parts.length) msgs.push({ html: `<b>${ship.name}</b> at ${port(here).name}: ${parts.join('. ')}. Awaiting orders.`, kind: 'port', log: `${ship.name} ${parts.join('; ')} at ${port(here).name}.` });
     return msgs;
   }
-  const buyGood = here === r.a ? r.goodA : here === r.b ? r.goodB : null;
+  msgs.push(...loadAndSail(S, market, ship, parts, fresh));
+  return msgs;
+}
+
+// What the captain may load on this leg: 'best' (his choice), a good's id, or 'none'.
+// Routes saved before 'best' existed used null for "nothing".
+function legChoice(r, here) {
+  const c = here === r.a ? r.goodA : here === r.b ? r.goodB : 'none';
+  return c == null ? 'none' : c;
+}
+
+// Price a cargo without buying it: units bought one at a time while each should still sell at
+// a profit at the next port, allowing for the price there falling as he sells.
+function quoteLoad(S, market, here, next, g) {
+  const target = market.sellPrice(next, g) * (1 - 0.006 * HOLD / 2);
+  const saved = market.press[here][g];
+  let qty = 0, cost = 0, profit = 0;
+  while (qty < HOLD) {
+    const price = market.buyPrice(here, g);
+    if (price > target * MARGIN || S.purse - cost - price < RESERVE) break;
+    market.press[here][g] -= 0.5; // as a real purchase would
+    qty++;
+    cost += price;
+    profit += target - price;
+  }
+  market.press[here][g] = saved;
+  return { qty, cost, profit };
+}
+
+function bestCargo(S, market, here, next, choice) {
+  const options = choice === 'best'
+    ? GOODS.filter((g) => market.sells(here, g.id)).map((g) => g.id)
+    : choice !== 'none' && market.sells(here, choice) ? [choice] : [];
+  let best = null;
+  for (const g of options) {
+    const q = quoteLoad(S, market, here, next, g);
+    if (q.qty && (!best || q.profit > best.profit)) best = { good: g, ...q };
+  }
+  return best;
+}
+
+// Load the best cargo going and sail; or, if nothing pays, wait in port a while on half pay.
+function loadAndSail(S, market, ship, parts = [], fresh = false) {
+  const msgs = [];
+  const here = ship.at, r = ship.route;
   const next = here === r.a ? r.b : r.a;
-  if (buyGood && market.sells(here, buyGood)) {
-    // Load one unit at a time while it should still sell at a profit at the other end.
-    // The captain reckons on the price there falling as he sells, so he wants a fair margin.
-    const target = market.sellPrice(next, buyGood) * (1 - 0.006 * HOLD / 2);
-    let bought = 0, cost = 0;
-    while (bought < HOLD) {
-      const price = market.buyPrice(here, buyGood);
-      if (price > target * MARGIN || S.purse - cost - price < RESERVE) break;
-      const r1 = market.buy(here, buyGood, 1, price, 1);
-      if (!r1.bought) break;
-      bought++;
-      cost += r1.cost;
-    }
+  const choice = legChoice(r, here);
+  const pick = choice === 'none' ? null : bestCargo(S, market, here, next, choice);
+  if (pick) {
+    const { bought, cost } = market.buy(here, pick.good, pick.qty, pick.cost, HOLD);
     if (bought) {
       S.purse -= cost;
-      ship.cargo = { good: buyGood, qty: bought, paid: cost, loaded: S.day };
-      parts.push(`loaded ${bought} ${good(buyGood).unit} of ${good(buyGood).name.toLowerCase()} for ${cost.toLocaleString()} cz`);
-    } else if (S.purse - market.buyPrice(here, buyGood) < RESERVE) {
-      parts.push(`could not afford a cargo of ${good(buyGood).name.toLowerCase()}`);
-    } else {
-      parts.push(`found ${good(buyGood).name.toLowerCase()} too dear to turn a profit, so sailed empty`);
+      ship.cargo = { good: pick.good, qty: bought, paid: cost, loaded: S.day };
+      parts.push(`loaded ${bought} ${good(pick.good).unit} of ${good(pick.good).name.toLowerCase()} for ${cost.toLocaleString()} cz`);
     }
+  } else if (choice !== 'none') {
+    if (ship.waitSince == null) ship.waitSince = S.day;
+    if (S.day - ship.waitSince < MAX_WAIT_DAYS) {
+      const first = ship.status !== 'loading';
+      ship.status = 'loading';
+      ship.nextCheck = S.day + 1;
+      if (first) {
+        const what = choice === 'best' ? 'nothing here pays for the run' : `${good(choice).name.toLowerCase()} is too dear to turn a profit`;
+        parts.push(`${what}, so he waits on half pay for prices to recover`);
+        msgs.push({ html: `<b>${ship.name}</b> at ${port(here).name}: ${parts.join('. ')}.`, kind: 'port', log: `${ship.name}: ${parts.join('; ')} at ${port(here).name}.` });
+      }
+      return msgs;
+    }
+    parts.push(S.purse - RESERVE < 20 ? 'could not afford a cargo, so sailed empty' : `waited ${Math.round(S.day - ship.waitSince)} days for better prices, then sailed empty`);
   }
+  ship.waitSince = null;
   const leg = planLeg(S, ship, here, next);
   if (!leg) { ship.status = 'idle'; return msgs; }
   ship.leg = leg;
@@ -221,7 +271,9 @@ export function tick(S, market, days, ownerPresent = true) {
   const F = ensureFleet(S);
   const msgs = [];
   for (const ship of F.ships) {
-    S.purse -= dailyCost(ship) * days;
+    const pay = dailyCost(ship) * (ship.status === 'sailing' ? 1 : IDLE_PAY) * days;
+    S.purse -= pay;
+    F.wagesPaid = (F.wagesPaid || 0) + pay;
     if (ship.captain.loyalty == null) ship.captain.loyalty = 100;
     if (ownerPresent) ship.captain.loyalty = Math.min(100, ship.captain.loyalty + LOYALTY_REGAIN_PER_DAY * days);
     if (ship.status === 'sailing' && ship.leg && S.day >= ship.leg.start + ship.leg.days) {
@@ -233,6 +285,8 @@ export function tick(S, market, days, ownerPresent = true) {
       msgs.push(...arrive(S, market, ship));
     } else if (ship.status === 'waiting' && !market.closed(ship.at)) {
       msgs.push(...arrive(S, market, ship));
+    } else if (ship.status === 'loading' && ship.route && S.day >= (ship.nextCheck ?? 0)) {
+      msgs.push(...loadAndSail(S, market, ship));
     }
   }
   return msgs;
@@ -262,6 +316,7 @@ export function statusText(S, ship) {
     return `Bound for ${port(ship.leg.to).name} with ${load}, about ${left} ${left === 1 ? 'day' : 'days'} out.`;
   }
   if (ship.status === 'waiting') return `Waiting outside ${port(ship.at).name} for the port to reopen.`;
+  if (ship.status === 'loading') return `Waiting in ${port(ship.at).name} for prices to recover, on half pay (${Math.max(0, Math.round(S.day - (ship.waitSince ?? S.day)))} of up to ${MAX_WAIT_DAYS} days).`;
   if (ship.status === 'ashore') return `Ashore in ${port(ship.at).name}: Captain ${ship.captain.name} will not sail until you give him orders there in person.`;
   return r ? `In ${port(ship.at).name}.` : `Idle in ${port(ship.at).name}, awaiting a route.`;
 }
