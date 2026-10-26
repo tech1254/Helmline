@@ -141,6 +141,7 @@ function revealAt(lon, lat, r, quiet = false) {
     if (!S.discovered[p.id] && distNm(lon, lat, p.lon, p.lat) <= r * 55) {
       S.discovered[p.id] = true;
       S.unpaidCharts.push(p.name);
+      warmRoutes();
       toast(`New port charted: <b>${p.name}</b>`, 'discover');
       log(`Charted the port of ${p.name}.`);
     }
@@ -1661,6 +1662,23 @@ function ageText(day) {
   return d <= 0 ? 'today' : d === 1 ? '1 day ago' : `${d} days ago`;
 }
 
+// Work out the sea routes between charted ports in the background, one every few
+// milliseconds, so the ledger and the captains find them ready instead of pausing.
+let warmQueue = [], warmTimer = null;
+function warmRoutes() {
+  warmQueue = [];
+  const known = PORTS.filter((p) => S.discovered[p.id]);
+  for (const a of known) for (const b of known) if (a !== b) warmQueue.push([a, b]);
+  if (!warmTimer) warmTimer = setTimeout(warmStep, 50);
+}
+function warmStep() {
+  warmTimer = null;
+  const pair = warmQueue.shift();
+  if (!pair) return;
+  findPath(pair[0].lon, pair[0].lat, pair[1].lon, pair[1].lat);
+  warmTimer = setTimeout(warmStep, 40);
+}
+
 // Sea passages for the harbourmaster's reckoning: the real route through the winds,
 // cached for a few days since he reasons from the same chart each time the ledger opens.
 const passageCache = new Map();
@@ -2140,6 +2158,7 @@ let startSummary = catchUp();
 // Build the sea grid and the routes from here to each charted port while the intro is read.
 setTimeout(() => {
   for (const p of PORTS) if (S.discovered[p.id] && p.id !== S.ship.docked) findPath(S.ship.lon, S.ship.lat, p.lon, p.lat);
+  warmRoutes();
 }, 300);
 centerOn(-13, 29, 0.85);
 setSpeed(1);
