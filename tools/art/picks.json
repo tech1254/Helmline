@@ -58,6 +58,16 @@
       "src": "production-1/ship-nau-cross-b-cut.png",
       "waterline": 0.09,
       "length": 30
+    },
+    "largecaravel": {
+      "src": "production-8/ship-largecaravel-b-cut.png",
+      "waterline": 0.1,
+      "length": 25
+    },
+    "largecaravel-cross": {
+      "src": "production-9/ship-largecaravel-cross-b-cut.png",
+      "waterline": 0.1,
+      "length": 25
     }
   },
   "stocks": {
