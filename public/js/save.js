@@ -8,6 +8,7 @@ import * as Fleet from './fleet.js';
 import * as Accounts from './accounts.js';
 import * as Pirates from './pirates.js';
 import * as Ships from './ships.js';
+import * as Ports from './ports.js';
 import { SAVE_KEY, START_PURSE } from './config.js';
 import { S, market, setGame } from './state.js';
 import { fogToString, initFog, markFogDirty } from './fog.js';
@@ -73,6 +74,7 @@ export function applySaveData(d) {
     Pirates.ensurePirates(S);
     Accounts.ensureAccounts(S);
     Ships.ensureFlagship(S);
+    Ports.ensurePorts(S);
     // Ports and goods added since the save was made: the known ports charted, an empty hold for new goods.
     for (const p of PORTS) if (p.known && S.discovered[p.id] == null) S.discovered[p.id] = true;
     for (const g of GOODS) { S.cargo[g.id] = S.cargo[g.id] || 0; S.paid[g.id] = S.paid[g.id] || 0; }
@@ -102,6 +104,7 @@ export function newGame() {
   Pirates.ensurePirates(S);
   Accounts.ensureAccounts(S);
   Ships.ensureFlagship(S);
+  Ports.ensurePorts(S);
   syncMarket();
   observe('lisbon');
   centerOn(-13, 29, 0.85);

@@ -9,12 +9,13 @@ import * as Accounts from './accounts.js';
 import * as Pirates from './pirates.js';
 import { WAGE_RESERVE_DAYS } from './config.js';
 import * as Ships from './ships.js';
+import * as Ports from './ports.js';
 import { S, market, ui } from './state.js';
 import { newGame, save } from './save.js';
 import { cloudSync, loadFromCloud, renderCloudButton, startCloudSave } from './cloudsync.js';
 import { cam, centerOn, clampCam } from './view.js';
 import { report } from './sim.js';
-import { checkMilestones, confirmVoyage, noPassage, observe, planCourse, waitInPort } from './voyage.js';
+import { boatsFor, checkMilestones, confirmVoyage, noPassage, observe, planCourse, waitInPort } from './voyage.js';
 import { menuAction } from './dock.js';
 import { openShips } from './shipyard.js';
 import { closeFeedback, feedbackInput, openFeedback, submitFeedback } from './feedback.js';
@@ -39,6 +40,10 @@ export function routeProblem(d, ship) {
       const a = PORTS.find((p) => p.id === d.stops[i].port), b = PORTS.find((p) => p.id === d.stops[(i + 1) % d.stops.length].port);
       if (a && b && !findPath(a.lon, a.lat, b.lon, b.lat, 1, true)) return `A ${H.name.toLowerCase()} keeps to the coast and cannot sail from ${a.name} to ${b.name}. Choose coastal ports, or give her captain a bigger ship.`;
     }
+  }
+  for (const st of d.stops) {
+    const p = PORTS.find((x) => x.id === st.port);
+    if (p?.river && Ships.draftOf(ship?.hull || 'caravel', 0) > Ports.depthOf(S, p.id) + 0.8) return `A ${H.name.toLowerCase()} draws too much to go up the river to ${p.name}, even light. Give that run to a barca or a caravel.`;
   }
   for (let i = 0; i < d.stops.length; i++) {
     if (d.stops[i].port === d.stops[(i + 1) % d.stops.length].port) return `Stops ${i + 1} and ${((i + 1) % d.stops.length) + 1} are the same port. Pick another, or remove one.`;
@@ -79,6 +84,7 @@ export function initActions() {
         const { bought, cost } = market.buy(pid, g, n, budget, free);
         S.cargo[g] += bought; S.paid[g] += cost; S.purse -= cost;
         Accounts.record(S, { kind: 'purchase', good: g, qty: bought, amount: -cost });
+        boatsFor(bought); // at anchor offshore, her boats bring it out
         observe(pid);
       };
       if (n > 1) {
@@ -102,6 +108,7 @@ export function initActions() {
         const { sold, income } = market.sell(pid, g, n);
         S.cargo[g] -= sold; S.paid[g] = Math.max(0, S.paid[g] - avgCost * sold); S.purse += income;
         Accounts.record(S, { kind: 'sale', good: g, qty: sold, amount: income });
+      boatsFor(sold);
         if (!S.cargo[g]) S.paid[g] = 0;
         observe(pid);
         checkMilestones();
@@ -213,7 +220,7 @@ export function initActions() {
           title: `Deliver ${c.qty} ${g.unit} of ${g.name.toLowerCase()}?`,
           body: `<dl class="facts"><dt>Contract pays</dt><dd>${c.reward.toLocaleString()} cz</dd><dt>Purse after</dt><dd>${Math.floor(S.purse + c.reward).toLocaleString()} cz</dd><dt>Left in the hold</dt><dd>${S.cargo[c.good] - c.qty} ${g.unit}</dd></dl>`,
           ok: `Deliver for ${c.reward.toLocaleString()} cz`,
-          onOk: () => { const m = Contracts.deliver(S, c); toast(m.html, m.kind); log(m.log); checkMilestones(); },
+          onOk: () => { const qty = c.qty || 0; const m = Contracts.deliver(S, c); boatsFor(qty); toast(m.html, m.kind); log(m.log); checkMilestones(); },
         });
         return;
       }

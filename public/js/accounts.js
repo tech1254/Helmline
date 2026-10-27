@@ -17,6 +17,7 @@ export const KINDS = {
   ships: 'Ships',
   corsairs: 'Corsairs',
   repairs: 'Repairs',
+  boats: 'Boatmen',
 };
 
 export function ensureAccounts(S) {

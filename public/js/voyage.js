@@ -1,6 +1,7 @@
 // Voyages and port calls: corsairs, planning a course, docking, milestones.
 
-import { COS0, D2R, PORTS, windAt, sailFactor, bearing, distNm, angleDiff, findPath, COASTAL_NM } from './world.js';
+import { COS0, D2R, PORTS, windAt, sailFactor, bearing, distNm, angleDiff, findPath, COASTAL_NM, berth, anchorage, isRiverLeg, RIVER_KNOTS, riverOf, shoalDepth, DEEP_DRAFT } from './world.js';
+import * as Ports from './ports.js';
 import { GOODS } from './economy.js';
 import * as Contracts from './contracts.js';
 import * as Events from './events.js';
@@ -14,7 +15,7 @@ import { S, market, ui } from './state.js';
 import { save } from './save.js';
 import { cloudSync } from './cloudsync.js';
 import { H, W, cam, clampCam } from './view.js';
-import { advanceTime, flushRot, report, shipWind } from './sim.js';
+import { advanceTime, flushRot, report, shipWind, loadOf } from './sim.js';
 import { preloadArrival } from './scene.js';
 import { $, cz, fmtDate } from './util.js';
 import { renderPanel, setSpeed } from './panels.js';
@@ -114,6 +115,8 @@ export function waitInPort(days) {
   const pid = S.ship.docked;
   if (!pid) return;
   for (let i = 0; i < days * 4; i++) advanceTime(0.25, false);
+  const bt = S.ship.boats;
+  if (bt) { bt.moved = Math.min(bt.total, bt.moved + bt.rate * days); if (bt.moved >= bt.total) S.ship.boats = null; }
   observe(pid);
   report(Events.hearNews(S, pid));
   hint(`${days === 7 ? 'A week' : `${days} days`} pass${days === 7 ? 'es' : ''} in ${PORTS.find((p) => p.id === pid).name}.`, 'port');
@@ -136,27 +139,95 @@ function leak(p) {
 }
 
 export function replan(dest) {
-  const path = findPath(S.ship.lon, S.ship.lat, dest.lon, dest.lat, 1, !!Ships.hullOf(S.ship).coastal);
+  const path = findPath(S.ship.lon, S.ship.lat, dest.lon, dest.lat, 1, !!Ships.hullOf(S.ship).coastal, Ships.isDeep(S.ship.hull));
   if (!path) return false;
   S.ship.route = path;
   return true;
 }
 
 // Work out a course to a point (optionally a port), appended to the current one if `append`.
+let why = ''; // why the last course could not be planned, beyond the usual reasons
 export function planCourse(lon, lat, portId, append) {
   const sh = S.ship;
+  why = '';
+  const deep = Ships.isDeep(sh.hull);
+  // On a river she must reach its end before turning elsewhere.
+  if (!append && sh.route.length && isRiverLeg(sh.route[0]) && !sh.docked) {
+    why = 'She is on the river. Let her reach the town or the river mouth before you set a new course.';
+    return null;
+  }
+  if (portId) {
+    const r = riverOf(portId);
+    if (r && !Ports.canGoUpriver(S, portId, sh.hull, loadOf())) {
+      const p = PORTS.find((x) => x.id === portId);
+      why = `The <b>${sh.name}</b> draws ${Ships.draftOf(sh.hull, loadOf())} m as she is loaded, and the channel up ${r.name} to ${p.name} has ${Ports.depthOf(S, portId)} m just now. Lighten her, wait for the rains, or send a shallower ship.`;
+      return null;
+    }
+    const b = berth(portId, deep); // a deep ship anchors outside the Arguin banks
+    lon = b.lon; lat = b.lat;
+  }
   const keep = append && sh.route.length ? sh.route : [];
   const fromLon = keep.length ? keep[keep.length - 1][0] : sh.lon;
   const fromLat = keep.length ? keep[keep.length - 1][1] : sh.lat;
-  const path = findPath(fromLon, fromLat, lon, lat, 1, !!Ships.hullOf(sh).coastal);
+  const start = sh.docked && !keep.length ? PORTS.find((p) => p.id === sh.docked) : null;
+  // leaving a river town, her course starts from the town itself
+  const path = start?.river ? findPath(start.lon, start.lat, lon, lat, 1, !!Ships.hullOf(sh).coastal, deep)
+    : findPath(fromLon, fromLat, lon, lat, 1, !!Ships.hullOf(sh).coastal, deep);
   if (!path) return null;
   return { route: keep.concat(path), dest: { lon, lat, port: portId || null } };
 }
 
-// Why no course could be planned: a coaster's limit, or no passage at all.
+// Why no course could be planned: the river, a coaster's limit, or no passage at all.
 export function noPassage() {
+  if (why) return why;
   const h = Ships.hullOf(S.ship);
   return h.coastal ? `A ${h.name.toLowerCase()} keeps to the coast: she cannot sail more than ${COASTAL_NM} miles from land. A caravel can make the open-sea passages.` : 'The pilot can find no passage there.';
+}
+
+// ---- Ships' boats --------------------------------------------------------------------
+// A ship that draws more than the harbour has anchors offshore, and her boats carry the cargo
+// between ship and shore, a few units a day, for a fee to the local boatmen.
+
+// Whether her hold, after a trade, puts her too deep to lie in this port. If so she moves out
+// to the anchorage (with word why).
+function anchorOffIfNeeded(pid) {
+  const sh = S.ship;
+  if (sh.offshore || !Ports.needsBoats(S, pid, sh.hull, loadOf())) return;
+  const p = PORTS.find((x) => x.id === pid);
+  const a = anchorage(pid, Ships.isDeep(sh.hull) && shoalDepth(p.lon, p.lat) <= DEEP_DRAFT);
+  sh.offshore = true;
+  sh.lon = a.lon; sh.lat = a.lat;
+  toast(`Laden like this the <b>${sh.name}</b> draws ${Ships.draftOf(sh.hull, loadOf())} m, more than the ${Ports.depthOf(S, pid)} m in ${p.name}. She moves out to the anchorage, and her boats bring the rest of the cargo out.`, 'port');
+}
+
+// Units traded at anchor: work for the boats, and the boatmen's fee.
+export function boatsFor(units) {
+  const sh = S.ship, pid = sh.docked;
+  if (!pid || !units) return;
+  anchorOffIfNeeded(pid);
+  if (!sh.offshore) return;
+  const p = PORTS.find((x) => x.id === pid);
+  const w = Ports.boatWork(pid, sh.hull, units, Ships.isDeep(sh.hull) && shoalDepth(p.lon, p.lat) <= DEEP_DRAFT);
+  const b = sh.boats || { total: 0, moved: 0, rate: w.rate };
+  sh.boats = { total: b.total - b.moved + units, moved: 0, rate: w.rate };
+  if (w.fee) {
+    S.purse -= w.fee;
+    Accounts.record(S, { kind: 'boats', amount: -w.fee, text: `Boatmen at ${p.name}, ${units} ${units === 1 ? 'unit' : 'units'}` });
+  }
+}
+
+export function boatDaysLeft() {
+  const b = S.ship.boats;
+  return b ? Math.max(0, (b.total - b.moved) / b.rate) : 0;
+}
+
+// Let her boats finish before she sails: the days pass in port.
+function finishBoats() {
+  const left = boatDaysLeft();
+  if (!left) return;
+  const steps = Math.ceil(left * 4);
+  for (let i = 0; i < steps; i++) advanceTime(left / steps, false);
+  S.ship.boats = null;
 }
 
 export function setCourse(lon, lat, portId, append) {
@@ -166,6 +237,7 @@ export function setCourse(lon, lat, portId, append) {
 }
 
 export function applyCourse(plan) {
+  if (S.ship.docked) finishBoats();
   S.ship.route = plan.route;
   S.ship.dest = plan.dest;
   try { preloadArrival(plan.dest?.port); } catch (e) { console.error(e); }
@@ -176,7 +248,8 @@ export function applyCourse(plan) {
 export function estimateVoyage(route, from = S.ship, startDay = S.day) {
   let lon = from.lon, lat = from.lat, day = startDay, nm = 0, hot = 0;
   const st = Ships.flagStats(S), hf = Pirates.hullFactor(S);
-  for (const [tl, ta] of route) {
+  for (const pt of route) {
+    const [tl, ta] = pt;
     for (let guard = 0; guard < 20000; guard++) {
       const rem = distNm(lon, lat, tl, ta);
       if (rem < 0.5) break;
@@ -184,7 +257,7 @@ export function estimateVoyage(route, from = S.ship, startDay = S.day) {
       const w = windAt(lon, lat, day);
       const off = angleDiff(b, w.from);
       const f = sailFactor(off) * (0.45 + 0.55 * w.strength);
-      const perDay = Ships.knotsAt(st, off, f, hf) * 24;
+      const perDay = (isRiverLeg(pt) ? RIVER_KNOTS * hf : Ships.knotsAt(st, off, f, hf)) * 24;
       const step = Math.min(perDay * 0.1, rem);
       lat += (step * Math.cos(b * D2R)) / 60;
       lon += (step * Math.sin(b * D2R)) / (60 * Math.cos(lat * D2R));
@@ -212,14 +285,17 @@ export function frameView(points) {
 
 export function confirmVoyage(plan) {
   frameView([[S.ship.lon, S.ship.lat], ...plan.route]);
-  const { days, nm, cost } = estimateVoyage(plan.route);
+  const est = estimateVoyage(plan.route);
+  const wait = S.ship.docked ? boatDaysLeft() : 0;
+  const days = est.days + wait, nm = est.nm, cost = est.cost;
   const to = plan.dest.port ? PORTS.find((p) => p.id === plan.dest.port).name : 'the mark on the chart';
   const left = Math.floor(S.purse) - cost;
   const d = Math.max(1, Math.round(days));
   confirmDialog({
     title: S.ship.docked || !S.ship.route.length ? `Set sail for ${to}?` : `Change course for ${to}?`,
     body: `<dl class="facts">
-        <dt>Passage</dt><dd>about ${d} ${d === 1 ? 'day' : 'days'} · ${Math.round(nm).toLocaleString()} nm</dd>
+        ${wait ? `<dt>Her boats</dt><dd>about ${Math.max(1, Math.round(wait))} more ${Math.round(wait) <= 1 ? 'day' : 'days'} to finish the cargo first</dd>` : ''}
+        <dt>Passage</dt><dd>about ${Math.max(1, Math.round(est.days))} ${Math.round(est.days) <= 1 ? 'day' : 'days'} · ${Math.round(nm).toLocaleString()} nm</dd>
         <dt>Arrival</dt><dd>around ${fmtDate(S.day + days)}</dd>
         <dt>Wages</dt><dd>${cost.toLocaleString()} cz (${Ships.flagStats(S).upkeep} cz a day)</dd>
         <dt>Purse on arrival</dt><dd class="${left < 0 ? 'warn' : ''}">${left.toLocaleString()} cz</dd>
@@ -240,10 +316,21 @@ export function dock(portId) {
   sh.route = [];
   sh.dest = null;
   sh.lon = p.lon; sh.lat = p.lat;
+  sh.boats = null;
+  sh.offshore = false;
+  // Too deep to come in: she lies at the anchorage and works her cargo with her boats.
+  const inBanks = shoalDepth(p.lon, p.lat) <= DEEP_DRAFT;
+  if (Ports.needsBoats(S, portId, sh.hull, loadOf()) || (Ships.isDeep(sh.hull) && inBanks)) {
+    const a = anchorage(portId, Ships.isDeep(sh.hull) && inBanks);
+    sh.offshore = true;
+    sh.lon = a.lon; sh.lat = a.lat;
+  }
   S.voyages++;
   observe(portId);
   Accounts.closeVoyage(S, portId);
-  let msg = `Dropped anchor at <b>${p.name}</b>.`;
+  let msg = sh.offshore
+    ? `Anchored off <b>${p.name}</b>: the <b>${sh.name}</b> draws ${Ships.draftOf(sh.hull, loadOf())} m and ${p.kind} has ${Ports.depthOf(S, portId)} m. Her boats will work the cargo.`
+    : `Dropped anchor at <b>${p.name}</b>.`;
   if (portId === 'lisbon' && S.unpaidCharts.length) {
     const reward = S.unpaidCharts.length * CHART_REWARD;
     S.purse += reward;
@@ -284,6 +371,8 @@ export function dock(portId) {
 export function undock() {
   S.ship.lastPort = S.ship.docked;
   S.ship.docked = null;
+  S.ship.offshore = false;
+  S.ship.boats = null;
   if (ui.panelMode === 'port') ui.panelMode = null;
   renderPanel();
 }

@@ -537,3 +537,5 @@ body.scene-open #panel, body.scene-open #toast, body.scene-open #tip { visibilit
 .notice-filter { margin: 0 0 10px; font-size: 14px; }
 .notice-filter label { display: inline-flex; gap: 6px; align-items: center; }
 .afloat.drawn .ship-art { position: absolute; inset: 4% 4% 0; width: 92%; height: 96%; }
+.harbour { font-size: 14px; color: var(--ink-2); margin: 4px 0 10px; line-height: 1.4; }
+.stop-note { font-size: 13px; color: var(--ink-2); margin: 2px 0 4px; } .stop-note.warn { color: var(--red); }

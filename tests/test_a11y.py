@@ -24,12 +24,16 @@ COLLECT = r"""(root) => {
     // only what is on screen: clipped by every scrolling box around it, and the middle of the line
     // (the line box's leading can reach into a neighbour)
     let L = rr.left + 1, T = rr.top + rr.height * 0.2, R = rr.right - 1, B = rr.bottom - rr.height * 0.2;
+    let cut = false;
     for (let p = el.parentElement; p; p = p.parentElement) {
       const o = getComputedStyle(p).overflow;
       if (o === 'visible') continue;
       const q = p.getBoundingClientRect();
+      // a line part scrolled out of its box sits under the box's frame: not a contrast problem
+      if (rr.top < q.top - 1 || rr.bottom > q.bottom + 1) cut = true;
       L = Math.max(L, q.left); T = Math.max(T, q.top); R = Math.min(R, q.right); B = Math.min(B, q.bottom);
     }
+    if (cut) continue;
     if (R - L < 2 || B - T < 2) continue;
     const r = { left: L, top: T, width: R - L, height: B - T, right: R, bottom: B };
     if (r.width < 2 || r.height < 2 || r.bottom < 0 || r.right < 0 || r.top > innerHeight || r.left > innerWidth) continue;

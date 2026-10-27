@@ -79,6 +79,7 @@ function statRows(st, base) {
   };
   return `<dl class="ship-stats">
       ${row('Hold', st.hold, base?.hold, (v) => `${v}`)}
+      ${row('Draft', Ships.draftOf(st.hull, 1), base ? Ships.draftOf(base.hull, 1) : null, (v) => `${Ships.draftOf(st.hull, 0)}–${v} m${Ships.isDeep(st.hull) ? ', keeps off the banks' : ''}`, -1)}
       ${row('Speed', st.knots, base?.knots, (v) => `${v.toFixed(1)} kn`)}
       ${row('To windward', st.up, base?.up, pct)}
       ${row('Off the wind', st.down * st.offWind, base ? base.down * base.offWind : null, pct)}

@@ -16,36 +16,56 @@ export const TIER_NAMES = { 0: 'anyone', 5: 'Known on the quays', 20: 'Respected
 // orderYear: may be ordered from this year (a third paid down); year: delivered or bought outright.
 export const HULLS = {
   barca: {
+    draft: [1.0, 1.5], // metres, light and fully laden
     id: 'barca', name: 'Barca', year: 1451, standing: KNOWN, price: 1050, hold: 25, knots: 4.5, up: 0.75, down: 1,
     upkeep: 2, hiredUpkeep: 1, scale: 0.5, size: 0.8, coastal: true,
     blurb: 'A small, single-masted coaster with a square sail. Cheap to buy and run, but she keeps within sight of the coast: no Madeira, no open-sea passages.',
   },
   caravel: {
+    draft: [1.6, 2.2], // metres, light and fully laden
     id: 'caravel', name: 'Caravel', year: 1451, standing: KNOWN, price: 1950, hold: 40, knots: 5, up: 1, down: 1,
     upkeep: 3, hiredUpkeep: 1, scale: 1, size: 1,
     blurb: 'Two lateen masts and a shallow draft. The best ship afloat for beating home against the trade winds.',
   },
   barinel: {
+    draft: [1.8, 2.5], // metres, light and fully laden
     id: 'barinel', name: 'Barinel', year: 1451, standing: KNOWN, price: 2850, hold: 60, knots: 4.8, up: 0.9, down: 1,
     upkeep: 4, hiredUpkeep: 1, scale: 1.3, size: 1.15, oars: 2,
     blurb: 'A broad oared sailing ship. Sweeps keep her moving at about 2 knots in a calm, as in the Gulf of Guinea.',
   },
   largecaravel: {
+    draft: [2.0, 2.7], // metres, light and fully laden
     id: 'largecaravel', name: 'Large caravel', year: 1456, standing: RESPECTED, price: 2600, hold: 55, knots: 5.2, up: 1.05, down: 1,
     upkeep: 4, hiredUpkeep: 1, scale: 1.2, size: 1.1,
     blurb: 'A caravela latina grande: three lateen masts on a longer hull. More hold than a caravel and even closer to the wind.',
   },
   redonda: {
+    draft: [2.3, 3.0], // metres, light and fully laden
     id: 'redonda', name: 'Caravela redonda', year: 1462, standing: RESPECTED, price: 3500, hold: 65, knots: 5.4, up: 0.85, down: 1.2,
     upkeep: 5, hiredUpkeep: 1, scale: 1.4, size: 1.2,
     blurb: 'A caravel with square sails on her fore and main masts and a lateen mizzen: fast with the wind behind her, a little slower into it.',
   },
   nau: {
+    draft: [3.2, 4.5], // metres, light and fully laden
     id: 'nau', name: 'Nau', year: 1470, orderYear: 1466, standing: TRUSTED, price: 7800, hold: 120, knots: 5.5, up: 0.75, down: 1.1,
     upkeep: 6, hiredUpkeep: 2, scale: 2, size: 1.45, fight: 0.1, shy: 0.8,
     blurb: 'A great carrack with high castles fore and aft. A huge hold and room for bombards; slow to windward. Galleys think twice before taking her on.',
   },
 };
+// How deep a ship draws with her hold this full (0 to 1): light, laden, and between.
+export function draftOf(hullId, load = 1) {
+  const [light, laden] = (HULLS[hullId] || HULLS.caravel).draft;
+  return Math.round((light + (laden - light) * Math.max(0, Math.min(1, load))) * 10) / 10;
+}
+// A deep ship keeps off the shoals (see world.js DEEP_DRAFT).
+export const isDeep = (hullId) => (HULLS[hullId] || HULLS.caravel).draft[1] > 3;
+// How many units of cargo her boats move between ship and shore in a day, at an anchorage
+// `nm` miles out: a bigger ship has more boats and hands.
+export function boatRate(hullId, nm = 7) {
+  const h = HULLS[hullId] || HULLS.caravel;
+  return Math.round((6 + 8 * h.size) * Math.min(1, 10 / Math.max(10, nm)));
+}
+
 export const HULL_ORDER = ['barca', 'caravel', 'barinel', 'largecaravel', 'redonda', 'nau'];
 // Hull prices above, and refits, are 30% dearer than first set (economy change C, 27 Oct 2026):
 // close to what ships cost per ton in the period, and enough to make buying one a decision.
