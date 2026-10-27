@@ -53,17 +53,11 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Cache the cut-out model
-        uses: actions/cache@v4
-        with:
-          path: ~/.cache/helmline-models
-          key: helmline-cutout-models-v1
-
       - name: Cut out (items marked cutout)
         env:
           BATCH: ${{ inputs.batch }}
         run: |
-          pip install --quiet onnxruntime numpy pillow
+          pip install --quiet numpy pillow scipy
           python tools/art/cutout.py "art/$(printf '%s' "$BATCH" | tr -cd 'a-z0-9-')"
 
       - name: Keep the images with the run

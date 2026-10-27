@@ -1,73 +1,51 @@
-"""Cut ships (or anything) out of their background, for items marked "cutout": true in a batch.
+"""Cut ships (or anything) out of a flat chroma-green background, for items marked "cutout": true.
 
-    python3 tools/art/cutout.py art/<batch> [--model birefnet|isnet] [--models-dir DIR]
+    python3 tools/art/cutout.py art/<batch>
+    python3 tools/art/cutout.py - --files a.png b.png
 
 For each such item in art/<batch>/manifest.json, writes <id>-cut.png: the subject on a transparent
-background, trimmed to its edges. Pictures are generated on flat chroma green; the green
-is keyed out, and a segmentation model (IS-Net or BiRefNet, ONNX builds published with rembg, run
-with onnxruntime) decides what counts as the subject, so specks and floor shadows are dropped.
+background, trimmed to its edges. Prompts ask for a flat chroma-green background, so the cut is a
+colour key measured against that picture's own green:
+
+- alpha follows how green each pixel is, with a soft edge, so thin rigging and flagpoles survive;
+- specks far from the subject are dropped (small blobs not near the main body);
+- holes enclosed by the subject are filled where their colour is tinted cloth (thin sails let some
+  green through) and left open where they are pure background (sky seen between mast and sail);
+- green spill is taken out of the edges.
 """
-import argparse, json, os, sys, urllib.request
+import argparse, json, os, sys
 import numpy as np
-from PIL import Image, ImageFilter
-import onnxruntime as ort
-
-MODELS = {
-    'birefnet': ('BiRefNet-general-epoch_244.onnx', (0.485, 0.456, 0.406), (0.229, 0.224, 0.225), 'sigmoid'),
-    'isnet': ('isnet-general-use.onnx', (0.5, 0.5, 0.5), (1.0, 1.0, 1.0), 'minmax'),
-}
-BASE = 'https://github.com/danielgatis/rembg/releases/download/v0.0.0/'
+from PIL import Image
+from scipy import ndimage
 
 
-def load(model, models_dir):
-    name = MODELS[model][0]
-    path = os.path.join(models_dir, name)
-    if not os.path.exists(path):
-        os.makedirs(models_dir, exist_ok=True)
-        print(f'downloading {name} ...', flush=True)
-        urllib.request.urlretrieve(BASE + name, path)
-    return ort.InferenceSession(path, providers=['CPUExecutionProvider'])
-
-
-def mask_for(sess, model, img):
-    _, mean, std, kind = MODELS[model]
-    x = np.asarray(img.convert('RGB').resize((1024, 1024), Image.BICUBIC), dtype=np.float32) / 255.0
-    x = (x - mean) / std
-    x = x.transpose(2, 0, 1)[None].astype(np.float32)
-    out = sess.run(None, {sess.get_inputs()[0].name: x})[0][0, 0]
-    if kind == 'sigmoid':
-        out = 1 / (1 + np.exp(-out))
-    else:
-        out = (out - out.min()) / max(1e-6, out.max() - out.min())
-    m = Image.fromarray((out * 255).clip(0, 255).astype(np.uint8)).resize(img.size, Image.BICUBIC)
-    return np.asarray(m, dtype=np.float32) / 255.0
-
-
-def _unused_background_colour(rgb):
-    # the plain background: the median of a 4-pixel border
-    edge = np.concatenate([rgb[:4].reshape(-1, 3), rgb[-4:].reshape(-1, 3), rgb[:, :4].reshape(-1, 3), rgb[:, -4:].reshape(-1, 3)])
-    return np.median(edge, axis=0)
-
-
-def cut(img, sess, model):
-    """Key the subject off a flat chroma-green background (as the prompts ask for), keep only what
-    lies near the segmentation model's subject (so floor shadows and stray specks go), and take the
-    green spill out of the edges. No erosion, so thin rigging and flagpoles survive."""
+def cut(img):
     rgb = np.asarray(img.convert('RGB'), dtype=np.float32)
     r, g, b = rgb[..., 0], rgb[..., 1], rgb[..., 2]
-    spill = g - np.maximum(r, b)                      # how green a pixel is
-    key = np.clip(1 - (spill - 22) / 55, 0, 1)        # soft edge between 22 and 77
-    m = mask_for(sess, model, img)
-    near = np.asarray(Image.fromarray((m > 0.3).astype(np.uint8) * 255).filter(ImageFilter.MaxFilter(31)), dtype=np.float32) / 255.0
-    near = np.asarray(Image.fromarray((near * 255).astype(np.uint8)).filter(ImageFilter.GaussianBlur(6)), dtype=np.float32) / 255.0
+    spill = g - np.maximum(r, b)                                   # how green a pixel is
+    border = np.concatenate([spill[:6].ravel(), spill[-6:].ravel(), spill[:, :6].ravel(), spill[:, -6:].ravel()])
+    bg = max(80.0, float(np.median(border)))                       # this picture's background green
+    lo, hi = 0.18 * bg, 0.5 * bg
+    key = np.clip(1 - (spill - lo) / (hi - lo), 0, 1)              # 1 = subject, 0 = background
+
+    core = key > 0.5
+    labels, n = ndimage.label(core)
+    if n:
+        sizes = ndimage.sum(core, labels, range(1, n + 1))
+        main = labels == (int(np.argmax(sizes)) + 1)
+        reach = ndimage.binary_dilation(main, iterations=40)
+        keep_ids = [i + 1 for i, s in enumerate(sizes) if s >= 150 or reach[labels == i + 1].any()]
+        core = np.isin(labels, keep_ids)
+    near = ndimage.binary_dilation(core, iterations=6)
     alpha = key * near
-    # Inside the subject, thin cloth lets some green through and would turn see-through. Where the
-    # model is sure it is the ship and the pixel is not the pure background green, keep it solid.
-    sure = np.asarray(Image.fromarray((m > 0.85).astype(np.uint8) * 255).filter(ImageFilter.MinFilter(7)), dtype=np.float32) / 255.0
-    solid = sure * np.clip(1 - (spill - 60) / 30, 0, 1)
-    alpha = np.maximum(alpha, solid)
-    alpha = np.where(alpha < 0.05, 0, alpha)
-    g2 = np.minimum(g, np.maximum(r, b))              # despill: no channel greener than the others
+
+    # enclosed holes: fill tinted cloth, keep pure background open
+    holes = ndimage.binary_fill_holes(core) & ~core
+    cloth = np.clip((0.75 * bg - spill) / (0.25 * bg), 0, 1)
+    alpha = np.where(holes, np.maximum(alpha, cloth), alpha)
+    alpha = np.where(alpha < 0.04, 0, alpha)
+
+    g2 = np.minimum(g, np.maximum(r, b))                           # despill
     fg = np.dstack([r, g2, b]).clip(0, 255)
     out = Image.fromarray(np.dstack([fg, alpha * 255]).astype(np.uint8), 'RGBA')
     box = out.getbbox()
@@ -77,8 +55,6 @@ def cut(img, sess, model):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('folder')
-    ap.add_argument('--model', default='isnet', choices=list(MODELS))
-    ap.add_argument('--models-dir', default=os.path.expanduser('~/.cache/helmline-models'))
     ap.add_argument('--files', nargs='*', help='cut these images instead of the manifest items')
     args = ap.parse_args()
     if args.files:
@@ -92,9 +68,8 @@ def main():
                 for i in man['items'] if i.get('cutout') and i.get('file')]
     if not jobs:
         print('nothing to cut out'); return
-    sess = load(args.model, args.models_dir)
     for src, dst in jobs:
-        out = cut(Image.open(src), sess, args.model)
+        out = cut(Image.open(src))
         out.save(dst, optimize=True)
         print(f'cut  {os.path.basename(dst)} {out.size}', flush=True)
 
