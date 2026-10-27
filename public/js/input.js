@@ -1,5 +1,6 @@
 // Mouse, touch and keyboard on the chart.
 
+import { closeShips, openShips } from './shipyard.js';
 import { PORTS, isLand, inBounds } from './world.js';
 import { S, ui } from './state.js';
 import { isRevealed } from './fog.js';
@@ -115,7 +116,9 @@ export function initInput() {
       if (e.key === 'Enter' && !ui.modal.locked) { e.preventDefault(); closeModal(true); }
       return;
     }
+    if (ui.screen) { if (e.key === 'Escape') closeShips(); return; }
     if (e.target.closest('input, textarea, select, button') && e.key !== 'Escape') return;
+    if (e.key === 's' || e.key === 'S') openShips('register');
     if (e.key === ' ') { e.preventDefault(); setSpeed(ui.speed === 0 ? ui.lastSpeed : 0); }
     if (e.key === '1') setSpeed(1);
     if (e.key === '2') setSpeed(2);

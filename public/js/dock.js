@@ -8,6 +8,7 @@ import { $ } from './util.js';
 import { renderPanel, setSpeed, toggleWind } from './panels.js';
 import { centerOn } from './view.js';
 import { openFeedback } from './feedback.js';
+import { openShips } from './shipyard.js';
 
 export const BOOKS = ['port', 'prices', 'ledger', 'contracts', 'fleet'];
 const NEXT_SPEED = { 1: 2, 2: 4, 4: 1 };
@@ -54,6 +55,7 @@ export function renderMenu(el) {
     <div class="menu-grid">
       ${item('wind', ui.showWind ? 'Hide the winds' : 'Show the winds', 'The arrows on the chart')}
       ${item('ship', 'Find my ship', 'Centre the chart on her')}
+      ${item('register', 'Ship register', 'Your ship and the ships ahead')}
       ${item('cloud', 'Cloud save', 'Play on another device')}
       ${item('help', 'How to play')}
       ${item('bug', 'Report a bug')}
@@ -65,6 +67,7 @@ export function renderMenu(el) {
 export function menuAction(act) {
   if (act === 'wind') { toggleWind(); renderPanel(); return true; }
   if (act === 'ship') { ui.panelMode = null; renderPanel(); centerOn(S.ship.lon, S.ship.lat); return true; }
+  if (act === 'register') { ui.panelMode = null; renderPanel(); openShips('register'); return true; }
   if (act === 'cloud' || act === 'help') { ui.panelMode = act; renderPanel(); return true; }
   if (act === 'bug' || act === 'idea') { openFeedback(act); return true; }
   return false;

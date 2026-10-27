@@ -15,6 +15,9 @@ export const ui = {
   showWind: true,
   hoverPort: null,
   modal: null,
+  screen: null, // the ship register or shipyard, full screen; time stands still while it is open
+  hireHull: 'caravel', // the hull chosen in the Fleet tab for a new captain
+  arrival: null, // the port arrival scene, while it plays
   introDone: false,
   pendingSummary: null,
   pendingEncounter: null,

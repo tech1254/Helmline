@@ -8,6 +8,7 @@ import * as Fleet from './fleet.js';
 import * as Pirates from './pirates.js';
 import { CHART_REWARD, OFFLINE_MAX_DAYS, STANDING_FADES_AFTER_HOURS } from './config.js';
 import * as Ships from './ships.js';
+import { shipSVG } from './shipart.js';
 import { S, market, ui } from './state.js';
 import { load, save } from './save.js';
 import { renderCloud } from './cloudsync.js';
@@ -21,6 +22,7 @@ import { renderPrices } from './pricebook.js';
 import { placeToasts, renderNoticeBadge, renderNotices } from './notices.js';
 import { renderFeedback } from './feedback.js';
 import { isBook, renderDock, renderMenu } from './dock.js';
+import { YARDS } from './shipyard.js';
 
 // ---- HUD & panels -----------------------------------------------------------
 
@@ -153,7 +155,7 @@ export function renderPort(el) {
     </table>
     <p class="foot">Hold ${held()} / ${st.hold} · purse ${Math.floor(S.purse).toLocaleString()} cz · upkeep ${st.upkeep} cz a day at sea.<br>
     Buying pushes the price up; selling pushes it down. Prices recover over a few weeks. <i>Max</i> keeps two weeks of wages in the purse.</p>
-    <div class="row"><button data-wait title="Let a week pass: prices recover, news arrives, your fleet sails on. Your crew draws no wages in port; hired captains are still paid.">Wait a week</button><button class="primary" data-tab="sail">Set sail…</button></div>`;
+    <div class="row"><button data-ships="register" title="Your ship and the ships ahead (S)">Your ship</button>${YARDS.includes(pid) ? `<button data-ships="yard" title="Refit your ship${pid === 'lisbon' ? ', or buy and order new ones' : ''}">Shipyard</button>` : ''}<button data-wait title="Let a week pass: prices recover, news arrives, your fleet sails on. Your crew draws no wages in port; hired captains are still paid.">Wait a week</button><button class="primary" data-tab="sail">Set sail…</button></div>`;
 }
 
 export function contractCard(c, actions) {
@@ -311,7 +313,7 @@ export function renderFleet(el) {
   const ships = F.ships.map((ship) => {
     const last = ship.last ? `Last: at ${PORTS.find((p) => p.id === ship.last.at).name} sold ${ship.last.text || 'cargo'} for ${ship.last.income.toLocaleString()} cz (${ship.last.profit >= 0 ? '+' : ''}${ship.last.profit.toLocaleString()}).` : 'No voyages yet.';
     return `<li class="contract" data-ship="${ship.id}">
-        <div class="c-head"><span class="c-title">${ship.name}</span><span class="c-pay">${ship.profit >= 0 ? '+' : ''}${ship.profit.toLocaleString()} cz</span></div>
+        <div class="c-head"><span class="c-title">${ship.name} <small class="muted">${Ships.HULLS[ship.hull || 'caravel'].name.toLowerCase()} · hold ${Fleet.holdSize(ship)}</small></span><span class="c-pay">${ship.profit >= 0 ? '+' : ''}${ship.profit.toLocaleString()} cz</span></div>
         <div class="c-patron">Captain ${ship.captain.name} · navigation ${stars(ship.captain.nav)} · trade ${stars(ship.captain.trade)} · ${Fleet.dailyCost(ship)} cz a day at sea, half in port · ${Fleet.loyaltyText(ship.captain.loyalty)}</div>
         <p>${Fleet.statusText(S, ship)} ${ship.trips} ${ship.trips === 1 ? 'sale' : 'sales'} so far.</p>
         ${ship.route ? `<p class="muted">Route: ${routeSummary(ship.route)}</p>` : ''}
@@ -329,16 +331,21 @@ export function renderFleet(el) {
   const allowance = `<p class="foot">Your standing lets you command ${maxShips} hired ${maxShips === 1 ? 'ship' : 'ships'}; you have ${F.ships.length}.${nextShips ? ` Become <i>${nextShips.title}</i> (standing ${nextShips.min}) to command ${nextShips.maxShips}.` : ''}</p>`;
   if (Fleet.canBuy(S, maxShips)) {
     if (S.ship.docked === 'lisbon') {
+      const hulls = Ships.HULL_ORDER.filter((id) => Ships.availability(S, Ships.HULLS[id]).ok === 'yes');
+      if (!hulls.includes(ui.hireHull)) ui.hireHull = hulls.includes('caravel') ? 'caravel' : hulls[0];
+      const H = Ships.HULLS[ui.hireHull];
+      const hst = Ships.stats({ hull: H.id });
       yard = `<h3>The Lisbon shipyard</h3>
-        <p class="blurb">A caravel like yours costs ${Fleet.SHIP_COST.toLocaleString()} cz. Choose the captain who will sail her.</p>
+        <div class="hire-hulls" role="radiogroup" aria-label="Ship for your captain">${hulls.map((id) => `<button role="radio" aria-checked="${id === H.id}" class="${id === H.id ? 'on' : ''}" data-hire-hull="${id}">${shipSVG({ hull: id }, { crop: 'tight', style: id === H.id ? 'colour' : 'ink' })}<b>${Ships.HULLS[id].name}</b><small>${Ships.HULLS[id].price.toLocaleString()} cz</small></button>`).join('')}</div>
+        <p class="blurb">A ${H.name.toLowerCase()}: hold ${hst.hold}, ${hst.knots} knots, ${Ships.HULLS[H.id].hiredUpkeep} cz a day upkeep on top of her captain's wage. ${H.blurb} Choose the captain who will sail her.</p>
         <ul class="contracts">${Fleet.candidates(S).map((c) => `<li class="contract">
           <div class="c-head"><span class="c-title">Captain ${c.name}</span><span class="c-pay">${c.wage} cz a day</span></div>
           <p>Navigation ${stars(c.nav)} (faster passages) · Trade ${stars(c.trade)} (better sale prices)</p>
-          <div class="row"><button class="primary" data-hire="${c.id}" ${S.purse < Fleet.SHIP_COST ? 'disabled' : ''}>Buy a caravel and hire him</button></div>
+          <div class="row"><button class="primary" data-hire="${c.id}" ${S.purse < H.price ? 'disabled' : ''}>Buy a ${H.name.toLowerCase()} and hire him</button></div>
         </li>`).join('')}</ul>
-        ${S.purse < Fleet.SHIP_COST ? `<p class="foot">You need ${Fleet.SHIP_COST.toLocaleString()} cz in your purse.</p>` : ''}`;
+        ${S.purse < H.price ? `<p class="foot">You need ${H.price.toLocaleString()} cz in your purse.</p>` : ''}`;
     } else {
-      yard = `<p class="foot">The Lisbon shipyard will build you a caravel for ${Fleet.SHIP_COST.toLocaleString()} cz.</p>`;
+      yard = `<p class="foot">The Lisbon shipyard will build a ship for a captain: a caravel costs ${Fleet.SHIP_COST.toLocaleString()} cz.</p>`;
     }
   }
   yard += allowance;

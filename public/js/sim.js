@@ -29,7 +29,7 @@ export function shipWind() {
 
 export function update(dtSec) {
   const sh = S.ship;
-  if (sh.docked || !sh.route.length || ui.speed === 0 || ui.modal) return;
+  if (sh.docked || !sh.route.length || ui.speed === 0 || ui.modal || ui.screen || ui.arrival) return;
   let days = dtSec * DAYS_PER_SEC * ui.speed;
   while (days > 0 && sh.route.length) {
     const dd = Math.min(0.05, days);
