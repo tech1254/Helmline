@@ -201,12 +201,32 @@ export function standingBox(C) {
     </div>`;
 }
 
+// Where a contract sends you next: to buy the goods, to deliver them, or home to Lisbon to report.
+// A button to set that course (confirmed as any voyage is), or nothing when you are there already.
+export function sailButton(c) {
+  let to, what;
+  if (c.kind === 'discover') {
+    if (c.stage === 'find') return '';
+    to = 'lisbon'; what = 'report';
+  } else if ((S.cargo[c.good] || 0) < c.qty) {
+    to = c.source; what = 'buy';
+  } else {
+    to = c.to; what = 'deliver';
+  }
+  if (!to || to === S.ship.docked) return '';
+  const name = PORTS.find((p) => p.id === to)?.name;
+  if (!name) return '';
+  if (S.ship.dest?.port === to) return `<span class="muted on-course">On course for ${name}</span>`;
+  return `<button class="primary" data-sailto="${to}">Sail to ${name} to ${what}</button>`;
+}
+
 export function renderContracts(el) {
   const C = Contracts.ensureContracts(S);
   const pid = S.ship.docked;
   const active = C.active.map((c) => contractCard(c, [
     Contracts.canDeliver(S, c) && !market.closed(pid) ? `<button class="primary" data-deliver="${c.id}">Deliver</button>` : '',
     c.kind === 'deliver' ? `<button data-abandon="${c.id}">Abandon</button>` : '',
+    Contracts.canDeliver(S, c) && !market.closed(pid) ? '' : sailButton(c),
   ].join(''))).join('');
   let offers = '';
   if (pid) {

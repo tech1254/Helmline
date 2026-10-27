@@ -451,3 +451,4 @@ body.scene-open #panel, body.scene-open #toast, body.scene-open #tip { visibilit
 .scene-skip { position: absolute; right: 14px; bottom: max(14px, env(safe-area-inset-bottom)); background: rgba(244, 234, 210, 0.75); font-size: 13px; }
 .register .setting { margin: 22px 0 0; display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: center; }
 .register .setting select { font: inherit; margin-left: 6px; }
+.contract .on-course { font-size: 14px; font-style: italic; align-self: center; }

@@ -30,6 +30,19 @@ async def main():
         await pg.click('[data-tab="port"]'); await pg.click('[data-wait]'); await pg.click('[data-tab="contracts"]')
         n2 = await J("() => document.querySelectorAll('[data-accept]').length")
         print(f'Lisbon offers: {n0} -> took one -> {n1} -> a week later -> {n2}')
+        # each accepted contract says where to sail next, and the button sets that course after the usual confirmation
+        await pg.click('[data-tab="contracts"]')
+        sails = await J("() => [...document.querySelectorAll('#panel [data-sailto]')].map(b => b.textContent)")
+        print('sail buttons on contracts:', sails)
+        if sails:
+            await pg.click('#panel [data-sailto]'); await pg.wait_for_timeout(200)
+            print('voyage confirmation:', await pg.is_visible('#modal'), await pg.inner_text('#modal-title'))
+            await pg.click('#modal-ok'); await pg.wait_for_timeout(200)
+            print('course set for:', await J("() => window.helmline.state.ship.dest?.port"))
+            await pg.click('#btn-contracts') if await pg.is_visible('#btn-contracts') else None
+            await pg.wait_for_timeout(150)
+            print('card now says:', await J("() => [...document.querySelectorAll('#panel .on-course')].map(e => e.textContent)"))
+            await J("() => { const S = window.helmline.state; window.helmline.dockAt('lisbon'); }")
         # ship limits by standing
         await J("() => { const s = window.helmline.state; s.purse = 9000; s.contracts.standing = 25; }")
         await pg.click('[data-tab="fleet"]')
