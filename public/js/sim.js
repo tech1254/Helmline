@@ -7,11 +7,13 @@ import * as Events from './events.js';
 import * as Fleet from './fleet.js';
 import * as Accounts from './accounts.js';
 import * as Pirates from './pirates.js';
-import { DAYS_PER_SEC, OFFLINE_DAYS_PER_DOUBLING, OFFLINE_FULL_DAYS, OFFLINE_MAX_DAYS, OFFLINE_MIN_SECONDS, OFFLINE_RATE, SHIP, SIGHT, STANDING_FADES_AFTER_HOURS } from './config.js';
+import * as Ships from './ships.js';
+import { DAYS_PER_SEC, OFFLINE_DAYS_PER_DOUBLING, OFFLINE_FULL_DAYS, OFFLINE_MAX_DAYS, OFFLINE_MIN_SECONDS, OFFLINE_RATE, SIGHT, STANDING_FADES_AFTER_HOURS } from './config.js';
 import { S, market, ui } from './state.js';
 import { save } from './save.js';
 import { revealAt } from './fog.js';
 import { dock, observe, replan } from './voyage.js';
+import { startArrival } from './scene.js';
 import { $, cz, fmtDate } from './util.js';
 import { log } from './pricebook.js';
 import { confirmDialog } from './dialog.js';
@@ -23,20 +25,20 @@ export function shipWind() {
   const w = windAt(S.ship.lon, S.ship.lat, S.day);
   const off = angleDiff(S.ship.heading, w.from);
   const f = sailFactor(off) * (0.45 + 0.55 * w.strength);
-  return { w, off, f, knots: SHIP.knots * Pirates.hullFactor(S) * f };
+  return { w, off, f, knots: Ships.knotsAt(Ships.flagStats(S), off, f, Pirates.hullFactor(S)) };
 }
 
 export function update(dtSec) {
   const sh = S.ship;
-  if (sh.docked || !sh.route.length || ui.speed === 0 || ui.modal) return;
+  if (sh.docked || !sh.route.length || ui.speed === 0 || ui.modal || ui.screen || ui.arrival) return;
   let days = dtSec * DAYS_PER_SEC * ui.speed;
   while (days > 0 && sh.route.length) {
     const dd = Math.min(0.05, days);
     days -= dd;
     const [tl, ta] = sh.route[0];
     sh.heading = bearing(sh.lon, sh.lat, tl, ta);
-    const { f } = shipWind();
-    const nm = SHIP.knots * Pirates.hullFactor(S) * 24 * f * dd;
+    const { knots } = shipWind();
+    const nm = knots * 24 * dd;
     const rem = distNm(sh.lon, sh.lat, tl, ta);
     advanceTime(dd, true);
     if (nm >= rem) {
@@ -60,7 +62,7 @@ export function update(dtSec) {
       if (S.trail.length > 4000) S.trail.splice(0, S.trail.length - 4000);
     }
     if (!sh.route.length) {
-      if (sh.dest?.port) dock(sh.dest.port);
+      if (sh.dest?.port) { try { startArrival(sh.dest.port); } catch (e) { console.error(e); } dock(sh.dest.port); }
       else { sh.dest = null; toast('Arrived at the mark. Awaiting orders.'); save(); }
       break;
     }
@@ -170,8 +172,9 @@ export function showSummary(sum) {
 export function advanceTime(dd, atSea, away = false) {
   S.day += dd;
   if (atSea) { // the crew is paid for the voyage; in port they are paid off
-    S.purse -= SHIP.upkeep * dd;
-    Accounts.accrueWages(S, SHIP.upkeep * dd, S.ship.lastPort);
+    const upkeep = Ships.flagStats(S).upkeep;
+    S.purse -= upkeep * dd;
+    Accounts.accrueWages(S, upkeep * dd, S.ship.lastPort);
   }
   market.tick(dd);
   report(Events.tick(S, dd));
@@ -194,6 +197,13 @@ export function advanceTime(dd, atSea, away = false) {
     }
   }
   report(Contracts.checkDeadlines(S));
+  // Ships and refits on order at the Lisbon yard: word when they are ready.
+  for (const o of Ships.ready(S)) {
+    if (o.told) continue;
+    o.told = true;
+    const what = o.kind === 'hull' ? `Your ${Ships.HULLS[o.hull].name.toLowerCase()}${o.name ? ` <b>${String(o.name).replace(/[<>&"]/g, '')}</b>` : ''} is` : `The ${Ships.choice(o.group, o.choice).name.toLowerCase()} you ordered is`;
+    report([{ html: `${what} ready at the Lisbon shipyard. Call there to take delivery.`, kind: 'discover', log: `${what.replace(/<[^>]+>/g, '')} ready in Lisbon.` }]);
+  }
 }
 
 // Events shape prices and close ports; standing earns better prices in Portuguese ports.
@@ -207,7 +217,7 @@ export function syncMarket() {
 export let rotPending = {};
 export let rotClock = 0;
 export function spoil(dd) {
-  const heat = S.ship.lat < 26 ? 1.6 : 1;
+  const heat = (S.ship.lat < 26 ? 1.6 : 1) * Ships.flagStats(S).spoil;
   for (const g of GOODS) {
     const have = S.cargo[g.id];
     if (!have || !g.spoil) continue;

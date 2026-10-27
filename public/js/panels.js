@@ -6,7 +6,9 @@ import * as Contracts from './contracts.js';
 import * as Events from './events.js';
 import * as Fleet from './fleet.js';
 import * as Pirates from './pirates.js';
-import { CHART_REWARD, OFFLINE_MAX_DAYS, SHIP, STANDING_FADES_AFTER_HOURS } from './config.js';
+import { CHART_REWARD, OFFLINE_MAX_DAYS, STANDING_FADES_AFTER_HOURS } from './config.js';
+import * as Ships from './ships.js';
+import { shipSVG } from './shipart.js';
 import { S, market, ui } from './state.js';
 import { load, save } from './save.js';
 import { renderCloud } from './cloudsync.js';
@@ -20,6 +22,7 @@ import { renderPrices } from './pricebook.js';
 import { placeToasts, renderNoticeBadge, renderNotices } from './notices.js';
 import { renderFeedback } from './feedback.js';
 import { isBook, renderDock, renderMenu } from './dock.js';
+import { YARDS } from './shipyard.js';
 
 // ---- HUD & panels -----------------------------------------------------------
 
@@ -45,7 +48,7 @@ export function renderHud() {
   const purse = Math.floor(S.purse);
   $('hud-purse').textContent = `${purse.toLocaleString()} cz`;
   $('hud-purse').classList.toggle('debt', purse < 0);
-  $('hud-hold').textContent = `${held()} / ${SHIP.hold}`;
+  $('hud-hold').textContent = `${held()} / ${Ships.flagStats(S).hold}`;
   const sh = S.ship;
   let status;
   if (sh.docked) {
@@ -119,7 +122,8 @@ export function renderPort(el) {
   if (!pid) { ui.panelMode = null; el.hidden = true; return; }
   const p = PORTS.find((x) => x.id === pid);
   observe(pid);
-  const free = SHIP.hold - held();
+  const st = Ships.flagStats(S);
+  const free = st.hold - held();
   const shut = Events.closure(S, pid);
   const rows = GOODS.map((g) => {
     const sells = market.sells(pid, g.id) && !shut;
@@ -149,9 +153,9 @@ export function renderPort(el) {
       <thead><tr><th>Good</th><th class="num">Buy</th><th class="num">Sell</th><th class="num">Hold</th><th></th></tr></thead>
       <tbody>${rows}</tbody>
     </table>
-    <p class="foot">Hold ${held()} / ${SHIP.hold} · purse ${Math.floor(S.purse).toLocaleString()} cz · upkeep ${SHIP.upkeep} cz a day at sea.<br>
+    <p class="foot">Hold ${held()} / ${st.hold} · purse ${Math.floor(S.purse).toLocaleString()} cz · upkeep ${st.upkeep} cz a day at sea.<br>
     Buying pushes the price up; selling pushes it down. Prices recover over a few weeks. <i>Max</i> keeps two weeks of wages in the purse.</p>
-    <div class="row"><button data-wait title="Let a week pass: prices recover, news arrives, your fleet sails on. Your crew draws no wages in port; hired captains are still paid.">Wait a week</button><button class="primary" data-tab="sail">Set sail…</button></div>`;
+    <div class="row"><button data-ships="register" title="Your ship and the ships ahead (S)">Your ship</button>${YARDS.includes(pid) ? `<button data-ships="yard" title="Refit your ship${pid === 'lisbon' ? ', or buy and order new ones' : ''}">Shipyard</button>` : ''}<button data-wait title="Let a week pass: prices recover, news arrives, your fleet sails on. Your crew draws no wages in port; hired captains are still paid.">Wait a week</button><button class="primary" data-tab="sail">Set sail…</button></div>`;
 }
 
 export function contractCard(c, actions) {
@@ -309,7 +313,7 @@ export function renderFleet(el) {
   const ships = F.ships.map((ship) => {
     const last = ship.last ? `Last: at ${PORTS.find((p) => p.id === ship.last.at).name} sold ${ship.last.text || 'cargo'} for ${ship.last.income.toLocaleString()} cz (${ship.last.profit >= 0 ? '+' : ''}${ship.last.profit.toLocaleString()}).` : 'No voyages yet.';
     return `<li class="contract" data-ship="${ship.id}">
-        <div class="c-head"><span class="c-title">${ship.name}</span><span class="c-pay">${ship.profit >= 0 ? '+' : ''}${ship.profit.toLocaleString()} cz</span></div>
+        <div class="c-head"><span class="c-title">${ship.name} <small class="muted">${Ships.HULLS[ship.hull || 'caravel'].name.toLowerCase()} · hold ${Fleet.holdSize(ship)}</small></span><span class="c-pay">${ship.profit >= 0 ? '+' : ''}${ship.profit.toLocaleString()} cz</span></div>
         <div class="c-patron">Captain ${ship.captain.name} · navigation ${stars(ship.captain.nav)} · trade ${stars(ship.captain.trade)} · ${Fleet.dailyCost(ship)} cz a day at sea, half in port · ${Fleet.loyaltyText(ship.captain.loyalty)}</div>
         <p>${Fleet.statusText(S, ship)} ${ship.trips} ${ship.trips === 1 ? 'sale' : 'sales'} so far.</p>
         ${ship.route ? `<p class="muted">Route: ${routeSummary(ship.route)}</p>` : ''}
@@ -327,16 +331,21 @@ export function renderFleet(el) {
   const allowance = `<p class="foot">Your standing lets you command ${maxShips} hired ${maxShips === 1 ? 'ship' : 'ships'}; you have ${F.ships.length}.${nextShips ? ` Become <i>${nextShips.title}</i> (standing ${nextShips.min}) to command ${nextShips.maxShips}.` : ''}</p>`;
   if (Fleet.canBuy(S, maxShips)) {
     if (S.ship.docked === 'lisbon') {
+      const hulls = Ships.HULL_ORDER.filter((id) => Ships.availability(S, Ships.HULLS[id]).ok === 'yes');
+      if (!hulls.includes(ui.hireHull)) ui.hireHull = hulls.includes('caravel') ? 'caravel' : hulls[0];
+      const H = Ships.HULLS[ui.hireHull];
+      const hst = Ships.stats({ hull: H.id });
       yard = `<h3>The Lisbon shipyard</h3>
-        <p class="blurb">A caravel like yours costs ${Fleet.SHIP_COST.toLocaleString()} cz. Choose the captain who will sail her.</p>
+        <div class="hire-hulls" role="radiogroup" aria-label="Ship for your captain">${hulls.map((id) => `<button role="radio" aria-checked="${id === H.id}" class="${id === H.id ? 'on' : ''}" data-hire-hull="${id}">${shipSVG({ hull: id }, { crop: 'tight', style: id === H.id ? 'colour' : 'ink' })}<b>${Ships.HULLS[id].name}</b><small>${Ships.HULLS[id].price.toLocaleString()} cz</small></button>`).join('')}</div>
+        <p class="blurb">A ${H.name.toLowerCase()}: hold ${hst.hold}, ${hst.knots} knots, ${Ships.HULLS[H.id].hiredUpkeep} cz a day upkeep on top of her captain's wage. ${H.blurb} Choose the captain who will sail her.</p>
         <ul class="contracts">${Fleet.candidates(S).map((c) => `<li class="contract">
           <div class="c-head"><span class="c-title">Captain ${c.name}</span><span class="c-pay">${c.wage} cz a day</span></div>
           <p>Navigation ${stars(c.nav)} (faster passages) · Trade ${stars(c.trade)} (better sale prices)</p>
-          <div class="row"><button class="primary" data-hire="${c.id}" ${S.purse < Fleet.SHIP_COST ? 'disabled' : ''}>Buy a caravel and hire him</button></div>
+          <div class="row"><button class="primary" data-hire="${c.id}" ${S.purse < H.price ? 'disabled' : ''}>Buy a ${H.name.toLowerCase()} and hire him</button></div>
         </li>`).join('')}</ul>
-        ${S.purse < Fleet.SHIP_COST ? `<p class="foot">You need ${Fleet.SHIP_COST.toLocaleString()} cz in your purse.</p>` : ''}`;
+        ${S.purse < H.price ? `<p class="foot">You need ${H.price.toLocaleString()} cz in your purse.</p>` : ''}`;
     } else {
-      yard = `<p class="foot">The Lisbon shipyard will build you a caravel for ${Fleet.SHIP_COST.toLocaleString()} cz.</p>`;
+      yard = `<p class="foot">The Lisbon shipyard will build a ship for a captain: a caravel costs ${Fleet.SHIP_COST.toLocaleString()} cz.</p>`;
     }
   }
   yard += allowance;
@@ -372,7 +381,9 @@ export function renderHelp(el) {
     <h3>Growing</h3>
     <ul class="help">
       <li><b>Contracts</b> open up at 500 cz. Completing them builds standing; missing deadlines costs it.</li>
-      <li><b>Standing</b> brings better pay, better prices in Portuguese ports, and the right to buy a second caravel.</li>
+      <li><b>Standing</b> brings better pay, better prices in Portuguese ports, the right to command hired ships, and bigger hulls at the shipyard.</li>
+      <li><b>Your ship:</b> the ship register (S, or <i>Ship</i>) shows your flagship, ships on order and the hulls ahead. The Lisbon shipyard refits her (sails, rig, guns, stores, colours), trades her up for a bigger hull, or builds one to order; Lagos and Funchal refit. A nau can be ordered from 1470 and is delivered in 1480.</li>
+      <li><b>Arriving:</b> your ship sails into each port in a short scene. Tap to skip it; choose every port, first visits only or off in the ship register.</li>
       <li><b>Your fleet:</b> a hired captain runs a trade route for you, paid from your purse.</li>
       <li><b>The ledger</b> accounts for every cruzado in and out. Your own dealings are entered at once. A hired captain's are entered when you are in any port on his route, so until then part of your purse is not yet accounted for.</li>
       <li><b>Time away:</b> if you have hired captains and your own ship is in port, the world moves on while you are gone: at a tenth of its usual pace at first, more slowly after a few weeks, up to ${OFFLINE_MAX_DAYS} days. Contract deadlines wait for you. A night's sleep or a working day is safe; stay away longer than ${Fleet.STRAY_AFTER_HOURS} hours and captains start to stray (skimming, then going ashore), and after ${STANDING_FADES_AFTER_HOURS} hours your standing starts to fade.</li>
@@ -382,7 +393,7 @@ export function renderHelp(el) {
       <li><b>On this device</b> your game saves by itself as you play.</li>
       <li><b>Cloud save:</b> tap the cloud button to get a save code. Enter it on another device to continue there; both stay in sync. A green dot means synced, red means it needs attention.</li>
     </ul>
-    <p class="foot">Keyboard: space pause · 1 2 3 speed · P price book · L ledger · N notices · W winds · Esc close.</p>`;
+    <p class="foot">Keyboard: space pause · 1 2 3 speed · P price book · L ledger · N notices · S ship register · W winds · Esc close.</p>`;
 }
 
 // Captain's notes: a gentle nudge through the first voyages, until contracts open up.

@@ -7,7 +7,8 @@ import * as Events from './events.js';
 import * as Accounts from './accounts.js';
 import * as Pirates from './pirates.js';
 import * as Fleet from './fleet.js';
-import { CHART_REWARD, MILESTONES, SHIP } from './config.js';
+import { CHART_REWARD, MILESTONES } from './config.js';
+import * as Ships from './ships.js';
 import { S, market, ui } from './state.js';
 import { save } from './save.js';
 import { cloudSync } from './cloudsync.js';
@@ -149,14 +150,16 @@ export function applyCourse(plan) {
 // Sail the route on paper, with the winds as they stand today, to estimate the passage.
 export function estimateVoyage(route, from = S.ship, startDay = S.day) {
   let lon = from.lon, lat = from.lat, day = startDay, nm = 0, hot = 0;
+  const st = Ships.flagStats(S), hf = Pirates.hullFactor(S);
   for (const [tl, ta] of route) {
     for (let guard = 0; guard < 20000; guard++) {
       const rem = distNm(lon, lat, tl, ta);
       if (rem < 0.5) break;
       const b = bearing(lon, lat, tl, ta);
       const w = windAt(lon, lat, day);
-      const f = sailFactor(angleDiff(b, w.from)) * (0.45 + 0.55 * w.strength);
-      const perDay = SHIP.knots * Pirates.hullFactor(S) * 24 * f;
+      const off = angleDiff(b, w.from);
+      const f = sailFactor(off) * (0.45 + 0.55 * w.strength);
+      const perDay = Ships.knotsAt(st, off, f, hf) * 24;
       const step = Math.min(perDay * 0.1, rem);
       lat += (step * Math.cos(b * D2R)) / 60;
       lon += (step * Math.sin(b * D2R)) / (60 * Math.cos(lat * D2R));
@@ -167,7 +170,7 @@ export function estimateVoyage(route, from = S.ship, startDay = S.day) {
     lon = tl; lat = ta;
   }
   const days = day - startDay;
-  return { days, nm, hot, cost: Math.ceil(days * SHIP.upkeep) };
+  return { days, nm, hot, cost: Math.ceil(days * st.upkeep) };
 }
 
 // Zoom and pan so every point fits on screen, leaving room for the dialog.
@@ -193,7 +196,7 @@ export function confirmVoyage(plan) {
     body: `<dl class="facts">
         <dt>Passage</dt><dd>about ${d} ${d === 1 ? 'day' : 'days'} · ${Math.round(nm).toLocaleString()} nm</dd>
         <dt>Arrival</dt><dd>around ${fmtDate(S.day + days)}</dd>
-        <dt>Wages</dt><dd>${cost.toLocaleString()} cz (${SHIP.upkeep} cz a day)</dd>
+        <dt>Wages</dt><dd>${cost.toLocaleString()} cz (${Ships.flagStats(S).upkeep} cz a day)</dd>
         <dt>Purse on arrival</dt><dd class="${left < 0 ? 'warn' : ''}">${left.toLocaleString()} cz</dd>
       </dl>
       ${left < 0 ? '<p class="warn">You cannot cover the wages for this passage. The crew will sail on credit, but sell cargo soon.</p>' : ''}

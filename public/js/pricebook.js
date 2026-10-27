@@ -4,7 +4,7 @@ import { PORTS, distNm, findPath } from './world.js';
 import { GOODS } from './economy.js';
 import * as Events from './events.js';
 import * as Pirates from './pirates.js';
-import { SHIP } from './config.js';
+import * as Ships from './ships.js';
 import { S, market } from './state.js';
 import { estimateVoyage } from './voyage.js';
 import { $, ageText, cz, fmtDate } from './util.js';
@@ -32,6 +32,7 @@ export function suggestions() {
   const out = [];
   const seen = Object.entries(S.seen);
   const here = { lon: S.ship.lon, lat: S.ship.lat };
+  const st = Ships.flagStats(S);
   for (const g of GOODS) {
     for (const [a, ra] of seen) {
       const buy = ra.prices[g.id].buy;
@@ -46,14 +47,14 @@ export function suggestions() {
         const run = passage(pa, pb, S.day + toA.days);
         if (!run) continue;
         const days = Math.max(1, toA.days + run.days);
-        const wages = Math.round(days * SHIP.upkeep);
+        const wages = Math.round(days * st.upkeep);
         const budget = Math.max(S.purse - wages, 50);
-        const units = Math.min(SHIP.hold, Math.max(1, Math.floor(budget / buy)));
+        const units = Math.min(st.hold, Math.max(1, Math.floor(budget / buy)));
         // Prices move as you trade: you pay more for each unit and get less for each sold.
         const gross = (sell - buy) * units * 0.7;
         // Expected rot on the run from A to B, faster in the tropics.
         const rotDays = run.days + 0.6 * run.hot;
-        const lost = g.spoil ? units * (1 - Math.exp(-g.spoil * rotDays)) : 0;
+        const lost = g.spoil ? units * (1 - Math.exp(-g.spoil * st.spoil * rotDays)) : 0;
         const spoilage = Math.round(lost * sell * 0.9);
         const profit = Math.round(gross - wages - spoilage);
         const stale = Math.max(S.day - ra.day, S.day - rb.day);

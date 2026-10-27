@@ -18,6 +18,9 @@ import { initActions } from './actions.js';
 import { initDialog } from './dialog.js';
 import { initNotices } from './notices.js';
 import { initDock } from './dock.js';
+import { initShipyard } from './shipyard.js';
+import * as Ships from './ships.js';
+import { startArrival } from './scene.js';
 
 // ---- Intro & loop -----------------------------------------------------------
 function startIntro(hasSave) {
@@ -53,13 +56,14 @@ function frame(t) {
   const dt = Math.min(0.1, (t - last) / 1000);
   last = t;
   if (ui.introDone) update(dt);
-  if (ui.pendingSummary && !ui.modal && ui.introDone) { const sm = ui.pendingSummary; ui.pendingSummary = null; showSummary(sm); }
-  if (ui.pendingEncounter && !ui.modal && ui.introDone) { const e = ui.pendingEncounter; ui.pendingEncounter = null; openEncounter(e); }
+  const free = !ui.modal && !ui.screen && !ui.arrival;
+  if (ui.pendingSummary && free && ui.introDone) { const sm = ui.pendingSummary; ui.pendingSummary = null; showSummary(sm); }
+  if (ui.pendingEncounter && free && ui.introDone) { const e = ui.pendingEncounter; ui.pendingEncounter = null; openEncounter(e); }
   saveClock += dt;
   if (saveClock > 5 && ui.introDone) { saveClock = 0; save(); }
   ui.cloudClock += dt;
   if (ui.cloudClock > 30 && ui.introDone) { ui.cloudClock = 0; cloudSync(); }
-  render();
+  if (!ui.screen) render(); // the chart is hidden behind the ship screens
   renderHud();
   requestAnimationFrame(frame);
 }
@@ -71,6 +75,7 @@ initActions();
 initDialog();
 initNotices();
 initDock();
+initShipyard();
 window.addEventListener('resize', () => { resize(); clampCam(); });
 window.addEventListener('beforeunload', () => ui.introDone && save());
 document.addEventListener('visibilitychange', () => {
@@ -107,5 +112,7 @@ window.helmline = {
   route: (lon, lat) => findPath(S.ship.lon, S.ship.lat, lon, lat),
   dockAt: (id) => { if (S.ship.docked) undock(); dock(id); },
   accounts: () => ({ purse: S.purse, known: Accounts.known(S), unaccounted: Accounts.unaccounted(S), pending: S.accounts.pending.reduce((t, e) => t + e.amount, 0), due: S.fleet.ships.reduce((t, x) => t + (x.wagesDue || 0), 0), voyage: S.accounts.voyage?.wages || 0, entries: S.accounts.entries.length }),
+  scene: (portId) => { window.helmlineScenes = true; if (S.called) delete S.called[portId]; return startArrival(portId); },
+  yearDay: (year) => Ships.dayOfYear(year),
   advance: (days) => { for (let i = 0; i < days * 4; i++) advanceTime(0.25, !S.ship.docked); renderPanel(); },
 };

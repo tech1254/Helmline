@@ -332,3 +332,122 @@ button.mini { font-size: 13px; padding: 3px 8px; justify-self: start; }
 .menu-grid button { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; text-align: left; padding: 10px 12px; min-height: 56px; }
 .menu-grid button b { font-weight: 600; font-size: 15px; }
 .menu-grid button small { font-size: 12px; color: var(--muted); }
+
+/* ---- Ship register and shipyard (full screen) ---- */
+#yard { position: fixed; inset: 0; z-index: 9; background: rgba(46, 36, 27, 0.55); display: grid; place-items: center; padding: max(12px, env(safe-area-inset-top)) 12px max(12px, env(safe-area-inset-bottom)); }
+#yard[hidden], #scene[hidden] { display: none; }
+body.screen-open #toast { z-index: 11; }
+.yard-card {
+  width: min(1120px, 100%); height: min(860px, 100%); display: flex; flex-direction: column; overflow: hidden;
+  background: radial-gradient(ellipse at 50% 30%, #f8f0dc 0%, var(--paper) 55%, #e6d5ad 100%); border: 1px solid var(--ink-2); border-radius: 12px; box-shadow: 0 18px 60px rgba(30, 18, 6, 0.5);
+}
+.yard-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; padding: 16px 22px 10px; border-bottom: 1px solid rgba(107, 82, 54, 0.35); }
+.yard-head h2 { font-family: var(--display); font-weight: 400; font-size: 30px; margin: 0; line-height: 1.1; }
+.yard-head .sub { margin: 2px 0 0; color: var(--ink-2); font-style: italic; }
+.yard-head .close { font-size: 22px; line-height: 1; padding: 4px 11px; }
+.yard-body { flex: 1 1 auto; overflow-y: auto; padding: 16px 22px 24px; overscroll-behavior: contain; }
+.yard-body.split { display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr); gap: 22px; overflow: hidden; padding-bottom: 0; }
+.yard-body.split > section { overflow-y: auto; padding-bottom: 18px; overscroll-behavior: contain; }
+.ship-art { display: block; width: 100%; height: auto; }
+.art.big { background: linear-gradient(#e9ddc0, #f3e8cf 60%); border: 1px solid rgba(107, 82, 54, 0.4); border-radius: 8px; box-shadow: inset 0 0 40px rgba(120, 90, 40, 0.18); overflow: hidden; }
+.yard-card .sec { font-family: var(--display); font-weight: 400; font-size: 22px; margin: 22px 0 4px; border-bottom: 1px solid rgba(107, 82, 54, 0.3); padding-bottom: 3px; }
+.yard-card .fine { font-size: 13px; color: var(--muted); margin: 4px 0 10px; }
+.yard-card .row.start { justify-content: flex-start; flex-wrap: wrap; gap: 8px; margin-top: 10px; align-items: center; }
+.hero { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); gap: 22px; align-items: center; }
+.hero .kicker { margin: 0; text-transform: uppercase; letter-spacing: 0.12em; font-size: 12px; color: var(--gold); }
+.hero h3 { font-family: var(--display); font-weight: 400; font-size: 34px; margin: 2px 0 4px; line-height: 1.05; }
+.ship-stats { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4px 16px; margin: 12px 0 4px; }
+.ship-stats > div { display: flex; justify-content: space-between; gap: 8px; border-bottom: 1px dotted rgba(107, 82, 54, 0.35); padding: 3px 0; }
+.ship-stats dt { color: var(--ink-2); font-size: 14px; }
+.ship-stats dd { margin: 0; font-weight: 600; font-variant-numeric: tabular-nums; }
+.delta { margin-left: 4px; font-size: 11px; }
+.delta.up { color: var(--good); }
+.delta.down { color: var(--red); }
+.hulls { list-style: none; margin: 8px 0 0; padding: 0; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; position: relative; }
+.hulls:not(.compact)::before { content: ''; position: absolute; left: 0; right: 0; top: 13px; border-top: 2px solid rgba(107, 82, 54, 0.4); }
+.hull-card { position: relative; background: rgba(255, 250, 238, 0.55); border: 1px solid rgba(107, 82, 54, 0.35); border-radius: 8px; padding: 30px 12px 12px; font-size: 14px; line-height: 1.35; }
+.hulls.compact .hull-card { padding-top: 10px; }
+.hull-card .year { position: absolute; top: 2px; left: 10px; background: var(--paper); border: 1px solid var(--ink-2); border-radius: 12px; padding: 1px 9px; font-size: 13px; font-weight: 600; }
+.hull-card h4 { font-family: var(--display); font-weight: 400; font-size: 20px; margin: 6px 0 2px; display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.hull-card p { margin: 4px 0; }
+.hull-card .nums { color: var(--ink-2); font-variant-numeric: tabular-nums; font-size: 13px; }
+.hull-card.pencil { background: rgba(255, 250, 238, 0.25); border-style: dashed; color: var(--ink-2); }
+.hull-card .need { color: var(--gold); font-style: italic; }
+.hull-card .ship-stats { grid-template-columns: 1fr; font-size: 13px; }
+.tag { font-family: var(--serif); font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; border: 1px solid var(--ink-2); border-radius: 10px; padding: 1px 7px; color: var(--ink-2); background: var(--paper); }
+.tag.own { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+.tag.order { border-color: var(--gold); color: var(--gold); }
+.tag.locked { border-style: dashed; }
+.orders, .fleet-list { list-style: none; margin: 8px 0 0; padding: 0; display: grid; gap: 10px; }
+.order-card { display: grid; grid-template-columns: 220px 1fr; gap: 16px; align-items: center; background: rgba(255, 250, 238, 0.55); border: 1px solid rgba(107, 82, 54, 0.35); border-radius: 8px; padding: 8px 14px 8px 8px; }
+.order-card h4 { font-family: var(--display); font-weight: 400; font-size: 20px; margin: 0 0 2px; }
+.order-card p { margin: 3px 0; }
+.bar { height: 6px; background: rgba(107, 82, 54, 0.18); border-radius: 3px; overflow: hidden; margin-top: 6px; }
+.bar span { display: block; height: 100%; background: var(--gold); }
+.fleet-list { grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); }
+.hired { display: grid; grid-template-columns: 110px 1fr; gap: 10px; align-items: center; font-size: 14px; }
+.stage .name { display: flex; align-items: center; gap: 8px; margin: 12px 0 4px; font-style: italic; color: var(--ink-2); }
+.stage .name input { flex: 1; font: inherit; font-family: var(--display); font-style: normal; font-size: 20px; color: var(--ink); background: rgba(255, 250, 238, 0.7); border: 1px solid var(--ink-2); border-radius: 4px; padding: 3px 8px; min-width: 0; }
+.choices .tabs { position: sticky; top: 0; background: var(--paper); z-index: 1; padding-top: 2px; }
+.opt-group { border: none; padding: 0; margin: 14px 0 6px; }
+.opt-group legend { font-family: var(--display); font-size: 19px; padding: 0; margin-bottom: 4px; }
+.opts { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 8px; }
+button.opt { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; text-align: left; padding: 8px 10px; background: rgba(255, 250, 238, 0.6); border-color: rgba(107, 82, 54, 0.5); border-radius: 6px; font-size: 14px; }
+button.opt .note { font-size: 12.5px; color: var(--ink-2); line-height: 1.3; }
+button.opt .price { font-size: 12.5px; color: var(--gold); font-weight: 600; margin-top: 2px; }
+button.opt.on { background: #fff7e3; border-color: var(--ink); box-shadow: inset 0 0 0 1.5px var(--ink); color: var(--ink); }
+button.opt.current:not(.on) .price { color: var(--muted); }
+.yard-foot { border-top: 1px solid rgba(107, 82, 54, 0.35); padding: 10px 22px 14px; display: grid; grid-template-columns: 1fr auto; gap: 6px 18px; align-items: end; background: rgba(233, 219, 184, 0.6); }
+.yard-foot .row { margin: 0; }
+.yard-foot .warn.fine { grid-column: 1 / -1; margin: 0; color: var(--red); }
+.bill { list-style: none; margin: 0; padding: 0; font-size: 14px; max-height: 96px; overflow-y: auto; }
+.bill li { display: flex; justify-content: space-between; gap: 12px; border-bottom: 1px dotted rgba(107, 82, 54, 0.3); }
+.total { display: flex; justify-content: space-between; gap: 12px; margin: 4px 0 0; font-size: 16px; }
+.bill-wrap .muted, .bill-wrap .warn { margin: 0; }
+.banner.ready { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; margin: 10px 22px 0; padding: 8px 12px; background: #f6ecc9; border: 1px solid var(--gold); border-radius: 6px; }
+.banner.ready > span { flex: 1 1 260px; }
+.hire-hulls { display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 6px; margin: 6px 0; }
+.hire-hulls button { display: flex; flex-direction: column; align-items: center; padding: 4px; font-size: 13px; }
+.hire-hulls button.on { background: #fff7e3; color: var(--ink); box-shadow: inset 0 0 0 1.5px var(--ink); }
+.hire-hulls button small { color: var(--ink-2); }
+.c-title small { font-family: var(--serif); font-size: 12px; font-weight: 400; }
+#modal-body .art { margin: 0 0 8px; border-radius: 6px; overflow: hidden; }
+@media (max-width: 860px) {
+  .hulls { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .hulls:not(.compact)::before { display: none; }
+  .yard-body.split { display: block; overflow-y: auto; padding-bottom: 18px; }
+  .yard-body.split > section { overflow: visible; }
+  .hero { grid-template-columns: 1fr; }
+}
+@media (max-width: 520px) {
+  #yard { padding: 0; }
+  .yard-card { border-radius: 0; height: 100%; border: none; }
+  .yard-head { padding: 12px 14px 8px; }
+  .yard-head h2 { font-size: 24px; }
+  .yard-body { padding: 12px 14px 20px; }
+  .hulls { grid-template-columns: 1fr; }
+  .order-card { grid-template-columns: 1fr; }
+  .ship-stats { grid-template-columns: 1fr 1fr; gap: 2px 10px; font-size: 14px; }
+  .yard-foot { grid-template-columns: 1fr; padding: 8px 14px calc(10px + env(safe-area-inset-bottom)); }
+  .opts { grid-template-columns: 1fr 1fr; }
+}
+.hulls.compact { grid-template-columns: 1fr; gap: 10px; }
+.hull-card.wide { display: grid; grid-template-columns: 170px minmax(0, 1fr); gap: 14px; align-items: start; padding: 10px 12px; }
+.hull-card.wide .info h4 { margin-top: 0; }
+.hull-card.wide .ship-stats { grid-template-columns: 1fr 1fr; gap: 0 14px; }
+.hull-card.wide .row.start .fine, .hull-card.wide .row.start .warn { margin: 0; }
+@media (max-width: 520px) { .hull-card.wide { grid-template-columns: 1fr; } }
+
+/* ---- Arrival scene ---- */
+#scene { position: fixed; inset: 0; z-index: 9; background: #2e241b; opacity: 0; cursor: pointer; overflow: hidden; }
+#scene canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+body.scene-open #panel, body.scene-open #toast, body.scene-open #tip { visibility: hidden; }
+.scene-cap { position: absolute; left: 50%; top: max(8vh, 40px); transform: translate(-50%, 8px); text-align: center; color: var(--ink); opacity: 0; transition: opacity 0.6s ease, transform 0.6s ease; pointer-events: none; width: min(560px, 90vw);
+  background: rgba(244, 234, 210, 0.82); border: 1px solid rgba(107, 82, 54, 0.5); border-radius: 8px; padding: 10px 22px 12px; box-shadow: 0 8px 30px rgba(40, 25, 10, 0.25); }
+#scene.cap-on .scene-cap { opacity: 1; transform: translate(-50%, 0); }
+.scene-cap .kicker { margin: 0; text-transform: uppercase; letter-spacing: 0.16em; font-size: 12px; color: var(--gold); }
+.scene-cap h2 { font-family: var(--display); font-weight: 400; font-size: clamp(34px, 6vw, 56px); margin: 0; line-height: 1.05; }
+.scene-cap .line { margin: 4px 0 0; font-style: italic; }
+.scene-skip { position: absolute; right: 14px; bottom: max(14px, env(safe-area-inset-bottom)); background: rgba(244, 234, 210, 0.75); font-size: 13px; }
+.register .setting { margin: 22px 0 0; display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: center; }
+.register .setting select { font: inherit; margin-left: 6px; }

@@ -1,15 +1,16 @@
-// The fleet: extra caravels run by hired captains on trade routes of two or more stops.
+// The fleet: extra ships (any hull from the shipyard) run by hired captains on trade routes of two or more stops.
 // They sail the same winds and trade in the same markets as the player, so their
 // buying and selling moves real prices. Money comes from, and goes to, the player's purse.
 
 import { PORTS, findPath, windAt, sailFactor, angleDiff, bearing, distNm, D2R } from './world.js';
 import { GOODS } from './economy.js';
 import * as Accounts from './accounts.js';
+import * as Ships from './ships.js';
 
-export const SHIP_COST = 1500;
-const HOLD = 40;
-const KNOTS = 5;
-export const SHIP_UPKEEP = 1; // cz a day, on top of the captain's wage (tuned 26 Oct 2026 with tests/sim)
+export const SHIP_COST = Ships.HULLS.caravel.price;
+// Upkeep is the hull's hiredUpkeep (a caravel 1 cz a day, tuned 26 Oct 2026 with tests/sim), on top of the captain's wage.
+export const SHIP_UPKEEP = Ships.HULLS.caravel.hiredUpkeep;
+const hullStats = (ship) => Ships.stats({ hull: ship.hull || 'caravel' });
 const RESERVE = 150; // a captain never spends the last of the purse
 const MARGIN = 0.8; // he pays at most 80% of what he expects to sell for
 // Loyalty: a captain left alone too long starts to stray.
@@ -57,17 +58,18 @@ export function canBuy(S, maxShips) {
   return ensureFleet(S).ships.length < maxShips;
 }
 
-export function buyShip(S, captainId, maxShips) {
+export function buyShip(S, captainId, maxShips, hullId = 'caravel') {
   const F = ensureFleet(S);
   const cap = (F.candidates?.list || []).find((c) => c.id === captainId);
-  if (!cap || S.purse < SHIP_COST || !canBuy(S, maxShips)) return null;
+  const h = Ships.HULLS[hullId];
+  if (!h || !cap || S.purse < h.price || !canBuy(S, maxShips)) return null;
   F.candidates.list = F.candidates.list.filter((c) => c !== cap);
   const used = new Set(F.ships.map((s) => s.name));
-  const name = SHIP_NAMES.find((n) => !used.has(n)) || `Caravel ${F.nextId}`;
-  const ship = { id: F.nextId++, name, captain: cap, at: 'lisbon', status: 'idle', route: null, leg: null, hold: {}, profit: 0, trips: 0, last: null };
+  const name = SHIP_NAMES.find((n) => !used.has(n) && n !== S.ship.name) || `${h.name} ${F.nextId}`;
+  const ship = { id: F.nextId++, name, hull: hullId, captain: cap, at: 'lisbon', status: 'idle', route: null, leg: null, hold: {}, profit: 0, trips: 0, last: null };
   F.ships.push(ship);
-  S.purse -= SHIP_COST;
-  Accounts.record(S, { kind: 'ships', amount: -SHIP_COST, text: `Bought the caravel ${name} and hired Captain ${cap.name}` });
+  S.purse -= h.price;
+  Accounts.record(S, { kind: 'ships', amount: -h.price, text: `Bought the ${h.name.toLowerCase()} ${name} and hired Captain ${cap.name}` });
   return ship;
 }
 
@@ -96,7 +98,7 @@ export function loyaltyText(l) {
 }
 
 export function dailyCost(ship) {
-  return SHIP_UPKEEP + ship.captain.wage;
+  return hullStats(ship).hiredUpkeep + ship.captain.wage;
 }
 
 // Estimate a passage for a hired captain: today's winds, adjusted for his navigation.
@@ -108,6 +110,7 @@ function planLeg(S, ship, fromId, toId) {
   const path = [[a.lon, a.lat], ...route];
   let day = S.day, total = 0;
   const cum = [0];
+  const st = hullStats(ship);
   for (let i = 1; i < path.length; i++) {
     let [lon, lat] = path[i - 1];
     const [tl, ta] = path[i];
@@ -116,7 +119,8 @@ function planLeg(S, ship, fromId, toId) {
       if (rem < 0.5) break;
       const br = bearing(lon, lat, tl, ta);
       const w = windAt(lon, lat, day);
-      const perDay = KNOTS * 24 * sailFactor(angleDiff(br, w.from)) * (0.45 + 0.55 * w.strength);
+      const off = angleDiff(br, w.from);
+      const perDay = Ships.knotsAt(st, off, sailFactor(off) * (0.45 + 0.55 * w.strength)) * 24;
       const step = Math.min(perDay * 0.1, rem);
       lat += (step * Math.cos(br * D2R)) / 60;
       lon += (step * Math.sin(br * D2R)) / (60 * Math.cos(lat * D2R));
@@ -137,7 +141,7 @@ function planLeg(S, ship, fromId, toId) {
 // 'best' lets the captain pick whatever pays most at the stop where it will next be sold.
 export const MAX_STOPS = 6;
 export const MAX_ORDERS = 4;
-export const HOLD_SIZE = HOLD;
+export const holdSize = (ship) => hullStats(ship).hold;
 
 export function simpleRoute(a, b) {
   const orders = () => [{ act: 'sell', good: 'all' }, { act: 'buy', good: 'best', pct: 100 }];
@@ -177,6 +181,7 @@ export function holdText(ship) {
 
 export function upgradeShip(ship) {
   holdOf(ship);
+  if (!ship.hull || !Ships.HULLS[ship.hull]) ship.hull = 'caravel';
   ship.route = normalizeRoute(ship.route);
 }
 
@@ -306,8 +311,9 @@ function buyAndSail(S, market, ship, parts = [], fresh = false) {
   const buys = stop.orders.filter((o) => o.act === 'buy');
   let boughtAny = false, bestFailed = false;
   for (const o of buys) {
-    const free = HOLD - holdUsed(ship);
-    const units = Math.min(free, Math.round(HOLD * (o.pct || 100) / 100));
+    const cap = holdSize(ship);
+    const free = cap - holdUsed(ship);
+    const units = Math.min(free, Math.round(cap * (o.pct || 100) / 100));
     if (units <= 0) continue;
     let g = o.good, qty = 0, cost = 0;
     if (g === 'best') {

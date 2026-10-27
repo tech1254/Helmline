@@ -7,7 +7,8 @@ import * as Fleet from './fleet.js';
 import * as Cloud from './cloud.js';
 import * as Accounts from './accounts.js';
 import * as Pirates from './pirates.js';
-import { SHIP, WAGE_RESERVE } from './config.js';
+import { WAGE_RESERVE_DAYS } from './config.js';
+import * as Ships from './ships.js';
 import { S, market, ui } from './state.js';
 import { newGame, save } from './save.js';
 import { cloudSync, loadFromCloud, renderCloudButton, startCloudSave } from './cloudsync.js';
@@ -15,6 +16,7 @@ import { cam, centerOn, clampCam } from './view.js';
 import { report } from './sim.js';
 import { checkMilestones, confirmVoyage, observe, planCourse, waitInPort } from './voyage.js';
 import { menuAction } from './dock.js';
+import { openShips } from './shipyard.js';
 import { closeFeedback, feedbackInput, openFeedback, submitFeedback } from './feedback.js';
 import { $, cz, fmtDate, held } from './util.js';
 import { draftFor, renderPanel, renderTip, routeDrafts, routeSummary, setSpeed, togglePanel, toggleWind } from './panels.js';
@@ -60,11 +62,12 @@ export function initActions() {
     }
     if (t.dataset.buy && pid) {
       const g = t.dataset.buy;
-      const free = SHIP.hold - held();
+      const st = Ships.flagStats(S);
+      const free = st.hold - held();
       const max = t.dataset.n === 'max';
       const n = max ? free : +t.dataset.n;
       // "Max" keeps back two weeks of wages so the crew is paid on the way.
-      const budget = Math.floor(S.purse - (max ? Math.min(WAGE_RESERVE, Math.max(0, S.purse - market.buyPrice(pid, g))) : 0));
+      const budget = Math.floor(S.purse - (max ? Math.min(WAGE_RESERVE_DAYS * st.upkeep, Math.max(0, S.purse - market.buyPrice(pid, g))) : 0));
       const doBuy = () => {
         const { bought, cost } = market.buy(pid, g, n, budget, free);
         S.cargo[g] += bought; S.paid[g] += cost; S.purse -= cost;
@@ -134,15 +137,23 @@ export function initActions() {
       return;
     } else if (t.hasAttribute('data-wait') && pid) {
       waitInPort(7);
+    } else if (t.dataset.ships) {
+      ui.panelMode = S.ship.docked ? 'port' : null;
+      renderPanel();
+      openShips(t.dataset.ships);
+      return;
+    } else if (t.dataset.hireHull) {
+      ui.hireHull = t.dataset.hireHull;
     } else if (t.dataset.hire) {
       const cap = (S.fleet.candidates?.list || []).find((c) => c.id === +t.dataset.hire);
+      const H = Ships.HULLS[ui.hireHull] || Ships.HULLS.caravel;
       if (cap) {
         confirmDialog({
-          title: `Buy a caravel for Captain ${cap.name}?`,
-          body: `<dl class="facts"><dt>Caravel</dt><dd>${Fleet.SHIP_COST.toLocaleString()} cz</dd><dt>Running cost</dt><dd>${cap.wage + Fleet.SHIP_UPKEEP} cz a day at sea, half that in port</dd><dt>Purse after</dt><dd>${Math.floor(S.purse - Fleet.SHIP_COST).toLocaleString()} cz</dd></dl><p>Then give him a route between two ports.</p>`,
-          ok: `Buy for ${Fleet.SHIP_COST.toLocaleString()} cz`,
+          title: `Buy a ${H.name.toLowerCase()} for Captain ${cap.name}?`,
+          body: `<dl class="facts"><dt>${H.name}</dt><dd>${H.price.toLocaleString()} cz</dd><dt>Hold</dt><dd>${Ships.stats({ hull: H.id }).hold}</dd><dt>Running cost</dt><dd>${cap.wage + H.hiredUpkeep} cz a day at sea, half that in port</dd><dt>Purse after</dt><dd>${Math.floor(S.purse - H.price).toLocaleString()} cz</dd></dl><p>Then give him a route between two ports.</p>`,
+          ok: `Buy for ${H.price.toLocaleString()} cz`,
           onOk: () => {
-            const ship = Fleet.buyShip(S, cap.id, Contracts.perks(S).maxShips);
+            const ship = Fleet.buyShip(S, cap.id, Contracts.perks(S).maxShips, H.id);
             if (ship) { toast(`The <b>${ship.name}</b> is yours, with Captain ${cap.name} in command. Give her a route.`, 'discover'); log(`Bought the ${ship.name}; hired Captain ${cap.name}.`); }
           },
         });
@@ -260,6 +271,7 @@ export function initActions() {
   });
   document.querySelectorAll('[data-speed]').forEach((b) => b.addEventListener('click', () => setSpeed(+b.dataset.speed)));
   $('btn-fleet').addEventListener('click', () => togglePanel('fleet'));
+  $('btn-register').addEventListener('click', () => openShips('register'));
   $('btn-help').addEventListener('click', () => togglePanel('help'));
   $('btn-cloud').addEventListener('click', () => togglePanel('cloud'));
   $('tip-close').addEventListener('click', () => { S.tips.off = true; renderTip(); save(); });

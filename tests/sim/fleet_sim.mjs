@@ -50,7 +50,7 @@ function freshState(ships) {
   Fleet.ensureFleet(S);
   ships.forEach((d, i) => {
     S.fleet.ships.push({
-      id: i + 1, name: `Ship ${i + 1}`, captain: { id: i + 1, name: `Captain ${i + 1}`, nav: d.nav, trade: d.trade, wage: d.wage, loyalty: 100 },
+      id: i + 1, name: `Ship ${i + 1}`, hull: d.hull || 'caravel', captain: { id: i + 1, name: `Captain ${i + 1}`, nav: d.nav, trade: d.trade, wage: d.wage, loyalty: 100 },
       at: d.route[0].port, status: 'idle', route: null, leg: null, hold: {}, profit: 0, trips: 0, last: null,
     });
   });
@@ -126,6 +126,22 @@ if (K !== 1) {
 }
 if (WAGE) for (const ships of Object.values(SCENARIOS)) for (const d of ships) d.wage += WAGE;
 
-if (import.meta.url === `file://${process.argv[1]}`) {
+// --hulls: every route sailed by each hull in turn (what a bigger hold earns, net of upkeep).
+export function hullReport() {
+  console.log(`\n${DAYS} days, ${RUNS} runs each: cash per ship by hull`);
+  const routes = { ...SCENARIOS,
+    'Lisbon → Lanzarote → Arguin → Gambia, best goods': [{ nav: 4, trade: 4, wage: 4, route: [stop('lisbon', sell, buy('best')), stop('lanzarote', sell, buy('best', 50)), stop('arguin', sell, buy('best', 50)), stop('gambia', sell, buy('best'))] }] };
+  for (const [name, ships] of Object.entries(routes)) {
+    const row = ['barca', 'caravel', 'barinel', 'nau'].map((hull) => {
+      const r = runScenario(ships.map((d) => ({ ...d, hull })))[0];
+      return `${hull} ${Math.round(r.cash).toLocaleString('en').padStart(6)}`;
+    });
+    console.log(`  ${name.padEnd(50)} ${row.join(' | ')}`);
+  }
+}
+
+if (import.meta.url === `file://${process.argv[1]}` && process.argv.includes('--hulls')) {
+  hullReport();
+} else if (import.meta.url === `file://${process.argv[1]}`) {
   report(`${DAYS} days, ${RUNS} runs each`, `${K !== 1 ? `, market depth ×${K}` : ''}${WAGE ? `, wages ${WAGE > 0 ? '+' : ''}${WAGE}/day` : ''}`);
 }

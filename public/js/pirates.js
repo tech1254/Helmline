@@ -6,6 +6,7 @@ import * as Accounts from './accounts.js';
 // looking for him), avoiding fights builds caution (the seas around him grow calmer).
 
 import { GOODS } from './economy.js';
+import * as Ships from './ships.js';
 
 const ZONES = [
   // [west, east, south, north, danger]
@@ -50,7 +51,8 @@ export function roll(S, days, lon, lat) {
   if (P.cooldown > 0) return null;
   const { d, where } = danger(lon, lat);
   if (!d) return null;
-  const chance = 1 - Math.exp(-BASE_CHANCE * d * attention(S) * days);
+  const shy = S.ship?.hull ? Ships.flagStats(S).shy : 1; // galleys think twice about a big ship
+  const chance = 1 - Math.exp(-BASE_CHANCE * d * attention(S) * shy * days);
   if (Math.random() > chance) return null;
   P.cooldown = COOLDOWN_DAYS;
   P.encounters++;
@@ -62,7 +64,8 @@ export function roll(S, days, lon, lat) {
 export function odds(S, enc, knots) {
   const P = ensurePirates(S);
   const run = clamp(0.25 + 0.11 * knots - (enc.big ? 0.1 : 0), 0.12, 0.88);
-  const fight = clamp((0.5 + 0.03 * Math.min(P.won, 6)) * (S.hull / 100 * 0.4 + 0.6) / enc.strength, 0.15, 0.8);
+  const guns = S.ship?.hull ? Ships.flagStats(S).fight : 0;
+  const fight = clamp((0.5 + 0.03 * Math.min(P.won, 6)) * (S.hull / 100 * 0.4 + 0.6) / enc.strength + guns, 0.15, 0.9);
   return { run, fight };
 }
 

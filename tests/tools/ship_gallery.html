@@ -1,0 +1,20 @@
+<!doctype html><meta charset="utf-8"><title>Ship gallery</title>
+<style>body{background:#f4ead2;margin:0;display:grid;grid-template-columns:repeat(4,1fr);gap:6px;padding:8px;font:12px Georgia}div{background:#efe2c2;border:1px solid #c9b48c}svg{width:100%;display:block}</style>
+<body><script type="module">
+import { shipSVG } from '../../public/js/shipart.js';
+const F = (o) => o;
+const items = [
+ ['barca', {}], ['caravel', {}], ['barinel', {}], ['nau', {}],
+ ['caravel', { rig: 'square', cloth: 'linen', mark: 'cross', area: 'bonnets', flags: 'streamers' }],
+ ['caravel', { cloth: 'linen', mark: 'cross', tack: 'sprit', paint: 'redlead', guns: 'bercos', stern: 'carved' }],
+ ['nau', { mark: 'cross', guns: 'bombards', stern: 'carved', flags: 'streamers', paint: 'ochre', area: 'bonnets' }],
+ ['barinel', { mark: 'arms', paint: 'ochre', cloth: 'hemp' }],
+];
+let html = '';
+for (const [h, fit] of items) html += `<div>${shipSVG({ hull: h, fit, name: 'São Cristóvão' }, { sea: true })}<p>${h} ${JSON.stringify(fit)}</p></div>`;
+for (const st of ['ink', 'pencil']) html += `<div>${shipSVG({ hull: 'nau' }, { style: st })}<p>${st}</p></div>`;
+for (const s of [0.1, 0.3, 0.55, 0.8, 0.95]) html += `<div>${shipSVG({ hull: 'nau' }, { stage: s })}<p>stage ${s}</p></div>`;
+html += `<div>${shipSVG({ hull: 'caravel', fit:{mark:'cross'} }, { crop: 'tight', sea: true })}<p>tight</p></div>`;
+for (const h of ['caravel','nau']) html += `<div>${shipSVG({ hull: h, fit:{flags:'streamers', rig: 'square'} }, { furled: true, sea: true })}<p>furled ${h}</p></div>`;
+document.body.innerHTML = html;
+</script>
