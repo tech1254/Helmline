@@ -7,6 +7,7 @@ import * as Accounts from './accounts.js';
 
 import { GOODS } from './economy.js';
 import * as Ships from './ships.js';
+import * as Wear from './wear.js';
 
 const ZONES = [
   // [west, east, south, north, danger]
@@ -17,8 +18,7 @@ const ZONES = [
 
 const BASE_CHANCE = 0.035; // per day in the most dangerous waters
 const COOLDOWN_DAYS = 12;
-export const REPAIR_PORTS = ['lisbon', 'lagos', 'funchal'];
-export const REPAIR_COST_PER_POINT = 4;
+export const REPAIR_PORTS = Wear.YARDS;
 
 export function ensurePirates(S) {
   if (!S.pirates) S.pirates = { notoriety: 0, caution: 0, cooldown: 0, encounters: 0, won: 0, lost: 0, fled: 0, paid: 0 };
@@ -114,7 +114,7 @@ function fight(S, enc, p) {
     S.hull = Math.max(10, S.hull - dmg);
     P.notoriety += 4;
     P.won++;
-    lines.push(`Your crew beats off the corsairs and takes ${loot} cz from their galley. The hull is damaged (${S.hull}%).`);
+    lines.push(`Your crew beats off the corsairs and takes ${loot} cz from their galley. The hull is damaged (${Math.round(S.hull)}%).`);
     kind = 'discover';
   } else {
     const share = 0.3 + Math.random() * 0.3;
@@ -135,22 +135,25 @@ function fight(S, enc, p) {
     S.hull = Math.max(10, S.hull - dmg);
     P.notoriety += 2;
     P.lost++;
-    lines.push(`The corsairs board you and strip the ship: ${lostGoods.length ? lostGoods.join(', ') : 'no cargo'}${cash ? ` and ${cash} cz` : ''}. The hull is badly damaged (${S.hull}%).`);
+    lines.push(`The corsairs board you and strip the ship: ${lostGoods.length ? lostGoods.join(', ') : 'no cargo'}${cash ? ` and ${cash} cz` : ''}. The hull is badly damaged (${Math.round(S.hull)}%).`);
     kind = '';
   }
   return { kind, lines };
 }
 
+// What the shipyard asks to make your flagship sound (wear.js).
 export function repairCost(S) {
-  return Math.ceil((100 - (S.hull ?? 100)) * REPAIR_COST_PER_POINT);
+  return Wear.yardQuote(S.ship?.hull, S.hull ?? 100).cost;
 }
 
-export function repair(S) {
-  const cost = repairCost(S);
-  S.purse -= cost;
-  Accounts.record(S, { kind: 'repairs', amount: -cost, text: 'Hull repaired' });
-  S.hull = 100;
-  return cost;
+// Pay for a repair, in the yard or on a beach. The days it takes are spent by the caller.
+export function repair(S, beach = false) {
+  const q = beach ? Wear.beachQuote(S.ship?.hull, S.hull ?? 100) : Wear.yardQuote(S.ship?.hull, S.hull ?? 100);
+  S.purse -= q.cost;
+  Accounts.record(S, { kind: 'repairs', amount: -q.cost, text: beach ? 'Careened on the beach' : 'Hull repaired in the shipyard' });
+  S.hull = Math.max(S.hull ?? 100, q.to);
+  S.hullWarned = 0;
+  return q;
 }
 
 export function reputationText(S) {

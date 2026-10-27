@@ -155,7 +155,7 @@ function registerHtml() {
         <div class="hero-text">
           <p class="kicker">Your flagship</p>
           <h3>${esc(sh.name)}</h3>
-          <p class="muted">${h.name}${sh.hull === 'caravel' ? (sh.fit.rig === 'square' ? ', square-rigged' : ', lateen-rigged') : ''} · ${fitSummary(sh.hull, sh.fit)}${S.hull < 100 ? ` · hull ${S.hull}%` : ''}</p>
+          <p class="muted">${h.name}${sh.hull === 'caravel' ? (sh.fit.rig === 'square' ? ', square-rigged' : ', lateen-rigged') : ''} · ${fitSummary(sh.hull, sh.fit)}${S.hull < 100 ? ` · hull ${Math.round(S.hull)}%` : ''}</p>
           ${statRows(st)}
           <div class="row start">
             ${yard ? '<button class="primary" data-yard="open-yard">Go to the shipyard</button>' : '<p class="fine">Shipyards: Lisbon builds ships and refits them; Lagos and Funchal refit.</p>'}

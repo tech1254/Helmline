@@ -1,3 +1,7 @@
+// NOTE: since the release of 27 Oct 2026 the game itself has B, C and D (thinner markets, dearer
+// ships, wear and repairs in public/js/economy.js, ships.js, wear.js and fleet.js). So `--only none`
+// now simulates the game as it is, and adding B, C or D on top applies them twice.
+//
 // A whole career, played headless: your flagship and two hired captains trading for a century
 // (1 March 1451 to 1 March 1551), with the real market, events and fleet code. Used to judge
 // proposed economy changes, alone and in every combination:

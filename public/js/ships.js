@@ -16,27 +16,30 @@ export const TIER_NAMES = { 0: 'anyone', 5: 'Known on the quays', 20: 'Respected
 // orderYear: may be ordered from this year (a third paid down); year: delivered or bought outright.
 export const HULLS = {
   barca: {
-    id: 'barca', name: 'Barca', year: 1451, standing: KNOWN, price: 800, hold: 25, knots: 4.5, up: 0.75, down: 1,
+    id: 'barca', name: 'Barca', year: 1451, standing: KNOWN, price: 1050, hold: 25, knots: 4.5, up: 0.75, down: 1,
     upkeep: 2, hiredUpkeep: 1, scale: 0.5, size: 0.8,
     blurb: 'A small, single-masted coaster with a square sail. Cheap to buy and run; a short-route ship for a captain.',
   },
   caravel: {
-    id: 'caravel', name: 'Caravel', year: 1451, standing: KNOWN, price: 1500, hold: 40, knots: 5, up: 1, down: 1,
+    id: 'caravel', name: 'Caravel', year: 1451, standing: KNOWN, price: 1950, hold: 40, knots: 5, up: 1, down: 1,
     upkeep: 3, hiredUpkeep: 1, scale: 1, size: 1,
     blurb: 'Two lateen masts and a shallow draft. The best ship afloat for beating home against the trade winds.',
   },
   barinel: {
-    id: 'barinel', name: 'Barinel', year: 1451, standing: KNOWN, price: 2200, hold: 60, knots: 4.8, up: 0.9, down: 1,
+    id: 'barinel', name: 'Barinel', year: 1451, standing: KNOWN, price: 2850, hold: 60, knots: 4.8, up: 0.9, down: 1,
     upkeep: 4, hiredUpkeep: 1, scale: 1.3, size: 1.15, oars: 2,
     blurb: 'A broad oared sailing ship. Sweeps keep her moving at about 2 knots in a calm, as in the Gulf of Guinea.',
   },
   nau: {
-    id: 'nau', name: 'Nau', year: 1480, orderYear: 1470, standing: TRUSTED, price: 6000, hold: 120, knots: 5.5, up: 0.75, down: 1.1,
+    id: 'nau', name: 'Nau', year: 1480, orderYear: 1470, standing: TRUSTED, price: 7800, hold: 120, knots: 5.5, up: 0.75, down: 1.1,
     upkeep: 6, hiredUpkeep: 2, scale: 2, size: 1.45, fight: 0.1, shy: 0.8,
     blurb: 'A great carrack with high castles fore and aft. A huge hold and room for bombards; slow to windward. Galleys think twice before taking her on.',
   },
 };
 export const HULL_ORDER = ['barca', 'caravel', 'barinel', 'nau'];
+// Hull prices above, and refits, are 30% dearer than first set (economy change C, 27 Oct 2026):
+// close to what ships cost per ton in the period, and enough to make buying one a decision.
+export const PRICE_RISE = 1.3;
 
 // Option groups. Each choice may change: knots (a factor), up (a factor), down, upAdd, hold (factor),
 // holdAdd, offWind (factor beyond 75° off the wind), wage (cz a day), fight (odds added), spoil (factor).
@@ -76,7 +79,7 @@ export const GROUPS = [
     id: 'hull', name: 'Hull', tab: 'hull',
     choices: [
       { id: 'built', name: 'As built' },
-      { id: 'tallow', name: 'Careened and tallowed', note: 'Hauled down, scraped of weed and coated with tallow and pitch.', knots: 1.05, price: 300, days: 3 },
+      { id: 'tallow', name: 'Careened and tallowed', note: 'Hauled down, scraped of weed and coated with tallow and pitch. Lasts about six months.', knots: 1.05, price: 300, days: 3 },
     ],
   },
   {
@@ -216,7 +219,7 @@ export function standingOf(S) {
 }
 
 export function priceFor(hullId, c) {
-  return Math.round((c.price || 0) * HULLS[hullId].scale / 10) * 10;
+  return Math.round((c.price || 0) * PRICE_RISE * HULLS[hullId].scale / 10) * 10;
 }
 
 // Whether a hull or option can be had now: 'yes', 'order' (may be ordered, delivered later),
@@ -275,6 +278,7 @@ export function quoteFit(S, fit) {
 export function applyFit(S, fit, q) {
   const sh = S.ship;
   for (const l of q.lines) if (!l.order) sh.fit[l.g.id] = l.c.id;
+  if (q.lines.some((l) => !l.order && l.g.id === 'hull' && l.c.id === 'tallow')) sh.tallowDay = S.day;
   for (const o of q.ordered) {
     S.yard.orders.push({ kind: 'fit', group: o.group, choice: o.choice, price: o.price, paid: Math.round(o.price / 3), due: dayOfYear(choice(o.group, o.choice).year), placed: S.day });
   }
@@ -293,6 +297,7 @@ export function tradeUp(S, hullId, name) {
   sh.fit = normalFit(hullId, keep);
   if (name) sh.name = name;
   S.hull = 100;
+  S.hullWarned = 0;
   S.yard.built = (S.yard.built || 0) + 1;
 }
 

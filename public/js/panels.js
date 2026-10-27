@@ -2,6 +2,7 @@
 
 import { PORTS, pointOfSail, compassPoint, distNm, findPath } from './world.js';
 import { GOODS, Market } from './economy.js';
+import * as Wear from './wear.js';
 import * as Contracts from './contracts.js';
 import * as Events from './events.js';
 import * as Fleet from './fleet.js';
@@ -60,7 +61,7 @@ export function renderHud() {
       let nm = 0, lon = sh.lon, lat = sh.lat;
       for (const [x, y] of sh.route) { nm += distNm(lon, lat, x, y); lon = x; lat = y; }
       const dest = sh.dest?.port ? PORTS.find((p) => p.id === sh.dest.port).name : 'the mark';
-      status = `${windTxt} · heading ${compassPoint(sh.heading)} · ${pointOfSail(off)} · ${knots.toFixed(1)} kn${S.hull < 100 ? ` · hull ${S.hull}%` : ''} · ${Math.round(nm)} nm to ${dest}`;
+      status = `${windTxt} · heading ${compassPoint(sh.heading)} · ${pointOfSail(off)} · ${knots.toFixed(1)} kn${S.hull < 90 ? ` · hull ${Math.round(S.hull)}%` : ''} · ${Math.round(nm)} nm to ${dest}`;
     } else {
       status = `${windTxt} · hove to · click the chart to set a course`;
     }
@@ -146,8 +147,7 @@ export function renderPort(el) {
     ${tabs('port')}
     <header><h2>${p.name}</h2><button class="close" data-close aria-label="Close">×</button></header>
     <p class="blurb">${p.blurb}</p>
-    ${S.hull < 100 ? `<p class="banner ${S.hull < 50 ? 'warn' : ''}"><b>Hull ${S.hull}%</b> · ${S.hull < 50 ? 'badly damaged, ' : ''}sailing at ${Math.round(Pirates.hullFactor(S) * 100)}% speed.
-      ${Pirates.REPAIR_PORTS.includes(pid) ? `<button data-repair ${S.purse < Pirates.repairCost(S) ? 'disabled' : ''}>Repair for ${Pirates.repairCost(S)} cz</button>` : 'The shipwrights of Lisbon, Lagos and Funchal can repair her.'}</p>` : ''}
+    ${hullBanner(pid)}
     ${shut ? `<p class="banner warn"><b>Closed to trade:</b> ${Events.template(shut).title.toLowerCase()}. Expected to reopen around ${fmtDate(shut.end)}.</p>` : ''}
     <table class="market">
       <thead><tr><th>Good</th><th class="num">Buy</th><th class="num">Sell</th><th class="num">Hold</th><th></th></tr></thead>
@@ -248,6 +248,23 @@ export function renderContracts(el) {
 }
 
 // A list of charted ports to sail to: easier than tapping a small marker on a phone.
+// The flagship's hull, when it needs looking at: the yard's price and days, or careening her
+// on the beach where there is no yard.
+function hullBanner(pid) {
+  const h = S.hull ?? 100;
+  if (h >= 90) return '';
+  const yard = Wear.YARDS.includes(pid);
+  const q = yard ? Wear.yardQuote(S.ship.hull, h) : Wear.beachQuote(S.ship.hull, h);
+  const days = (n) => `${n} ${n === 1 ? 'day' : 'days'}`;
+  const state = h < Wear.DANGER_BELOW ? 'in danger, ' : h < Wear.LEAKS_BELOW ? 'leaking, ' : '';
+  const act = yard
+    ? `<button data-repair ${S.purse < q.cost ? 'disabled' : ''}>Repair in the yard: ${q.cost.toLocaleString()} cz, ${days(q.days)}</button>`
+    : q.pts > 0
+      ? `<button data-careen ${S.purse < q.cost ? 'disabled' : ''}>Careen her on the beach: ${q.cost.toLocaleString()} cz, ${days(q.days)}, to ${Wear.BEACH_TO}%</button> <span class="fine">The yards of Lisbon, Lagos and Funchal make her fully sound.</span>`
+      : '<span class="fine">The yards of Lisbon, Lagos and Funchal can make her fully sound.</span>';
+  return `<p class="banner ${h < Wear.LEAKS_BELOW ? 'warn' : ''}"><b>Hull ${Math.round(h)}%</b> · ${state}sailing at ${Math.round(Pirates.hullFactor(S) * 100)}% speed. ${act}</p>`;
+}
+
 export function renderSail(el) {
   const rows = PORTS.filter((p) => S.discovered[p.id] && p.id !== S.ship.docked).map((p) => {
     const plan = planCourse(p.lon, p.lat, p.id, false);
@@ -333,7 +350,7 @@ export function renderFleet(el) {
   const ships = F.ships.map((ship) => {
     const last = ship.last ? `Last: at ${PORTS.find((p) => p.id === ship.last.at).name} sold ${ship.last.text || 'cargo'} for ${ship.last.income.toLocaleString()} cz (${ship.last.profit >= 0 ? '+' : ''}${ship.last.profit.toLocaleString()}).` : 'No voyages yet.';
     return `<li class="contract" data-ship="${ship.id}">
-        <div class="c-head"><span class="c-title">${ship.name} <small class="muted">${Ships.HULLS[ship.hull || 'caravel'].name.toLowerCase()} · hold ${Fleet.holdSize(ship)}</small></span><span class="c-pay">${ship.profit >= 0 ? '+' : ''}${ship.profit.toLocaleString()} cz</span></div>
+        <div class="c-head"><span class="c-title">${ship.name} <small class="muted">${Ships.HULLS[ship.hull || 'caravel'].name.toLowerCase()} · hold ${Fleet.holdSize(ship)} · hull ${Math.round(ship.hullPct ?? 100)}%</small></span><span class="c-pay">${ship.profit >= 0 ? '+' : ''}${ship.profit.toLocaleString()} cz</span></div>
         <div class="c-patron">Captain ${ship.captain.name} · navigation ${stars(ship.captain.nav)} · trade ${stars(ship.captain.trade)} · ${Fleet.dailyCost(ship)} cz a day at sea, half in port · ${Fleet.loyaltyText(ship.captain.loyalty)}</div>
         <p>${Fleet.statusText(S, ship)} ${ship.trips} ${ship.trips === 1 ? 'sale' : 'sales'} so far.</p>
         ${ship.route ? `<p class="muted">Route: ${routeSummary(ship.route)}</p>` : ''}

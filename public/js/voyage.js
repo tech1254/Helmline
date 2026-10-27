@@ -9,6 +9,7 @@ import * as Pirates from './pirates.js';
 import * as Fleet from './fleet.js';
 import { CHART_REWARD, MILESTONES } from './config.js';
 import * as Ships from './ships.js';
+import * as Wear from './wear.js';
 import { S, market, ui } from './state.js';
 import { save } from './save.js';
 import { cloudSync } from './cloudsync.js';
@@ -33,7 +34,7 @@ export function openEncounter(enc) {
     body: `<p>${enc.big ? 'A big Barbary galley, packed with fighting men,' : 'A Barbary galley, oars flashing,'} is closing on you off ${enc.where}.</p>
       <dl class="facts">
         <dt>Run for it</dt><dd>${pct(o.run)} chance to escape at ${knots.toFixed(1)} kn</dd>
-        <dt>Fight</dt><dd>${pct(o.fight)} chance to win${S.hull < 100 ? `, hull at ${S.hull}%` : ''}</dd>
+        <dt>Fight</dt><dd>${pct(o.fight)} chance to win${S.hull < 100 ? `, hull at ${Math.round(S.hull)}%` : ''}</dd>
         <dt>Pay tribute</dt><dd>${t} cz, and they let you pass</dd>
       </dl>
       <p class="fine">Fighting makes your name feared, and corsairs seek you out. Avoiding fights makes the seas around you calmer.</p>
@@ -92,7 +93,7 @@ function afterEncounter(r) {
     title,
     body: `${r.lines.map((l) => `<p>${l}</p>`).join('')}
       <dl class="facts">
-        <dt>Hull</dt><dd class="${S.hull < 50 ? 'warn' : ''}">${S.hull}%${S.hull < 100 ? `, sailing at ${Math.round(Pirates.hullFactor(S) * 100)}% speed` : ''}</dd>
+        <dt>Hull</dt><dd class="${S.hull < 50 ? 'warn' : ''}">${Math.round(S.hull)}%${S.hull < 100 ? `, sailing at ${Math.round(Pirates.hullFactor(S) * 100)}% speed` : ''}</dd>
         <dt>Purse</dt><dd>${Math.floor(S.purse).toLocaleString()} cz</dd>
         <dt>Hold</dt><dd>${held.length ? held.join(', ') : 'empty'}</dd>
         ${left ? `<dt>${goingTo ? goingTo.name : 'Your mark'}</dt><dd>about ${dayText(left.days)} on</dd>` : ''}
@@ -116,6 +117,22 @@ export function waitInPort(days) {
   observe(pid);
   report(Events.hearNews(S, pid));
   hint(`${days === 7 ? 'A week' : `${days} days`} pass${days === 7 ? 'es' : ''} in ${PORTS.find((p) => p.id === pid).name}.`, 'port');
+}
+
+// A leaking hull spoils cargo on the passage: counted up as she makes port.
+function leak(p) {
+  const share = Wear.leakShare(S.hull ?? 100);
+  if (!share) return;
+  const lost = [];
+  for (const g of GOODS) {
+    const have = S.cargo[g.id] || 0;
+    const n = Math.min(have, Math.round(have * share));
+    if (!n) continue;
+    S.cargo[g.id] -= n; // what was paid stays paid, as with spoilage
+    if (!S.cargo[g.id]) S.paid[g.id] = 0;
+    lost.push(`${n} ${n === 1 ? g.one : g.unit} of ${g.name.toLowerCase()}`);
+  }
+  if (lost.length) toast(`Sea water in the hold: ${lost.join(', ')} ruined on the way to ${p.name}. Her hull is at ${Math.round(S.hull)}%.`, 'alert', true, 'alert');
 }
 
 export function replan(dest) {
@@ -231,6 +248,12 @@ export function dock(portId) {
   }
   toast(msg, 'port');
   flushRot();
+  leak(p);
+  // a careened, tallowed bottom grows weed again in about six months
+  if (sh.fit?.hull === 'tallow' && S.day - (sh.tallowDay ?? S.day) > 180) {
+    sh.fit.hull = 'built';
+    toast(`The tallow on the <b>${sh.name}</b>'s bottom has worn away and the weed is back. The shipyard can careen and tallow her again.`, '');
+  }
   report(Contracts.onDock(S, portId));
   report(Events.hearNews(S, portId));
   const heard = Accounts.reveal(S, portId, S.fleet.ships);

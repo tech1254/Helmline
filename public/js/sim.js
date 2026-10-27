@@ -8,6 +8,7 @@ import * as Fleet from './fleet.js';
 import * as Accounts from './accounts.js';
 import * as Pirates from './pirates.js';
 import * as Ships from './ships.js';
+import * as Wear from './wear.js';
 import { DAYS_PER_SEC, OFFLINE_DAYS_PER_DOUBLING, OFFLINE_FULL_DAYS, OFFLINE_MAX_DAYS, OFFLINE_MIN_SECONDS, OFFLINE_RATE, SIGHT, STANDING_FADES_AFTER_HOURS } from './config.js';
 import { S, market, ui } from './state.js';
 import { save } from './save.js';
@@ -181,6 +182,7 @@ export function advanceTime(dd, atSea, away = false) {
   syncMarket();
   if (atSea) {
     spoil(dd);
+    wearHull(dd);
     if (!ui.modal && !ui.pendingEncounter) {
       const enc = Pirates.roll(S, dd, S.ship.lon, S.ship.lat);
       if (enc) ui.pendingEncounter = enc;
@@ -203,6 +205,23 @@ export function advanceTime(dd, atSea, away = false) {
     o.told = true;
     const what = o.kind === 'hull' ? `Your ${Ships.HULLS[o.hull].name.toLowerCase()}${o.name ? ` <b>${String(o.name).replace(/[<>&"]/g, '')}</b>` : ''} is` : `The ${Ships.choice(o.group, o.choice).name.toLowerCase()} you ordered is`;
     report([{ html: `${what} ready at the Lisbon shipyard. Call there to take delivery.`, kind: 'discover', log: `${what.replace(/<[^>]+>/g, '')} ready in Lisbon.` }]);
+  }
+}
+
+// The flagship's hull wears at sea, and storms batter her now and then (wear.js). Word once as
+// she starts to leak and again when she is in danger; the factor in port tells you the rest.
+function wearHull(dd) {
+  if (S.hull == null) S.hull = 100;
+  const storm = Wear.storms(dd);
+  S.hull = Math.max(5, S.hull - Wear.wearPerDay(S.ship.lat) * dd - storm);
+  if (storm) toast(`A storm batters the <b>${S.ship.name}</b>: her hull is at ${Math.round(S.hull)}%.`, '');
+  const warned = S.hullWarned || 0;
+  if (S.hull < Wear.DANGER_BELOW && warned < 2) {
+    S.hullWarned = 2;
+    toast(`The <b>${S.ship.name}</b> is in danger: her hull is at ${Math.round(S.hull)}% and the pumps barely keep up. Make for a shipyard, or careen her on the nearest beach.`, 'alert', true, 'alert');
+  } else if (S.hull < Wear.LEAKS_BELOW && warned < 1) {
+    S.hullWarned = 1;
+    toast(`The <b>${S.ship.name}</b> is leaking: hull ${Math.round(S.hull)}%. Cargo will spoil until she is repaired.`, 'alert', true, 'alert');
   }
 }
 

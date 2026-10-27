@@ -29,6 +29,9 @@ const MARKETS = {
 };
 
 const GOLD_K = 1.6; // gold is scarce: each pouch moves the price more
+// Thin markets: every load moves the price half as far again as it first did, so dumping a full
+// hold in one port costs dear (economy change B, 27 Oct 2026; see tests/sim/economy_sim.mjs).
+const DEPTH = 1.5;
 const SPREAD = 0.07;
 const PRESSURE_DAYS = 30; // how long the effect of a trade lingers
 const DRIFT_DAYS = 60;
@@ -67,7 +70,7 @@ export class Market {
   }
 
   k(port, good) {
-    return MARKETS[port].k * (good === 'gold' ? GOLD_K : 1);
+    return MARKETS[port].k * DEPTH * (good === 'gold' ? GOLD_K : 1);
   }
 
   basePrice(port, good) {

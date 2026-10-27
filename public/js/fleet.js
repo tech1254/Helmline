@@ -6,6 +6,7 @@ import { PORTS, findPath, windAt, sailFactor, angleDiff, bearing, distNm, D2R } 
 import { GOODS } from './economy.js';
 import * as Accounts from './accounts.js';
 import * as Ships from './ships.js';
+import * as Wear from './wear.js';
 
 export const SHIP_COST = Ships.HULLS.caravel.price;
 // Upkeep is the hull's hiredUpkeep (a caravel 1 cz a day, tuned 26 Oct 2026 with tests/sim), on top of the captain's wage.
@@ -131,7 +132,8 @@ function planLeg(S, ship, fromId, toId) {
     cum.push(total);
   }
   const navFactor = 1.12 - 0.04 * ship.captain.nav; // a good navigator is quicker
-  return { from: fromId, to: toId, start: S.day, days: Math.max(1, (day - S.day) * navFactor), path, cum, total };
+  const worn = 0.6 + 0.4 * (ship.hullPct ?? 100) / 100; // and a worn hull slower, as for the flagship
+  return { from: fromId, to: toId, start: S.day, days: Math.max(1, (day - S.day) * navFactor / worn), path, cum, total };
 }
 
 // ---- Routes ---------------------------------------------------------------------------
@@ -319,6 +321,8 @@ function visit(S, market, ship, fresh = false) {
     } else if (R.since == null) ship.round = { since: S.day, net: 0, visits: 0, rounds: 0 };
   }
   if (r) roundOf(ship).visits++;
+  const fix = repairIfNeeded(S, ship);
+  if (fix) { msgs.push(fix); return msgs; }
   if (r && (ship.captain.loyalty ?? 100) < LOYALTY_DESERT) {
     ship.route = null;
     ship.status = 'ashore';
@@ -444,16 +448,57 @@ export function tick(S, market, days, ownerPresent = true) {
       ship.at = leg.to;
       ship.leg = null;
       Accounts.bookCaptainWages(S, ship, `passage from ${port(leg.from).name}`);
-      const lost = spoilOnArrival(ship, leg.days, (port(leg.from).lat + port(leg.to).lat) / 2);
+      const lat = (port(leg.from).lat + port(leg.to).lat) / 2;
+      const lost = spoilOnArrival(ship, leg.days, lat);
       if (lost.length) msgs.push({ html: `<b>${ship.name}</b>: ${lost.join(', ')} on the passage.`, kind: '', level: 'routine' });
+      const w = wearOnPassage(S, ship, leg, lat);
+      if (w) msgs.push(w);
+      if (ship.sunk) continue;
       msgs.push(...visit(S, market, ship));
     } else if (ship.status === 'waiting' && !market.closed(ship.at)) {
       msgs.push(...visit(S, market, ship));
     } else if (ship.status === 'loading' && ship.route && S.day >= (ship.nextCheck ?? 0)) {
       msgs.push(...buyAndSail(S, market, ship));
+    } else if (ship.status === 'repair' && S.day >= (ship.repairUntil ?? 0)) {
+      ship.status = 'idle';
+      msgs.push(...(ship.route ? buyAndSail(S, market, ship) : []));
     }
   }
+  if (F.ships.some((x) => x.sunk)) F.ships = F.ships.filter((x) => !x.sunk);
   return msgs;
+}
+
+// Wear on a passage (wear.js): the hull loses condition, more in the tropics and in storms; a
+// leaking hull spoils cargo; a hull in danger can founder with all she carries.
+function wearOnPassage(S, ship, leg, lat) {
+  const before = ship.hullPct ?? 100;
+  const storm = Wear.storms(leg.days);
+  ship.hullPct = Math.max(5, before - Wear.wearPerDay(lat) * leg.days - storm);
+  const share = Wear.leakShare(ship.hullPct);
+  if (share) for (const [g, lot] of Object.entries(holdOf(ship))) { lot.qty -= Math.round(lot.qty * share); if (lot.qty <= 0) delete holdOf(ship)[g]; }
+  if (ship.hullPct < Wear.DANGER_BELOW && Math.random() < 0.1) {
+    ship.sunk = true;
+    return { html: `<b>${ship.name} is lost.</b> Her hull gave way on the passage to ${port(leg.to).name}; Captain ${ship.captain.name} and the crew got off in the boat, but the ship and her cargo are gone.`, kind: 'alert', level: 'alert', log: `${ship.name} foundered on the way to ${port(leg.to).name}.` };
+  }
+  if (storm) return { html: `<b>${ship.name}</b> came through a storm on the way to ${port(leg.to).name}: hull ${Math.round(ship.hullPct)}%.`, kind: '', level: 'routine' };
+  return null;
+}
+
+// A captain puts his ship in for repairs on his own: at a shipyard on his route once she is
+// worn, or on a beach anywhere if she is badly worn. Returns a message, or null.
+function repairIfNeeded(S, ship) {
+  const h = ship.hullPct ?? 100;
+  const yard = Wear.YARDS.includes(ship.at);
+  if (!(yard ? h < Wear.CAPTAIN_YARD_BELOW : h < Wear.CAPTAIN_BEACH_BELOW)) return null;
+  const q = yard ? Wear.yardQuote(ship.hull, h) : Wear.beachQuote(ship.hull, h);
+  if (!q.pts) return null;
+  S.purse -= q.cost;
+  roundOf(ship).net -= q.cost;
+  Accounts.captain(S, ship, { kind: 'repairs', amount: -q.cost, text: yard ? `Repairs in the ${port(ship.at).name} yard` : `Careened on the beach at ${port(ship.at).name}` });
+  ship.hullPct = q.to;
+  ship.status = 'repair';
+  ship.repairUntil = S.day + q.days;
+  return { html: `<b>${ship.name}</b> ${yard ? `goes into the yard at ${port(ship.at).name}` : `is careened on the beach at ${port(ship.at).name}`} for ${q.days} days: ${q.cost.toLocaleString()} cz.`, kind: 'port', level: 'routine', log: `${ship.name}: repairs at ${port(ship.at).name}, ${q.days} days, ${q.cost} cz.` };
 }
 
 // Where a ship is on the chart right now, and which way it is heading.
@@ -479,6 +524,7 @@ export function statusText(S, ship) {
     return `Bound for ${port(ship.leg.to).name} with ${holdText(ship)}, about ${left} ${left === 1 ? 'day' : 'days'} out.`;
   }
   if (ship.status === 'waiting') return `Waiting outside ${port(ship.at).name} for the port to reopen.`;
+  if (ship.status === 'repair') return `${Wear.YARDS.includes(ship.at) ? `In the yard at ${port(ship.at).name}` : `Careened on the beach at ${port(ship.at).name}`} for ${Math.max(1, Math.ceil((ship.repairUntil ?? S.day) - S.day))} more days.`;
   if (ship.status === 'loading') return `Waiting in ${port(ship.at).name} for prices to recover, on half pay (${Math.max(0, Math.round(S.day - (ship.waitSince ?? S.day)))} of up to ${MAX_WAIT_DAYS} days).`;
   if (ship.status === 'ashore') return `Ashore in ${port(ship.at).name}: Captain ${ship.captain.name} will not sail until you give him orders there in person.`;
   return r ? `In ${port(ship.at).name}.` : `Idle in ${port(ship.at).name}, awaiting a route.`;

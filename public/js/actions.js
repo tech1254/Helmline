@@ -113,10 +113,12 @@ export function initActions() {
         return;
       }
       doSell();
-    } else if (t.hasAttribute('data-repair') && pid) {
-      const cost = Pirates.repair(S);
-      toast(`The shipwrights make her sound again for ${cost} cz.`, 'port');
-      log(`Repaired the hull for ${cost} cz.`);
+    } else if ((t.hasAttribute('data-repair') || t.hasAttribute('data-careen')) && pid) {
+      const beach = t.hasAttribute('data-careen');
+      const q = Pirates.repair(S, beach);
+      if (q.days) waitInPort(q.days);
+      toast(beach ? `Her crew careen the <b>${S.ship.name}</b> on the beach: ${q.days} days and ${q.cost} cz, and she is at ${q.to}%.` : `The shipwrights make the <b>${S.ship.name}</b> sound again: ${q.days} days in the yard, ${q.cost} cz.`, 'port');
+      log(`${beach ? 'Careened' : 'Repaired'} the hull: ${q.cost} cz, ${q.days} days.`);
     } else if (t.hasAttribute('data-cloud-create')) {
       startCloudSave();
       return;
