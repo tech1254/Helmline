@@ -1,0 +1,221 @@
+{
+  "note": "The art chosen for the game (picks of 27 Oct 2026). publish.py turns these into public/img. Paths are inside the art branch (art/<batch>/<file>).",
+  "ports": {
+    "lisbon": "production-1/lisbon-clean-a.png",
+    "lagos": "production-1/lagos-b.png",
+    "funchal": "production-1/funchal-b.png",
+    "lanzarote": "production-1/lanzarote-a.png",
+    "arguin": {
+      "src": "production-2/arguin-flag.png",
+      "fix": "order-of-christ-flag"
+    },
+    "gambia": "production-1/gambia-a.png",
+    "serraleoa": "production-1/serraleoa-a.png",
+    "cestos": "production-1/cestos-a.png",
+    "mina": "production-1/mina-b.png"
+  },
+  "ships": {
+    "caravel": {
+      "src": "production-1/ship-caravel-a-cut.png",
+      "waterline": 0.1,
+      "length": 20
+    },
+    "caravel-cross": {
+      "src": "production-1/ship-caravel-cross-b-cut.png",
+      "waterline": 0.1,
+      "length": 20
+    },
+    "caravel-square": {
+      "src": "production-5/ship-caravel-square-plain-cut.png",
+      "waterline": 0.12,
+      "length": 21
+    },
+    "caravel-square-cross": {
+      "src": "production-1/ship-caravel-square-a-cut.png",
+      "waterline": 0.12,
+      "length": 21
+    },
+    "barca": {
+      "src": "production-1/ship-barca-b-cut.png",
+      "waterline": 0.05,
+      "length": 15
+    },
+    "barinel": {
+      "src": "production-1/ship-barinel-a-cut.png",
+      "waterline": 0.05,
+      "length": 24
+    },
+    "nau": {
+      "src": "production-1/ship-nau-a-cut.png",
+      "waterline": 0.09,
+      "length": 30
+    },
+    "nau-cross": {
+      "src": "production-1/ship-nau-cross-b-cut.png",
+      "waterline": 0.09,
+      "length": 30
+    }
+  },
+  "stocks": {
+    "frames": "production-2/stocks-frames-b.png",
+    "planked": "production-1/stocks-planked.png",
+    "rigged": "production-2/stocks-rigged-b.png"
+  },
+  "yards": {
+    "lisbon": "production-1/yard-lisbon-clean.png",
+    "lagos": "production-1/yard-lagos.png",
+    "funchal": "production-1/yard-funchal.png"
+  },
+  "ui": {
+    "vellum": {
+      "src": "production-1/vellum-clean.png",
+      "wash": 0.65,
+      "toward": "#f6eedb"
+    },
+    "oak": {
+      "src": "photoreal-ui-1/oak.png",
+      "darken": 0.3
+    },
+    "leather": {
+      "src": "photoreal-ui-1/leather.png"
+    }
+  },
+  "light_note": "How each harbour is lit, so a ship sailing in can be relit to match (see photos.js gradedShip): light is the colour of sunlight on white cloth there, shade the colour of the deepest shadows, bright scales her exposure, sat her saturation, haze how much of the horizon's haze lies over her. Set by eye, 27 Oct 2026.",
+  "light": {
+    "lisbon": {
+      "light": [
+        255,
+        226,
+        185
+      ],
+      "shade": [
+        36,
+        26,
+        20
+      ],
+      "bright": 1.0,
+      "sat": 1.0,
+      "haze": 0.03
+    },
+    "lagos": {
+      "light": [
+        255,
+        222,
+        175
+      ],
+      "shade": [
+        40,
+        30,
+        24
+      ],
+      "bright": 1.0,
+      "sat": 1.05,
+      "haze": 0.03
+    },
+    "funchal": {
+      "light": [
+        235,
+        222,
+        200
+      ],
+      "shade": [
+        14,
+        16,
+        16
+      ],
+      "bright": 0.8,
+      "sat": 0.9,
+      "haze": 0.03
+    },
+    "lanzarote": {
+      "light": [
+        255,
+        236,
+        208
+      ],
+      "shade": [
+        28,
+        28,
+        34
+      ],
+      "bright": 1.0,
+      "sat": 1.0,
+      "haze": 0.03
+    },
+    "arguin": {
+      "light": [
+        250,
+        240,
+        212
+      ],
+      "shade": [
+        48,
+        50,
+        46
+      ],
+      "bright": 1.0,
+      "sat": 0.9,
+      "haze": 0.07
+    },
+    "gambia": {
+      "light": [
+        255,
+        226,
+        180
+      ],
+      "shade": [
+        40,
+        34,
+        26
+      ],
+      "bright": 0.88,
+      "sat": 0.9,
+      "haze": 0.1
+    },
+    "serraleoa": {
+      "light": [
+        235,
+        228,
+        205
+      ],
+      "shade": [
+        26,
+        30,
+        24
+      ],
+      "bright": 0.85,
+      "sat": 0.85,
+      "haze": 0.08
+    },
+    "cestos": {
+      "light": [
+        245,
+        236,
+        214
+      ],
+      "shade": [
+        40,
+        42,
+        36
+      ],
+      "bright": 0.92,
+      "sat": 0.85,
+      "haze": 0.1
+    },
+    "mina": {
+      "light": [
+        255,
+        222,
+        172
+      ],
+      "shade": [
+        42,
+        36,
+        28
+      ],
+      "bright": 0.95,
+      "sat": 0.9,
+      "haze": 0.07
+    }
+  }
+}

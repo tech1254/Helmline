@@ -14,6 +14,7 @@ import { save } from './save.js';
 import { cloudSync } from './cloudsync.js';
 import { H, W, cam, clampCam } from './view.js';
 import { advanceTime, flushRot, report, shipWind } from './sim.js';
+import { preloadArrival } from './scene.js';
 import { $, cz, fmtDate } from './util.js';
 import { renderPanel, setSpeed } from './panels.js';
 import { log, passage } from './pricebook.js';
@@ -144,6 +145,7 @@ export function setCourse(lon, lat, portId, append) {
 export function applyCourse(plan) {
   S.ship.route = plan.route;
   S.ship.dest = plan.dest;
+  try { preloadArrival(plan.dest?.port); } catch (e) { console.error(e); }
   if (S.ship.docked) undock();
 }
 

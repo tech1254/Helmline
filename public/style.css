@@ -2,15 +2,22 @@
   --paper: #f4ead2;
   --paper-2: #e9dbb8;
   --ink: #3a2716;
-  --ink-2: #6b5236;
-  --muted: #9a8466;
+  --ink-2: #5c4630;
+  --muted: #665238; /* 4.5:1 or better on the vellum (WCAG 2.2 AA); was #9a8466 at 2.99:1 */
   --red: #a2372b;
   --sea-ink: #1e3246;
   --good: #3f6b3a;
-  --gold: #9a6a12;
+  --gold: #7a4f0c; /* was #9a6a12 at 3.95:1 */
   --shadow: 0 8px 30px rgba(40, 25, 10, 0.28);
   --serif: "EB Garamond", Georgia, "Times New Roman", serif;
   --display: "IM Fell English", Georgia, serif;
+  /* materials: photographs of vellum, tooled leather and oak (tools/art/publish.py calms them so
+     text over them keeps AA contrast) */
+  --vellum: #f6eedb url(img/ui/vellum.webp) center / cover;
+  --leather: linear-gradient(rgba(20, 10, 4, 0.15), rgba(20, 10, 4, 0.15)), url(img/ui/leather.webp) center / 420px #3b2416;
+  --oak: #2a1a0e url(img/ui/oak.webp) center / cover;
+  --on-dark: #efdcae;   /* text on leather and oak */
+  --on-dark-2: #ecd9a8; /* smaller labels on leather */
 }
 
 * { box-sizing: border-box; }
@@ -379,7 +386,7 @@ body.screen-open #toast { z-index: 11; }
 .tag.order { border-color: var(--gold); color: var(--gold); }
 .tag.locked { border-style: dashed; }
 .orders, .fleet-list { list-style: none; margin: 8px 0 0; padding: 0; display: grid; gap: 10px; }
-.order-card { display: grid; grid-template-columns: 220px 1fr; gap: 16px; align-items: center; background: rgba(255, 250, 238, 0.55); border: 1px solid rgba(107, 82, 54, 0.35); border-radius: 8px; padding: 8px 14px 8px 8px; }
+.order-card { display: grid; grid-template-columns: 300px 1fr; gap: 16px; align-items: center; background: rgba(255, 250, 238, 0.55); border: 1px solid rgba(107, 82, 54, 0.35); border-radius: 8px; padding: 8px 14px 8px 8px; }
 .order-card h4 { font-family: var(--display); font-weight: 400; font-size: 20px; margin: 0 0 2px; }
 .order-card p { margin: 3px 0; }
 .bar { height: 6px; background: rgba(107, 82, 54, 0.18); border-radius: 3px; overflow: hidden; margin-top: 6px; }
@@ -451,4 +458,75 @@ body.scene-open #panel, body.scene-open #toast, body.scene-open #tip { visibilit
 .scene-skip { position: absolute; right: 14px; bottom: max(14px, env(safe-area-inset-bottom)); background: rgba(244, 234, 210, 0.75); font-size: 13px; }
 .register .setting { margin: 22px 0 0; display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: center; }
 .register .setting select { font: inherit; margin-left: 6px; }
+
+/* ---- Materials: vellum sheets, leather fittings, the oak of the shipyard ---- */
+#chart-skin { position: fixed; inset: 0; pointer-events: none; background: url(img/ui/vellum.webp) center / cover; mix-blend-mode: multiply; opacity: 0.55; }
+#panel, #modal .card, #intro .card, .choices .tabs { background: var(--vellum); }
+#panel, #modal .card, #intro .card { box-shadow: 0 14px 40px rgba(20, 12, 4, 0.5), inset 0 0 60px rgba(110, 70, 20, 0.22); border-color: #4a3420; }
+.brand, .stats, #status, #dock, #tip, .scene-cap { background: var(--leather); color: var(--on-dark); border-color: #120b06; box-shadow: inset 0 1px 0 rgba(255, 230, 180, 0.16), 0 3px 10px rgba(0, 0, 0, 0.45); text-shadow: 0 1px 1px #000; }
+.brand .tag, .stats small, .scene-cap .kicker { color: var(--on-dark-2); }
+.brand .tag { background: none; border: none; padding: 0; }
+#tip .tip-label { color: var(--on-dark); }
+.stats > div { border-color: rgba(201, 162, 76, 0.35); }
+#hud-purse.debt { color: #ffb3a3; }
+#tip-close { color: var(--on-dark); }
+#hud button, #zoom button, #dock button { background: var(--leather); color: var(--on-dark); border-color: #120b06; text-shadow: 0 1px 1px #000; }
+#hud button:hover:not(:disabled):not(.on), #zoom button:hover:not(:disabled) { background: #4a2e1c url(img/ui/leather.webp) center / 420px; filter: brightness(1.15); }
+#hud button.on, #dock button.on { background: linear-gradient(#d8b25a, #a8823a); color: #1d1209; border-color: #120b06; text-shadow: none; }
+#dock button .ico { color: var(--on-dark); }
+#dock button.on .ico { color: #1d1209; }
+#dock { border-top-color: #120b06; }
+#panel button:not(.close):not(.opt), #modal .card button { background: var(--leather); color: var(--on-dark); border-color: #120b06; text-shadow: 0 1px 1px #000; }
+
+#panel .tabs button, #panel .tabs button:not(.close) { background: none; color: var(--ink); border: none; text-shadow: none; }
+#panel .tabs button.on { border-bottom: 2px solid var(--red); }
+.scene-cap { color: var(--on-dark); }
+.scene-cap .line { color: var(--on-dark); }
+.scene-skip { background: var(--leather); color: var(--on-dark); border-color: #120b06; }
+/* the shipyard and register: an oak frame with vellum sheets on it */
+#yard { background: rgba(10, 6, 3, 0.7); }
+.yard-card { background: linear-gradient(rgba(0, 0, 0, 0.18), rgba(0, 0, 0, 0.18)), var(--oak); border-color: #0d0804; }
+.yard-head { border-color: rgba(201, 162, 76, 0.3); }
+.yard-head h2, .yard-card .sec, .yard-head .sub, .yard-card .yard-body > .fine, .register .setting, .register .setting .fine { color: var(--on-dark); text-shadow: 0 1px 2px #000; }
+.yard-card .sec { border-color: rgba(201, 162, 76, 0.35); }
+.yard-card button:not(.opt):not([role=tab]) { background: var(--leather); color: var(--on-dark); border-color: #120b06; text-shadow: 0 1px 1px #000; }
+.hero, .hull-card, .order-card, .choices, .stage .name, .stage .ship-stats, .yard-foot, .art.big.plan, .hired, .banner.ready { background: var(--vellum); border: none; border-radius: 6px; box-shadow: 0 6px 18px rgba(0, 0, 0, 0.45); color: var(--ink); text-shadow: none; }
+.hero { padding: 14px; }
+.hired { padding: 6px 10px 6px 6px; }
+.choices { padding: 8px 14px 18px; }
+.stage .name, .stage .ship-stats { padding: 6px 12px; margin-top: 10px; }
+.yard-foot { margin: 0 22px 14px; }
+.hull-card.pencil { background: rgba(246, 238, 219, 0.82); border: 1px dashed #5c4630; }
+.hull-card .year { background: var(--vellum); }
+.choices .tabs button[role=tab] { background: none; color: var(--ink); border: none; }
+.choices .tabs button.on { border-bottom: 2px solid var(--red); }
+.yard-card button.opt { background: rgba(255, 250, 235, 0.55); color: var(--ink); border-color: rgba(80, 55, 25, 0.45); }
+.yard-card button.opt.on { background: rgba(255, 248, 226, 0.92); box-shadow: inset 0 0 0 2px #6d2617; }
+@media (max-width: 520px) { .yard-foot { margin: 0; border-radius: 0; } }
+
+/* Photographs */
+.afloat { position: relative; margin: 0; aspect-ratio: 16 / 9; overflow: hidden; border-radius: 6px; display: flex; align-items: flex-end; justify-content: center; background-size: cover; background-position: center; }
+.afloat.sea { background: linear-gradient(#d7e1df 0%, #c3d3d2 55%, #8fadb1 56%, #5f8590 100%); }
+.afloat.hero { aspect-ratio: 16 / 10; }
+.afloat .ship-at { position: absolute; left: 50%; bottom: 22%; transform: translateX(-50%); max-height: 74%; }
+.afloat.sea .ship-at { bottom: 18%; }
+.afloat .ship { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; object-position: bottom; }
+.afloat .reflect { position: absolute; left: 0; top: 100%; width: 100%; height: 50%; object-fit: fill; transform: scaleY(-1); opacity: 0.22; filter: blur(1.2px); pointer-events: none; }
+.hull-card .afloat, .order-card .afloat, .hired .afloat { border-radius: 4px; }
+.hull-card.wide .afloat { aspect-ratio: 4 / 3; }
+.art.big .afloat { border-radius: 8px; }
+.art.big:has(.afloat) { border: none; box-shadow: 0 8px 22px rgba(0, 0, 0, 0.5); }
+.hire-hulls .afloat { width: 100%; aspect-ratio: 3 / 2; }
+.stocks { margin: 0; }
+.stocks img, .yard-photo img { display: block; width: 100%; height: auto; border-radius: 6px; }
+.yard-photo img { aspect-ratio: 16 / 7; object-fit: cover; object-position: 50% 60%; }
+.yard-photo { margin: 0 0 10px; box-shadow: 0 8px 22px rgba(0, 0, 0, 0.5); border-radius: 6px; }
+.art.big.plan { padding: 4px 10px 6px; }
+.art.big.plan svg { display: block; width: 100%; height: min(230px, 34vh); }
+.plan-title { margin: 4px 0 0; font-family: var(--display); font-style: italic; color: var(--ink-2); font-size: 15px; }
+@media (prefers-reduced-motion: no-preference) { .afloat .ship { animation: bob 6s ease-in-out infinite; } }
+@keyframes bob { 50% { transform: translateY(1.5%) rotate(-0.4deg); } }
+.tag { white-space: nowrap; }
+#panel button:not(.close):not(.opt):hover:not(:disabled), #modal .card button:hover:not(:disabled), .yard-card button:not(.opt):not([role=tab]):hover:not(:disabled) { filter: brightness(1.18); }
+#panel button.primary:not(.close):not(.opt), #modal .card button.primary, .yard-card button.primary:not(.opt):not([role=tab]) { background: linear-gradient(#a8442e, #6d2617); color: #fff6e6; border-color: #3d120a; }
 .contract .on-course { font-size: 14px; font-style: italic; align-self: center; }

@@ -3,9 +3,9 @@
 // comes to rest. About five seconds; a tap or a key skips it. Never for hired ships, nor while
 // catching up after time away.
 //
-// The harbours are painted in code from six settings (Lisbon has its own); each port can later
-// take a commissioned painting instead: put it at img/ports/<port id>.webp and list the port
-// in PAINTED below.
+// Each harbour is a photograph (img/ports, see photos.js) with the ship's photograph cut at her
+// waterline sailing in over it. While the photographs load, or for a port without one, the
+// harbour is painted in code from six settings (Lisbon has its own) and the ship drawn.
 
 import { PORTS } from './world.js';
 import { S, ui } from './state.js';
@@ -13,11 +13,11 @@ import { cam, clampCam } from './view.js';
 import { COS0 } from './world.js';
 import { $, fmtDate } from './util.js';
 import { shipImage, ART_BOX } from './shipart.js';
+import { portPhoto, shipPhoto, photoImage, gradedShip, PX_PER_M } from './photos.js';
 import { CHART_REWARD } from './config.js';
 import { releaseToasts } from './notices.js';
 
 const SETTING = { lisbon: 'lisbon', lagos: 'iberia', funchal: 'madeira', lanzarote: 'volcanic', arguin: 'desert', gambia: 'river', serraleoa: 'river', cestos: 'river', mina: 'surf' };
-const PAINTED = []; // ports with a commissioned painting in img/ports/
 const T_ZOOM = 0.9, T_FADE = 0.5, T_SAIL = 3.6, T_HOLD = 0.9, T_OUT = 0.45;
 
 export const SCENE_MODES = [['all', 'Every port'], ['first', 'First visits only'], ['off', 'Off']];
@@ -35,6 +35,14 @@ function enabled(first) {
   if (m === 'off' || (m === 'first' && !first)) return false;
   if (navigator.webdriver && !window.helmlineScenes) return false;
   return true;
+}
+
+// Called when the flagship sets course for a port: fetch the photographs while she sails.
+export function preloadArrival(portId) {
+  if (!portId || sceneMode() === 'off') return;
+  if (sceneMode() === 'first' && S.called?.[portId]) return;
+  photoImage(portPhoto(portId));
+  photoImage(shipPhoto(S.ship)?.src);
 }
 
 // Called as the ship reaches a port, before dock(). Returns true if the scene will play.
@@ -66,7 +74,9 @@ function run() {
   A.canvas = el.querySelector('canvas');
   A.img = shipImage(A.ship, { sea: false });
   A.furled = shipImage(A.ship, { sea: false, furled: true });
-  A.painting = PAINTED.includes(A.portId) ? Object.assign(new Image(), { src: `img/ports/${A.portId}.webp` }) : null;
+  A.painting = photoImage(portPhoto(A.portId));
+  A.photo = shipPhoto(A.ship);
+  A.photoImg = photoImage(A.photo?.src);
   const skip = () => finish(true);
   el.onclick = skip;
   A.onKey = (e) => { if (!ui.modal) { e.preventDefault(); e.stopImmediatePropagation(); skip(); } };
@@ -84,7 +94,7 @@ function sizeCanvas() {
   const dpr = Math.min(2, window.devicePixelRatio || 1);
   A.w = window.innerWidth; A.h = window.innerHeight; A.dpr = dpr;
   A.canvas.width = Math.round(A.w * dpr); A.canvas.height = Math.round(A.h * dpr);
-  A.backdrop = null;
+  A.backdrop = null; A.vignette = null;
 }
 
 const ease = (t) => (t <= 0 ? 0 : t >= 1 ? 1 : 1 - Math.pow(1 - t, 3));
@@ -147,13 +157,27 @@ function draw(A, t, sailT) {
   const c = A.canvas.getContext('2d');
   const { w, h, dpr } = A;
   c.setTransform(dpr, 0, 0, dpr, 0, 0);
-  if (!A.backdrop) A.backdrop = paintBackdrop(A, w, h);
-  c.drawImage(A.backdrop, 0, 0, w, h);
-  const horizon = h * 0.5;
-  const waterY = h * 0.8;
+  const ready = (img) => img && img.complete && img.naturalWidth;
+  // a harbour photograph, cover-fitted; the painted harbour until it has loaded
+  if (A.usePhoto == null && (t >= (A.reduced ? 0.6 : T_ZOOM) || (ready(A.painting) && ready(A.photoImg))))
+    A.usePhoto = !!(ready(A.painting) && (A.photo ? ready(A.photoImg) : true));
+  const photo = !!A.usePhoto;
+  let s = 1, horizon = h * 0.5, waterY = h * 0.8;
+  if (photo) {
+    const P = A.painting;
+    s = Math.max(w / P.naturalWidth, h / P.naturalHeight);
+    const dx = (w - P.naturalWidth * s) / 2, dy = (h - P.naturalHeight * s) / 2;
+    c.drawImage(P, dx, dy, P.naturalWidth * s, P.naturalHeight * s);
+    s *= P.naturalWidth / 1600; // the photographs' scale is set at 1600 pixels wide
+    horizon = dy + P.naturalHeight * (s * 1600 / P.naturalWidth) * 0.5;
+    waterY = Math.min(h * 0.86, dy + P.naturalHeight * (s * 1600 / P.naturalWidth) * 0.8);
+  } else {
+    if (!A.backdrop) A.backdrop = paintBackdrop(A, w, h);
+    c.drawImage(A.backdrop, 0, 0, w, h);
+  }
   // water: moving glints
   c.save();
-  c.globalAlpha = 0.5;
+  c.globalAlpha = photo ? 0.12 : 0.5;
   c.strokeStyle = '#f6f1e2';
   c.lineWidth = 1.2;
   for (let i = 0; i < 26; i++) {
@@ -164,6 +188,7 @@ function draw(A, t, sailT) {
     c.beginPath(); c.moveTo(x, y); c.quadraticCurveTo(x + len / 2, y - 1.5, x + len, y); c.stroke();
   }
   c.restore();
+  if (photo && A.photo) { drawPhotoShip(c, A, t, sailT, s, waterY); drawVignette(c, A, w, h); return; }
   // the ship
   const shipH = Math.min(h * 0.62, w * (w < 700 ? 0.8 : 0.5) * ART_BOX.h / ART_BOX.w);
   const shipW = shipH * ART_BOX.w / ART_BOX.h;
@@ -195,7 +220,6 @@ function draw(A, t, sailT) {
   c.save();
   c.translate(x + shipW / 2, y + shipH * ART_BOX.waterline / ART_BOX.h);
   c.rotate(tilt);
-  const ready = (img) => img.complete && img.naturalWidth;
   // the furled ship underneath, the ship under sail over her, fading as the sails come in
   const top = -shipH * ART_BOX.waterline / ART_BOX.h;
   if (furl > 0 && ready(A.furled)) c.drawImage(A.furled, -shipW / 2, top, shipW, shipH);
@@ -219,6 +243,72 @@ function draw(A, t, sailT) {
   c.restore();
   if (A.foreground) c.drawImage(A.foreground, 0, 0, w, h);
   c.drawImage(A.grain, 0, 0, w, h);
+}
+
+// The ship's photograph: cut at her waterline, so her bottom edge sits on the water. She sails in
+// from the left with her sails set and comes to rest; a soft broken reflection below her.
+function drawPhotoShip(c, A, t, sailT, s, waterY) {
+  const { w } = A;
+  const ph = A.photo;
+  if (!A.shipLit) A.shipLit = gradedShip(A.photoImg, ph, A.portId); // relit once for this harbour's light
+  const img = A.shipLit;
+  let shipW = ph.length * PX_PER_M * s;
+  shipW = Math.min(shipW, w * 0.92);
+  const shipH = shipW * ph.h / ph.w;
+  const restX = w * (w < 700 ? 0.5 : 0.42) - shipW / 2;
+  const k = ease(Math.min(1, sailT));
+  const x = -shipW + (restX + shipW) * k;
+  const bob = Math.sin(t * 1.6) * shipH * 0.006 * (1.4 - k * 0.6);
+  const tilt = Math.sin(t * 1.3) * 0.008 * (1.3 - k * 0.7);
+  // reflection, broken into strips that sway
+  c.save();
+  const rh = shipH * 0.5, strips = 14;
+  for (let i = 0; i < strips; i++) {
+    const v0 = i / strips, v1 = (i + 1) / strips;
+    c.globalAlpha = 0.22 * (1 - v0) * (0.7 + 0.3 * Math.sin(i * 1.7 + t * 2));
+    const sx = Math.sin(i * 0.9 + t * 1.8) * 3;
+    // strip i of the reflection shows the ship from her waterline upward
+    c.save();
+    c.translate(x + sx, waterY + bob + rh * v0);
+    c.scale(1, -1);
+    c.drawImage(img, 0, ph.h * (1 - v1), ph.w, ph.h * (v1 - v0), 0, -rh * (v1 - v0), shipW, rh * (v1 - v0));
+    c.restore();
+  }
+  c.restore();
+  // a shadow along the waterline
+  c.save();
+  const g = c.createRadialGradient(0, 0, 0, 0, 0, 1);
+  g.addColorStop(0, 'rgba(10,20,25,0.4)'); g.addColorStop(1, 'rgba(10,20,25,0)');
+  c.translate(x + shipW / 2, waterY + bob + 2); c.scale(shipW * 0.5, shipH * 0.03);
+  c.fillStyle = g; c.beginPath(); c.arc(0, 0, 1, 0, 6.29); c.fill();
+  c.restore();
+  // wake while she moves
+  if (k < 0.98) {
+    c.save();
+    c.strokeStyle = 'rgba(250,246,234,0.45)';
+    c.lineWidth = 1.2;
+    for (let i = 0; i < 4; i++) {
+      const wx = x + shipW * 0.15 - i * 26 - (t * 30) % 26;
+      c.beginPath(); c.moveTo(wx, waterY + 3 + i * 2); c.lineTo(wx - 30, waterY + 7 + i * 3); c.stroke();
+    }
+    c.restore();
+  }
+  c.save();
+  c.translate(x + shipW / 2, waterY + bob);
+  c.rotate(tilt);
+  c.drawImage(img, -shipW / 2, -shipH, shipW, shipH);
+  c.restore();
+}
+
+function drawVignette(c, A, w, h) {
+  if (!A.vignette) {
+    const [cv, v] = layer(w, h);
+    const g = v.createRadialGradient(w / 2, h / 2, Math.min(w, h) * 0.35, w / 2, h / 2, Math.max(w, h) * 0.75);
+    g.addColorStop(0, 'rgba(20,12,5,0)'); g.addColorStop(1, 'rgba(20,12,5,0.3)');
+    v.fillStyle = g; v.fillRect(0, 0, w, h);
+    A.vignette = cv;
+  }
+  c.drawImage(A.vignette, 0, 0, w, h);
 }
 
 function rng(seed) {
@@ -389,7 +479,6 @@ function paintBackdrop(A, w, h) {
     c.beginPath(); c.moveTo(x, y); c.quadraticCurveTo(x + s / 2, y - s * 0.12, x + s, y); c.stroke();
   }
   c.restore();
-  if (A.painting?.complete && A.painting.naturalWidth) c.drawImage(A.painting, 0, 0, w, h);
   A.foreground = paintForeground(set, w, h);
   A.grain = paintGrain(w, h);
   return cv;

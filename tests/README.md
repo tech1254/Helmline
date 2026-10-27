@@ -37,6 +37,7 @@ Every test except `corsairs` calms the seas (no random corsair attacks) so its c
 | `feedback` | Report a bug or idea from Help; typing does not trigger shortcuts; the draft survives a reload; reports are stored with or without game details |
 | `captain_prices` | Captains' price notes reach the price book only at ports on their route; the course home from Mina swings out to sea |
 | `routes_file` | The ready-made routes match what the pathfinder plans |
+| `a11y` | WCAG 2.2 AA on the intro, chart, market, register and shipyard, desktop and phone: text contrast against the worst 2% of the photographed vellum, leather and oak behind it; alt text on images; names on buttons and fields |
 | `shipyard` | Ship register, refits, an order (square rig, a nau), trading up, delivery and refund, a hull for a captain, phone layout, old saves |
 | `arrival` | The arrival scene on a real port call: pop-ups held until it ends, tap to skip, the first-visits setting, every harbour, phone |
 
