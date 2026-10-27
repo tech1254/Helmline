@@ -1,0 +1,82 @@
+{
+ "note": "Production run 2: the nau on the stocks as edits of the kept planked picture, so all four stages share one yard and viewpoint; Arguin flag to the Order of Christ.",
+ "items": [
+  {
+   "id": "stocks-keel-a",
+   "model": "black-forest-labs/flux-2-pro-preview",
+   "width": 1280,
+   "height": 896,
+   "seed": 4101,
+   "refs": [
+    "art:production-1/stocks-planked.png"
+   ],
+   "prompt": "Edit this photograph and keep everything else exactly as it is: the same camera position, framing and lens, the same timber slipway and platform, the same sheds, stone house, timber piles, small boat, river, distant city and hazy morning light. The ship stays in exactly the same place and at the same size, bow to the right. Change only the ship on the slipway: take the hull away entirely, leaving only the long straight oak keel of a nau, about 30 metres, lying on the slipway blocks along the same line, with the tall curved stem post rising at the bow on the right and the straight raked sternpost at the left, a few shipwrights with adzes working on it; no frames, no planks, no scaffolding around it. Nothing later than 1480 anywhere: no modern detail. No text, no border, no watermark."
+  },
+  {
+   "id": "stocks-keel-b",
+   "model": "black-forest-labs/flux-2-pro-preview",
+   "width": 1280,
+   "height": 896,
+   "seed": 4102,
+   "refs": [
+    "art:production-1/stocks-planked.png"
+   ],
+   "prompt": "Edit this photograph and keep everything else exactly as it is: the same camera position, framing and lens, the same timber slipway and platform, the same sheds, stone house, timber piles, small boat, river, distant city and hazy morning light. The ship stays in exactly the same place and at the same size, bow to the right. Change only the ship on the slipway: take the hull away entirely, leaving only the long straight oak keel of a nau, about 30 metres, lying on the slipway blocks along the same line, with the tall curved stem post rising at the bow on the right and the straight raked sternpost at the left, a few shipwrights with adzes working on it; no frames, no planks, no scaffolding around it. Nothing later than 1480 anywhere: no modern detail. No text, no border, no watermark."
+  },
+  {
+   "id": "stocks-frames-a",
+   "model": "black-forest-labs/flux-2-pro-preview",
+   "width": 1280,
+   "height": 896,
+   "seed": 4111,
+   "refs": [
+    "art:production-1/stocks-planked.png"
+   ],
+   "prompt": "Edit this photograph and keep everything else exactly as it is: the same camera position, framing and lens, the same timber slipway and platform, the same sheds, stone house, timber piles, small boat, river, distant city and hazy morning light. The ship stays in exactly the same place and at the same size, bow to the right. Change only the ship on the slipway: take the planking and the castles away, leaving the keel with rows of curved oak frames (ribs) standing up along its whole length in the exact shape of this hull, the stem post at the bow and the sternpost at the stern, some scaffolding and shipwrights on it; you can see the river through the ribs. Nothing later than 1480 anywhere: no modern detail. No text, no border, no watermark."
+  },
+  {
+   "id": "stocks-frames-b",
+   "model": "black-forest-labs/flux-2-pro-preview",
+   "width": 1280,
+   "height": 896,
+   "seed": 4112,
+   "refs": [
+    "art:production-1/stocks-planked.png"
+   ],
+   "prompt": "Edit this photograph and keep everything else exactly as it is: the same camera position, framing and lens, the same timber slipway and platform, the same sheds, stone house, timber piles, small boat, river, distant city and hazy morning light. The ship stays in exactly the same place and at the same size, bow to the right. Change only the ship on the slipway: take the planking and the castles away, leaving the keel with rows of curved oak frames (ribs) standing up along its whole length in the exact shape of this hull, the stem post at the bow and the sternpost at the stern, some scaffolding and shipwrights on it; you can see the river through the ribs. Nothing later than 1480 anywhere: no modern detail. No text, no border, no watermark."
+  },
+  {
+   "id": "stocks-rigged-a",
+   "model": "black-forest-labs/flux-2-pro-preview",
+   "width": 1280,
+   "height": 896,
+   "seed": 4121,
+   "refs": [
+    "art:production-1/stocks-planked.png"
+   ],
+   "prompt": "Edit this photograph and keep everything else exactly as it is: the same camera position, framing and lens, the same timber slipway and platform, the same sheds, stone house, timber piles, small boat, river, distant city and hazy morning light. The ship stays in exactly the same place and at the same size, bow to the right. Change only the ship on the slipway: finish the ship: the same hull now fully planked and tarred dark, its high square sterncastle with a flat transom at the stern on the left and the smaller forecastle on the bow at the right, scaffolding taken down; three masts stepped and the standing rigging set up (shrouds with ratlines, stays), square yards crossed on the foremast and mainmast and a long slanted lateen yard on the mizzen, no sails bent on, a bowsprit, a few men aloft. It is a 15th-century Portuguese nau (carrack), still on the slipway. Nothing later than 1480 anywhere: no modern detail. No text, no border, no watermark."
+  },
+  {
+   "id": "stocks-rigged-b",
+   "model": "black-forest-labs/flux-2-pro-preview",
+   "width": 1280,
+   "height": 896,
+   "seed": 4122,
+   "refs": [
+    "art:production-1/stocks-planked.png"
+   ],
+   "prompt": "Edit this photograph and keep everything else exactly as it is: the same camera position, framing and lens, the same timber slipway and platform, the same sheds, stone house, timber piles, small boat, river, distant city and hazy morning light. The ship stays in exactly the same place and at the same size, bow to the right. Change only the ship on the slipway: finish the ship: the same hull now fully planked and tarred dark, its high square sterncastle with a flat transom at the stern on the left and the smaller forecastle on the bow at the right, scaffolding taken down; three masts stepped and the standing rigging set up (shrouds with ratlines, stays), square yards crossed on the foremast and mainmast and a long slanted lateen yard on the mizzen, no sails bent on, a bowsprit, a few men aloft. It is a 15th-century Portuguese nau (carrack), still on the slipway. Nothing later than 1480 anywhere: no modern detail. No text, no border, no watermark."
+  },
+  {
+   "id": "arguin-flag",
+   "model": "black-forest-labs/flux-2-pro-preview",
+   "width": 1600,
+   "height": 896,
+   "seed": 4201,
+   "refs": [
+    "art:production-1/arguin-a.png"
+   ],
+   "prompt": "Edit this photograph and keep everything else exactly as it is (composition, light, the fort, the tents, the boats, the water): change only the flag on the fort's tower to the flag of the Portuguese Order of Christ: a white flag bearing a red cross with flared ends (cross pattee) with a thin white cross inside it. Nothing modern. No text, no border, no watermark."
+  }
+ ]
+}
