@@ -1,0 +1,17 @@
+{
+ "note": "Production run 5: the square-rigged caravel with plain sails (the picked one has crosses).",
+ "items": [
+  {
+   "id": "ship-caravel-square-plain",
+   "model": "black-forest-labs/flux-2-pro-preview",
+   "width": 1280,
+   "height": 896,
+   "seed": 4501,
+   "cutout": true,
+   "refs": [
+    "art:production-1/ship-caravel-square-a.png"
+   ],
+   "prompt": "Edit this photograph and keep everything else exactly as it is: the ship, its shape, rigging, position, light and the flat chroma-green background. Change only the sails: remove the red crosses so every sail is plain weathered off-white linen with its seams and patches."
+  }
+ ]
+}
