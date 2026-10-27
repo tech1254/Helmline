@@ -1,0 +1,80 @@
+# Generate art with Cloudflare Workers AI (FLUX.2) from a batch of prompts in tools/art/batches/.
+# Images are committed to the `art` branch under art/<batch>/ (never to main, so nothing deploys),
+# and also attached to the run as a downloadable artifact.
+#
+# Needs two repository secrets: CLOUDFLARE_API_TOKEN (Workers AI token) and CLOUDFLARE_ACCOUNT_ID.
+# Partner models such as FLUX.2 [pro] are paid from AI Gateway credits in the Cloudflare account.
+
+name: Generate art
+
+on:
+  workflow_dispatch:
+    inputs:
+      batch:
+        description: "Batch name: a file in tools/art/batches, without .json"
+        required: true
+        default: lisbon-look-1
+      only:
+        description: "Optional: only these item ids, separated by spaces"
+        required: false
+        default: ""
+
+permissions:
+  contents: write
+
+concurrency:
+  group: generate-art
+  cancel-in-progress: false
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Generate
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          BATCH: ${{ inputs.batch }}
+          ONLY: ${{ inputs.only }}
+        run: |
+          # inputs reach the script as arguments, never pasted into the shell command
+          node tools/art/generate.mjs "$BATCH" $(printf '%s' "$ONLY" | tr -cd 'a-z0-9 -')
+
+      - name: Keep the images with the run
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: art-${{ github.run_id }}
+          path: art/
+          if-no-files-found: ignore
+
+      - name: Commit to the art branch
+        env:
+          BATCH: ${{ inputs.batch }}
+        run: |
+          set -e
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          mv art "$RUNNER_TEMP/art-out"
+          if git ls-remote --exit-code --heads origin art >/dev/null; then
+            git switch -c art origin/art
+          else
+            git switch --orphan art
+            git rm -rf --quiet . || true
+            printf '# Generated art\n\nOutput of the Generate art workflow, one folder per batch. Not part of the game until copied into public/img.\n' > README.md
+            git add README.md
+          fi
+          mkdir -p art
+          cp -R "$RUNNER_TEMP/art-out/." art/
+          git add art
+          git commit -m "Art: $BATCH (run $GITHUB_RUN_ID)" || { echo "Nothing new to commit"; exit 0; }
+          git push origin art
