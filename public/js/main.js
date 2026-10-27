@@ -96,7 +96,7 @@ checkCloudOnStart();
 let startSummary = catchUp();
 // Build the sea grid and the routes from here to each charted port while the intro is read.
 setTimeout(() => {
-  for (const p of PORTS) if (S.discovered[p.id] && p.id !== S.ship.docked) findPath(S.ship.lon, S.ship.lat, p.lon, p.lat);
+  for (const p of PORTS) if (S.discovered[p.id] && p.id !== S.ship.docked) findPath(S.ship.lon, S.ship.lat, p.lon, p.lat, 1, !!Ships.hullOf(S.ship).coastal);
   warmRoutes();
 }, 300);
 centerOn(-13, 29, 0.85);

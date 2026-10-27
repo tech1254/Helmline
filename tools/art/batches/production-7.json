@@ -1,0 +1,29 @@
+{
+ "note": "Production run 7: the large caravel with plain sails, edited from the three-masted picture with crosses.",
+ "items": [
+  {
+   "id": "ship-largecaravel-plain-a",
+   "model": "black-forest-labs/flux-2-pro-preview",
+   "width": 1280,
+   "height": 896,
+   "seed": 5301,
+   "cutout": true,
+   "refs": [
+    "art:production-6/ship-largecaravel-cross-b.png"
+   ],
+   "prompt": "Edit this photograph and keep everything else exactly as it is: the ship, her three masts and three lateen sails, her shape, rigging, position, light and the flat chroma-green background. Change only the sails: remove the red crosses so every sail is plain weathered off-white linen with its seams and patches."
+  },
+  {
+   "id": "ship-largecaravel-plain-b",
+   "model": "black-forest-labs/flux-2-pro-preview",
+   "width": 1280,
+   "height": 896,
+   "seed": 5302,
+   "cutout": true,
+   "refs": [
+    "art:production-6/ship-largecaravel-cross-b.png"
+   ],
+   "prompt": "Edit this photograph and keep everything else exactly as it is: the ship, her three masts and three lateen sails, her shape, rigging, position, light and the flat chroma-green background. Change only the sails: remove the red crosses so every sail is plain weathered off-white linen with its seams and patches."
+  }
+ ]
+}

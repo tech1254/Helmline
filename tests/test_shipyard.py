@@ -27,9 +27,10 @@ async def main():
         await pg.screenshot(path=f'{OUT}/shipyard_register_start.png')
         await pg.keyboard.press('Escape'); print('closed:', await pg.is_hidden('#yard'))
 
-        # a rich captain in 1472, trusted by the crown
-        await pg.evaluate("""() => { const S = window.helmline.state; S.purse = 30000; S.contracts.unlocked = true; S.contracts.standing = 45;
-          S.day = window.helmline.yearDay(1472) + 10; S.cargo.wine = 30; S.paid.wine = 300; }""")
+        print('new game ship:', await st("S.ship.hull"))
+        # a rich captain in 1467, trusted by the crown, in a caravel
+        await pg.evaluate("""() => { const S = window.helmline.state; S.purse = 40000; S.contracts.unlocked = true; S.contracts.standing = 45; S.ship.hull = 'caravel';
+          S.day = window.helmline.yearDay(1467) + 10; S.cargo.wine = 30; S.paid.wine = 300; }""")
         await pg.click('[data-ships="yard"]'); await pg.wait_for_selector('.shipyard')
         await pg.click('[data-yard-tab="rig"]'); await pg.click('[data-opt="cloth:linen"]'); await pg.click('[data-opt="area:bonnets"]')
         await pg.click('[data-yard-tab="arms"]'); await pg.click('[data-opt="guns:bercos"]'); await pg.click('[data-opt="stores:casks"]')
@@ -44,35 +45,29 @@ async def main():
         await pg.click('[data-yard-tab="hull"]'); await pg.click('[data-opt="stow:standard"]'); await pg.click('[data-yard="commission"]'); await pg.wait_for_timeout(200)
         print('shrinking the hold below the cargo refused:', await st("S.ship.fit.stow"), 'dialog open', await pg.is_visible('#modal'))
         await pg.evaluate("() => { const S = window.helmline.state; S.cargo.wine = 30; }"); await pg.click('[data-yard="reset"]')
-        # square rig: may be ordered from 1470, fitted from 1480
-        await pg.click('[data-yard-tab="rig"]'); await pg.click('[data-opt="rig:square"]')
-        await pg.click('[data-yard="commission"]'); await pg.click('#modal-ok'); await pg.wait_for_timeout(200)
-        print('rig ordered:', await st("S.yard.orders.map(o => o.choice)"), 'rig now:', await st("S.ship.fit.rig"))
-        # a nau on order, then trade up to a barinel meanwhile
+        # the ladder: every hull on offer in 1467, the nau on the order book (delivered 1470)
         await pg.click('[data-yard-tab="new"]'); await pg.screenshot(path=f'{OUT}/shipyard_new.png')
+        print('trade-up buttons:', await pg.eval_on_selector_all('[data-trade-up]', 'els => els.map(e => e.dataset.tradeUp)'), '| order:', await pg.eval_on_selector_all('[data-order-hull]', 'els => els.map(e => e.dataset.orderHull)'))
         await pg.fill('[data-yard-name]', 'Santa Catarina'); await pg.click('[data-order-hull="nau"]'); await pg.click('#modal-ok'); await pg.wait_for_timeout(200)
         await pg.fill('[data-yard-name]', 'São Cristóvão')
-        await pg.click('[data-trade-up="barinel"]'); await pg.click('#modal-ok'); await pg.wait_for_timeout(200)
+        await pg.click('[data-trade-up="redonda"]'); await pg.click('#modal-ok'); await pg.wait_for_timeout(200)
         print('after trade up:', await st("({ hull: S.ship.hull, cargo: S.cargo.wine, mark: S.ship.fit.mark, guns: S.ship.fit.guns, orders: S.yard.orders.length })"), 'hud', await pg.inner_text('#hud-hold'))
         await pg.click('[data-yard="close"]')
-        # four years on: the nau is half built
-        await pg.evaluate("() => { const S = window.helmline.state; S.day = window.helmline.yearDay(1476); }")
+        # two years on: the nau is half built
+        await pg.evaluate("() => { const S = window.helmline.state; S.day = window.helmline.yearDay(1468) + 180; }")
         await pg.evaluate('document.activeElement?.blur()'); await pg.keyboard.press('s'); await pg.wait_for_selector('.register')
         print('on the stocks:', await pg.locator('.order-card').count(), await pg.locator('.order-card h4').all_inner_texts())
         await pg.screenshot(path=f'{OUT}/shipyard_register_building.png', full_page=False)
         await pg.locator('.orders').scroll_into_view_if_needed(); await pg.screenshot(path=f'{OUT}/shipyard_register_orders.png')
         await pg.keyboard.press('Escape')
-        # 1480: delivery
-        await pg.evaluate("() => { const S = window.helmline.state; S.day = window.helmline.yearDay(1480) + 2; window.helmline.advance(1); }")
+        # 1470: delivery
+        await pg.evaluate("() => { const S = window.helmline.state; S.day = window.helmline.yearDay(1470) + 2; window.helmline.advance(1); }")
         print('told:', await st("S.yard.orders.map(o => !!o.told)"))
         await pg.click('[data-ships="yard"]'); await pg.wait_for_selector('.banner.ready')
         await pg.screenshot(path=f'{OUT}/shipyard_delivery.png')
         purse = await st("S.purse")
-        await pg.click('[data-deliver-order="1"]'); await pg.click('#modal-ok'); await pg.wait_for_timeout(200)
+        await pg.click('[data-deliver-order="0"]'); await pg.click('#modal-ok'); await pg.wait_for_timeout(200)
         print('delivered:', await st("({ hull: S.ship.hull, name: S.ship.name, orders: S.yard.orders.length })"), 'paid', round(purse - await st("S.purse")))
-        purse = await st("S.purse")
-        await pg.click('[data-deliver-order="0"]'); await pg.wait_for_timeout(200)
-        print('rig order on a nau refunded:', round(await st("S.purse") - purse), 'orders left', await st("S.yard.orders.length"))
         await pg.click('[data-yard-tab="arms"]'); await pg.click('[data-opt="guns:bombards"]'); await pg.click('[data-yard-tab="colours"]'); await pg.click('[data-opt="stern:carved"]')
         await pg.click('[data-yard="commission"]'); await pg.click('#modal-ok'); await pg.wait_for_timeout(200)
         print('nau fitted:', await st("({ guns: S.ship.fit.guns, stern: S.ship.fit.stern })"), 'stats', await pg.evaluate("() => document.querySelector('.ship-stats').innerText.replace(/\\n/g,' | ')"))
@@ -94,11 +89,17 @@ async def main():
         print('phone fits width:', wide)
         await pg.click('[data-yard="close"]')
 
-        # an old save with no ship details loads as a lateen caravel
+        # an old save with no ship details loads as a lateen caravel; one with a square-rigged caravel
+        # becomes a caravela redonda, and a square rig on order is refunded
         await pg.evaluate("""() => { const raw = JSON.parse(localStorage.getItem('helmline-proto0-v1')); delete raw.S.ship.hull; delete raw.S.ship.fit; delete raw.S.ship.name; delete raw.S.yard;
           for (const x of raw.S.fleet.ships) delete x.hull; localStorage.setItem('helmline-proto0-v1', JSON.stringify(raw));
           Storage.prototype.setItem = () => {}; }""")  # so the save on unload does not overwrite it
         await pg.reload(); await pg.click('#intro-continue'); await pg.wait_for_timeout(300)
-        print('old save:', await st("({ hull: S.ship.hull, name: S.ship.name, rig: S.ship.fit.rig, fleet: S.fleet.ships.map(x => x.hull) })"))
+        print('old save:', await st("({ hull: S.ship.hull, name: S.ship.name, fleet: S.fleet.ships.map(x => x.hull) })"))
+        await pg.evaluate("""() => { const raw = JSON.parse(localStorage.getItem('helmline-proto0-v1')); raw.S.ship.hull = 'caravel'; raw.S.ship.fit = { rig: 'square' };
+          raw.S.yard = { orders: [{ kind: 'fit', group: 'rig', choice: 'square', price: 780, paid: 260, due: 10000, placed: 0 }], built: 0 }; raw.S.purse = 1000;
+          localStorage.setItem('helmline-proto0-v1', JSON.stringify(raw)); Storage.prototype.setItem = () => {}; }""")
+        await pg.reload(); await pg.click('#intro-continue'); await pg.wait_for_timeout(300)
+        print('square-rigged caravel save:', await st("({ hull: S.ship.hull, purse: Math.round(S.purse), orders: S.yard.orders.length, note: S.notices[S.notices.length - 1].html.slice(0, 60) })"))
         print('ERRORS', errs); await b.close()
 asyncio.run(main())

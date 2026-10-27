@@ -47,6 +47,18 @@ export const TEMPLATES = [
   { id: 'arguin_fair', port: 'arguin', days: [30, 50], title: 'Traders crowd Arguin',
     text: 'Desert merchants have come down to the coast in numbers. They pay well for cloth and wine.',
     effects: { arguin: { cloth: 1.5, wine: 1.3 } } },
+  { id: 'ceuta_siege', port: 'ceuta', days: [30, 60], title: 'The Moors besiege Ceuta',
+    text: 'An army from Fez is camped before the walls. The garrison will pay almost anything for wheat and wine.',
+    effects: { ceuta: { wheat: 2.0, wine: 1.5 } } },
+  { id: 'safi_harvest', port: 'safi', days: [40, 70], title: 'A great harvest in the Doukkala',
+    text: 'The plains behind Safi have brought in a huge crop. Wheat is cheap in Safi.',
+    effects: { safi: { wheat: 0.55 } } },
+  { id: 'cadiz_fleet', port: 'cadiz', days: [30, 50], title: 'A Genoese fleet at Cádiz',
+    text: 'Genoese merchants are buying for the Mediterranean. Gold, ivory and sugar fetch more than ever in Cádiz.',
+    effects: { cadiz: { gold: 1.25, ivory: 1.3, sugar: 1.3 } } },
+  { id: 'douro_flood', port: 'porto', days: [25, 45], title: 'The Douro in flood',
+    text: 'The river has burst its banks and the quays of Porto are under water. No ship can trade there until it falls.',
+    close: ['porto'] },
 ];
 
 const T = Object.fromEntries(TEMPLATES.map((t) => [t.id, t]));

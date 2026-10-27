@@ -26,6 +26,9 @@ const SHAPES = {
   barca: { L: 150, free: 18, stern: 12, bow: 8, keel: 14, aft: [0, 0.22, 10], fore: null, masts: [{ at: 0.52, h: 118, rig: 'square', w: 70 }], tumble: 0.9 },
   caravel: { L: 215, free: 20, stern: 20, bow: 10, keel: 18, aft: [0, 0.27, 14], fore: null, masts: null, tumble: 1 },
   barinel: { L: 245, free: 18, stern: 16, bow: 10, keel: 17, aft: [0, 0.22, 12], fore: null, masts: [{ at: 0.58, h: 128, rig: 'square', w: 86 }, { at: 0.26, h: 92, rig: 'lateen', s: 0.55 }], oars: 8, tumble: 1 },
+  largecaravel: { L: 240, free: 22, stern: 22, bow: 11, keel: 19, aft: [0, 0.27, 15], fore: null,
+    masts: [{ at: 0.62, h: 166, rig: 'lateen', s: 1 }, { at: 0.4, h: 140, rig: 'lateen', s: 0.8 }, { at: 0.19, h: 108, rig: 'lateen', s: 0.58 }], tumble: 1 },
+  redonda: { L: 235, free: 22, stern: 22, bow: 11, keel: 19, aft: [0, 0.27, 15], fore: null, masts: null, tumble: 1 },
   nau: { L: 300, free: 30, stern: 26, bow: 18, keel: 24, aft: [0, 0.3, 30], fore: [0.8, 1.0, 24], masts: null, tumble: 1.2 },
 };
 
@@ -64,7 +67,7 @@ export function shipSVG(ship, opts = {}) {
   const L = sh.L;
   const x0 = (BOX_W - L) / 2 - (sh.masts ? 0 : 6);
   const x1 = x0 + L;
-  const masts = hull === 'caravel' ? caravelMasts(fit) : hull === 'nau' ? NAU_MASTS : sh.masts;
+  const masts = hull === 'caravel' ? caravelMasts(fit) : hull === 'redonda' ? caravelMasts({ rig: 'square' }) : hull === 'nau' ? NAU_MASTS : sh.masts;
   const pencil = style === 'pencil';
   const colour = style === 'colour';
   const ink = pencil ? '#8c7b66' : INK;

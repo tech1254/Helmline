@@ -14,6 +14,7 @@ import { fogToString, initFog, markFogDirty } from './fog.js';
 import { centerOn } from './view.js';
 import { syncMarket } from './sim.js';
 import { observe } from './voyage.js';
+import { addNotice } from './notices.js';
 
 export function freshState() {
   const lis = PORTS[0];
@@ -22,7 +23,7 @@ export function freshState() {
     purse: START_PURSE,
     cargo: Object.fromEntries(GOODS.map((g) => [g.id, 0])),
     paid: Object.fromEntries(GOODS.map((g) => [g.id, 0])), // total paid for current stock, for average cost
-    ship: { lon: lis.lon, lat: lis.lat, heading: 210, route: [], dest: null, docked: 'lisbon', hull: 'caravel', name: Ships.FLAGSHIP_NAME, fit: { ...Ships.DEFAULT_FIT } },
+    ship: { lon: lis.lon, lat: lis.lat, heading: 210, route: [], dest: null, docked: 'lisbon', hull: 'barca', name: Ships.FLAGSHIP_NAME, fit: { ...Ships.DEFAULT_FIT } },
     discovered: Object.fromEntries(PORTS.map((p) => [p.id, p.known])),
     sighted: { iberia: true, africa: true, madeira: true, canaries: true },
     unpaidCharts: [],
@@ -72,6 +73,15 @@ export function applySaveData(d) {
     Pirates.ensurePirates(S);
     Accounts.ensureAccounts(S);
     Ships.ensureFlagship(S);
+    // Ports and goods added since the save was made: the known ports charted, an empty hold for new goods.
+    for (const p of PORTS) if (p.known && S.discovered[p.id] == null) S.discovered[p.id] = true;
+    for (const g of GOODS) { S.cargo[g.id] = S.cargo[g.id] || 0; S.paid[g.id] = S.paid[g.id] || 0; }
+    if (S.yard.refunds?.length) {
+      const total = S.yard.refunds.reduce((t, x) => t + x, 0);
+      addNotice(`The caravela redonda is now a ship of her own at the Lisbon yard, not a re-rigging. The yard has returned the ${total.toLocaleString()} cz you paid down for a square rig.`, 'alert');
+      Accounts.record(S, { kind: 'ships', amount: total, text: 'Refund: square rig order (now the caravela redonda)' });
+      S.yard.refunds = [];
+    }
     syncMarket();
     return true;
   } catch (e) {

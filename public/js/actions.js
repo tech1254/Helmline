@@ -1,6 +1,6 @@
 // What the panel buttons and top-bar controls do.
 
-import { PORTS } from './world.js';
+import { PORTS, findPath } from './world.js';
 import { GOODS } from './economy.js';
 import * as Contracts from './contracts.js';
 import * as Fleet from './fleet.js';
@@ -14,7 +14,7 @@ import { newGame, save } from './save.js';
 import { cloudSync, loadFromCloud, renderCloudButton, startCloudSave } from './cloudsync.js';
 import { cam, centerOn, clampCam } from './view.js';
 import { report } from './sim.js';
-import { checkMilestones, confirmVoyage, observe, planCourse, waitInPort } from './voyage.js';
+import { checkMilestones, confirmVoyage, noPassage, observe, planCourse, waitInPort } from './voyage.js';
 import { menuAction } from './dock.js';
 import { openShips } from './shipyard.js';
 import { closeFeedback, feedbackInput, openFeedback, submitFeedback } from './feedback.js';
@@ -31,8 +31,15 @@ export function keepDetailsOpen(shipId) {
   if (det) det.open = true;
 }
 
-export function routeProblem(d) {
+export function routeProblem(d, ship) {
   if (d.stops.length < 2) return 'A route needs at least two stops.';
+  const H = Ships.HULLS[ship?.hull || 'caravel'];
+  if (H?.coastal) {
+    for (let i = 0; i < d.stops.length; i++) {
+      const a = PORTS.find((p) => p.id === d.stops[i].port), b = PORTS.find((p) => p.id === d.stops[(i + 1) % d.stops.length].port);
+      if (a && b && !findPath(a.lon, a.lat, b.lon, b.lat, 1, true)) return `A ${H.name.toLowerCase()} keeps to the coast and cannot sail from ${a.name} to ${b.name}. Choose coastal ports, or give her captain a bigger ship.`;
+    }
+  }
   for (let i = 0; i < d.stops.length; i++) {
     if (d.stops[i].port === d.stops[(i + 1) % d.stops.length].port) return `Stops ${i + 1} and ${((i + 1) % d.stops.length) + 1} are the same port. Pick another, or remove one.`;
   }
@@ -182,7 +189,7 @@ export function initActions() {
     } else if (t.dataset.route) {
       const ship = S.fleet.ships.find((x) => x.id === +t.dataset.route);
       const d = draftFor(ship);
-      const problem = routeProblem(d);
+      const problem = routeProblem(d, ship);
       if (problem) { hint(problem); keepDetailsOpen(ship.id); return; }
       report(Fleet.setRoute(S, market, ship, d));
       delete routeDrafts[ship.id];
@@ -225,7 +232,7 @@ export function initActions() {
       const p = PORTS.find((x) => x.id === t.dataset.sailto);
       const plan = planCourse(p.lon, p.lat, p.id, false);
       if (plan) { ui.panelMode = null; confirmVoyage(plan); }
-      else hint('The pilot can find no passage there.');
+      else hint(noPassage());
     } else if (t.hasAttribute('data-prices')) {
       ui.panelMode = 'prices';
     } else if (t.hasAttribute('data-close-prices') || t.hasAttribute('data-close-ledger')) {

@@ -17,7 +17,7 @@ import { portPhoto, shipPhoto, photoImage, gradedShip, PX_PER_M } from './photos
 import { CHART_REWARD } from './config.js';
 import { releaseToasts } from './notices.js';
 
-const SETTING = { lisbon: 'lisbon', lagos: 'iberia', funchal: 'madeira', lanzarote: 'volcanic', arguin: 'desert', gambia: 'river', serraleoa: 'river', cestos: 'river', mina: 'surf' };
+const SETTING = { lisbon: 'lisbon', porto: 'iberia', cadiz: 'iberia', ceuta: 'iberia', safi: 'iberia', lagos: 'iberia', funchal: 'madeira', lanzarote: 'volcanic', arguin: 'desert', gambia: 'river', serraleoa: 'river', cestos: 'river', mina: 'surf' };
 const T_ZOOM = 0.9, T_FADE = 0.5, T_SAIL = 3.6, T_HOLD = 0.9, T_OUT = 0.45;
 
 export const SCENE_MODES = [['all', 'Every port'], ['first', 'First visits only'], ['off', 'Off']];

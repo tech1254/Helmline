@@ -26,10 +26,13 @@ async def main():
         await pg.click('[data-buy="wine"][data-n="10"]'); await pg.click('#modal-ok'); print('+10 confirmed:', await st())
         await pg.click('[data-sell="wine"][data-n="all"]'); print('Sell all dialog:', await modal())
         await pg.keyboard.press('Escape'); print('after Esc:', await st())
-        # Story 3: voyage confirmation via clicking Funchal on the chart
-        pos = await pg.evaluate("() => { const c = document.getElementById('chart'); return null; }")
+        # Story 3: voyage confirmation via clicking Funchal on the chart. A new game starts in a barca,
+        # which keeps to the coast and cannot make the passage to Madeira; a caravel can.
         await pg.click('[data-close]')
         xy = await pg.evaluate("""() => { const h = window.helmline; return h.screenOf(-16.9, 32.6); }""")
+        await pg.mouse.click(*xy); await pg.wait_for_timeout(200)
+        print('barca to Funchal:', await pg.evaluate("() => [...document.querySelectorAll('#toast .t')].pop()?.innerText"), '| dialog open', await pg.is_visible('#modal'))
+        await pg.evaluate("() => { window.helmline.state.ship.hull = 'caravel'; }")
         await pg.mouse.click(*xy); await pg.wait_for_timeout(200)
         print('voyage dialog:', await modal())
         await pg.screenshot(path=f'{SP}/11-voyage-confirm.png')

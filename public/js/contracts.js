@@ -39,6 +39,10 @@ const FAIL_PENALTY = 5; // standing lost for a missed deadline or an abandoned c
 
 export const PATRONS = {
   lisbon: 'The merchants of Lisbon',
+  porto: 'The merchants of Porto',
+  cadiz: 'The Genoese of Cádiz',
+  ceuta: 'The captain of Ceuta',
+  safi: 'The Portuguese factor at Safi',
   lagos: 'The Casa de Lagos',
   funchal: 'The planters of Madeira',
   lanzarote: 'The governor of Lanzarote',

@@ -11,21 +11,31 @@ export const GOODS = [
   { id: 'gold', name: 'Gold dust', unit: 'pouches', one: 'pouch', spoil: 0, rot: '' },
   { id: 'ivory', name: 'Ivory', unit: 'tusks', one: 'tusk', spoil: 0, rot: '' },
   { id: 'pepper', name: 'Melegueta pepper', unit: 'sacks', one: 'sack', spoil: 0.003, rot: 'gone musty' },
+  { id: 'wheat', name: 'Wheat', unit: 'sacks', one: 'sack', spoil: 0.002, rot: 'gone mouldy' },
+  { id: 'salt', name: 'Salt', unit: 'sacks', one: 'sack', spoil: 0.001, rot: 'dissolved in the damp' },
+  { id: 'alquices', name: 'Moorish cloth', unit: 'bales', one: 'bale', spoil: 0.001, rot: 'mildewed' },
 ];
+// Wheat from Morocco fed Portugal, Madeira and the Ceuta garrison; salt from the pans of Cádiz
+// and Setúbal was prized all down the African coast; Moorish cloth (alquicés) bought at Safi was
+// what the factors at Arguin traded for gold.
 
-export const PORTUGUESE_PORTS = ['lisbon', 'lagos', 'funchal'];
+export const PORTUGUESE_PORTS = ['lisbon', 'porto', 'lagos', 'funchal', 'ceuta'];
 
 // [base price, sold here?]. Every port buys every good; only some sell.
 const MARKETS = {
-  lisbon:    { k: 0.012, p: { wine: [9, 1], cloth: [11, 1], sugar: [26], dye: [24], gold: [120], ivory: [54], pepper: [44] } },
-  lagos:     { k: 0.02,  p: { wine: [8, 1], cloth: [12, 1], sugar: [24], dye: [22], gold: [110], ivory: [46], pepper: [38] } },
-  funchal:   { k: 0.03,  p: { wine: [16], cloth: [18], sugar: [11, 1], dye: [20], gold: [100], ivory: [40], pepper: [34] } },
-  lanzarote: { k: 0.035, p: { wine: [17], cloth: [19], sugar: [18], dye: [9, 1], gold: [95], ivory: [38], pepper: [30] } },
-  arguin:    { k: 0.03,  p: { wine: [22], cloth: [26], sugar: [20], dye: [16], gold: [68, 1], ivory: [34], pepper: [26] } },
-  gambia:    { k: 0.03,  p: { wine: [25], cloth: [30], sugar: [22], dye: [18], gold: [78, 1], ivory: [18, 1], pepper: [12, 1] } },
-  serraleoa: { k: 0.03,  p: { wine: [24], cloth: [31], sugar: [23], dye: [19], gold: [85], ivory: [15, 1], pepper: [11, 1] } },
-  cestos:    { k: 0.035, p: { wine: [26], cloth: [32], sugar: [24], dye: [20], gold: [90], ivory: [24], pepper: [7, 1] } },
-  mina:      { k: 0.025, p: { wine: [30], cloth: [40], sugar: [26], dye: [22], gold: [52, 1], ivory: [21, 1], pepper: [16] } },
+  lisbon:    { k: 0.012, p: { wine: [9, 1], cloth: [11, 1], sugar: [26], dye: [24], gold: [120], ivory: [54], pepper: [44], wheat: [14], salt: [4, 1], alquices: [14] } },
+  porto:     { k: 0.02, p: { wine: [7, 1], cloth: [12, 1], sugar: [28], dye: [26], gold: [118], ivory: [52], pepper: [46], wheat: [12], salt: [7], alquices: [15] } },
+  lagos:     { k: 0.02, p: { wine: [8, 1], cloth: [12, 1], sugar: [24], dye: [22], gold: [110], ivory: [46], pepper: [38], wheat: [13], salt: [5], alquices: [14] } },
+  cadiz:     { k: 0.015, p: { wine: [9, 1], cloth: [13], sugar: [28], dye: [25], gold: [125], ivory: [56], pepper: [46], wheat: [13], salt: [3, 1], alquices: [15] } },
+  ceuta:     { k: 0.035, p: { wine: [16], cloth: [18], sugar: [24], dye: [22], gold: [105], ivory: [44], pepper: [40], wheat: [18], salt: [6], alquices: [14] } },
+  safi:      { k: 0.03, p: { wine: [18], cloth: [20], sugar: [20], dye: [16], gold: [90], ivory: [40], pepper: [32], wheat: [6, 1], salt: [6], alquices: [10, 1] } },
+  funchal:   { k: 0.03, p: { wine: [16], cloth: [18], sugar: [11, 1], dye: [20], gold: [100], ivory: [40], pepper: [34], wheat: [15], salt: [8], alquices: [15] } },
+  lanzarote: { k: 0.035, p: { wine: [17], cloth: [19], sugar: [18], dye: [9, 1], gold: [95], ivory: [38], pepper: [30], wheat: [15], salt: [7], alquices: [16] } },
+  arguin:    { k: 0.03, p: { wine: [22], cloth: [26], sugar: [20], dye: [16], gold: [68, 1], ivory: [34], pepper: [26], wheat: [16], salt: [10], alquices: [26] } },
+  gambia:    { k: 0.03, p: { wine: [25], cloth: [30], sugar: [22], dye: [18], gold: [78, 1], ivory: [18, 1], pepper: [12, 1], wheat: [14], salt: [18], alquices: [24] } },
+  serraleoa: { k: 0.03, p: { wine: [24], cloth: [31], sugar: [23], dye: [19], gold: [85], ivory: [15, 1], pepper: [11, 1], wheat: [14], salt: [20], alquices: [22] } },
+  cestos:    { k: 0.035, p: { wine: [26], cloth: [32], sugar: [24], dye: [20], gold: [90], ivory: [24], pepper: [7, 1], wheat: [14], salt: [20], alquices: [22] } },
+  mina:      { k: 0.025, p: { wine: [30], cloth: [40], sugar: [26], dye: [22], gold: [52, 1], ivory: [21, 1], pepper: [16], wheat: [16], salt: [22], alquices: [30] } },
 };
 
 const GOLD_K = 1.6; // gold is scarce: each pouch moves the price more

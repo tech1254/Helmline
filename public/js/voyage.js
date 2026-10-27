@@ -1,6 +1,6 @@
 // Voyages and port calls: corsairs, planning a course, docking, milestones.
 
-import { COS0, D2R, PORTS, windAt, sailFactor, bearing, distNm, angleDiff, findPath } from './world.js';
+import { COS0, D2R, PORTS, windAt, sailFactor, bearing, distNm, angleDiff, findPath, COASTAL_NM } from './world.js';
 import { GOODS } from './economy.js';
 import * as Contracts from './contracts.js';
 import * as Events from './events.js';
@@ -136,7 +136,7 @@ function leak(p) {
 }
 
 export function replan(dest) {
-  const path = findPath(S.ship.lon, S.ship.lat, dest.lon, dest.lat);
+  const path = findPath(S.ship.lon, S.ship.lat, dest.lon, dest.lat, 1, !!Ships.hullOf(S.ship).coastal);
   if (!path) return false;
   S.ship.route = path;
   return true;
@@ -148,14 +148,20 @@ export function planCourse(lon, lat, portId, append) {
   const keep = append && sh.route.length ? sh.route : [];
   const fromLon = keep.length ? keep[keep.length - 1][0] : sh.lon;
   const fromLat = keep.length ? keep[keep.length - 1][1] : sh.lat;
-  const path = findPath(fromLon, fromLat, lon, lat);
+  const path = findPath(fromLon, fromLat, lon, lat, 1, !!Ships.hullOf(sh).coastal);
   if (!path) return null;
   return { route: keep.concat(path), dest: { lon, lat, port: portId || null } };
 }
 
+// Why no course could be planned: a coaster's limit, or no passage at all.
+export function noPassage() {
+  const h = Ships.hullOf(S.ship);
+  return h.coastal ? `A ${h.name.toLowerCase()} keeps to the coast: she cannot sail more than ${COASTAL_NM} miles from land. A caravel can make the open-sea passages.` : 'The pilot can find no passage there.';
+}
+
 export function setCourse(lon, lat, portId, append) {
   const plan = planCourse(lon, lat, portId, append);
-  if (!plan) { hint('The pilot can find no passage there.'); return; }
+  if (!plan) { hint(noPassage()); return; }
   applyCourse(plan);
 }
 

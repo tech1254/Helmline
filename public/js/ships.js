@@ -17,8 +17,8 @@ export const TIER_NAMES = { 0: 'anyone', 5: 'Known on the quays', 20: 'Respected
 export const HULLS = {
   barca: {
     id: 'barca', name: 'Barca', year: 1451, standing: KNOWN, price: 1050, hold: 25, knots: 4.5, up: 0.75, down: 1,
-    upkeep: 2, hiredUpkeep: 1, scale: 0.5, size: 0.8,
-    blurb: 'A small, single-masted coaster with a square sail. Cheap to buy and run; a short-route ship for a captain.',
+    upkeep: 2, hiredUpkeep: 1, scale: 0.5, size: 0.8, coastal: true,
+    blurb: 'A small, single-masted coaster with a square sail. Cheap to buy and run, but she keeps within sight of the coast: no Madeira, no open-sea passages.',
   },
   caravel: {
     id: 'caravel', name: 'Caravel', year: 1451, standing: KNOWN, price: 1950, hold: 40, knots: 5, up: 1, down: 1,
@@ -30,13 +30,23 @@ export const HULLS = {
     upkeep: 4, hiredUpkeep: 1, scale: 1.3, size: 1.15, oars: 2,
     blurb: 'A broad oared sailing ship. Sweeps keep her moving at about 2 knots in a calm, as in the Gulf of Guinea.',
   },
+  largecaravel: {
+    id: 'largecaravel', name: 'Large caravel', year: 1456, standing: RESPECTED, price: 2600, hold: 55, knots: 5.2, up: 1.05, down: 1,
+    upkeep: 4, hiredUpkeep: 1, scale: 1.2, size: 1.1,
+    blurb: 'A caravela latina grande: three lateen masts on a longer hull. More hold than a caravel and even closer to the wind.',
+  },
+  redonda: {
+    id: 'redonda', name: 'Caravela redonda', year: 1462, standing: RESPECTED, price: 3500, hold: 65, knots: 5.4, up: 0.85, down: 1.2,
+    upkeep: 5, hiredUpkeep: 1, scale: 1.4, size: 1.2,
+    blurb: 'A caravel with square sails on her fore and main masts and a lateen mizzen: fast with the wind behind her, a little slower into it.',
+  },
   nau: {
-    id: 'nau', name: 'Nau', year: 1480, orderYear: 1470, standing: TRUSTED, price: 7800, hold: 120, knots: 5.5, up: 0.75, down: 1.1,
+    id: 'nau', name: 'Nau', year: 1470, orderYear: 1466, standing: TRUSTED, price: 7800, hold: 120, knots: 5.5, up: 0.75, down: 1.1,
     upkeep: 6, hiredUpkeep: 2, scale: 2, size: 1.45, fight: 0.1, shy: 0.8,
     blurb: 'A great carrack with high castles fore and aft. A huge hold and room for bombards; slow to windward. Galleys think twice before taking her on.',
   },
 };
-export const HULL_ORDER = ['barca', 'caravel', 'barinel', 'nau'];
+export const HULL_ORDER = ['barca', 'caravel', 'barinel', 'largecaravel', 'redonda', 'nau'];
 // Hull prices above, and refits, are 30% dearer than first set (economy change C, 27 Oct 2026):
 // close to what ships cost per ton in the period, and enough to make buying one a decision.
 export const PRICE_RISE = 1.3;
@@ -45,14 +55,6 @@ export const PRICE_RISE = 1.3;
 // holdAdd, offWind (factor beyond 75° off the wind), wage (cz a day), fight (odds added), spoil (factor).
 // price is for a caravel (scaled by the hull), days in the yard, standing and year needed.
 export const GROUPS = [
-  {
-    id: 'rig', name: 'Rig', tab: 'rig', hulls: ['caravel'],
-    choices: [
-      { id: 'lateen', name: 'Lateen', note: 'Two triangular sails: superb close to the wind.' },
-      { id: 'square', name: 'Square rig, lateen mizzen', note: 'Square sails on the foremast and main: fast with the wind behind, a little slower into it.',
-        up: 0.9, down: 1.15, holdAdd: 15, price: 600, days: 10, standing: RESPECTED, year: 1480, orderYear: 1470 },
-    ],
-  },
   {
     id: 'cloth', name: 'Sailcloth', tab: 'rig',
     choices: [
@@ -242,6 +244,15 @@ export const FLAGSHIP_NAME = 'São Cristóvão';
 export function ensureFlagship(S) {
   const sh = S.ship;
   if (!sh.hull || !HULLS[sh.hull]) sh.hull = 'caravel';
+  // Before the caravela redonda was a hull of her own, a caravel could be re-rigged square.
+  if (sh.hull === 'caravel' && sh.fit?.rig === 'square') sh.hull = 'redonda';
+  if (S.yard?.orders?.some((o) => o.kind === 'fit' && o.group === 'rig')) {
+    for (const o of S.yard.orders.filter((x) => x.kind === 'fit' && x.group === 'rig')) {
+      S.purse += o.paid;
+      (S.yard.refunds = S.yard.refunds || []).push(o.paid);
+    }
+    S.yard.orders = S.yard.orders.filter((o) => !(o.kind === 'fit' && o.group === 'rig'));
+  }
   sh.name = String(sh.name || FLAGSHIP_NAME).replace(/[<>]/g, '').slice(0, 40) || FLAGSHIP_NAME;
   sh.fit = normalFit(sh.hull, sh.fit);
   if (!S.yard) S.yard = { orders: [], built: 0 };
