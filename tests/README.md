@@ -32,7 +32,7 @@ Every test except `corsairs` calms the seas (no random corsair attacks) so its c
 | `notices` | Pop-up timing, tap to close, the feed and unread count, on desktop and phone |
 | `sail_list` | The Sail to… list opens quickly |
 | `old_save` | A save from before events and the fleet still loads |
-| `phone` | Phone layout |
+| `phone` | Phone layout: one row at the top, the bottom bar (pause, speed, Books reopening the last tab, More), help, and a long summary that scrolls |
 | `cloud_two_devices` | Cloud save on one device, load on another, conflicts |
 | `feedback` | Report a bug or idea from Help; typing does not trigger shortcuts; the draft survives a reload; reports are stored with or without game details |
 | `captain_prices` | Captains' price notes reach the price book only at ports on their route; the course home from Mina swings out to sea |

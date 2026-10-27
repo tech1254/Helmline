@@ -3,7 +3,7 @@
 import { S, ui } from './state.js';
 import { resize } from './view.js';
 import { $, fmtDate } from './util.js';
-import { renderPanel, tabs } from './panels.js';
+import { renderPanel } from './panels.js';
 
 export let toastTimer;
 // Notices: everything that happens is kept in a feed (the bell), and shown briefly as a
@@ -71,7 +71,8 @@ export function placeToasts() {
   el.style.left = '';
   el.style.top = `${top}px`;
   el.style.removeProperty('--toast-max');
-  el.style.maxHeight = open ? `${Math.max(0, Math.round(open.top - top - 8))}px` : '';
+  const room = open ? Math.round(open.top - top - 8) : null;
+  el.style.maxHeight = room === null ? '' : `${room < 44 ? 0 : room}px`; // no room for a whole pop-up: none
 }
 
 export function hint(html, kind = '') {
@@ -90,7 +91,6 @@ export function renderNotices(el) {
     return `${head}<li class="n ${n.kind}">${n.html}</li>`;
   }).join('');
   el.innerHTML = `
-    ${tabs('notices')}
     <header><h2>Notices</h2><button class="close" data-close aria-label="Close">×</button></header>
     <ul class="notices">${items || '<li class="muted">Nothing yet. News, arrivals and your captains\' reports will appear here.</li>'}</ul>`;
 }

@@ -21,6 +21,7 @@ An age-of-sail exploration and trade game. This is **Prototype 0**: the West Afr
 - **Corsairs of Barbary:** encounters off Morocco, the Algarve and the Canaries; run, fight or pay tribute. Afterwards the game pauses to let you hold course or turn back for a shipyard. Notoriety draws more corsairs, caution fewer. Battle damage slows the ship until repaired in Lisbon, Lagos or Funchal.
 - **Notices:** pop-ups stay up long enough to read (longer for longer messages), pause while hovered and close on a tap; every notice is also kept in a feed under the bell, with an unread count.
 - **Feedback:** Report a bug or Suggest an idea from the How to play screen. Reports go to the `feedback` table in D1 (with game details, if the player agrees) and are reviewed nightly into the design doc's backlog.
+- **Phones:** one row at the top (date, purse, hold, notices) and a bar at the bottom: play or pause, speed, Sail, Books (market, price book, ledger, contracts and fleet as tabs) and More (winds, find my ship, cloud save, how to play, feedback).
 - **Wait in port**, zoom buttons, Captain's notes for the first voyages, and a How to play screen.
 - Saves to the browser, and optionally to the cloud with a save code to play across devices.
 

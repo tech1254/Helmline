@@ -14,6 +14,7 @@ import { cloudSync, loadFromCloud, renderCloudButton, startCloudSave } from './c
 import { cam, centerOn, clampCam } from './view.js';
 import { report } from './sim.js';
 import { checkMilestones, confirmVoyage, observe, planCourse, waitInPort } from './voyage.js';
+import { menuAction } from './dock.js';
 import { closeFeedback, feedbackInput, openFeedback, submitFeedback } from './feedback.js';
 import { $, cz, fmtDate, held } from './util.js';
 import { draftFor, renderPanel, renderTip, routeDrafts, routeSummary, setSpeed, togglePanel, toggleWind } from './panels.js';
@@ -50,6 +51,7 @@ export function initActions() {
     const t = e.target.closest('button');
     if (!t || t.closest('form')) return; // forms handle their own submit
     if (t.dataset.feedback) { openFeedback(t.dataset.feedback); return; }
+    if (t.dataset.menu && menuAction(t.dataset.menu)) return;
     if (t.hasAttribute('data-feedback-close')) { closeFeedback(); return; }
     const pid = S.ship.docked;
     if ((t.dataset.buy || t.dataset.sell) && pid && market.closed(pid)) {

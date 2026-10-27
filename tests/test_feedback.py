@@ -41,7 +41,7 @@ async def main():
         # An idea from a phone, without game details.
         ph = await (await b.new_context(viewport={'width': 360, 'height': 640}, has_touch=True, is_mobile=True)).new_page(); ph.on('pageerror', lambda e: errs.append(str(e)))
         await ph.goto(URL); await ph.wait_for_selector('#intro', state='visible'); await ph.tap('#intro-new'); await ph.wait_for_timeout(300)
-        await ph.tap('#btn-help'); await ph.tap('[data-feedback="idea"]'); await ph.wait_for_timeout(150)
+        await ph.tap('#dock-more'); await ph.tap('[data-menu="idea"]'); await ph.wait_for_timeout(150)
         await ph.fill('textarea', 'Let captains carry letters between ports.')
         await ph.tap('input[name="details"]')
         await ph.screenshot(path=(sys.argv[1] if len(sys.argv) > 1 else '.') + '/46-phone-feedback.png')

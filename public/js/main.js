@@ -17,6 +17,7 @@ import { initInput } from './input.js';
 import { initActions } from './actions.js';
 import { initDialog } from './dialog.js';
 import { initNotices } from './notices.js';
+import { initDock } from './dock.js';
 
 // ---- Intro & loop -----------------------------------------------------------
 function startIntro(hasSave) {
@@ -69,6 +70,7 @@ initInput();
 initActions();
 initDialog();
 initNotices();
+initDock();
 window.addEventListener('resize', () => { resize(); clampCam(); });
 window.addEventListener('beforeunload', () => ui.introDone && save());
 document.addEventListener('visibilitychange', () => {

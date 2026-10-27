@@ -19,6 +19,7 @@ import { renderLedger } from './ledgerview.js';
 import { renderPrices } from './pricebook.js';
 import { placeToasts, renderNoticeBadge, renderNotices } from './notices.js';
 import { renderFeedback } from './feedback.js';
+import { isBook, renderDock, renderMenu } from './dock.js';
 
 // ---- HUD & panels -----------------------------------------------------------
 
@@ -26,6 +27,7 @@ export function setSpeed(v) {
   if (v) ui.lastSpeed = v;
   ui.speed = v;
   document.querySelectorAll('[data-speed]').forEach((b) => b.classList.toggle('on', +b.dataset.speed === v));
+  renderDock();
 }
 
 export function toggleWind() {
@@ -93,7 +95,7 @@ export function renderPanel() {
   $('btn-contracts').classList.toggle('on', ui.panelMode === 'contracts');
   $('btn-contracts').hidden = !S.contracts?.unlocked;
   if (ui.panelMode === 'contracts' && !S.contracts?.unlocked) ui.panelMode = S.ship.docked ? 'port' : null;
-  if (!ui.panelMode) { el.hidden = true; placeToasts(); return; }
+  if (!ui.panelMode) { el.hidden = true; placeToasts(); renderDock(); return; }
   el.hidden = false;
   el.classList.toggle('wide', ui.panelMode === 'prices' || ui.panelMode === 'ledger');
   if (ui.panelMode === 'port') renderPort(el);
@@ -103,10 +105,13 @@ export function renderPanel() {
   else if (ui.panelMode === 'help') renderHelp(el);
   else if (ui.panelMode === 'cloud') renderCloud(el);
   else if (ui.panelMode === 'feedback') renderFeedback(el);
+  else if (ui.panelMode === 'menu') renderMenu(el);
   else if (ui.panelMode === 'ledger') renderLedger(el);
   else if (ui.panelMode === 'notices') renderNotices(el);
   else renderPrices(el);
+  if (isBook(ui.panelMode)) ui.lastBook = ui.panelMode;
   placeToasts();
+  renderDock();
 }
 
 export function renderPort(el) {
@@ -402,15 +407,16 @@ export function renderTip() {
 }
 
 // Market, Price book and other tabs, shown while in port so either is one click away.
+// The trading panels, one tab each. In port: the market and Set sail too.
 export function tabs(active) {
-  if (!S.ship.docked) return '';
+  const docked = !!S.ship.docked;
   return `<nav class="tabs" role="tablist">
-      <button role="tab" data-tab="port" aria-selected="${active === 'port'}" class="${active === 'port' ? 'on' : ''}">Market</button>
+      ${docked ? `<button role="tab" data-tab="port" aria-selected="${active === 'port'}" class="${active === 'port' ? 'on' : ''}">Market</button>` : ''}
       <button role="tab" data-tab="prices" aria-selected="${active === 'prices'}" class="${active === 'prices' ? 'on' : ''}">Price book</button>
       <button role="tab" data-tab="ledger" aria-selected="${active === 'ledger'}" class="${active === 'ledger' ? 'on' : ''}">Ledger</button>
       ${S.contracts?.unlocked ? `<button role="tab" data-tab="contracts" aria-selected="${active === 'contracts'}" class="${active === 'contracts' ? 'on' : ''}">Contracts</button>` : ''}
       ${fleetUnlocked() ? `<button role="tab" data-tab="fleet" aria-selected="${active === 'fleet'}" class="${active === 'fleet' ? 'on' : ''}">Fleet</button>` : ''}
-      <button role="tab" data-tab="sail" aria-selected="${active === 'sail'}" class="${active === 'sail' ? 'on' : ''}">Set sail</button>
+      ${docked ? `<button role="tab" data-tab="sail" aria-selected="${active === 'sail'}" class="${active === 'sail' ? 'on' : ''}">Set sail</button>` : ''}
     </nav>`;
 }
 

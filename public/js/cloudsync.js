@@ -5,6 +5,7 @@ import { S, market, setGame, ui } from './state.js';
 import { applySaveData, load, payload, save } from './save.js';
 import { centerOn } from './view.js';
 import { catchUp } from './sim.js';
+import { renderDock } from './dock.js';
 import { $, fmtDate, timeAgo } from './util.js';
 import { renderPanel } from './panels.js';
 import { confirmDialog } from './dialog.js';
@@ -121,6 +122,7 @@ export function renderCloudButton() {
   b.classList.toggle('linked', st === 'idle' || st === 'syncing');
   b.classList.toggle('problem', st === 'error' || st === 'conflict');
   b.title = st === 'off' ? 'Cloud save: off' : st === 'error' ? `Cloud save: ${Cloud.cloud.error}` : st === 'conflict' ? 'Cloud save: played on another device' : `Cloud save: synced ${timeAgo(Cloud.cloud.lastSync)}`;
+  if (S) renderDock(); // on a phone the cloud button lives in More, which shows the warning
 }
 
 export function renderCloud(el) {
