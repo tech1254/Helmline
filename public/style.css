@@ -529,3 +529,4 @@ body.scene-open #panel, body.scene-open #toast, body.scene-open #tip { visibilit
 .tag { white-space: nowrap; }
 #panel button:not(.close):not(.opt):hover:not(:disabled), #modal .card button:hover:not(:disabled), .yard-card button:not(.opt):not([role=tab]):hover:not(:disabled) { filter: brightness(1.18); }
 #panel button.primary:not(.close):not(.opt), #modal .card button.primary, .yard-card button.primary:not(.opt):not([role=tab]) { background: linear-gradient(#a8442e, #6d2617); color: #fff6e6; border-color: #3d120a; }
+.contract .on-course { font-size: 14px; font-style: italic; align-self: center; }
