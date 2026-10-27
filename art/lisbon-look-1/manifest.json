@@ -1,0 +1,114 @@
+{
+  "batch": "lisbon-look-1",
+  "note": "First look for the Lisbon arrival scene and the São Cristóvão: photograph, oil painting and ink-and-watercolour, for the harbour alone (as a backdrop behind the drawn ship), the ship alone, and the two together. FLUX.2 [pro], about 5 US cents each.",
+  "commit": "c5224c068587310f6d1a70e03217adc33e3aeea5",
+  "generated": "2026-10-27T13:20:54.612Z",
+  "items": [
+    {
+      "id": "harbour-photo",
+      "model": "black-forest-labs/flux-2-pro-preview",
+      "width": 1600,
+      "height": 896,
+      "seed": 1451,
+      "refs": [
+        "tools/art/refs/lisbon-layout.jpg"
+      ],
+      "prompt": "A photorealistic photograph of Lisbon seen from the river Tagus, late afternoon golden light, soft haze, gentle ripples and reflections on calm water, shot on a 35mm lens. Keep the composition of the reference image exactly: the river Tagus fills the lower half, the horizon sits at mid-height, the hill of Lisbon rises in the centre distance, and a stone quay with three barrels and a bollard sits in the lower right corner. The left two-thirds of the water must be open and empty: no ships, boats or people there. No people in the foreground. No text, no frame, no border. Historically accurate Lisbon in 1451: the Castle of São Jorge crowning the hill with medieval stone walls and square towers; the Alfama quarter below it, whitewashed houses with terracotta roofs stacked down the slope; the twin-towered Romanesque cathedral (Sé) among them; a low medieval stone wall along the riverfront. No Belém Tower, no modern buildings, no bridges, no grand waterfront square.",
+      "file": "harbour-photo.png",
+      "seconds": 27.4
+    },
+    {
+      "id": "harbour-oil",
+      "model": "black-forest-labs/flux-2-pro-preview",
+      "width": 1600,
+      "height": 896,
+      "seed": 1451,
+      "refs": [
+        "tools/art/refs/lisbon-layout.jpg"
+      ],
+      "prompt": "An oil painting of Lisbon seen from the river Tagus in the manner of 19th-century marine painting: luminous warm sky, visible brushwork, glazed water reflections, rich but calm palette. Keep the composition of the reference image exactly: the river Tagus fills the lower half, the horizon sits at mid-height, the hill of Lisbon rises in the centre distance, and a stone quay with three barrels and a bollard sits in the lower right corner. The left two-thirds of the water must be open and empty: no ships, boats or people there. No people in the foreground. No text, no frame, no border. Historically accurate Lisbon in 1451: the Castle of São Jorge crowning the hill with medieval stone walls and square towers; the Alfama quarter below it, whitewashed houses with terracotta roofs stacked down the slope; the twin-towered Romanesque cathedral (Sé) among them; a low medieval stone wall along the riverfront. No Belém Tower, no modern buildings, no bridges, no grand waterfront square.",
+      "file": "harbour-oil.png",
+      "seconds": 12.6
+    },
+    {
+      "id": "harbour-watercolour",
+      "model": "black-forest-labs/flux-2-pro-preview",
+      "width": 1600,
+      "height": 896,
+      "seed": 1451,
+      "refs": [
+        "tools/art/refs/lisbon-layout.jpg"
+      ],
+      "prompt": "A hand-drawn illustration of Lisbon seen from the river Tagus, fine sepia ink linework with soft watercolour washes on warm parchment paper, muted palette of faded blue, ochre and terracotta, like a vignette in an old atlas. Keep the composition of the reference image exactly: the river Tagus fills the lower half, the horizon sits at mid-height, the hill of Lisbon rises in the centre distance, and a stone quay with three barrels and a bollard sits in the lower right corner. The left two-thirds of the water must be open and empty: no ships, boats or people there. No people in the foreground. No text, no frame, no border. Historically accurate Lisbon in 1451: the Castle of São Jorge crowning the hill with medieval stone walls and square towers; the Alfama quarter below it, whitewashed houses with terracotta roofs stacked down the slope; the twin-towered Romanesque cathedral (Sé) among them; a low medieval stone wall along the riverfront. No Belém Tower, no modern buildings, no bridges, no grand waterfront square.",
+      "file": "harbour-watercolour.png",
+      "seconds": 11.1
+    },
+    {
+      "id": "ship-photo",
+      "model": "black-forest-labs/flux-2-pro-preview",
+      "width": 1280,
+      "height": 896,
+      "seed": 1451,
+      "refs": [
+        "tools/art/refs/caravel-drawing.png"
+      ],
+      "prompt": "A photorealistic photograph of a full-size working replica of a 15th-century caravel under sail on calm sea, late afternoon light, plain pale hazy sky behind her and nothing else in the frame. The ship is exactly the one in the ship reference: a small 15th-century Portuguese caravel, about 20 metres long, lateen-rigged with two masts carrying large triangular lateen sails on long slanted yards, the taller mainmast forward and a smaller mizzen aft, a dark tarred hull with planking lines, a raised deck at the stern, and a small white ensign at the stern. Seen exactly side-on, bow pointing right, the whole ship in frame. Weathered linen sails, real rope rigging, wet timber.",
+      "file": "ship-photo.png",
+      "seconds": 12.8
+    },
+    {
+      "id": "ship-oil",
+      "model": "black-forest-labs/flux-2-pro-preview",
+      "width": 1280,
+      "height": 896,
+      "seed": 1451,
+      "refs": [
+        "tools/art/refs/caravel-drawing.png"
+      ],
+      "prompt": "An oil painting of a 15th-century caravel under sail on calm sea, in the manner of 19th-century marine painting, warm light, plain pale sky behind her and nothing else in the frame. The ship is exactly the one in the ship reference: a small 15th-century Portuguese caravel, about 20 metres long, lateen-rigged with two masts carrying large triangular lateen sails on long slanted yards, the taller mainmast forward and a smaller mizzen aft, a dark tarred hull with planking lines, a raised deck at the stern, and a small white ensign at the stern. Seen exactly side-on, bow pointing right, the whole ship in frame.",
+      "file": "ship-oil.png",
+      "seconds": 11.6
+    },
+    {
+      "id": "ship-watercolour",
+      "model": "black-forest-labs/flux-2-pro-preview",
+      "width": 1280,
+      "height": 896,
+      "seed": 1451,
+      "refs": [
+        "tools/art/refs/caravel-drawing.png"
+      ],
+      "prompt": "A detailed hand-drawn illustration of a 15th-century caravel under sail, fine sepia ink linework with soft watercolour washes on warm parchment paper, like a plate in an old book of ships, plain parchment background and nothing else in the frame. The ship is exactly the one in the ship reference: a small 15th-century Portuguese caravel, about 20 metres long, lateen-rigged with two masts carrying large triangular lateen sails on long slanted yards, the taller mainmast forward and a smaller mizzen aft, a dark tarred hull with planking lines, a raised deck at the stern, and a small white ensign at the stern. Seen exactly side-on, bow pointing right, the whole ship in frame.",
+      "file": "ship-watercolour.png",
+      "seconds": 10.9
+    },
+    {
+      "id": "scene-photo",
+      "model": "black-forest-labs/flux-2-pro-preview",
+      "width": 1600,
+      "height": 896,
+      "seed": 1451,
+      "refs": [
+        "tools/art/refs/lisbon-layout.jpg",
+        "tools/art/refs/caravel-drawing.png"
+      ],
+      "prompt": "A photorealistic photograph, late afternoon golden light: the caravel from the second reference image sails into Lisbon harbour laid out as in the first reference image, seen side-on in the left half of the frame, bow pointing right toward the quay, sails full. The ship is exactly the one in the ship reference: a small 15th-century Portuguese caravel, about 20 metres long, lateen-rigged with two masts carrying large triangular lateen sails on long slanted yards, the taller mainmast forward and a smaller mizzen aft, a dark tarred hull with planking lines, a raised deck at the stern, and a small white ensign at the stern. Seen exactly side-on, bow pointing right, the whole ship in frame. Apart from the caravel, keep the layout of the first reference image: horizon at mid-height, the hill of Lisbon in the centre distance, a stone quay with barrels in the lower right corner. Historically accurate Lisbon in 1451: the Castle of São Jorge crowning the hill with medieval stone walls and square towers; the Alfama quarter below it, whitewashed houses with terracotta roofs stacked down the slope; the twin-towered Romanesque cathedral (Sé) among them; a low medieval stone wall along the riverfront. No Belém Tower, no modern buildings, no bridges, no grand waterfront square. No text, no border.",
+      "file": "scene-photo.png",
+      "seconds": 22.8
+    },
+    {
+      "id": "scene-oil",
+      "model": "black-forest-labs/flux-2-pro-preview",
+      "width": 1600,
+      "height": 896,
+      "seed": 1451,
+      "refs": [
+        "tools/art/refs/lisbon-layout.jpg",
+        "tools/art/refs/caravel-drawing.png"
+      ],
+      "prompt": "An oil painting in the manner of 19th-century marine painting, warm luminous light: the caravel from the second reference image sails into Lisbon harbour laid out as in the first reference image, seen side-on in the left half of the frame, bow pointing right toward the quay, sails full. The ship is exactly the one in the ship reference: a small 15th-century Portuguese caravel, about 20 metres long, lateen-rigged with two masts carrying large triangular lateen sails on long slanted yards, the taller mainmast forward and a smaller mizzen aft, a dark tarred hull with planking lines, a raised deck at the stern, and a small white ensign at the stern. Seen exactly side-on, bow pointing right, the whole ship in frame. Apart from the caravel, keep the layout of the first reference image: horizon at mid-height, the hill of Lisbon in the centre distance, a stone quay with barrels in the lower right corner. Historically accurate Lisbon in 1451: the Castle of São Jorge crowning the hill with medieval stone walls and square towers; the Alfama quarter below it, whitewashed houses with terracotta roofs stacked down the slope; the twin-towered Romanesque cathedral (Sé) among them; a low medieval stone wall along the riverfront. No Belém Tower, no modern buildings, no bridges, no grand waterfront square. No text, no border.",
+      "file": "scene-oil.png",
+      "seconds": 11.2
+    }
+  ]
+}
