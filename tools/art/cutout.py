@@ -61,6 +61,11 @@ def cut(img, sess, model):
     near = np.asarray(Image.fromarray((m > 0.3).astype(np.uint8) * 255).filter(ImageFilter.MaxFilter(31)), dtype=np.float32) / 255.0
     near = np.asarray(Image.fromarray((near * 255).astype(np.uint8)).filter(ImageFilter.GaussianBlur(6)), dtype=np.float32) / 255.0
     alpha = key * near
+    # Inside the subject, thin cloth lets some green through and would turn see-through. Where the
+    # model is sure it is the ship and the pixel is not the pure background green, keep it solid.
+    sure = np.asarray(Image.fromarray((m > 0.85).astype(np.uint8) * 255).filter(ImageFilter.MinFilter(7)), dtype=np.float32) / 255.0
+    solid = sure * np.clip(1 - (spill - 60) / 30, 0, 1)
+    alpha = np.maximum(alpha, solid)
     alpha = np.where(alpha < 0.05, 0, alpha)
     g2 = np.minimum(g, np.maximum(r, b))              # despill: no channel greener than the others
     fg = np.dstack([r, g2, b]).clip(0, 255)

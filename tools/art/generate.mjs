@@ -3,7 +3,8 @@
 //   CLOUDFLARE_ACCOUNT_ID=... CLOUDFLARE_API_TOKEN=... node tools/art/generate.mjs <batch> [only-id ...]
 //
 // <batch> names tools/art/batches/<batch>.json:
-//   { "note": "...", "items": [ { "id", "model", "prompt", "width", "height", "seed", "refs": ["tools/art/refs/x.png"] } ] }
+//   { "note": "...", "items": [ { "id", "model", "prompt", "width", "height", "seed", "refs": ["tools/art/refs/x.png"], "cutout": true } ] }
+// A ref of the form "art:<batch>/<file>" uses an earlier result from the art branch (to edit or clean it up).
 // Images are written to art/<batch>/<id>.<ext>, with art/<batch>/manifest.json recording each prompt.
 // Run by .github/workflows/generate-art.yml, which commits the results to the `art` branch.
 //
@@ -63,6 +64,7 @@ async function generate(item) {
     if (item.seed != null) form.append('seed', String(item.seed));
     if (item.steps) form.append('steps', String(item.steps));
     for (const [i, ref] of refs.entries()) {
+      if (ref.startsWith('art:')) throw new Error('art-branch references only work with the pro model');
       const buf = await readFile(path.join(ROOT, ref));
       form.append(`input_image_${i}`, new Blob([buf], { type: ref.endsWith('.png') ? 'image/png' : 'image/jpeg' }), path.basename(ref));
     }
@@ -77,7 +79,10 @@ async function generate(item) {
   if (item.seed != null) input.seed = item.seed;
   if (refs.length) {
     if (!GITHUB_REPOSITORY || !GITHUB_SHA) throw new Error('reference images need GITHUB_REPOSITORY and GITHUB_SHA (run in Actions)');
-    input.input_images = refs.map((r) => `https://raw.githubusercontent.com/${GITHUB_REPOSITORY}/${GITHUB_SHA}/${r}`);
+    // "art:<batch>/<file>" points at an earlier result on the art branch (for edits and clean-ups)
+    input.input_images = refs.map((r) => (r.startsWith('art:')
+      ? `https://raw.githubusercontent.com/${GITHUB_REPOSITORY}/art/art/${r.slice(4)}`
+      : `https://raw.githubusercontent.com/${GITHUB_REPOSITORY}/${GITHUB_SHA}/${r}`));
   }
   const json = await call(API, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ model: item.model, input }) });
   const result = json.result || json;

@@ -1,0 +1,411 @@
+{
+  "note": "Production run 1: two candidates for every harbour and hull look, the nau on the stocks, the Lagos and Funchal yards, clean vellum, and clean-up edits of the best Lisbon and Lisbon yard so far.",
+  "items": [
+    {
+      "id": "lisbon-clean-a",
+      "model": "black-forest-labs/flux-2-pro-preview",
+      "width": 1600,
+      "height": 896,
+      "seed": 3001,
+      "refs": [
+        "art:production-fix-1/lisbon-a.png"
+      ],
+      "prompt": "Edit this photograph and keep everything else exactly as it is (composition, light, the castle, the water): remove every car, street lamp, sign and modern window; turn the tall townhouse facades into small two- and three-storey medieval houses with whitewashed walls, small windows and terracotta tile roofs; give the cathedral two plain square towers without spires; make the two moored ships simple 15th-century caravels with lateen sails furled. The scene is Lisbon in 1451."
+    },
+    {
+      "id": "lisbon-clean-b",
+      "model": "black-forest-labs/flux-2-pro-preview",
+      "width": 1600,
+      "height": 896,
+      "seed": 3002,
+      "refs": [
+        "art:production-fix-1/lisbon-b.png"
+      ],
+      "prompt": "Edit this photograph and keep everything else exactly as it is (composition, light, the castle, the water, the beach): replace the Gothic church with tall spires by a plain fortress-like Romanesque cathedral with two square towers without spires and a rose window; turn the tall townhouse facades into small two- and three-storey medieval houses with whitewashed walls, small windows and terracotta tile roofs; remove any modern detail; make the moored ship a simple 15th-century caravel with furled lateen sails. The scene is Lisbon in 1451."
+    },
+    {
+      "id": "lagos-a",
+      "model": "black-forest-labs/flux-2-pro-preview",
+      "width": 1600,
+      "height": 896,
+      "seed": 3106,
+      "refs": [],
+      "prompt": "A photorealistic still from a big-budget historical film set in 1451, natural light, shot on a 35mm lens, meticulous period detail. Lagos on the Algarve coast, the harbour of Prince Henry the Navigator: a small walled town of low whitewashed houses with tile roofs on a gentle slope, a modest castle with square towers by the water, the simple church of Santa Maria, a long sandy beach where two small caravels are drawn up and a few fishing boats lie, and to the left golden sandstone cliffs and sea stacks. Warm late afternoon light. Camera on the water about 250 to 300 metres from the shore, at water level, horizon exactly at mid-height. The lower half of the frame is calm open water with soft ripples and long reflections, completely empty in the near water and across the left two-thirds: no boats, no quay, no posts, no rocks, nothing close to the camera. The shore and everything on it sit in the middle distance, small with distance. Nothing later than 1451 anywhere: no cars, street lamps, power lines, tyres, concrete, plastic, glass windows, motorboats, ferries, three-masted ships, modern clothing, tall townhouse facades, Baroque or Gothic spires. No text, no border, no watermark."
+    },
+    {
+      "id": "lagos-b",
+      "model": "black-forest-labs/flux-2-pro-preview",
+      "width": 1600,
+      "height": 896,
+      "seed": 3107,
+      "refs": [],
+      "prompt": "A photorealistic still from a big-budget historical film set in 1451, natural light, shot on a 35mm lens, meticulous period detail. Lagos on the Algarve coast, the harbour of Prince Henry the Navigator: a small walled town of low whitewashed houses with tile roofs on a gentle slope, a modest castle with square towers by the water, the simple church of Santa Maria, a long sandy beach where two small caravels are drawn up and a few fishing boats lie, and to the left golden sandstone cliffs and sea stacks. Warm late afternoon light. Camera on the water about 250 to 300 metres from the shore, at water level, horizon exactly at mid-height. The lower half of the frame is calm open water with soft ripples and long reflections, completely empty in the near water and across the left two-thirds: no boats, no quay, no posts, no rocks, nothing close to the camera. The shore and everything on it sit in the middle distance, small with distance. Nothing later than 1451 anywhere: no cars, street lamps, power lines, tyres, concrete, plastic, glass windows, motorboats, ferries, three-masted ships, modern clothing, tall townhouse facades, Baroque or Gothic spires. No text, no border, no watermark."
+    },
+    {
+      "id": "funchal-a",
+      "model": "black-forest-labs/flux-2-pro-preview",
+      "width": 1600,
+      "height": 896,
+      "seed": 3108,
+      "refs": [],
+      "prompt": "A photorealistic still from a big-budget historical film set in 1451, natural light, shot on a 35mm lens, meticulous period detail. Funchal on Madeira, a young settlement only thirty years old: a cluster of small whitewashed houses with tile roofs and a plain chapel above a beach of dark volcanic pebbles, steep green mountains rising straight behind into cloud, terraced fields and the first sugarcane, a waterfall in a ravine, two small boats on the beach. No fort, no large buildings. Soft morning light with mist on the peaks. Camera on the water about 250 to 300 metres from the shore, at water level, horizon exactly at mid-height. The lower half of the frame is calm open water with soft ripples and long reflections, completely empty in the near water and across the left two-thirds: no boats, no quay, no posts, no rocks, nothing close to the camera. The shore and everything on it sit in the middle distance, small with distance. Nothing later than 1451 anywhere: no cars, street lamps, power lines, tyres, concrete, plastic, glass windows, motorboats, ferries, three-masted ships, modern clothing, tall townhouse facades, Baroque or Gothic spires. No text, no border, no watermark."
+    },
+    {
+      "id": "funchal-b",
+      "model": "black-forest-labs/flux-2-pro-preview",
+      "width": 1600,
+      "height": 896,
+      "seed": 3109,
+      "refs": [],
+      "prompt": "A photorealistic still from a big-budget historical film set in 1451, natural light, shot on a 35mm lens, meticulous period detail. Funchal on Madeira, a young settlement only thirty years old: a cluster of small whitewashed houses with tile roofs and a plain chapel above a beach of dark volcanic pebbles, steep green mountains rising straight behind into cloud, terraced fields and the first sugarcane, a waterfall in a ravine, two small boats on the beach. No fort, no large buildings. Soft morning light with mist on the peaks. Camera on the water about 250 to 300 metres from the shore, at water level, horizon exactly at mid-height. The lower half of the frame is calm open water with soft ripples and long reflections, completely empty in the near water and across the left two-thirds: no boats, no quay, no posts, no rocks, nothing close to the camera. The shore and everything on it sit in the middle distance, small with distance. Nothing later than 1451 anywhere: no cars, street lamps, power lines, tyres, concrete, plastic, glass windows, motorboats, ferries, three-masted ships, modern clothing, tall townhouse facades, Baroque or Gothic spires. No text, no border, no watermark."
+    },
+    {
+      "id": "lanzarote-a",
+      "model": "black-forest-labs/flux-2-pro-preview",
+      "width": 1600,
+      "height": 896,
+      "seed": 3110,
+      "refs": [],
+      "prompt": "A photorealistic still from a big-budget historical film set in 1451, natural light, shot on a 35mm lens, meticulous period detail. The coast of Lanzarote in the Canary Islands: a small sheltered bay with dark sand, a handful of low white cube-shaped houses with flat roofs and a small stone watchtower, behind them a bare landscape of rust-red and brown volcanic cones and black lava fields under a hard clear sky, a few camels near the houses, one small boat on the sand. Bright midday light. Camera on the water about 250 to 300 metres from the shore, at water level, horizon exactly at mid-height. The lower half of the frame is calm open water with soft ripples and long reflections, completely empty in the near water and across the left two-thirds: no boats, no quay, no posts, no rocks, nothing close to the camera. The shore and everything on it sit in the middle distance, small with distance. Nothing later than 1451 anywhere: no cars, street lamps, power lines, tyres, concrete, plastic, glass windows, motorboats, ferries, three-masted ships, modern clothing, tall townhouse facades, Baroque or Gothic spires. No text, no border, no watermark."
+    },
+    {
+      "id": "lanzarote-b",
+      "model": "black-forest-labs/flux-2-pro-preview",
+      "width": 1600,
+      "height": 896,
+      "seed": 3111,
+      "refs": [],
+      "prompt": "A photorealistic still from a big-budget historical film set in 1451, natural light, shot on a 35mm lens, meticulous period detail. The coast of Lanzarote in the Canary Islands: a small sheltered bay with dark sand, a handful of low white cube-shaped houses with flat roofs and a small stone watchtower, behind them a bare landscape of rust-red and brown volcanic cones and black lava fields under a hard clear sky, a few camels near the houses, one small boat on the sand. Bright midday light. Camera on the water about 250 to 300 metres from the shore, at water level, horizon exactly at mid-height. The lower half of the frame is calm open water with soft ripples and long reflections, completely empty in the near water and across the left two-thirds: no boats, no quay, no posts, no rocks, nothing close to the camera. The shore and everything on it sit in the middle distance, small with distance. Nothing later than 1451 anywhere: no cars, street lamps, power lines, tyres, concrete, plastic, glass windows, motorboats, ferries, three-masted ships, modern clothing, tall townhouse facades, Baroque or Gothic spires. No text, no border, no watermark."
+    },
+    {
+      "id": "arguin-a",
+      "model": "black-forest-labs/flux-2-pro-preview",
+      "width": 1600,
+      "height": 896,
+      "seed": 3107,
+      "refs": [],
+      "prompt": "A photorealistic still from a big-budget historical film set in 1451, natural light, shot on a 35mm lens, meticulous period detail. Arguin island off the Saharan coast: a low flat island of pale sand barely above the turquoise shallows, a small square Portuguese trading fort of rough stone with one tower and a white flag with a red cross, a few Berber tents and fishing boats with lateen sails beached nearby, the yellow desert coast of the mainland a thin line behind. Shimmering heat haze, blinding light. Camera on the water about 250 to 300 metres from the shore, at water level, horizon exactly at mid-height. The lower half of the frame is calm open water with soft ripples and long reflections, completely empty in the near water and across the left two-thirds: no boats, no quay, no posts, no rocks, nothing close to the camera. The shore and everything on it sit in the middle distance, small with distance. Nothing later than 1451 anywhere: no cars, street lamps, power lines, tyres, concrete, plastic, glass windows, motorboats, ferries, three-masted ships, modern clothing, tall townhouse facades, Baroque or Gothic spires. No text, no border, no watermark."
+    },
+    {
+      "id": "arguin-b",
+      "model": "black-forest-labs/flux-2-pro-preview",
+      "width": 1600,
+      "height": 896,
+      "seed": 3108,
+      "refs": [],
+      "prompt": "A photorealistic still from a big-budget historical film set in 1451, natural light, shot on a 35mm lens, meticulous period detail. Arguin island off the Saharan coast: a low flat island of pale sand barely above the turquoise shallows, a small square Portuguese trading fort of rough stone with one tower and a white flag with a red cross, a few Berber tents and fishing boats with lateen sails beached nearby, the yellow desert coast of the mainland a thin line behind. Shimmering heat haze, blinding light. Camera on the water about 250 to 300 metres from the shore, at water level, horizon exactly at mid-height. The lower half of the frame is calm open water with soft ripples and long reflections, completely empty in the near water and across the left two-thirds: no boats, no quay, no posts, no rocks, nothing close to the camera. The shore and everything on it sit in the middle distance, small with distance. Nothing later than 1451 anywhere: no cars, street lamps, power lines, tyres, concrete, plastic, glass windows, motorboats, ferries, three-masted ships, modern clothing, tall townhouse facades, Baroque or Gothic spires. No text, no border, no watermark."
+    },
+    {
+      "id": "gambia-a",
+      "model": "black-forest-labs/flux-2-pro-preview",
+      "width": 1600,
+      "height": 896,
+      "seed": 3107,
+      "refs": [],
+      "prompt": "A photorealistic still from a big-budget historical film set in 1451, natural light, shot on a 35mm lens, meticulous period detail. The mouth of the Gambia River in West Africa: a very wide brown river meeting the sea, dense green mangroves along both banks, tall palms and baobab trees, a village of round mud-walled huts with conical thatched roofs among the trees, long dugout canoes with paddlers on the water in the middle distance, humid haze, warm late afternoon light. Camera on the water about 250 to 300 metres from the shore, at water level, horizon exactly at mid-height. The lower half of the frame is calm open water with soft ripples and long reflections, completely empty in the near water and across the left two-thirds: no boats, no quay, no posts, no rocks, nothing close to the camera. The shore and everything on it sit in the middle distance, small with distance. Nothing later than 1451 anywhere: no cars, street lamps, power lines, tyres, concrete, plastic, glass windows, motorboats, ferries, three-masted ships, modern clothing, tall townhouse facades, Baroque or Gothic spires. No text, no border, no watermark."
+    },
+    {
+      "id": "gambia-b",
+      "model": "black-forest-labs/flux-2-pro-preview",
+      "width": 1600,
+      "height": 896,
+      "seed": 3108,
+      "refs": [],
+      "prompt": "A photorealistic still from a big-budget historical film set in 1451, natural light, shot on a 35mm lens, meticulous period detail. The mouth of the Gambia River in West Africa: a very wide brown river meeting the sea, dense green mangroves along both banks, tall palms and baobab trees, a village of round mud-walled huts with conical thatched roofs among the trees, long dugout canoes with paddlers on the water in the middle distance, humid haze, warm late afternoon light. Camera on the water about 250 to 300 metres from the shore, at water level, horizon exactly at mid-height. The lower half of the frame is calm open water with soft ripples and long reflections, completely empty in the near water and across the left two-thirds: no boats, no quay, no posts, no rocks, nothing close to the camera. The shore and everything on it sit in the middle distance, small with distance. Nothing later than 1451 anywhere: no cars, street lamps, power lines, tyres, concrete, plastic, glass windows, motorboats, ferries, three-masted ships, modern clothing, tall townhouse facades, Baroque or Gothic spires. No text, no border, no watermark."
+    },
+    {
+      "id": "serraleoa-a",
+      "model": "black-forest-labs/flux-2-pro-preview",
+      "width": 1600,
+      "height": 896,
+      "seed": 3110,
+      "refs": [],
+      "prompt": "A photorealistic still from a big-budget historical film set in 1451, natural light, shot on a 35mm lens, meticulous period detail. The great bay of Sierra Leone: steep forested green mountains rising from the sea and wrapped in cloud, a long beach of golden sand, a small village of thatched huts among palms at the water's edge, dugout canoes pulled up on the beach, soft humid light after rain. Camera on the water about 250 to 300 metres from the shore, at water level, horizon exactly at mid-height. The lower half of the frame is calm open water with soft ripples and long reflections, completely empty in the near water and across the left two-thirds: no boats, no quay, no posts, no rocks, nothing close to the camera. The shore and everything on it sit in the middle distance, small with distance. Nothing later than 1451 anywhere: no cars, street lamps, power lines, tyres, concrete, plastic, glass windows, motorboats, ferries, three-masted ships, modern clothing, tall townhouse facades, Baroque or Gothic spires. No text, no border, no watermark."
+    },
+    {
+      "id": "serraleoa-b",
+      "model": "black-forest-labs/flux-2-pro-preview",
+      "width": 1600,
+      "height": 896,
+      "seed": 3111,
+      "refs": [],
+      "prompt": "A photorealistic still from a big-budget historical film set in 1451, natural light, shot on a 35mm lens, meticulous period detail. The great bay of Sierra Leone: steep forested green mountains rising from the sea and wrapped in cloud, a long beach of golden sand, a small village of thatched huts among palms at the water's edge, dugout canoes pulled up on the beach, soft humid light after rain. Camera on the water about 250 to 300 metres from the shore, at water level, horizon exactly at mid-height. The lower half of the frame is calm open water with soft ripples and long reflections, completely empty in the near water and across the left two-thirds: no boats, no quay, no posts, no rocks, nothing close to the camera. The shore and everything on it sit in the middle distance, small with distance. Nothing later than 1451 anywhere: no cars, street lamps, power lines, tyres, concrete, plastic, glass windows, motorboats, ferries, three-masted ships, modern clothing, tall townhouse facades, Baroque or Gothic spires. No text, no border, no watermark."
+    },
+    {
+      "id": "cestos-a",
+      "model": "black-forest-labs/flux-2-pro-preview",
+      "width": 1600,
+      "height": 896,
+      "seed": 3107,
+      "refs": [],
+      "prompt": "A photorealistic still from a big-budget historical film set in 1451, natural light, shot on a 35mm lens, meticulous period detail. The mouth of the Cestos river on the Grain Coast of West Africa: a river breaking through a sandbar into the surf, white breakers on the bar, dense dark rainforest behind with tall emergent trees, a small fishing village of thatched huts on the sandbar, canoes. Overcast tropical light, warm and hazy. Camera on the water about 250 to 300 metres from the shore, at water level, horizon exactly at mid-height. The lower half of the frame is calm open water with soft ripples and long reflections, completely empty in the near water and across the left two-thirds: no boats, no quay, no posts, no rocks, nothing close to the camera. The shore and everything on it sit in the middle distance, small with distance. Nothing later than 1451 anywhere: no cars, street lamps, power lines, tyres, concrete, plastic, glass windows, motorboats, ferries, three-masted ships, modern clothing, tall townhouse facades, Baroque or Gothic spires. No text, no border, no watermark."
+    },
+    {
+      "id": "cestos-b",
+      "model": "black-forest-labs/flux-2-pro-preview",
+      "width": 1600,
+      "height": 896,
+      "seed": 3108,
+      "refs": [],
+      "prompt": "A photorealistic still from a big-budget historical film set in 1451, natural light, shot on a 35mm lens, meticulous period detail. The mouth of the Cestos river on the Grain Coast of West Africa: a river breaking through a sandbar into the surf, white breakers on the bar, dense dark rainforest behind with tall emergent trees, a small fishing village of thatched huts on the sandbar, canoes. Overcast tropical light, warm and hazy. Camera on the water about 250 to 300 metres from the shore, at water level, horizon exactly at mid-height. The lower half of the frame is calm open water with soft ripples and long reflections, completely empty in the near water and across the left two-thirds: no boats, no quay, no posts, no rocks, nothing close to the camera. The shore and everything on it sit in the middle distance, small with distance. Nothing later than 1451 anywhere: no cars, street lamps, power lines, tyres, concrete, plastic, glass windows, motorboats, ferries, three-masted ships, modern clothing, tall townhouse facades, Baroque or Gothic spires. No text, no border, no watermark."
+    },
+    {
+      "id": "mina-a",
+      "model": "black-forest-labs/flux-2-pro-preview",
+      "width": 1600,
+      "height": 896,
+      "seed": 3105,
+      "refs": [],
+      "prompt": "A photorealistic still from a big-budget historical film set in 1451, natural light, shot on a 35mm lens, meticulous period detail. The Gold Coast of West Africa: a long beach of golden sand with heavy white surf, a rocky point with dark rocks, groves of coconut palms, a coastal village of rectangular mud-walled houses with thatched roofs, large canoes coming through the surf with paddlers, the green forest behind. Bright warm light, salt haze over the surf. No European fort. Camera on the water about 250 to 300 metres from the shore, at water level, horizon exactly at mid-height. The lower half of the frame is calm open water with soft ripples and long reflections, completely empty in the near water and across the left two-thirds: no boats, no quay, no posts, no rocks, nothing close to the camera. The shore and everything on it sit in the middle distance, small with distance. Nothing later than 1451 anywhere: no cars, street lamps, power lines, tyres, concrete, plastic, glass windows, motorboats, ferries, three-masted ships, modern clothing, tall townhouse facades, Baroque or Gothic spires. No text, no border, no watermark."
+    },
+    {
+      "id": "mina-b",
+      "model": "black-forest-labs/flux-2-pro-preview",
+      "width": 1600,
+      "height": 896,
+      "seed": 3106,
+      "refs": [],
+      "prompt": "A photorealistic still from a big-budget historical film set in 1451, natural light, shot on a 35mm lens, meticulous period detail. The Gold Coast of West Africa: a long beach of golden sand with heavy white surf, a rocky point with dark rocks, groves of coconut palms, a coastal village of rectangular mud-walled houses with thatched roofs, large canoes coming through the surf with paddlers, the green forest behind. Bright warm light, salt haze over the surf. No European fort. Camera on the water about 250 to 300 metres from the shore, at water level, horizon exactly at mid-height. The lower half of the frame is calm open water with soft ripples and long reflections, completely empty in the near water and across the left two-thirds: no boats, no quay, no posts, no rocks, nothing close to the camera. The shore and everything on it sit in the middle distance, small with distance. Nothing later than 1451 anywhere: no cars, street lamps, power lines, tyres, concrete, plastic, glass windows, motorboats, ferries, three-masted ships, modern clothing, tall townhouse facades, Baroque or Gothic spires. No text, no border, no watermark."
+    },
+    {
+      "id": "ship-caravel-a",
+      "model": "black-forest-labs/flux-2-pro-preview",
+      "width": 1280,
+      "height": 896,
+      "seed": 3208,
+      "refs": [
+        "tools/art/refs/caravel-photo-green.jpg"
+      ],
+      "cutout": true,
+      "prompt": "A photorealistic photograph of a real full-size 15th-century Portuguese caravel under sail, about 20 metres long: two masts with large triangular lateen sails on long slanted yards, the taller mainmast forward, a small raised stern deck with a rail, a plain white ensign on a thin pole at the stern, a short bowsprit. Same design as the ship in the reference photo, but a real ship without the stand. Seen exactly side-on, bow pointing right, warm late afternoon light from the right. A simple working ship of the 15th-century Portuguese Discoveries: weathered linen sails, hemp rigging, dark tarred planking. No gunports, no portholes, no gilded carving, no lanterns, not a galleon, not a pirate ship. Not a model: a real ship. She is isolated on a solid, flat, evenly lit chroma-key green background (#00b140) filling everything around her, including below the hull: no sea, no sky, no shadow, no floor, no stand, no cradle. The whole ship from the mastheads to the keel in frame, with a margin all round."
+    },
+    {
+      "id": "ship-caravel-b",
+      "model": "black-forest-labs/flux-2-pro-preview",
+      "width": 1280,
+      "height": 896,
+      "seed": 3209,
+      "refs": [
+        "tools/art/refs/caravel-photo-green.jpg"
+      ],
+      "cutout": true,
+      "prompt": "A photorealistic photograph of a real full-size 15th-century Portuguese caravel under sail, about 20 metres long: two masts with large triangular lateen sails on long slanted yards, the taller mainmast forward, a small raised stern deck with a rail, a plain white ensign on a thin pole at the stern, a short bowsprit. Same design as the ship in the reference photo, but a real ship without the stand. Seen exactly side-on, bow pointing right, warm late afternoon light from the right. A simple working ship of the 15th-century Portuguese Discoveries: weathered linen sails, hemp rigging, dark tarred planking. No gunports, no portholes, no gilded carving, no lanterns, not a galleon, not a pirate ship. Not a model: a real ship. She is isolated on a solid, flat, evenly lit chroma-key green background (#00b140) filling everything around her, including below the hull: no sea, no sky, no shadow, no floor, no stand, no cradle. The whole ship from the mastheads to the keel in frame, with a margin all round."
+    },
+    {
+      "id": "ship-caravel-cross-a",
+      "model": "black-forest-labs/flux-2-pro-preview",
+      "width": 1280,
+      "height": 896,
+      "seed": 3214,
+      "refs": [
+        "tools/art/refs/caravel-photo-green.jpg"
+      ],
+      "cutout": true,
+      "prompt": "A photorealistic photograph of a real full-size 15th-century Portuguese caravel under sail, about 20 metres long: two masts with large triangular lateen sails on long slanted yards, each sail painted with the red cross of the Order of Christ (a red cross with flared ends and a thin white cross inside it), a small raised stern deck, a white ensign on a thin pole at the stern. Same design as the ship in the reference photo, but a real ship without the stand. Seen exactly side-on, bow pointing right, warm late afternoon light from the right. A simple working ship of the 15th-century Portuguese Discoveries: weathered linen sails, hemp rigging, dark tarred planking. No gunports, no portholes, no gilded carving, no lanterns, not a galleon, not a pirate ship. Not a model: a real ship. She is isolated on a solid, flat, evenly lit chroma-key green background (#00b140) filling everything around her, including below the hull: no sea, no sky, no shadow, no floor, no stand, no cradle. The whole ship from the mastheads to the keel in frame, with a margin all round."
+    },
+    {
+      "id": "ship-caravel-cross-b",
+      "model": "black-forest-labs/flux-2-pro-preview",
+      "width": 1280,
+      "height": 896,
+      "seed": 3215,
+      "refs": [
+        "tools/art/refs/caravel-photo-green.jpg"
+      ],
+      "cutout": true,
+      "prompt": "A photorealistic photograph of a real full-size 15th-century Portuguese caravel under sail, about 20 metres long: two masts with large triangular lateen sails on long slanted yards, each sail painted with the red cross of the Order of Christ (a red cross with flared ends and a thin white cross inside it), a small raised stern deck, a white ensign on a thin pole at the stern. Same design as the ship in the reference photo, but a real ship without the stand. Seen exactly side-on, bow pointing right, warm late afternoon light from the right. A simple working ship of the 15th-century Portuguese Discoveries: weathered linen sails, hemp rigging, dark tarred planking. No gunports, no portholes, no gilded carving, no lanterns, not a galleon, not a pirate ship. Not a model: a real ship. She is isolated on a solid, flat, evenly lit chroma-key green background (#00b140) filling everything around her, including below the hull: no sea, no sky, no shadow, no floor, no stand, no cradle. The whole ship from the mastheads to the keel in frame, with a margin all round."
+    },
+    {
+      "id": "ship-caravel-square-a",
+      "model": "black-forest-labs/flux-2-pro-preview",
+      "width": 1280,
+      "height": 896,
+      "seed": 3215,
+      "refs": [
+        "tools/art/refs/caravel-photo-green.jpg"
+      ],
+      "cutout": true,
+      "prompt": "A photorealistic photograph of a real full-size Portuguese square-rigged caravel (caravela redonda) of about 1490 under sail, about 22 metres long: square sails on the foremast and mainmast, a triangular lateen sail on the mizzen at the stern, the square sails painted with the red cross of the Order of Christ, a small raised stern deck, a white ensign at the stern. Seen exactly side-on, bow pointing right, warm late afternoon light from the right. A simple working ship of the 15th-century Portuguese Discoveries: weathered linen sails, hemp rigging, dark tarred planking. No gunports, no portholes, no gilded carving, no lanterns, not a galleon, not a pirate ship. Not a model: a real ship. She is isolated on a solid, flat, evenly lit chroma-key green background (#00b140) filling everything around her, including below the hull: no sea, no sky, no shadow, no floor, no stand, no cradle. The whole ship from the mastheads to the keel in frame, with a margin all round."
+    },
+    {
+      "id": "ship-caravel-square-b",
+      "model": "black-forest-labs/flux-2-pro-preview",
+      "width": 1280,
+      "height": 896,
+      "seed": 3216,
+      "refs": [
+        "tools/art/refs/caravel-photo-green.jpg"
+      ],
+      "cutout": true,
+      "prompt": "A photorealistic photograph of a real full-size Portuguese square-rigged caravel (caravela redonda) of about 1490 under sail, about 22 metres long: square sails on the foremast and mainmast, a triangular lateen sail on the mizzen at the stern, the square sails painted with the red cross of the Order of Christ, a small raised stern deck, a white ensign at the stern. Seen exactly side-on, bow pointing right, warm late afternoon light from the right. A simple working ship of the 15th-century Portuguese Discoveries: weathered linen sails, hemp rigging, dark tarred planking. No gunports, no portholes, no gilded carving, no lanterns, not a galleon, not a pirate ship. Not a model: a real ship. She is isolated on a solid, flat, evenly lit chroma-key green background (#00b140) filling everything around her, including below the hull: no sea, no sky, no shadow, no floor, no stand, no cradle. The whole ship from the mastheads to the keel in frame, with a margin all round."
+    },
+    {
+      "id": "ship-barca-a",
+      "model": "black-forest-labs/flux-2-pro-preview",
+      "width": 1280,
+      "height": 896,
+      "seed": 3206,
+      "refs": [],
+      "cutout": true,
+      "prompt": "A photorealistic photograph of a real full-size 15th-century Portuguese barca under sail, a small coastal trading ship about 15 metres long: one mast with a single large square sail, a low hull with a short raised deck at the stern, a white ensign on a thin pole at the stern. Seen exactly side-on, bow pointing right, warm late afternoon light from the right. A simple working ship of the 15th-century Portuguese Discoveries: weathered linen sails, hemp rigging, dark tarred planking. No gunports, no portholes, no gilded carving, no lanterns, not a galleon, not a pirate ship. Not a model: a real ship. She is isolated on a solid, flat, evenly lit chroma-key green background (#00b140) filling everything around her, including below the hull: no sea, no sky, no shadow, no floor, no stand, no cradle. The whole ship from the mastheads to the keel in frame, with a margin all round."
+    },
+    {
+      "id": "ship-barca-b",
+      "model": "black-forest-labs/flux-2-pro-preview",
+      "width": 1280,
+      "height": 896,
+      "seed": 3207,
+      "refs": [],
+      "cutout": true,
+      "prompt": "A photorealistic photograph of a real full-size 15th-century Portuguese barca under sail, a small coastal trading ship about 15 metres long: one mast with a single large square sail, a low hull with a short raised deck at the stern, a white ensign on a thin pole at the stern. Seen exactly side-on, bow pointing right, warm late afternoon light from the right. A simple working ship of the 15th-century Portuguese Discoveries: weathered linen sails, hemp rigging, dark tarred planking. No gunports, no portholes, no gilded carving, no lanterns, not a galleon, not a pirate ship. Not a model: a real ship. She is isolated on a solid, flat, evenly lit chroma-key green background (#00b140) filling everything around her, including below the hull: no sea, no sky, no shadow, no floor, no stand, no cradle. The whole ship from the mastheads to the keel in frame, with a margin all round."
+    },
+    {
+      "id": "ship-barinel-a",
+      "model": "black-forest-labs/flux-2-pro-preview",
+      "width": 1280,
+      "height": 896,
+      "seed": 3208,
+      "refs": [],
+      "cutout": true,
+      "prompt": "A photorealistic photograph of a real full-size 15th-century Portuguese barinel under sail, a long low oared sailing ship about 25 metres long: a mainmast with a large square sail, a small lateen mizzen at the stern, a row of long oars (sweeps) out along the side, a white ensign on a thin pole at the stern. Seen exactly side-on, bow pointing right, warm late afternoon light from the right. A simple working ship of the 15th-century Portuguese Discoveries: weathered linen sails, hemp rigging, dark tarred planking. No gunports, no portholes, no gilded carving, no lanterns, not a galleon, not a pirate ship. Not a model: a real ship. She is isolated on a solid, flat, evenly lit chroma-key green background (#00b140) filling everything around her, including below the hull: no sea, no sky, no shadow, no floor, no stand, no cradle. The whole ship from the mastheads to the keel in frame, with a margin all round."
+    },
+    {
+      "id": "ship-barinel-b",
+      "model": "black-forest-labs/flux-2-pro-preview",
+      "width": 1280,
+      "height": 896,
+      "seed": 3209,
+      "refs": [],
+      "cutout": true,
+      "prompt": "A photorealistic photograph of a real full-size 15th-century Portuguese barinel under sail, a long low oared sailing ship about 25 metres long: a mainmast with a large square sail, a small lateen mizzen at the stern, a row of long oars (sweeps) out along the side, a white ensign on a thin pole at the stern. Seen exactly side-on, bow pointing right, warm late afternoon light from the right. A simple working ship of the 15th-century Portuguese Discoveries: weathered linen sails, hemp rigging, dark tarred planking. No gunports, no portholes, no gilded carving, no lanterns, not a galleon, not a pirate ship. Not a model: a real ship. She is isolated on a solid, flat, evenly lit chroma-key green background (#00b140) filling everything around her, including below the hull: no sea, no sky, no shadow, no floor, no stand, no cradle. The whole ship from the mastheads to the keel in frame, with a margin all round."
+    },
+    {
+      "id": "ship-nau-a",
+      "model": "black-forest-labs/flux-2-pro-preview",
+      "width": 1280,
+      "height": 896,
+      "seed": 3204,
+      "refs": [
+        "art:photoreal-look-1/nau-green.png"
+      ],
+      "cutout": true,
+      "prompt": "A photorealistic photograph of a real full-size Portuguese nau (carrack) of about 1490 under sail, about 35 metres long: a high rounded hull, a tall forecastle and a sterncastle, square sails on the foremast and mainmast with a topsail above the mainsail, a lateen mizzen, a spritsail under the bowsprit, plain undyed sails. Same ship as the reference photo but plain sails and no decoration. Seen exactly side-on, bow pointing right, warm late afternoon light from the right. A simple working ship of the 15th-century Portuguese Discoveries: weathered linen sails, hemp rigging, dark tarred planking. No gunports, no portholes, no gilded carving, no lanterns, not a galleon, not a pirate ship. Not a model: a real ship. She is isolated on a solid, flat, evenly lit chroma-key green background (#00b140) filling everything around her, including below the hull: no sea, no sky, no shadow, no floor, no stand, no cradle. The whole ship from the mastheads to the keel in frame, with a margin all round."
+    },
+    {
+      "id": "ship-nau-b",
+      "model": "black-forest-labs/flux-2-pro-preview",
+      "width": 1280,
+      "height": 896,
+      "seed": 3205,
+      "refs": [
+        "art:photoreal-look-1/nau-green.png"
+      ],
+      "cutout": true,
+      "prompt": "A photorealistic photograph of a real full-size Portuguese nau (carrack) of about 1490 under sail, about 35 metres long: a high rounded hull, a tall forecastle and a sterncastle, square sails on the foremast and mainmast with a topsail above the mainsail, a lateen mizzen, a spritsail under the bowsprit, plain undyed sails. Same ship as the reference photo but plain sails and no decoration. Seen exactly side-on, bow pointing right, warm late afternoon light from the right. A simple working ship of the 15th-century Portuguese Discoveries: weathered linen sails, hemp rigging, dark tarred planking. No gunports, no portholes, no gilded carving, no lanterns, not a galleon, not a pirate ship. Not a model: a real ship. She is isolated on a solid, flat, evenly lit chroma-key green background (#00b140) filling everything around her, including below the hull: no sea, no sky, no shadow, no floor, no stand, no cradle. The whole ship from the mastheads to the keel in frame, with a margin all round."
+    },
+    {
+      "id": "ship-nau-cross-a",
+      "model": "black-forest-labs/flux-2-pro-preview",
+      "width": 1280,
+      "height": 896,
+      "seed": 3210,
+      "refs": [
+        "art:photoreal-look-1/nau-green.png"
+      ],
+      "cutout": true,
+      "prompt": "A photorealistic photograph of a real full-size Portuguese nau (carrack) of about 1490 under sail, about 35 metres long: a high rounded hull, a tall forecastle and a sterncastle, square sails on the foremast and mainmast with a topsail above the mainsail, each square sail painted with the red cross of the Order of Christ (red cross with flared ends and a thin white cross inside), a lateen mizzen, a spritsail. Same ship as the reference photo, without the gilding. Seen exactly side-on, bow pointing right, warm late afternoon light from the right. A simple working ship of the 15th-century Portuguese Discoveries: weathered linen sails, hemp rigging, dark tarred planking. No gunports, no portholes, no gilded carving, no lanterns, not a galleon, not a pirate ship. Not a model: a real ship. She is isolated on a solid, flat, evenly lit chroma-key green background (#00b140) filling everything around her, including below the hull: no sea, no sky, no shadow, no floor, no stand, no cradle. The whole ship from the mastheads to the keel in frame, with a margin all round."
+    },
+    {
+      "id": "ship-nau-cross-b",
+      "model": "black-forest-labs/flux-2-pro-preview",
+      "width": 1280,
+      "height": 896,
+      "seed": 3211,
+      "refs": [
+        "art:photoreal-look-1/nau-green.png"
+      ],
+      "cutout": true,
+      "prompt": "A photorealistic photograph of a real full-size Portuguese nau (carrack) of about 1490 under sail, about 35 metres long: a high rounded hull, a tall forecastle and a sterncastle, square sails on the foremast and mainmast with a topsail above the mainsail, each square sail painted with the red cross of the Order of Christ (red cross with flared ends and a thin white cross inside), a lateen mizzen, a spritsail. Same ship as the reference photo, without the gilding. Seen exactly side-on, bow pointing right, warm late afternoon light from the right. A simple working ship of the 15th-century Portuguese Discoveries: weathered linen sails, hemp rigging, dark tarred planking. No gunports, no portholes, no gilded carving, no lanterns, not a galleon, not a pirate ship. Not a model: a real ship. She is isolated on a solid, flat, evenly lit chroma-key green background (#00b140) filling everything around her, including below the hull: no sea, no sky, no shadow, no floor, no stand, no cradle. The whole ship from the mastheads to the keel in frame, with a margin all round."
+    },
+    {
+      "id": "stocks-keel",
+      "model": "black-forest-labs/flux-2-pro-preview",
+      "width": 1280,
+      "height": 896,
+      "seed": 3300,
+      "refs": [],
+      "prompt": "A photorealistic photograph in the royal shipyard on the riverbank of Lisbon in the 1470s, side view from about 40 metres, soft hazy morning light, the river Tagus behind. The same timber slipway, the same viewpoint and framing in every picture of this series, the ship centred, bow to the right, people at true human scale (about a twentieth of the ship's length). Only the keel is laid on the slipway blocks: a long straight oak keel about 30 metres, with the curved stem post at the bow and the sternpost raised, a few shipwrights with adzes. Nothing later than 1451 anywhere: no cars, street lamps, power lines, tyres, concrete, plastic, glass windows, motorboats, ferries, three-masted ships, modern clothing, tall townhouse facades, Baroque or Gothic spires. No text, no border, no watermark."
+    },
+    {
+      "id": "stocks-frames",
+      "model": "black-forest-labs/flux-2-pro-preview",
+      "width": 1280,
+      "height": 896,
+      "seed": 3300,
+      "refs": [
+        "art:photoreal-look-1/frames-photo.png"
+      ],
+      "prompt": "A photorealistic photograph in the royal shipyard on the riverbank of Lisbon in the 1470s, side view from about 40 metres, soft hazy morning light, the river Tagus behind. The same timber slipway, the same viewpoint and framing in every picture of this series, the ship centred, bow to the right, people at true human scale (about a twentieth of the ship's length). The keel with rows of curved oak frames (ribs) standing up along its whole length, no planking yet, shipwrights on scaffolding. Nothing later than 1451 anywhere: no cars, street lamps, power lines, tyres, concrete, plastic, glass windows, motorboats, ferries, three-masted ships, modern clothing, tall townhouse facades, Baroque or Gothic spires. No text, no border, no watermark."
+    },
+    {
+      "id": "stocks-planked",
+      "model": "black-forest-labs/flux-2-pro-preview",
+      "width": 1280,
+      "height": 896,
+      "seed": 3300,
+      "refs": [],
+      "prompt": "A photorealistic photograph in the royal shipyard on the riverbank of Lisbon in the 1470s, side view from about 40 metres, soft hazy morning light, the river Tagus behind. The same timber slipway, the same viewpoint and framing in every picture of this series, the ship centred, bow to the right, people at true human scale (about a twentieth of the ship's length). The hull fully planked with oak, the high sterncastle and forecastle framed, scaffolding along the side, shipwrights caulking the seams with tar and oakum, no masts yet. Nothing later than 1451 anywhere: no cars, street lamps, power lines, tyres, concrete, plastic, glass windows, motorboats, ferries, three-masted ships, modern clothing, tall townhouse facades, Baroque or Gothic spires. No text, no border, no watermark."
+    },
+    {
+      "id": "stocks-rigged",
+      "model": "black-forest-labs/flux-2-pro-preview",
+      "width": 1280,
+      "height": 896,
+      "seed": 3300,
+      "refs": [],
+      "prompt": "A photorealistic photograph in the royal shipyard on the riverbank of Lisbon in the 1470s, side view from about 40 metres, soft hazy morning light, the river Tagus behind. The same timber slipway, the same viewpoint and framing in every picture of this series, the ship centred, bow to the right, people at true human scale (about a twentieth of the ship's length). The finished hull of a nau (carrack) still on the slipway, tarred, the three masts stepped and the standing rigging set up, yards crossed but no sails bent on, men aloft. Nothing later than 1451 anywhere: no cars, street lamps, power lines, tyres, concrete, plastic, glass windows, motorboats, ferries, three-masted ships, modern clothing, tall townhouse facades, Baroque or Gothic spires. No text, no border, no watermark."
+    },
+    {
+      "id": "yard-lisbon-clean",
+      "model": "black-forest-labs/flux-2-pro-preview",
+      "width": 1600,
+      "height": 896,
+      "seed": 3401,
+      "refs": [
+        "art:production-fix-1/yard-lisbon-caravel.png"
+      ],
+      "prompt": "Edit this photograph and keep everything else exactly as it is (the caravel on the slipway, the shipwrights, the timber, the light): replace the blue and yellow flag with a plain white ensign; remove the three-masted ship on the river and put a small 15th-century fishing boat with a lateen sail there instead; turn the buildings of the city behind into small medieval whitewashed houses with tile roofs below a castle on the hill. The scene is Lisbon in the 1450s."
+    },
+    {
+      "id": "yard-lagos",
+      "model": "black-forest-labs/flux-2-pro-preview",
+      "width": 1600,
+      "height": 896,
+      "seed": 3402,
+      "refs": [
+        "tools/art/refs/caravel-photo-green.jpg"
+      ],
+      "prompt": "A photorealistic still from a big-budget historical film set in 1451, natural light, shot on a 35mm lens, meticulous period detail. The beach at Lagos on the Algarve, used as a shipyard: the caravel from the reference photo is hauled up on the sand on timber rollers and careened (leaned over) for her hull to be scraped and tarred, seen side-on from about 35 metres, bow to the right. Shipwrights at true human scale with scrapers and tar pots, a smoking fire under a cauldron, timber and rope on the sand; the walled town and the golden cliffs behind. Ignore the green background and the stand in the reference. Nothing later than 1451 anywhere: no cars, street lamps, power lines, tyres, concrete, plastic, glass windows, motorboats, ferries, three-masted ships, modern clothing, tall townhouse facades, Baroque or Gothic spires. No text, no border, no watermark."
+    },
+    {
+      "id": "yard-funchal",
+      "model": "black-forest-labs/flux-2-pro-preview",
+      "width": 1600,
+      "height": 896,
+      "seed": 3403,
+      "refs": [
+        "tools/art/refs/caravel-photo-green.jpg"
+      ],
+      "prompt": "A photorealistic still from a big-budget historical film set in 1451, natural light, shot on a 35mm lens, meticulous period detail. A small boatyard on the dark volcanic pebble beach of Funchal on Madeira: the caravel from the reference photo stands on a short timber slipway for repairs, seen side-on from about 35 metres, bow to the right, shipwrights at true human scale fitting a new plank; steep green mountains with mist behind, a few small white houses and a chapel. Ignore the green background and the stand in the reference. Nothing later than 1451 anywhere: no cars, street lamps, power lines, tyres, concrete, plastic, glass windows, motorboats, ferries, three-masted ships, modern clothing, tall townhouse facades, Baroque or Gothic spires. No text, no border, no watermark."
+    },
+    {
+      "id": "vellum-clean",
+      "model": "black-forest-labs/flux-2-pro-preview",
+      "width": 1600,
+      "height": 896,
+      "seed": 3501,
+      "refs": [],
+      "prompt": "A top-down photograph of a smooth, clean sheet of fine vellum, evenly lit, a pale warm cream colour with only a very soft natural skin texture and the faintest variation in tone, no stains, no foxing, no creases, no edges, no writing, filling the whole frame."
+    }
+  ]
+}
