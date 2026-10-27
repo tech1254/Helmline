@@ -109,12 +109,23 @@ def main():
         lows.append(np.asarray(im.resize((160, 90)))[45:].reshape(-1, 3).mean(0))
         total += save_webp(fit(im, 1600), f'{IMG}/ports/{pid}.webp', 72)
         data['ports'].append(pid)
+        if pid in picks.get('light', {}):
+            a = np.asarray(im).astype(np.float32)
+            haze = a[int(a.shape[0] * .46):int(a.shape[0] * .52)].reshape(-1, 3).mean(0)   # just under the horizon
+            data.setdefault('light', {})[pid] = {**picks['light'][pid], 'hazeColour': [round(float(x)) for x in haze]}
     light = np.mean(lows, axis=0)
     for sid, p in picks['ships'].items():
         im = ship(load(p['src']), p['waterline'], light)
         im = fit(im, 900)
         total += save_webp(im, f'{IMG}/ships/{sid}.webp', 80)
-        data['ships'][sid] = {'w': im.width, 'h': im.height, 'length': p['length']}
+        px = np.asarray(im).astype(np.float32)
+        px = px[px[..., 3] > 200][:, :3]
+        L = px @ np.array([.2126, .7152, .0722])
+        lo = px[L <= np.percentile(L, 3)].mean(0)                      # her deepest shadows
+        hi = px[L >= np.percentile(L, 92)]
+        hi = hi[(hi.max(1) - hi.min(1)) <= np.percentile(hi.max(1) - hi.min(1), 40)].mean(0)   # her sailcloth in full light
+        data['ships'][sid] = {'w': im.width, 'h': im.height, 'length': p['length'],
+                              'lo': [round(float(x), 1) for x in lo], 'hi': [round(float(x), 1) for x in hi]}
     for kind in ('stocks', 'yards'):
         for k, p in picks[kind].items():
             total += save_webp(fit(load(p).convert('RGB'), 1280), f'{IMG}/{kind}/{k}.webp', 72)

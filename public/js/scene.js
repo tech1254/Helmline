@@ -13,7 +13,7 @@ import { cam, clampCam } from './view.js';
 import { COS0 } from './world.js';
 import { $, fmtDate } from './util.js';
 import { shipImage, ART_BOX } from './shipart.js';
-import { portPhoto, shipPhoto, photoImage, PX_PER_M } from './photos.js';
+import { portPhoto, shipPhoto, photoImage, gradedShip, PX_PER_M } from './photos.js';
 import { CHART_REWARD } from './config.js';
 import { releaseToasts } from './notices.js';
 
@@ -249,7 +249,9 @@ function draw(A, t, sailT) {
 // from the left with her sails set and comes to rest; a soft broken reflection below her.
 function drawPhotoShip(c, A, t, sailT, s, waterY) {
   const { w } = A;
-  const img = A.photoImg, ph = A.photo;
+  const ph = A.photo;
+  if (!A.shipLit) A.shipLit = gradedShip(A.photoImg, ph, A.portId); // relit once for this harbour's light
+  const img = A.shipLit;
   let shipW = ph.length * PX_PER_M * s;
   shipW = Math.min(shipW, w * 0.92);
   const shipH = shipW * ph.h / ph.w;
