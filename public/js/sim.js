@@ -13,6 +13,7 @@ import { S, market, ui } from './state.js';
 import { save } from './save.js';
 import { revealAt } from './fog.js';
 import { dock, observe, replan } from './voyage.js';
+import { startArrival } from './scene.js';
 import { $, cz, fmtDate } from './util.js';
 import { log } from './pricebook.js';
 import { confirmDialog } from './dialog.js';
@@ -61,7 +62,7 @@ export function update(dtSec) {
       if (S.trail.length > 4000) S.trail.splice(0, S.trail.length - 4000);
     }
     if (!sh.route.length) {
-      if (sh.dest?.port) dock(sh.dest.port);
+      if (sh.dest?.port) { startArrival(sh.dest.port); dock(sh.dest.port); }
       else { sh.dest = null; toast('Arrived at the mark. Awaiting orders.'); save(); }
       break;
     }

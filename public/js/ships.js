@@ -240,6 +240,7 @@ export function ensureFlagship(S) {
   if (!sh.name) sh.name = FLAGSHIP_NAME;
   sh.fit = normalFit(sh.hull, sh.fit);
   if (!S.yard) S.yard = { orders: [], built: 0 };
+  if (!S.called) S.called = Object.fromEntries(Object.keys(S.seen || {}).filter((p) => (S.seen[p].day ?? -1) >= 0).map((p) => [p, true]));
   return sh;
 }
 

@@ -15,5 +15,6 @@ for (const [h, fit] of items) html += `<div>${shipSVG({ hull: h, fit, name: 'Sã
 for (const st of ['ink', 'pencil']) html += `<div>${shipSVG({ hull: 'nau' }, { style: st })}<p>${st}</p></div>`;
 for (const s of [0.1, 0.3, 0.55, 0.8, 0.95]) html += `<div>${shipSVG({ hull: 'nau' }, { stage: s })}<p>stage ${s}</p></div>`;
 html += `<div>${shipSVG({ hull: 'caravel', fit:{mark:'cross'} }, { crop: 'tight', sea: true })}<p>tight</p></div>`;
+for (const h of ['caravel','nau']) html += `<div>${shipSVG({ hull: h, fit:{flags:'streamers', rig: 'square'} }, { furled: true, sea: true })}<p>furled ${h}</p></div>`;
 document.body.innerHTML = html;
 </script>

@@ -33,6 +33,7 @@ export function renderNoticeBadge() {
 
 export function toast(html, kind = '', feed = true) {
   if (feed && S) addNotice(html, kind);
+  if (ui.arrival) { ui.arrival.held.push([html, kind]); return; } // shown once the arrival scene ends
   placeToasts();
   const el = $('toast');
   const item = document.createElement('div');
@@ -73,6 +74,11 @@ export function placeToasts() {
   el.style.removeProperty('--toast-max');
   const room = open ? Math.round(open.top - top - 8) : null;
   el.style.maxHeight = room === null ? '' : `${room < 44 ? 0 : room}px`; // no room for a whole pop-up: none
+}
+
+// Pop-ups held back during the arrival scene, shown when it ends (already in the feed).
+export function releaseToasts(list) {
+  for (const [html, kind] of list.slice(-4)) toast(html, kind, false);
 }
 
 export function hint(html, kind = '') {

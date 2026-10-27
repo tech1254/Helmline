@@ -5,6 +5,7 @@
 //   shipSVG({ hull, fit, name }, { style, stage, sea, crop, width })
 //     style: 'colour' (default), 'ink' (wash only, for ships you could buy) or 'pencil' (locked)
 //     stage: 0 to 1, a ship on the stocks (keel, frames, planking, masts, rigging); 1 = finished
+//     furled: finished, with her sails brailed up on the yards (coming alongside)
 //     sea:   draw water under her
 //     crop:  'fixed' keeps every hull at the same scale (to compare sizes); 'tight' fills the box
 // Side view, bow to the right. Units: the waterline is y = WL, the box is 420 wide.
@@ -56,6 +57,7 @@ export function shipSVG(ship, opts = {}) {
   const fit = normalFit(hull, ship?.fit);
   const style = opts.style || 'colour';
   const stage = opts.stage ?? 1;
+  const furled = !!opts.furled;
   const id = `sa${++uid}`;
   const R = rng(hull.length * 97 + (fit.rig === 'square' ? 7 : 3));
   const sh = SHAPES[hull];
@@ -186,7 +188,8 @@ export function shipSVG(ship, opts = {}) {
   // --- masts, yards, sails, rigging ---
   if (stage >= 0.7) {
     const rigged = stage >= 0.9;
-    const sails = stage >= 1;
+    const sails = stage >= 1 && !furled;
+    const bundle = (d, wdt) => `<path d="${d}" stroke="${ink}" stroke-width="${wdt + 2}" stroke-linecap="round" fill="none"/><path d="${d}" stroke="${colour ? CLOTH[fit.cloth] : '#efe5cc'}" stroke-width="${wdt}" stroke-linecap="round" fill="none" data-part="furled"/>`;
     const cloth = colour ? CLOTH[fit.cloth] : pencil ? 'none' : '#efe5cc';
     const back = [];
     const front = [];
@@ -208,6 +211,7 @@ export function shipSVG(ship, opts = {}) {
         const yy = top + 18;
         const footY = yy + m.h * 0.5;
         front.push(`<path d="M ${f1(mx - w / 2)} ${f1(yy)} L ${f1(mx + w / 2)} ${f1(yy)}" stroke="${WOOD}" stroke-width="3" stroke-linecap="round" data-part="yard"/>`);
+        if (furled) { front.push(bundle(`M ${f1(mx - w / 2 + 4)} ${f1(yy + 3)} Q ${f1(mx)} ${f1(yy + 7)} ${f1(mx + w / 2 - 4)} ${f1(yy + 3)}`, 5)); if (m.top) front.push(bundle(`M ${f1(mx - w * 0.25)} ${f1(top + 5)} L ${f1(mx + w * 0.25)} ${f1(top + 5)}`, 4)); }
         if (sails) {
           const sail = `M ${f1(mx - w / 2)} ${f1(yy)} L ${f1(mx + w / 2)} ${f1(yy)} Q ${f1(mx + w / 2 + 7)} ${f1((yy + footY) / 2)} ${f1(mx + w / 2 - 2)} ${f1(footY)} Q ${f1(mx)} ${f1(footY + 9)} ${f1(mx - w / 2 + 2)} ${f1(footY)} Q ${f1(mx - w / 2 - 7)} ${f1((yy + footY) / 2)} ${f1(mx - w / 2)} ${f1(yy)} Z`;
           front.push(sailShape(sail, cloth, ink, sw, colour, pencil, id, 'sail'));
@@ -233,6 +237,7 @@ export function shipSVG(ship, opts = {}) {
         const bx = mx - L * 0.22 * s, by = top - 14 * s;
         const cx = mx - L * 0.12 * s, cy = base - 6;
         front.push(`<path d="M ${f1(ax)} ${f1(ay)} L ${f1(bx)} ${f1(by)}" stroke="${WOOD}" stroke-width="${s > 0.8 ? 3 : 2.4}" stroke-linecap="round" data-part="yard"/>`);
+        if (furled) front.push(bundle(`M ${f1(ax - (ax - bx) * 0.08)} ${f1(ay - (ay - by) * 0.08 + 3)} L ${f1(bx + (ax - bx) * 0.1)} ${f1(by + (ay - by) * 0.1 + 3)}`, 5));
         if (sails) {
           const sail = `M ${f1(ax)} ${f1(ay)} L ${f1(bx)} ${f1(by)} Q ${f1(bx - 4)} ${f1((by + cy) / 2 + 12)} ${f1(cx)} ${f1(cy)} Q ${f1((cx + ax) / 2)} ${f1(cy + 6)} ${f1(ax)} ${f1(ay)} Z`;
           front.push(sailShape(sail, cloth, ink, sw, colour, pencil, id, 'sail'));
@@ -249,7 +254,7 @@ export function shipSVG(ship, opts = {}) {
         }
       }
       // pennants at the mastheads
-      if (sails && fit.flags === 'streamers') front.push(streamer(mx + rake, top, 26 + m.h * 0.18, colour, ink, R));
+      if ((sails || furled) && fit.flags === 'streamers') front.push(streamer(mx + rake, top, 26 + m.h * 0.18, colour, ink, R));
     });
     // spritsail and bowsprit
     if (fit.tack === 'sprit' || hull === 'nau') {
@@ -268,7 +273,7 @@ export function shipSVG(ship, opts = {}) {
       }
     }
     // ensign at the stern
-    if (sails) {
+    if (sails || furled) {
       const fx = X(0.01), fy = deckY(0) - (sh.aft ? sh.aft[2] : 0) - 2;
       back.push(`<path d="M ${f1(fx)} ${f1(fy)} V ${f1(fy - 30)}" stroke="${WOOD}" stroke-width="1.6"/>`);
       front.push(ensign(fx, fy - 30, colour, pencil, ink));

@@ -20,6 +20,7 @@ import { confirmDialog } from './dialog.js';
 import { hint, toast } from './notices.js';
 import { log } from './pricebook.js';
 import { shipSVG } from './shipart.js';
+import { SCENE_MODES, sceneMode, setSceneMode } from './scene.js';
 
 export const FULL_YARD = 'lisbon';
 export const YARDS = ['lisbon', 'lagos', 'funchal'];
@@ -163,6 +164,7 @@ function registerHtml() {
       <p class="fine">Hulls come within reach as your standing grows and the years pass. Pencil sketches are ships you cannot have yet.</p>
       <ol class="hulls">${hulls}</ol>
       ${fleet ? `<h3 class="sec">Your captains' ships</h3><ul class="fleet-list">${fleet}</ul>` : ''}
+      <p class="setting"><label>Arrival scenes <select data-scene-mode>${SCENE_MODES.map(([v, l]) => `<option value="${v}" ${sceneMode() === v ? 'selected' : ''}>${l}</option>`).join('')}</select></label> <span class="fine">Your ship sailing into each port. Tap to skip one.</span></p>
     </div>
   </div>`;
 }
@@ -303,6 +305,9 @@ export function initShipyard() {
       const changed = cleanName(e.target.value) && cleanName(e.target.value) !== S.ship.name;
       if (!!btn !== !!changed) { const pos = e.target.selectionStart; renderShips(); const inp = el.querySelector('[data-yard-name]'); inp.focus(); inp.setSelectionRange(pos, pos); }
     }
+  });
+  el.addEventListener('change', (e) => {
+    if (e.target.matches('[data-scene-mode]')) { setSceneMode(e.target.value); save(); }
   });
   el.addEventListener('keydown', (e) => {
     if (e.key === 'Escape' && !ui.modal) { e.stopPropagation(); closeShips(); }
