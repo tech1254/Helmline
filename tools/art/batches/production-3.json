@@ -1,0 +1,71 @@
+{
+ "note": "Production run 3: the bare keel made from the frames picture, the Arguin flag again, and Lisbon without street lamps.",
+ "items": [
+  {
+   "id": "stocks-keel-a",
+   "model": "black-forest-labs/flux-2-pro-preview",
+   "width": 1280,
+   "height": 896,
+   "seed": 4301,
+   "refs": [
+    "art:production-2/stocks-frames-b.png"
+   ],
+   "prompt": "Edit this photograph and keep everything else exactly as it is: the same camera, framing, slipway, scaffolding, sheds, people, river and light. Change only the ship: take away every curved rib (frame), so that all that is left on the slipway is the bare keel, a single long straight squared oak beam lying on the blocks along the slipway, with the tall curved stem post standing up at its right end and the straight sternpost standing up at its left end, both held by a few props. Nothing else is built yet: you see the river and the yard through the empty space where the hull will be. Nothing later than 1480 anywhere: no modern detail. No text, no border, no watermark."
+  },
+  {
+   "id": "stocks-keel-b",
+   "model": "black-forest-labs/flux-2-pro-preview",
+   "width": 1280,
+   "height": 896,
+   "seed": 4302,
+   "refs": [
+    "art:production-2/stocks-frames-b.png"
+   ],
+   "prompt": "Edit this photograph and keep everything else exactly as it is: the same camera, framing, slipway, scaffolding, sheds, people, river and light. Change only the ship: take away every curved rib (frame), so that all that is left on the slipway is the bare keel, a single long straight squared oak beam lying on the blocks along the slipway, with the tall curved stem post standing up at its right end and the straight sternpost standing up at its left end, both held by a few props. Nothing else is built yet: you see the river and the yard through the empty space where the hull will be. Nothing later than 1480 anywhere: no modern detail. No text, no border, no watermark."
+  },
+  {
+   "id": "arguin-flag-a",
+   "model": "black-forest-labs/flux-2-pro-preview",
+   "width": 1600,
+   "height": 896,
+   "seed": 4311,
+   "refs": [
+    "art:production-1/arguin-a.png"
+   ],
+   "prompt": "Edit this photograph and keep everything else exactly as it is (composition, light, the fort, the tents, the boats, the water): change only the flag on the fort's tower to the flag of the Portuguese Order of Christ: a plain white flag with one large red cross with straight arms that widen toward their square ends, filling most of the flag, and a thin white cross drawn inside the red one. No circle, no ring, no border, no other emblem. Also remove the small white building on the dunes in the distance. Nothing modern. No text, no border, no watermark."
+  },
+  {
+   "id": "arguin-flag-b",
+   "model": "black-forest-labs/flux-2-pro-preview",
+   "width": 1600,
+   "height": 896,
+   "seed": 4312,
+   "refs": [
+    "art:production-1/arguin-a.png"
+   ],
+   "prompt": "Edit this photograph and keep everything else exactly as it is (composition, light, the fort, the tents, the boats, the water): change only the flag on the fort's tower to the flag of the Portuguese Order of Christ: a plain white flag with one large red cross with straight arms that widen toward their square ends, filling most of the flag, and a thin white cross drawn inside the red one. No circle, no ring, no border, no other emblem. Also remove the small white building on the dunes in the distance. Nothing modern. No text, no border, no watermark."
+  },
+  {
+   "id": "lisbon-nolamps-a",
+   "model": "black-forest-labs/flux-2-pro-preview",
+   "width": 1600,
+   "height": 896,
+   "seed": 4321,
+   "refs": [
+    "art:production-1/lisbon-clean-a.png"
+   ],
+   "prompt": "Edit this photograph and keep everything else exactly as it is (composition, light, the castle, the cathedral, the houses, the moored ships, the water): remove every street lamp, lamp post, sign and signboard along the waterfront and the walls, and every glazed window pane: windows are small openings with wooden shutters. The scene is Lisbon in 1451. Nothing later than 1480 anywhere: no modern detail. No text, no border, no watermark."
+  },
+  {
+   "id": "lisbon-nolamps-b",
+   "model": "black-forest-labs/flux-2-pro-preview",
+   "width": 1600,
+   "height": 896,
+   "seed": 4322,
+   "refs": [
+    "art:production-1/lisbon-clean-a.png"
+   ],
+   "prompt": "Edit this photograph and keep everything else exactly as it is (composition, light, the castle, the cathedral, the houses, the moored ships, the water): remove every street lamp, lamp post, sign and signboard along the waterfront and the walls, and every glazed window pane: windows are small openings with wooden shutters. The scene is Lisbon in 1451. Nothing later than 1480 anywhere: no modern detail. No text, no border, no watermark."
+  }
+ ]
+}
