@@ -6,21 +6,30 @@ import { $, fmtDate } from './util.js';
 import { renderPanel } from './panels.js';
 
 export let toastTimer;
-// Notices: everything that happens is kept in a feed (the bell), and shown briefly as a
-// pop-up. Pop-ups stay up long enough to read, pause while hovered, and close on a tap.
+// Notices: everything that happens is kept in a feed (the bell), and most of it shown briefly
+// as a pop-up. Pop-ups stay up long enough to read, pause while hovered, and close on a tap.
 // Hints about the controls ("That is dry land") are pop-ups only.
+// Three levels, so a busy fleet at 4x does not bury what matters:
+//   alert    must see: news, losses, a captain gone ashore (red pop-up)
+//   normal   what happened, and outcomes: a captain's round of his route and what it made
+//   routine  the working detail: a captain loaded or sold at a port, prices shared. Feed only,
+//            hidden unless the feed is set to show everything, and not counted as unread.
 export const NOTICES_MAX = 150;
-export function addNotice(html, kind = '', day = S.day) {
+export function addNotice(html, kind = '', day = S.day, level = 'normal') {
   S.notices = S.notices || [];
   S.noticeSeq = (S.noticeSeq || 0) + 1;
-  S.notices.push({ id: S.noticeSeq, day, html, kind });
-  if (S.notices.length > NOTICES_MAX) S.notices.splice(0, S.notices.length - NOTICES_MAX);
+  S.notices.push({ id: S.noticeSeq, day, html, kind, ...(level === 'routine' ? { routine: true } : {}) });
+  // keep the last 150 that matter; routine reports make room first
+  while (S.notices.length > NOTICES_MAX) {
+    const i = S.notices.findIndex((n) => n.routine);
+    S.notices.splice(i >= 0 && S.notices.filter((n) => n.routine).length > 50 ? i : 0, 1);
+  }
   if (ui.panelMode === 'notices') { S.noticesRead = S.noticeSeq; renderPanel(); }
   renderNoticeBadge();
 }
 
 export function unreadNotices() {
-  return (S?.notices || []).filter((n) => n.id > (S.noticesRead || 0)).length;
+  return (S?.notices || []).filter((n) => n.id > (S.noticesRead || 0) && !n.routine).length;
 }
 
 export function renderNoticeBadge() {
@@ -31,8 +40,9 @@ export function renderNoticeBadge() {
   $('btn-notices').title = n ? `Notices: ${n} unread` : 'Notices';
 }
 
-export function toast(html, kind = '', feed = true) {
-  if (feed && S) addNotice(html, kind);
+export function toast(html, kind = '', feed = true, level = 'normal') {
+  if (feed && S) addNotice(html, kind, S.day, level);
+  if (level === 'routine') return; // in the feed only
   if (ui.arrival) { ui.arrival.held.push([html, kind]); return; } // shown once the arrival scene ends
   placeToasts();
   const el = $('toast');
@@ -88,16 +98,20 @@ export function hint(html, kind = '') {
 export function renderNotices(el) {
   S.noticesRead = S.noticeSeq || 0;
   renderNoticeBadge();
-  const list = (S.notices || []).slice().reverse();
+  const all = ui.noticesAll;
+  const every = (S.notices || []).slice().reverse();
+  const list = all ? every : every.filter((n) => !n.routine);
+  const hidden = every.length - list.length;
   let lastDay = null;
   const items = list.map((n) => {
     const d = fmtDate(n.day);
     const head = d !== lastDay ? `<li class="day">${d}</li>` : '';
     lastDay = d;
-    return `${head}<li class="n ${n.kind}">${n.html}</li>`;
+    return `${head}<li class="n ${n.kind}${n.routine ? ' routine' : ''}">${n.html}</li>`;
   }).join('');
   el.innerHTML = `
     <header><h2>Notices</h2><button class="close" data-close aria-label="Close">×</button></header>
+    <p class="notice-filter"><label><input type="checkbox" data-notices-all ${all ? 'checked' : ''}> Show your captains' port reports too</label>${!all && hidden ? ` <span class="muted">(${hidden} hidden)</span>` : ''}</p>
     <ul class="notices">${items || '<li class="muted">Nothing yet. News, arrivals and your captains\' reports will appear here.</li>'}</ul>`;
 }
 

@@ -250,6 +250,7 @@ export function initActions() {
   $('panel').addEventListener('change', (e) => {
     if (feedbackInput(e)) return;
     if (e.target.matches('select[data-ledger-who]')) { ui.ledgerWho = e.target.value; renderPanel(); return; }
+    if (e.target.matches('[data-notices-all]')) { ui.noticesAll = e.target.checked; renderPanel(); return; }
     const sel = e.target.closest('select[data-f]');
     if (!sel) return;
     const card = sel.closest('[data-ship]');

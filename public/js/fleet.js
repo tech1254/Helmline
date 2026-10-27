@@ -23,6 +23,7 @@ const LOYALTY_REGAIN_PER_DAY = 0.3; // while the owner is playing
 const MAX_WAIT_DAYS = 12;
 export const IDLE_PAY = 0.5;
 const CANDIDATE_DAYS = 30;
+const REPORT_DAYS = 60; // a captain's rounds are summed up about every two months
 
 const SHIP_NAMES = ['Santa Clara', 'São Jorge', 'Bom Jesus', 'Espírito Santo', 'Santa Maria', 'São Gabriel'];
 const FIRST = ['Diogo', 'Gil', 'Nuno', 'Álvaro', 'Pêro', 'João', 'Fernão', 'Estêvão', 'Gonçalo', 'Afonso', 'Martim', 'Lopo'];
@@ -179,6 +180,12 @@ export function holdText(ship) {
   return items.length === 1 ? items[0] : `${items.slice(0, -1).join(', ')} and ${items[items.length - 1]}`;
 }
 
+// What a ship has made since she last left the first stop of her route.
+function roundOf(ship) {
+  if (!ship.round) ship.round = { since: null, net: 0, visits: 0 };
+  return ship.round;
+}
+
 export function upgradeShip(ship) {
   holdOf(ship);
   if (!ship.hull || !Ships.HULLS[ship.hull]) ship.hull = 'caravel';
@@ -250,7 +257,7 @@ function visit(S, market, ship, fresh = false) {
   ship.seen = ship.seen || {};
   ship.seen[here] = { day: S.day, prices: market.observe(here) };
   if (market.closed(here)) {
-    if (ship.status !== 'waiting') msgs.push({ html: `<b>${ship.name}</b> is held outside ${port(here).name}: the port is closed.`, kind: '' });
+    if (ship.status !== 'waiting') msgs.push({ html: `<b>${ship.name}</b> is held outside ${port(here).name}: the port is closed.`, kind: 'alert', level: 'alert' });
     ship.status = 'waiting';
     return msgs;
   }
@@ -277,6 +284,7 @@ function visit(S, market, ship, fresh = false) {
   if (sold.length) {
     const skim = (ship.captain.loyalty ?? 100) < LOYALTY_SKIM ? Math.round(income * SKIM_SHARE) : 0;
     S.purse += income - skim;
+    roundOf(ship).net += income - skim;
     profit -= skim;
     ship.profit += profit;
     ship.trips++;
@@ -287,10 +295,34 @@ function visit(S, market, ship, fresh = false) {
       Accounts.captain(S, ship, { kind: 'skim', amount: -skim, text: `Captain ${ship.captain.name} kept back part of the takings` });
     }
   }
+  // Back at the first stop of her route: one round done. Every couple of months of rounds, say
+  // what they made in all (sales less purchases and wages), rather than every load and sale.
+  // A loss is an alert the first time, then plain news until she makes money again.
+  if (r && r.next === 0) {
+    const R = roundOf(ship);
+    if (R.since != null && R.visits >= r.stops.length) {
+      R.rounds = (R.rounds || 0) + 1;
+      R.visits = 0;
+      const days = Math.round(S.day - R.since);
+      if (days >= REPORT_DAYS) {
+        const net = Math.round(R.net);
+        const what = R.rounds === 1 ? `a round of her route in ${days} days` : `${R.rounds} rounds of her route in ${days} days`;
+        if (net >= 0) {
+          ship.lossWarned = false;
+          msgs.push({ html: `<b>${ship.name}</b>: ${what}, <b>+${net.toLocaleString()} cz</b>.`, kind: 'port', log: `${ship.name}: ${what}, +${net} cz.` });
+        } else {
+          msgs.push({ html: `<b>${ship.name}</b>: ${what}, a <b>loss of ${(-net).toLocaleString()} cz</b>. Check her route and orders.`, kind: ship.lossWarned ? 'port' : 'alert', level: ship.lossWarned ? 'normal' : 'alert', log: `${ship.name}: ${what}, ${net} cz.` });
+          ship.lossWarned = true;
+        }
+        ship.round = { since: S.day, net: 0, visits: 0, rounds: 0 };
+      }
+    } else if (R.since == null) ship.round = { since: S.day, net: 0, visits: 0, rounds: 0 };
+  }
+  if (r) roundOf(ship).visits++;
   if (r && (ship.captain.loyalty ?? 100) < LOYALTY_DESERT) {
     ship.route = null;
     ship.status = 'ashore';
-    msgs.push({ html: `<b>${ship.name}</b>: Captain ${ship.captain.name} has gone ashore in ${port(here).name} and will not sail until you come and give him orders.`, kind: '', log: `Captain ${ship.captain.name} went ashore in ${port(here).name}.` });
+    msgs.push({ html: `<b>${ship.name}</b>: Captain ${ship.captain.name} has gone ashore in ${port(here).name} and will not sail until you come and give him orders.`, kind: 'alert', level: 'alert', log: `Captain ${ship.captain.name} went ashore in ${port(here).name}.` });
     return msgs;
   }
   if (!r) {
@@ -337,6 +369,7 @@ function buyAndSail(S, market, ship, parts = [], fresh = false) {
     }
     if (qty) {
       S.purse -= cost;
+      roundOf(ship).net -= cost;
       Accounts.captain(S, ship, { kind: 'purchase', good: g, qty, amount: -cost });
       addToHold(ship, g, qty, cost);
       boughtAny = true;
@@ -351,7 +384,7 @@ function buyAndSail(S, market, ship, parts = [], fresh = false) {
       ship.nextCheck = S.day + 1;
       if (first) {
         parts.push('nothing here pays for the run, so he waits on half pay for prices to recover');
-        msgs.push({ html: `<b>${ship.name}</b> at ${port(here).name}: ${parts.join('. ')}.`, kind: 'port', log: `${ship.name}: ${parts.join('; ')} at ${port(here).name}.` });
+        msgs.push({ html: `<b>${ship.name}</b> at ${port(here).name}: ${parts.join('. ')}.`, kind: 'port', level: 'routine', log: `${ship.name}: ${parts.join('; ')} at ${port(here).name}.` });
       }
       return msgs;
     }
@@ -373,7 +406,7 @@ function sailOn(S, ship, parts, fresh) {
   ship.status = 'sailing';
   if (parts.length || fresh) {
     const what = parts.length ? parts.join('. ') : `sailing with ${holdText(ship)}`;
-    msgs.push({ html: `<b>${ship.name}</b> at ${port(ship.at).name}: ${what}. Bound for ${port(next).name}, about ${Math.round(leg.days)} days.`, kind: 'port', log: `${ship.name}: ${what} at ${port(ship.at).name}.` });
+    msgs.push({ html: `<b>${ship.name}</b> at ${port(ship.at).name}: ${what}. Bound for ${port(next).name}, about ${Math.round(leg.days)} days.`, kind: 'port', level: fresh ? 'normal' : 'routine', log: `${ship.name}: ${what} at ${port(ship.at).name}.` });
   }
   return msgs;
 }
@@ -401,6 +434,7 @@ export function tick(S, market, days, ownerPresent = true) {
     upgradeShip(ship);
     const pay = dailyCost(ship) * (ship.status === 'sailing' ? 1 : IDLE_PAY) * days;
     S.purse -= pay;
+    roundOf(ship).net -= pay;
     Accounts.accrueCaptainWages(ship, pay);
     F.wagesPaid = (F.wagesPaid || 0) + pay;
     if (ship.captain.loyalty == null) ship.captain.loyalty = 100;
@@ -411,7 +445,7 @@ export function tick(S, market, days, ownerPresent = true) {
       ship.leg = null;
       Accounts.bookCaptainWages(S, ship, `passage from ${port(leg.from).name}`);
       const lost = spoilOnArrival(ship, leg.days, (port(leg.from).lat + port(leg.to).lat) / 2);
-      if (lost.length) msgs.push({ html: `<b>${ship.name}</b>: ${lost.join(', ')} on the passage.`, kind: '' });
+      if (lost.length) msgs.push({ html: `<b>${ship.name}</b>: ${lost.join(', ')} on the passage.`, kind: '', level: 'routine' });
       msgs.push(...visit(S, market, ship));
     } else if (ship.status === 'waiting' && !market.closed(ship.at)) {
       msgs.push(...visit(S, market, ship));

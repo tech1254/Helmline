@@ -238,10 +238,10 @@ export function dock(portId) {
   const priceText = prices.length ? ` Their notes bring fresh prices from ${prices.map((x) => PORTS.find((q) => q.id === x).name).join(', ')} to your price book.` : '';
   if (heard) {
     const net = Math.round(heard.net);
-    toast(`The factor in ${p.name} has accounts from the <b>${heard.ships.join(', ')}</b>: ${heard.count} ${heard.count === 1 ? 'entry' : 'entries'}, ${net >= 0 ? '+' : ''}${net.toLocaleString()} cz, now in your ledger.${priceText}`, 'port');
+    toast(`The factor in ${p.name} has accounts from the <b>${heard.ships.join(', ')}</b>: ${heard.count} ${heard.count === 1 ? 'entry' : 'entries'}, ${net >= 0 ? '+' : ''}${net.toLocaleString()} cz, now in your ledger.${priceText}`, 'port', true, 'routine');
     log(`Accounts from ${heard.ships.join(', ')} received in ${p.name} (${net >= 0 ? '+' : ''}${net} cz).`);
   } else if (prices.length) {
-    toast(`Your captains' notes bring fresh prices from ${prices.map((x) => PORTS.find((q) => q.id === x).name).join(', ')} to your price book.`, 'port');
+    toast(`Your captains' notes bring fresh prices from ${prices.map((x) => PORTS.find((q) => q.id === x).name).join(', ')} to your price book.`, 'port', true, 'routine');
   }
   const shut = Events.closure(S, portId);
   if (shut) toast(`<b>${p.name} is closed:</b> ${Events.template(shut).title.toLowerCase()}. You may anchor, but not trade.`, '');

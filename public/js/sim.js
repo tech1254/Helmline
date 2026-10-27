@@ -73,7 +73,7 @@ export function update(dtSec) {
 export function report(msgs) {
   for (const m of msgs) {
     if (m.log) log(m.log);
-    if (ui.offlineBuffer) { ui.offlineBuffer.push(m); addNotice(m.html, m.kind); } else toast(m.html, m.kind);
+    if (ui.offlineBuffer) { ui.offlineBuffer.push(m); addNotice(m.html, m.kind, S.day, m.level); } else toast(m.html, m.kind, true, m.level);
   }
 }
 
