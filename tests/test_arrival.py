@@ -45,6 +45,7 @@ async def main():
         for pid in ['lisbon', 'funchal', 'lanzarote', 'arguin', 'gambia', 'mina']:
             await pg.evaluate(f"() => window.helmline.scene('{pid}')")
             await pg.wait_for_timeout(4700 if pid == 'lisbon' else 4200)
+            print(pid, 'photographs:', await pg.evaluate("() => window.helmline.arrival()"))
             await pg.screenshot(path=f'{OUT}/arrival_{pid}.png')
             await pg.keyboard.press('Escape'); await pg.wait_for_selector('#scene', state='hidden', timeout=3000)
         # phone

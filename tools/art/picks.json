@@ -1,0 +1,39 @@
+{
+  "note": "The art chosen for the game (picks of 27 Oct 2026). publish.py turns these into public/img. Paths are inside the art branch (art/<batch>/<file>).",
+  "ports": {
+    "lisbon": "production-1/lisbon-clean-a.png",
+    "lagos": "production-1/lagos-b.png",
+    "funchal": "production-1/funchal-b.png",
+    "lanzarote": "production-1/lanzarote-a.png",
+    "arguin": {"src": "production-2/arguin-flag.png", "fix": "order-of-christ-flag"},
+    "gambia": "production-1/gambia-a.png",
+    "serraleoa": "production-1/serraleoa-a.png",
+    "cestos": "production-1/cestos-a.png",
+    "mina": "production-1/mina-b.png"
+  },
+  "ships": {
+    "caravel":              {"src": "production-1/ship-caravel-a-cut.png", "waterline": 0.10, "length": 20},
+    "caravel-cross":        {"src": "production-1/ship-caravel-cross-b-cut.png", "waterline": 0.10, "length": 20},
+    "caravel-square":       {"src": "production-5/ship-caravel-square-plain-cut.png", "waterline": 0.12, "length": 21},
+    "caravel-square-cross": {"src": "production-1/ship-caravel-square-a-cut.png", "waterline": 0.12, "length": 21},
+    "barca":                {"src": "production-1/ship-barca-b-cut.png", "waterline": 0.05, "length": 15},
+    "barinel":              {"src": "production-1/ship-barinel-a-cut.png", "waterline": 0.05, "length": 24},
+    "nau":                  {"src": "production-1/ship-nau-a-cut.png", "waterline": 0.09, "length": 30},
+    "nau-cross":            {"src": "production-1/ship-nau-cross-b-cut.png", "waterline": 0.09, "length": 30}
+  },
+  "stocks": {
+    "frames": "production-2/stocks-frames-b.png",
+    "planked": "production-1/stocks-planked.png",
+    "rigged": "production-2/stocks-rigged-b.png"
+  },
+  "yards": {
+    "lisbon": "production-1/yard-lisbon-clean.png",
+    "lagos": "production-1/yard-lagos.png",
+    "funchal": "production-1/yard-funchal.png"
+  },
+  "ui": {
+    "vellum": {"src": "production-1/vellum-clean.png", "wash": 0.65, "toward": "#f6eedb"},
+    "oak": {"src": "photoreal-ui-1/oak.png", "darken": 0.30},
+    "leather": {"src": "photoreal-ui-1/leather.png"}
+  }
+}

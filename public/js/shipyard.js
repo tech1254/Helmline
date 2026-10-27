@@ -1,8 +1,10 @@
 // The ship register and the shipyard: two full screens over the chart.
-//   Register: your flagship, ships on order (drawn as they are built), the hulls ahead on a
-//   timeline (pencil sketches until you can have them), and your hired ships.
-//   Shipyard: rig, sail, arm and paint your flagship and watch her change; trade her up for a
-//   bigger hull, or order one that is not yet built. Full yard in Lisbon; refits only in
+//   Register: your flagship (a photograph, afloat in the port she lies in), ships on order
+//   (photographed on the stocks as they are built), the hulls ahead on a timeline (pencil
+//   sketches until you can have them), and your hired ships.
+//   Shipyard: the yard itself in a photograph, and the shipwright's plan of your flagship, which
+//   is redrawn as you rig, sail, arm and paint her; trade her up for a bigger hull, or order one
+//   that is not yet built. Full yard in Lisbon; refits only in
 //   Lagos and Funchal.
 // Time stands still while either screen is open.
 
@@ -20,6 +22,7 @@ import { confirmDialog } from './dialog.js';
 import { hint, toast } from './notices.js';
 import { log } from './pricebook.js';
 import { shipSVG } from './shipart.js';
+import { shipFigure, stocksFigure, yardPhoto } from './photos.js';
 import { SCENE_MODES, sceneMode, setSceneMode } from './scene.js';
 
 export const FULL_YARD = 'lisbon';
@@ -114,7 +117,7 @@ function registerHtml() {
   const orders = (S.yard.orders || []).map((o) => {
     const p = Ships.progress(S, o);
     const art = o.kind === 'hull'
-      ? shipSVG({ hull: o.hull, fit: Ships.normalFit(o.hull, {}), name: o.name }, { stage: p >= 1 ? 1 : Math.max(0.05, p), sea: p >= 1 })
+      ? (p >= 1 ? shipFigure({ hull: o.hull, fit: Ships.normalFit(o.hull, sh.fit), name: o.name }) : stocksFigure(p, `Your ${Ships.HULLS[o.hull].name.toLowerCase()} on the stocks at Lisbon: ${Ships.stageText(p)}`))
       : shipSVG({ hull: sh.hull, fit: { ...sh.fit, [o.group]: o.choice }, name: sh.name }, { style: p >= 1 ? 'colour' : 'ink', sea: true });
     const what = o.kind === 'hull' ? `${Ships.HULLS[o.hull].name}${o.name ? `: <i>${esc(o.name)}</i>` : ''}` : Ships.choice(o.group, o.choice).name;
     return `<li class="order-card">
@@ -134,7 +137,7 @@ function registerHtml() {
     const tag = mine ? '<span class="tag own">Your ship</span>' : av.ok === 'yes' ? '<span class="tag">Available</span>' : av.ok === 'order' ? '<span class="tag order">On order book</span>' : '<span class="tag locked">Not yet</span>';
     return `<li class="hull-card ${style}" data-hull="${id}">
         <div class="year">${H.orderYear && year < H.year ? `${H.orderYear}–${H.year}` : H.year}</div>
-        <div class="art">${shipSVG(mine ? sh : { hull: id }, { style, crop: 'fixed', sea: style !== 'pencil' })}</div>
+        <div class="art">${style === 'pencil' ? shipSVG({ hull: id }, { style, crop: 'fixed', sea: false }) : shipFigure(mine ? sh : { hull: id })}</div>
         <h4>${H.name} ${tag}</h4>
         <p class="nums">${cst.hold} hold · ${cst.knots} kn · windward ${pct(cst.up)} · ${fmt(H.price)} cz</p>
         <p>${H.blurb}</p>
@@ -142,13 +145,13 @@ function registerHtml() {
       </li>`;
   }).join('');
   const fleet = (S.fleet?.ships || []).map((x) => `<li class="hired">
-      <div class="art">${shipSVG({ hull: x.hull || 'caravel', name: x.name }, { crop: 'tight', style: 'ink' })}</div>
+      <div class="art">${shipFigure({ hull: x.hull || 'caravel', name: x.name })}</div>
       <div><b>${x.name}</b><br><span class="muted">${Ships.HULLS[x.hull || 'caravel'].name} · Captain ${x.captain.name} · hold ${Fleet.holdSize(x)}</span></div></li>`).join('');
   return `<div class="yard-card register">
     ${header('Ship register', `${fmtDate(S.day)} · ${yard ? `in ${portName(yard)}, with a shipyard` : S.ship.docked ? `in ${portName(S.ship.docked)}` : 'at sea'}`)}
     <div class="yard-body">
       <section class="hero">
-        <div class="art big">${shipSVG(sh, { sea: true, crop: 'tight' })}</div>
+        <div class="art big">${shipFigure(sh, { harbour: S.ship.docked, size: 'hero' })}</div>
         <div class="hero-text">
           <p class="kicker">Your flagship</p>
           <h3>${esc(sh.name)}</h3>
@@ -205,7 +208,7 @@ function yardHtml() {
   }
   const bill = q.error ? `<p class="warn">${q.error}</p>` : q.lines.length ? `
       <ul class="bill">${q.lines.map((l) => `<li><span>${l.g.name}: ${l.c.name}${l.order ? ' (ordered)' : ''}</span><span>${l.order ? `${fmt(Math.round(l.price / 3))} cz now` : l.price ? `${fmt(l.price)} cz` : 'free'}</span></li>`).join('')}</ul>
-      <p class="total"><span>${q.days ? `${q.days} ${q.days === 1 ? 'day' : 'days'} in the yard` : q.ordered.length ? 'Ordered for later' : ''}</span><b>${fmt(q.cost + q.down)} cz</b></p>` : '<p class="muted">Choose what to change. Your ship is redrawn as you go.</p>';
+      <p class="total"><span>${q.days ? `${q.days} ${q.days === 1 ? 'day' : 'days'} in the yard` : q.ordered.length ? 'Ordered for later' : ''}</span><b>${fmt(q.cost + q.down)} cz</b></p>` : '<p class="muted">Choose what to change. The shipwright redraws the plan as you go.</p>';
   const canPay = !q.error && q.lines.length && S.purse >= q.cost + q.down;
   const renamed = (y.name || '').trim() && y.name.trim() !== sh.name;
   return `<div class="yard-card shipyard">
@@ -213,7 +216,8 @@ function yardHtml() {
     ${ready.length && full ? `<div class="banner ready">${ready.map((o) => `<span>${o.kind === 'hull' ? `Your new ${Ships.HULLS[o.hull].name.toLowerCase()}${o.name ? ` <i>${esc(o.name)}</i>` : ''}` : Ships.choice(o.group, o.choice).name} is ready. ${fmt(o.price - o.paid)} cz due.</span><button class="primary" data-deliver-order="${S.yard.orders.indexOf(o)}">Take delivery</button>`).join('')}</div>` : ''}
     <div class="yard-body split">
       <section class="stage">
-        <div class="art big">${shipSVG({ hull: sh.hull, fit: y.tab === 'new' ? sh.fit : draft, name: (y.name || sh.name).trim() || sh.name }, { sea: true, crop: 'tight' })}</div>
+        <figure class="yard-photo"><img src="${yardPhoto(pid)}" alt="${full ? 'The royal shipyard on the Tagus at Lisbon' : `The shipwrights' beach at ${portName(pid)}`}" decoding="async"></figure>
+        <div class="art big plan"><p class="plan-title">The shipwright's plan</p>${shipSVG({ hull: sh.hull, fit: y.tab === 'new' ? sh.fit : draft, name: (y.name || sh.name).trim() || sh.name }, { sea: false, crop: 'tight' })}</div>
         <label class="name">Her name <input data-yard-name maxlength="28" value="${esc(y.name ?? sh.name)}" autocomplete="off"></label>
         ${renamed ? '<button class="mini" data-yard="rename">Paint the new name on (free)</button>' : ''}
         ${y.tab === 'new' ? statRows(now) : statRows(after, now)}
@@ -251,7 +255,7 @@ function newShipHtml() {
       else if (av.ok === 'order') act = `<button class="primary" data-order-hull="${id}" ${S.purse < Math.round(H.price / 3) ? 'disabled' : ''}>Order: ${fmt(Math.round(H.price / 3))} cz down</button><span class="fine">Delivered in ${H.year}; ${fmt(H.price - Math.round(H.price / 3))} cz then.</span>`;
       else act = `<span class="need">${cap(av.why)}.</span>`;
       return `<li class="hull-card wide ${av.ok === 'no' && !mine ? 'pencil' : mine ? 'colour' : 'ink'}">
-          <div class="art">${shipSVG(mine ? sh : { hull: id, fit: { paint: sh.fit.paint, mark: sh.fit.mark, flags: sh.fit.flags } }, { style: av.ok === 'no' && !mine ? 'pencil' : 'colour', crop: 'fixed', sea: av.ok !== 'no' || mine })}</div>
+          <div class="art">${av.ok === 'no' && !mine ? shipSVG({ hull: id }, { style: 'pencil', crop: 'fixed', sea: false }) : shipFigure(mine ? sh : { hull: id, fit: { mark: sh.fit.mark } })}</div>
           <div class="info">
             <h4>${H.name} <small class="muted">${fmt(H.price)} cz</small></h4>
             <p>${H.blurb}</p>
@@ -449,7 +453,7 @@ function deliver(i) {
   const name = o.name || sh.name;
   confirmDialog({
     title: `Take delivery of the ${name}?`,
-    body: `<div class="art">${shipSVG({ hull: o.hull, fit: Ships.normalFit(o.hull, sh.fit), name }, { sea: true, crop: 'tight' })}</div>
+    body: `<div class="art">${shipFigure({ hull: o.hull, fit: Ships.normalFit(o.hull, sh.fit), name }, { harbour: FULL_YARD, size: 'hero' })}</div>
       <dl class="facts"><dt>Balance due</dt><dd>${fmt(due)} cz</dd><dt>The ${esc(sh.name)} in part exchange</dt><dd>−${fmt(value)} cz</dd><dt>To pay</dt><dd>${net >= 0 ? fmt(net) : `you receive ${fmt(-net)}`} cz</dd></dl>`,
     ok: net >= 0 ? `Pay ${fmt(net)} cz` : 'Take her',
     kind: 'yard',

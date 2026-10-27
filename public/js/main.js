@@ -114,5 +114,6 @@ window.helmline = {
   accounts: () => ({ purse: S.purse, known: Accounts.known(S), unaccounted: Accounts.unaccounted(S), pending: S.accounts.pending.reduce((t, e) => t + e.amount, 0), due: S.fleet.ships.reduce((t, x) => t + (x.wagesDue || 0), 0), voyage: S.accounts.voyage?.wages || 0, entries: S.accounts.entries.length }),
   scene: (portId) => { window.helmlineScenes = true; if (S.called) delete S.called[portId]; return startArrival(portId); },
   yearDay: (year) => Ships.dayOfYear(year),
+  arrival: () => ui.arrival && { port: ui.arrival.portId, photo: !!ui.arrival.usePhoto, ship: ui.arrival.photo?.id || null },
   advance: (days) => { for (let i = 0; i < days * 4; i++) advanceTime(0.25, !S.ship.docked); renderPanel(); },
 };

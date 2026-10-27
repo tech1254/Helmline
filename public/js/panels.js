@@ -8,7 +8,7 @@ import * as Fleet from './fleet.js';
 import * as Pirates from './pirates.js';
 import { CHART_REWARD, OFFLINE_MAX_DAYS, STANDING_FADES_AFTER_HOURS } from './config.js';
 import * as Ships from './ships.js';
-import { shipSVG } from './shipart.js';
+import { shipFigure } from './photos.js';
 import { S, market, ui } from './state.js';
 import { load, save } from './save.js';
 import { renderCloud } from './cloudsync.js';
@@ -336,7 +336,7 @@ export function renderFleet(el) {
       const H = Ships.HULLS[ui.hireHull];
       const hst = Ships.stats({ hull: H.id });
       yard = `<h3>The Lisbon shipyard</h3>
-        <div class="hire-hulls" role="radiogroup" aria-label="Ship for your captain">${hulls.map((id) => `<button role="radio" aria-checked="${id === H.id}" class="${id === H.id ? 'on' : ''}" data-hire-hull="${id}">${shipSVG({ hull: id }, { crop: 'tight', style: id === H.id ? 'colour' : 'ink' })}<b>${Ships.HULLS[id].name}</b><small>${Ships.HULLS[id].price.toLocaleString()} cz</small></button>`).join('')}</div>
+        <div class="hire-hulls" role="radiogroup" aria-label="Ship for your captain">${hulls.map((id) => `<button role="radio" aria-checked="${id === H.id}" class="${id === H.id ? 'on' : ''}" data-hire-hull="${id}">${shipFigure({ hull: id }, { size: 'mini', decorative: true })}<b>${Ships.HULLS[id].name}</b><small>${Ships.HULLS[id].price.toLocaleString()} cz</small></button>`).join('')}</div>
         <p class="blurb">A ${H.name.toLowerCase()}: hold ${hst.hold}, ${hst.knots} knots, ${Ships.HULLS[H.id].hiredUpkeep} cz a day upkeep on top of her captain's wage. ${H.blurb} Choose the captain who will sail her.</p>
         <ul class="contracts">${Fleet.candidates(S).map((c) => `<li class="contract">
           <div class="c-head"><span class="c-title">Captain ${c.name}</span><span class="c-pay">${c.wage} cz a day</span></div>
