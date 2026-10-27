@@ -1,0 +1,125 @@
+{
+ "note": "Production run 6: the four new coastal ports (Porto, Cadiz, Ceuta, Safi) and the large caravel, plain and with the Order of Christ cross.",
+ "items": [
+  {
+   "id": "porto-a",
+   "model": "black-forest-labs/flux-2-pro-preview",
+   "width": 1600,
+   "height": 896,
+   "seed": 5106,
+   "refs": [],
+   "prompt": "A photorealistic still from a big-budget historical film set in 1451, natural light, shot on a 35mm lens, meticulous period detail. Porto on the river Douro in northern Portugal: a steep granite town climbing the north bank inside its fourteenth-century walls, the fortress-like Romanesque cathedral with two square towers on the hilltop above, tall narrow stone houses with red tile roofs crowding down to the riverside quay of the Ribeira, flat-bottomed river boats with a single square sail moored along it, and on the far south bank green hills and a few stone wine lodges. Soft overcast morning light, a little mist on the river. Camera on the water about 250 to 300 metres from the shore, at water level, horizon exactly at mid-height. The lower half of the frame is calm open water with soft ripples and long reflections, completely empty in the near water and across the left two-thirds: no boats, no quay, no posts, no rocks, nothing close to the camera. The shore and everything on it sit in the middle distance, small with distance. Nothing later than 1451 anywhere: no cars, street lamps, power lines, tyres, concrete, plastic, glass windows, motorboats, ferries, three-masted ships, modern clothing, tall townhouse facades, Baroque or Gothic spires, bridges across the river. No text, no border, no watermark."
+  },
+  {
+   "id": "porto-b",
+   "model": "black-forest-labs/flux-2-pro-preview",
+   "width": 1600,
+   "height": 896,
+   "seed": 5107,
+   "refs": [],
+   "prompt": "A photorealistic still from a big-budget historical film set in 1451, natural light, shot on a 35mm lens, meticulous period detail. Porto on the river Douro in northern Portugal: a steep granite town climbing the north bank inside its fourteenth-century walls, the fortress-like Romanesque cathedral with two square towers on the hilltop above, tall narrow stone houses with red tile roofs crowding down to the riverside quay of the Ribeira, flat-bottomed river boats with a single square sail moored along it, and on the far south bank green hills and a few stone wine lodges. Soft overcast morning light, a little mist on the river. Camera on the water about 250 to 300 metres from the shore, at water level, horizon exactly at mid-height. The lower half of the frame is calm open water with soft ripples and long reflections, completely empty in the near water and across the left two-thirds: no boats, no quay, no posts, no rocks, nothing close to the camera. The shore and everything on it sit in the middle distance, small with distance. Nothing later than 1451 anywhere: no cars, street lamps, power lines, tyres, concrete, plastic, glass windows, motorboats, ferries, three-masted ships, modern clothing, tall townhouse facades, Baroque or Gothic spires, bridges across the river. No text, no border, no watermark."
+  },
+  {
+   "id": "cadiz-a",
+   "model": "black-forest-labs/flux-2-pro-preview",
+   "width": 1600,
+   "height": 896,
+   "seed": 5106,
+   "refs": [],
+   "prompt": "A photorealistic still from a big-budget historical film set in 1451, natural light, shot on a 35mm lens, meticulous period detail. C\u00e1diz in Castile, a walled city on a long island in the Atlantic: low stone sea walls, whitewashed houses with flat roofs and a few square watchtowers, the old Romanesque cathedral of Santa Cruz with a plain square bell tower, salt pans glinting on the flat marshes behind, fishing boats with lateen sails drawn up on the sand below the walls. Bright Andalusian afternoon light, deep blue sea. Camera on the water about 250 to 300 metres from the shore, at water level, horizon exactly at mid-height. The lower half of the frame is calm open water with soft ripples and long reflections, completely empty in the near water and across the left two-thirds: no boats, no quay, no posts, no rocks, nothing close to the camera. The shore and everything on it sit in the middle distance, small with distance. Nothing later than 1451 anywhere: no cars, street lamps, power lines, tyres, concrete, plastic, glass windows, motorboats, ferries, three-masted ships, modern clothing, tall townhouse facades, Baroque or Gothic spires, bridges across the river. No text, no border, no watermark."
+  },
+  {
+   "id": "cadiz-b",
+   "model": "black-forest-labs/flux-2-pro-preview",
+   "width": 1600,
+   "height": 896,
+   "seed": 5107,
+   "refs": [],
+   "prompt": "A photorealistic still from a big-budget historical film set in 1451, natural light, shot on a 35mm lens, meticulous period detail. C\u00e1diz in Castile, a walled city on a long island in the Atlantic: low stone sea walls, whitewashed houses with flat roofs and a few square watchtowers, the old Romanesque cathedral of Santa Cruz with a plain square bell tower, salt pans glinting on the flat marshes behind, fishing boats with lateen sails drawn up on the sand below the walls. Bright Andalusian afternoon light, deep blue sea. Camera on the water about 250 to 300 metres from the shore, at water level, horizon exactly at mid-height. The lower half of the frame is calm open water with soft ripples and long reflections, completely empty in the near water and across the left two-thirds: no boats, no quay, no posts, no rocks, nothing close to the camera. The shore and everything on it sit in the middle distance, small with distance. Nothing later than 1451 anywhere: no cars, street lamps, power lines, tyres, concrete, plastic, glass windows, motorboats, ferries, three-masted ships, modern clothing, tall townhouse facades, Baroque or Gothic spires, bridges across the river. No text, no border, no watermark."
+  },
+  {
+   "id": "ceuta-a",
+   "model": "black-forest-labs/flux-2-pro-preview",
+   "width": 1600,
+   "height": 896,
+   "seed": 5106,
+   "refs": [],
+   "prompt": "A photorealistic still from a big-budget historical film set in 1451, natural light, shot on a 35mm lens, meticulous period detail. Ceuta on the African shore of the Strait of Gibraltar, a Portuguese garrison town since 1415: massive ochre stone walls and towers along a narrow neck of land with a broad moat cut through it, a whitewashed town of low flat-roofed houses inside, a former mosque with a square minaret now a church, and the green hill of Monte Hacho rising at the end of the peninsula with a stone fortress on top; the mountains of the Rif hazy behind. Clear, windy light. Camera on the water about 250 to 300 metres from the shore, at water level, horizon exactly at mid-height. The lower half of the frame is calm open water with soft ripples and long reflections, completely empty in the near water and across the left two-thirds: no boats, no quay, no posts, no rocks, nothing close to the camera. The shore and everything on it sit in the middle distance, small with distance. Nothing later than 1451 anywhere: no cars, street lamps, power lines, tyres, concrete, plastic, glass windows, motorboats, ferries, three-masted ships, modern clothing, tall townhouse facades, Baroque or Gothic spires, bridges across the river. No text, no border, no watermark."
+  },
+  {
+   "id": "ceuta-b",
+   "model": "black-forest-labs/flux-2-pro-preview",
+   "width": 1600,
+   "height": 896,
+   "seed": 5107,
+   "refs": [],
+   "prompt": "A photorealistic still from a big-budget historical film set in 1451, natural light, shot on a 35mm lens, meticulous period detail. Ceuta on the African shore of the Strait of Gibraltar, a Portuguese garrison town since 1415: massive ochre stone walls and towers along a narrow neck of land with a broad moat cut through it, a whitewashed town of low flat-roofed houses inside, a former mosque with a square minaret now a church, and the green hill of Monte Hacho rising at the end of the peninsula with a stone fortress on top; the mountains of the Rif hazy behind. Clear, windy light. Camera on the water about 250 to 300 metres from the shore, at water level, horizon exactly at mid-height. The lower half of the frame is calm open water with soft ripples and long reflections, completely empty in the near water and across the left two-thirds: no boats, no quay, no posts, no rocks, nothing close to the camera. The shore and everything on it sit in the middle distance, small with distance. Nothing later than 1451 anywhere: no cars, street lamps, power lines, tyres, concrete, plastic, glass windows, motorboats, ferries, three-masted ships, modern clothing, tall townhouse facades, Baroque or Gothic spires, bridges across the river. No text, no border, no watermark."
+  },
+  {
+   "id": "safi-a",
+   "model": "black-forest-labs/flux-2-pro-preview",
+   "width": 1600,
+   "height": 896,
+   "seed": 5105,
+   "refs": [],
+   "prompt": "A photorealistic still from a big-budget historical film set in 1451, natural light, shot on a 35mm lens, meticulous period detail. Safi on the Atlantic coast of Morocco, a walled Moroccan trading town: whitewashed and earth-coloured houses with flat roofs packed inside crenellated pis\u00e9 walls, a square minaret, a kasbah on the cliff above the sea, ochre cliffs and a small beach where Portuguese merchants' boats are drawn up beside local fishing boats, camels and bales of cloth on the shore. Warm hazy afternoon light, Atlantic swell breaking gently on the rocks. Camera on the water about 250 to 300 metres from the shore, at water level, horizon exactly at mid-height. The lower half of the frame is calm open water with soft ripples and long reflections, completely empty in the near water and across the left two-thirds: no boats, no quay, no posts, no rocks, nothing close to the camera. The shore and everything on it sit in the middle distance, small with distance. Nothing later than 1451 anywhere: no cars, street lamps, power lines, tyres, concrete, plastic, glass windows, motorboats, ferries, three-masted ships, modern clothing, tall townhouse facades, Baroque or Gothic spires, bridges across the river. No text, no border, no watermark."
+  },
+  {
+   "id": "safi-b",
+   "model": "black-forest-labs/flux-2-pro-preview",
+   "width": 1600,
+   "height": 896,
+   "seed": 5106,
+   "refs": [],
+   "prompt": "A photorealistic still from a big-budget historical film set in 1451, natural light, shot on a 35mm lens, meticulous period detail. Safi on the Atlantic coast of Morocco, a walled Moroccan trading town: whitewashed and earth-coloured houses with flat roofs packed inside crenellated pis\u00e9 walls, a square minaret, a kasbah on the cliff above the sea, ochre cliffs and a small beach where Portuguese merchants' boats are drawn up beside local fishing boats, camels and bales of cloth on the shore. Warm hazy afternoon light, Atlantic swell breaking gently on the rocks. Camera on the water about 250 to 300 metres from the shore, at water level, horizon exactly at mid-height. The lower half of the frame is calm open water with soft ripples and long reflections, completely empty in the near water and across the left two-thirds: no boats, no quay, no posts, no rocks, nothing close to the camera. The shore and everything on it sit in the middle distance, small with distance. Nothing later than 1451 anywhere: no cars, street lamps, power lines, tyres, concrete, plastic, glass windows, motorboats, ferries, three-masted ships, modern clothing, tall townhouse facades, Baroque or Gothic spires, bridges across the river. No text, no border, no watermark."
+  },
+  {
+   "id": "ship-largecaravel-a",
+   "model": "black-forest-labs/flux-2-pro-preview",
+   "width": 1280,
+   "height": 896,
+   "seed": 5201,
+   "refs": [
+    "tools/art/refs/caravel-photo-green.jpg"
+   ],
+   "cutout": true,
+   "prompt": "A photorealistic photograph of a real full-size 15th-century Portuguese large caravel (caravela latina grande) under sail, about 25 metres long: THREE masts, every one with a large triangular lateen sail on a long slanted yard, the tallest mainmast forward and two smaller masts behind it, a raised stern deck with a rail, a plain white ensign on a thin pole at the stern, a short bowsprit. Bigger and longer than the two-masted caravel in the reference photo, but the same simple build. Seen exactly side-on, bow pointing right, warm late afternoon light from the right. A working ship of the 15th-century Portuguese Discoveries: weathered linen sails, hemp rigging, dark tarred planking. No gunports, no portholes, no gilded carving, no lanterns, no square sails, not a galleon, not a pirate ship. Not a model: a real ship. She is isolated on a solid, flat, evenly lit chroma-key green background (#00b140) filling everything around her, including below the hull: no sea, no sky, no shadow, no floor, no stand, no cradle. The whole ship from the mastheads to the keel in frame, with a margin all round."
+  },
+  {
+   "id": "ship-largecaravel-cross-a",
+   "model": "black-forest-labs/flux-2-pro-preview",
+   "width": 1280,
+   "height": 896,
+   "seed": 5211,
+   "refs": [
+    "tools/art/refs/caravel-photo-green.jpg"
+   ],
+   "cutout": true,
+   "prompt": "A photorealistic photograph of a real full-size 15th-century Portuguese large caravel (caravela latina grande) under sail, about 25 metres long: THREE masts, every one with a large triangular lateen sail on a long slanted yard, the tallest mainmast forward and two smaller masts behind it, a raised stern deck with a rail, a plain white ensign on a thin pole at the stern, a short bowsprit. Bigger and longer than the two-masted caravel in the reference photo, but the same simple build. Seen exactly side-on, bow pointing right, warm late afternoon light from the right. A working ship of the 15th-century Portuguese Discoveries: weathered linen sails each bearing the red cross of the Order of Christ (a red cross with flared arms and a thin white cross inside it), hemp rigging, dark tarred planking. No gunports, no portholes, no gilded carving, no lanterns, no square sails, not a galleon, not a pirate ship. Not a model: a real ship. She is isolated on a solid, flat, evenly lit chroma-key green background (#00b140) filling everything around her, including below the hull: no sea, no sky, no shadow, no floor, no stand, no cradle. The whole ship from the mastheads to the keel in frame, with a margin all round."
+  },
+  {
+   "id": "ship-largecaravel-b",
+   "model": "black-forest-labs/flux-2-pro-preview",
+   "width": 1280,
+   "height": 896,
+   "seed": 5202,
+   "refs": [
+    "tools/art/refs/caravel-photo-green.jpg"
+   ],
+   "cutout": true,
+   "prompt": "A photorealistic photograph of a real full-size 15th-century Portuguese large caravel (caravela latina grande) under sail, about 25 metres long: THREE masts, every one with a large triangular lateen sail on a long slanted yard, the tallest mainmast forward and two smaller masts behind it, a raised stern deck with a rail, a plain white ensign on a thin pole at the stern, a short bowsprit. Bigger and longer than the two-masted caravel in the reference photo, but the same simple build. Seen exactly side-on, bow pointing right, warm late afternoon light from the right. A working ship of the 15th-century Portuguese Discoveries: weathered linen sails, hemp rigging, dark tarred planking. No gunports, no portholes, no gilded carving, no lanterns, no square sails, not a galleon, not a pirate ship. Not a model: a real ship. She is isolated on a solid, flat, evenly lit chroma-key green background (#00b140) filling everything around her, including below the hull: no sea, no sky, no shadow, no floor, no stand, no cradle. The whole ship from the mastheads to the keel in frame, with a margin all round."
+  },
+  {
+   "id": "ship-largecaravel-cross-b",
+   "model": "black-forest-labs/flux-2-pro-preview",
+   "width": 1280,
+   "height": 896,
+   "seed": 5212,
+   "refs": [
+    "tools/art/refs/caravel-photo-green.jpg"
+   ],
+   "cutout": true,
+   "prompt": "A photorealistic photograph of a real full-size 15th-century Portuguese large caravel (caravela latina grande) under sail, about 25 metres long: THREE masts, every one with a large triangular lateen sail on a long slanted yard, the tallest mainmast forward and two smaller masts behind it, a raised stern deck with a rail, a plain white ensign on a thin pole at the stern, a short bowsprit. Bigger and longer than the two-masted caravel in the reference photo, but the same simple build. Seen exactly side-on, bow pointing right, warm late afternoon light from the right. A working ship of the 15th-century Portuguese Discoveries: weathered linen sails each bearing the red cross of the Order of Christ (a red cross with flared arms and a thin white cross inside it), hemp rigging, dark tarred planking. No gunports, no portholes, no gilded carving, no lanterns, no square sails, not a galleon, not a pirate ship. Not a model: a real ship. She is isolated on a solid, flat, evenly lit chroma-key green background (#00b140) filling everything around her, including below the hull: no sea, no sky, no shadow, no floor, no stand, no cradle. The whole ship from the mastheads to the keel in frame, with a margin all round."
+  }
+ ]
+}
