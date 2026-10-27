@@ -20,7 +20,7 @@ async def main():
             const cost = o.qty * m.buyPrice(o.source, o.good);
             out.push(`${o.title} [from ${o.source}] pays ${o.reward}, cost ~${cost}, ratio ${ratio.toFixed(2)}, ${o.offeredDays} d` + (o.qty > 40 || cost > s.purse || ratio < 1.25 || !m.sells(o.source, o.good) ? '  <-- PROBLEM' : '')); }
           return out; }"""
-        for pid in ['lisbon','lagos','funchal','lanzarote','arguin','gambia']:
+        for pid in ['lisbon','porto','lagos','cadiz','ceuta','safi','funchal','lanzarote','arguin','gambia']:
             r = await J(f"() => ({check})('{pid}')")
             bad = [x for x in r if 'PROBLEM' in x]; print(pid, '->', len(r), 'offers,', len(bad), 'problems')
         # taking an offer gets replaced after a week

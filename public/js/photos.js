@@ -7,6 +7,7 @@
 
 import { PHOTOS } from './photos-data.js';
 import { HULLS } from './ships.js';
+import { shipSVG } from './shipart.js';
 
 export const PX_PER_M = 22; // in a harbour photograph 1600 pixels wide, at arrival distance
 
@@ -35,7 +36,9 @@ export function photoImage(src) {
 export function shipLook(ship) {
   const fit = ship.fit || {};
   const cross = fit.mark === 'cross' ? '-cross' : '';
-  if (ship.hull === 'caravel') return `caravel${fit.rig === 'square' ? '-square' : ''}${cross}`;
+  if (ship.hull === 'caravel') return `caravel${cross}`;
+  if (ship.hull === 'redonda') return `caravel-square${cross}`;
+  if (ship.hull === 'largecaravel') return `largecaravel${cross}`;
   if (ship.hull === 'nau') return `nau${cross}`;
   return ship.hull || 'caravel';
 }
@@ -97,8 +100,8 @@ export function gradedShip(img, ph, portId) {
 //   decorative: true where the ship is already named in text beside her (no alt text)
 export function shipFigure(ship, { harbour = null, size = 'card', label = '', decorative = false } = {}) {
   const ph = shipPhoto(ship);
-  if (!ph) return '';
   const H = HULLS[ship.hull] || HULLS.caravel;
+  if (!ph) return `<figure class="afloat ${size} sea drawn">${shipSVG(ship, { sea: false, crop: 'tight', label: decorative ? '' : (label || undefined) })}</figure>`; // no photograph yet: the drawing
   // bigger hulls look bigger, but every ship fills her frame
   const width = Math.round((size === 'hero' ? 34 : size === 'mini' ? 52 : 46) + ph.length * (size === 'hero' ? 1.5 : 1.4));
   const bg = harbour && portPhoto(harbour);

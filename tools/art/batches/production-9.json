@@ -1,0 +1,31 @@
+{
+ "note": "Production run 9: the large caravel with Order of Christ crosses, painted onto the picked plain one.",
+ "items": [
+  {
+   "id": "ship-largecaravel-cross-a",
+   "model": "black-forest-labs/flux-2-pro-preview",
+   "width": 1280,
+   "height": 896,
+   "seed": 5501,
+   "cutout": true,
+   "refs": [
+    "art:production-8/ship-largecaravel-b.png",
+    "art:production-1/ship-caravel-cross-b.png"
+   ],
+   "prompt": "Edit the first photograph and keep everything about the ship exactly as it is: her hull, three masts, three lateen sails, rigging, colours, weathering, light, position and the flat chroma-green background. Change only the sails: paint on each of her three sails the red cross of the Order of Christ exactly as on the sails of the ship in the second photograph (a red cross with flared arms and a thin white cross inside it), centred on the sail. Nothing else changes."
+  },
+  {
+   "id": "ship-largecaravel-cross-b",
+   "model": "black-forest-labs/flux-2-pro-preview",
+   "width": 1280,
+   "height": 896,
+   "seed": 5502,
+   "cutout": true,
+   "refs": [
+    "art:production-8/ship-largecaravel-b.png",
+    "art:production-1/ship-caravel-cross-b.png"
+   ],
+   "prompt": "Edit the first photograph and keep everything about the ship exactly as it is: her hull, three masts, three lateen sails, rigging, colours, weathering, light, position and the flat chroma-green background. Change only the sails: paint on each of her three sails the red cross of the Order of Christ exactly as on the sails of the ship in the second photograph (a red cross with flared arms and a thin white cross inside it), centred on the sail. Nothing else changes."
+  }
+ ]
+}

@@ -536,3 +536,4 @@ body.scene-open #panel, body.scene-open #toast, body.scene-open #tip { visibilit
 .notices li.n.routine { font-size: 14px; background: none; border-left-style: dotted; }
 .notice-filter { margin: 0 0 10px; font-size: 14px; }
 .notice-filter label { display: inline-flex; gap: 6px; align-items: center; }
+.afloat.drawn .ship-art { position: absolute; inset: 4% 4% 0; width: 92%; height: 96%; }

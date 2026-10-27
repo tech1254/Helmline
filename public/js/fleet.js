@@ -107,7 +107,7 @@ export function dailyCost(ship) {
 function planLeg(S, ship, fromId, toId) {
   const a = port(fromId), b = port(toId);
   // A better navigator plans for the winds; a poor one keeps to the shortest course.
-  const route = findPath(a.lon, a.lat, b.lon, b.lat, (ship.captain.nav - 1) / 4);
+  const route = findPath(a.lon, a.lat, b.lon, b.lat, (ship.captain.nav - 1) / 4, !!Ships.HULLS[ship.hull || 'caravel']?.coastal);
   if (!route) return null;
   const path = [[a.lon, a.lat], ...route];
   let day = S.day, total = 0;

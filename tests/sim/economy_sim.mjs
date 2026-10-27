@@ -41,6 +41,7 @@ const arg = (name, dflt) => {
 const YEARS = Number(arg('years', 100));
 const RUNS = Number(arg('runs', 6));
 const ONLY = arg('only', null);
+const START = arg('start', 'caravel'); // 'barca': start as a new game does now, in a coastal barca
 const STEP = 0.5;
 const A_STR = Number(arg('a', 0.5)); // A: how far each price moves toward the average (0 none, 1 all the way, on a log scale)
 const B_STR = Number(arg('b', 2.5)); // B: how much further each load moves the price
@@ -54,6 +55,7 @@ const ROUTES = {
   flagship: [stop('lisbon', sell, buy('best')), stop('lanzarote', sell, buy('best', 50)), stop('arguin', sell, buy('best', 50)), stop('gambia', sell, buy('best'))],
   first: [stop('lisbon', sell, buy('cloth')), stop('gambia', sell, buy('pepper'))],
   second: [stop('lisbon', sell, buy('best')), stop('arguin', sell, buy('best', 50)), stop('lanzarote', buy('best', 50))],
+  coastal: [stop('lisbon', sell, buy('best')), stop('safi', sell, buy('best')), stop('ceuta', sell, buy('best'))],
 };
 const YARDS = ['lisbon', 'lagos', 'funchal'];
 const port = (id) => PORTS.find((p) => p.id === id);
@@ -127,12 +129,12 @@ function career(cfg) {
   const add = (role, hull, captain) => {
     const ship = { id: nextId++, name: role, role, hull, captain: { id: nextId, name: role, ...captain, loyalty: 100 }, at: 'lisbon', status: 'idle', route: null, leg: null, hold: {}, profit: 0, trips: 0, last: null, hullPct: 100 };
     S.fleet.ships.push(ship);
-    Fleet.setRoute(S, market, ship, { stops: ROUTES[role].map((s) => ({ port: s.port, orders: s.orders.map((o) => ({ ...o })) })), next: 0 });
+    Fleet.setRoute(S, market, ship, { stops: ROUTES[role === 'flagship' && hull === 'barca' ? 'coastal' : role].map((s) => ({ port: s.port, orders: s.orders.map((o) => ({ ...o })) })), next: 0 });
     return ship;
   };
   // the flagship: a skilled captain (you) with no wage; she pays the hull's full upkeep
   const flagWage = (hull) => Ships.HULLS[hull].upkeep - Ships.HULLS[hull].hiredUpkeep;
-  add('flagship', 'caravel', { nav: 5, trade: 5, wage: flagWage('caravel') });
+  add('flagship', START, { nav: 5, trade: 5, wage: flagWage(START) });
   const pay = (amount, what) => { S.purse -= amount; R.spentOnShips += amount; R.shipsBought++; R.events.push(`${(1451 + S.day / 365.25).toFixed(1)} ${what} ${amount}`); };
   const role = (r) => S.fleet.ships.find((x) => x.role === r);
   let order = null; // the nau on the stocks
@@ -140,14 +142,23 @@ function career(cfg) {
     const P = (h) => Ships.HULLS[h].price;
     const year = Ships.yearOf(S.day);
     const tradeIn = (ship) => Math.round(P(ship.hull) / 2);
+    // a barca owner's first goal: a caravel, and the open sea
+    const f0 = role('flagship');
+    if (f0 && f0.hull === 'barca') {
+      if (S.purse > P('caravel') - tradeIn(f0) + 400 && !f0.leg) {
+        pay(P('caravel') - tradeIn(f0), 'flagship to caravel'); f0.hull = 'caravel'; f0.captain.wage = flagWage('caravel'); f0.hullPct = 100;
+        Fleet.setRoute(S, market, f0, { stops: ROUTES.flagship.map((st) => ({ port: st.port, orders: st.orders.map((o) => ({ ...o })) })), next: 0 });
+      }
+      return;
+    }
     // hire captains
     for (const r of ['first', 'second']) {
       if (!role(r) && S.purse > P('caravel') * 2 + 300) { pay(P('caravel'), `${r} captain, caravel`); add(r, 'caravel', { nav: 4, trade: 4, wage: 4 }); }
     }
     const fl = role('flagship');
-    // the nau: order a third down from 1470, the rest on delivery in 1480
-    if (fl && fl.hull !== 'nau' && !order && year >= 1470 && S.purse > P('nau') * 0.75) { order = { paid: Math.round(P('nau') / 3) }; pay(order.paid, 'nau ordered'); }
-    if (fl && order && year >= 1480 && S.purse > P('nau') - order.paid - tradeIn(fl) + 500) { pay(P('nau') - order.paid - tradeIn(fl), 'nau delivered'); fl.hull = 'nau'; fl.captain.wage = flagWage('nau'); fl.hullPct = 100; order = null; }
+    // the nau: order a third down from her order year, the rest on delivery
+    if (fl && fl.hull !== 'nau' && !order && year >= Ships.HULLS.nau.orderYear && S.purse > P('nau') * 0.75) { order = { paid: Math.round(P('nau') / 3) }; pay(order.paid, 'nau ordered'); }
+    if (fl && order && year >= Ships.HULLS.nau.year && S.purse > P('nau') - order.paid - tradeIn(fl) + 500) { pay(P('nau') - order.paid - tradeIn(fl), 'nau delivered'); fl.hull = 'nau'; fl.captain.wage = flagWage('nau'); fl.hullPct = 100; order = null; }
     // barinels: the flagship first, then the captains
     for (const r of ['flagship', 'first', 'second']) {
       const s = role(r);
@@ -214,6 +225,7 @@ for (const cfg of list) {
     final: avg((x) => x.final), min: sorted[0], median: sorted[Math.floor(sorted.length / 2)], max: sorted[sorted.length - 1],
     at: Object.fromEntries([1462, 1470, 1480, 1500, 1525].map((m) => [m, avg((x) => x.at[m] ?? 0)])),
     repairs: avg((x) => x.repairs), repairDays: avg((x) => x.repairDays), lost: avg((x) => x.lost), spentOnShips: avg((x) => x.spentOnShips),
+    firstCaravel: avg((x) => Number((x.events.find((e) => e.includes('flagship to caravel')) || '1451').split(' ')[0])),
     firstBarinel: avg((x) => Number((x.events.find((e) => e.includes('flagship to barinel')) || '1551').split(' ')[0])),
     broke: runs.filter((x) => x.broke != null).length / runs.length,
     brokeYear: avg((x) => x.broke ?? 0) / Math.max(1e-9, runs.filter((x) => x.broke != null).length / runs.length),

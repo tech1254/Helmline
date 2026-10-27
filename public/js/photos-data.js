@@ -2,7 +2,11 @@
 export const PHOTOS = {
   "ports": [
     "lisbon",
+    "porto",
     "lagos",
+    "cadiz",
+    "ceuta",
+    "safi",
     "funchal",
     "lanzarote",
     "arguin",
@@ -22,9 +26,9 @@ export const PHOTOS = {
         2.2
       ],
       "hi": [
-        233.0,
+        231.4,
         236.0,
-        216.0
+        219.8
       ]
     },
     "caravel-cross": {
@@ -37,9 +41,9 @@ export const PHOTOS = {
         2.1
       ],
       "hi": [
-        232.7,
+        230.8,
         232.0,
-        220.5
+        224.1
       ]
     },
     "caravel-square": {
@@ -52,9 +56,9 @@ export const PHOTOS = {
         2.1
       ],
       "hi": [
-        250.8,
+        249.0,
         247.2,
-        239.1
+        242.4
       ]
     },
     "caravel-square-cross": {
@@ -67,9 +71,9 @@ export const PHOTOS = {
         2.8
       ],
       "hi": [
-        240.0,
-        239.6,
-        229.7
+        238.0,
+        239.4,
+        232.5
       ]
     },
     "barca": {
@@ -82,9 +86,9 @@ export const PHOTOS = {
         0.6
       ],
       "hi": [
-        241.8,
-        233.4,
-        199.4
+        240.3,
+        232.8,
+        201.7
       ]
     },
     "barinel": {
@@ -97,9 +101,9 @@ export const PHOTOS = {
         2.5
       ],
       "hi": [
-        234.4,
-        230.8,
-        219.3
+        232.7,
+        229.8,
+        222.0
       ]
     },
     "nau": {
@@ -112,9 +116,9 @@ export const PHOTOS = {
         1.7
       ],
       "hi": [
-        225.7,
-        193.2,
-        136.3
+        224.1,
+        192.7,
+        138.8
       ]
     },
     "nau-cross": {
@@ -122,14 +126,44 @@ export const PHOTOS = {
       "h": 622,
       "length": 30,
       "lo": [
-        8.3,
+        8.2,
         1.7,
-        2.4
+        2.6
       ],
       "hi": [
-        226.3,
+        224.7,
         214.1,
-        143.1
+        145.5
+      ]
+    },
+    "largecaravel": {
+      "w": 900,
+      "h": 628,
+      "length": 25,
+      "lo": [
+        8.0,
+        4.6,
+        1.4
+      ],
+      "hi": [
+        232.6,
+        219.7,
+        190.7
+      ]
+    },
+    "largecaravel-cross": {
+      "w": 900,
+      "h": 575,
+      "length": 25,
+      "lo": [
+        10.5,
+        4.6,
+        1.1
+      ],
+      "hi": [
+        233.5,
+        240.4,
+        231.7
       ]
     }
   },
@@ -169,6 +203,26 @@ export const PHOTOS = {
         88
       ]
     },
+    "porto": {
+      "light": [
+        238,
+        232,
+        218
+      ],
+      "shade": [
+        30,
+        32,
+        32
+      ],
+      "bright": 0.9,
+      "sat": 0.85,
+      "haze": 0.08,
+      "hazeColour": [
+        85,
+        81,
+        72
+      ]
+    },
     "lagos": {
       "light": [
         255,
@@ -187,6 +241,66 @@ export const PHOTOS = {
         153,
         110,
         61
+      ]
+    },
+    "cadiz": {
+      "light": [
+        255,
+        240,
+        215
+      ],
+      "shade": [
+        30,
+        34,
+        44
+      ],
+      "bright": 1.0,
+      "sat": 1.0,
+      "haze": 0.04,
+      "hazeColour": [
+        135,
+        132,
+        127
+      ]
+    },
+    "ceuta": {
+      "light": [
+        255,
+        236,
+        205
+      ],
+      "shade": [
+        34,
+        32,
+        32
+      ],
+      "bright": 1.0,
+      "sat": 1.0,
+      "haze": 0.04,
+      "hazeColour": [
+        137,
+        127,
+        108
+      ]
+    },
+    "safi": {
+      "light": [
+        255,
+        222,
+        175
+      ],
+      "shade": [
+        42,
+        32,
+        24
+      ],
+      "bright": 1.0,
+      "sat": 1.0,
+      "haze": 0.05,
+      "hazeColour": [
+        160,
+        114,
+        81
       ]
     },
     "funchal": {

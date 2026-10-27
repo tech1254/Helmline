@@ -23,7 +23,7 @@ function islet(cx, cy, rx, ry, rot = 0, seed = 7, n = 16) {
 }
 
 const IBERIA = [
-  [-5.35, 36.15], [-5.6, 36.02], [-6.0, 36.2], [-6.3, 36.55], [-6.4, 36.8], [-6.9, 37.15],
+  [-5.35, 36.15], [-5.6, 36.08], [-6.0, 36.2], [-6.3, 36.55], [-6.4, 36.8], [-6.9, 37.15],
   [-7.4, 37.18], [-7.9, 36.98], [-8.6, 37.1], [-8.99, 37.02], [-8.8, 37.4], [-8.85, 37.95],
   [-8.78, 38.3], [-9.2, 38.42], [-9.3, 38.66], [-9.42, 38.7], [-9.5, 38.78], [-9.42, 39.0],
   [-9.4, 39.36], [-9.07, 39.6], [-8.9, 40.15], [-8.75, 40.7], [-8.68, 41.2], [-8.85, 41.7],
@@ -34,7 +34,7 @@ const IBERIA = [
 ];
 
 const AFRICA = [
-  [-5.3, 35.9], [-5.9, 35.78], [-6.2, 35.2], [-6.6, 34.6], [-7.0, 33.95], [-7.6, 33.6],
+  [-5.3, 35.84], [-5.6, 35.66], [-5.9, 35.7], [-6.2, 35.2], [-6.6, 34.6], [-7.0, 33.95], [-7.6, 33.6],
   [-8.5, 33.25], [-9.25, 32.55], [-9.75, 31.5], [-9.85, 30.6], [-9.6, 30.4], [-9.85, 29.9],
   [-10.2, 29.35], [-11.1, 28.7], [-12.2, 28.1], [-12.95, 27.95], [-13.4, 27.6], [-14.0, 26.8],
   [-14.5, 26.15], [-14.9, 25.3], [-15.6, 24.3], [-16.0, 23.6], [-16.35, 22.5], [-16.9, 21.9],
@@ -126,8 +126,16 @@ export function inBounds(lon, lat) {
 export const PORTS = [
   { id: 'lisbon', name: 'Lisbon', lon: -9.36, lat: 38.6, known: true,
     blurb: 'Home port. Merchants here pay well for anything from the south, and the crown rewards new charts.' },
+  { id: 'porto', name: 'Porto', lon: -8.68, lat: 41.15, known: true,
+    blurb: 'The granite city on the Douro. Cheap northern wine and English cloth; pays well for sugar and spices.' },
   { id: 'lagos', name: 'Lagos', lon: -8.67, lat: 37.03, known: true,
     blurb: "Prince Henry's harbour on the Algarve. Wine and cloth are cheap here." },
+  { id: 'cadiz', name: 'Cádiz', lon: -6.3, lat: 36.53, known: true,
+    blurb: 'Castile\'s island port, with the Seville trade behind it. Salt from the pans is cheap; gold and spices fetch the best prices on the coast.' },
+  { id: 'ceuta', name: 'Ceuta', lon: -5.32, lat: 35.86, known: true,
+    blurb: 'Portugal\'s fortress across the Strait since 1415. The garrison pays dearly for wheat, wine and cloth.' },
+  { id: 'safi', name: 'Safi', lon: -9.38, lat: 32.3, known: true,
+    blurb: 'A Moroccan port where Portuguese merchants buy wheat and the striped Moorish cloth the traders of Arguin want for their gold.' },
   { id: 'funchal', name: 'Funchal', lon: -16.9, lat: 32.6, known: true,
     blurb: 'Madeira. The new cane fields make sugar cheap.' },
   { id: 'lanzarote', name: 'Lanzarote', lon: -13.38, lat: 28.92, known: true,
@@ -264,6 +272,47 @@ export function clearWater(aLon, aLat, bLon, bLat, margin = 0.03) {
   return true;
 }
 
+// How far each sea cell lies from the nearest land, in nautical miles (for coastal ships).
+export const COASTAL_NM = 60; // a barca keeps within this of the shore
+let landDist = null;
+function getLandDist() {
+  if (landDist) return landDist;
+  const g = getNavGrid();
+  landDist = new Float32Array(NW * NH).fill(Infinity);
+  const heap = [];
+  const push = (n, d) => { heap.push([d, n]); let c = heap.length - 1; while (c > 0) { const q = (c - 1) >> 1; if (heap[q][0] <= heap[c][0]) break; [heap[q], heap[c]] = [heap[c], heap[q]]; c = q; } };
+  const pop = () => { const top = heap[0], last = heap.pop(); if (heap.length) { heap[0] = last; let c = 0; for (;;) { const l = 2 * c + 1, r = l + 1; let m = c; if (l < heap.length && heap[l][0] < heap[m][0]) m = l; if (r < heap.length && heap[r][0] < heap[m][0]) m = r; if (m === c) break; [heap[m], heap[c]] = [heap[c], heap[m]]; c = m; } } return top; };
+  for (let n = 0; n < NW * NH; n++) if (g[n]) { landDist[n] = 0; push(n, 0); }
+  while (heap.length) {
+    const [d, n] = pop();
+    if (d > landDist[n]) continue;
+    const i = n % NW, j = Math.floor(n / NW);
+    const cl = Math.cos((BOUNDS.south + (j + 0.5) * NAV_CELL) * D2R);
+    for (const [di, dj] of STEPS) {
+      const ni = i + di, nj = j + dj;
+      if (ni < 0 || nj < 0 || ni >= NW || nj >= NH) continue;
+      const m = nj * NW + ni, nd = d + 60 * NAV_CELL * Math.hypot(di * cl, dj);
+      if (nd < landDist[m]) { landDist[m] = nd; push(m, nd); }
+    }
+  }
+  return landDist;
+}
+// Nautical miles from this point to the nearest land (to the nearest grid cell's worth).
+export function offshoreNm(lon, lat) {
+  const i = Math.floor((lon - BOUNDS.west) / NAV_CELL), j = Math.floor((lat - BOUNDS.south) / NAV_CELL);
+  if (i < 0 || j < 0 || i >= NW || j >= NH) return Infinity;
+  return getLandDist()[j * NW + i];
+}
+// True if a straight course keeps within reach of the shore all the way.
+function inshore(aLon, aLat, bLon, bLat, limit) {
+  const steps = Math.ceil(Math.hypot(bLon - aLon, bLat - aLat) / (NAV_CELL / 2));
+  for (let s = 0; s <= steps; s++) {
+    const t = steps ? s / steps : 0;
+    if (offshoreNm(aLon + (bLon - aLon) * t, aLat + (bLat - aLat) * t) > limit) return false;
+  }
+  return true;
+}
+
 function nearestSeaCell(lon, lat) {
   const g = getNavGrid();
   const ci = Math.floor((lon - BOUNDS.west) / NAV_CELL), cj = Math.floor((lat - BOUNDS.south) / NAV_CELL);
@@ -302,12 +351,13 @@ export function loadRoutes(table) {
 // `skill` is the navigator's grasp of the winds, 0 to 1: a master (1) plans for the least
 // sailing time, a novice (0) for the shortest distance, hugging the coast; between the two,
 // the winds count for less.
-export function findPath(aLon, aLat, bLon, bLat, skill = 1) {
+// `coastal`: a ship that must keep within COASTAL_NM of land (a barca).
+export function findPath(aLon, aLat, bLon, bLat, skill = 1, coastal = false) {
   skill = Math.round(Math.min(1, Math.max(0, skill)) * 4) / 4;
-  const key = routeKey(aLon, aLat, bLon, bLat, skill);
-  const hit = portRoutes.has(key) ? portRoutes.get(key) : pathCache.get(key);
+  const key = routeKey(aLon, aLat, bLon, bLat, skill) + (coastal ? 'c' : '');
+  const hit = !coastal && portRoutes.has(key) ? portRoutes.get(key) : pathCache.get(key);
   if (hit !== undefined) return hit && hit.map((pt) => [pt[0], pt[1]]);
-  const route = computePath(aLon, aLat, bLon, bLat, skill);
+  const route = computePath(aLon, aLat, bLon, bLat, skill, coastal ? COASTAL_NM : 0);
   if (pathCache.size >= PATH_CACHE_MAX) pathCache.delete(pathCache.keys().next().value);
   pathCache.set(key, route);
   return route && route.map((pt) => [pt[0], pt[1]]);
@@ -372,10 +422,11 @@ function legTime(a, b, skill = 1) {
 const STEPS = [];
 for (let dj = -1; dj <= 1; dj++) for (let di = -1; di <= 1; di++) if (di || dj) STEPS.push([di, dj]);
 
-function computePath(aLon, aLat, bLon, bLat, skill = 1) {
+function computePath(aLon, aLat, bLon, bLat, skill = 1, maxOff = 0) {
   // A short hop in clear water goes straight.
-  if (distNm(aLon, aLat, bLon, bLat) < 90 && clearWater(aLon, aLat, bLon, bLat)) return [[bLon, bLat]];
+  if (distNm(aLon, aLat, bLon, bLat) < 90 && clearWater(aLon, aLat, bLon, bLat) && (!maxOff || inshore(aLon, aLat, bLon, bLat, maxOff))) return [[bLon, bLat]];
   const g = getNavGrid();
+  const off = maxOff ? getLandDist() : null;
   const W = getMeanWind();
   const start = nearestSeaCell(aLon, aLat), goal = nearestSeaCell(bLon, bLat);
   if (start === null || goal === null) return null;
@@ -427,7 +478,7 @@ function computePath(aLon, aLat, bLon, bLat, skill = 1) {
       const ni = i + di, nj = j + dj;
       if (ni < 0 || nj < 0 || ni >= NW || nj >= NH) continue;
       const m = nj * NW + ni;
-      if (g[m] || closed[m]) continue;
+      if (g[m] || closed[m] || (off && off[m] > maxOff)) continue;
       if (di && dj && (g[j * NW + ni] || g[nj * NW + i])) continue; // no corner cutting
       // the true heading of this step, allowing for the narrower degrees of longitude
       const hd = (Math.atan2(di * cl, dj) / D2R + 360) % 360;
@@ -447,7 +498,7 @@ function computePath(aLon, aLat, bLon, bLat, skill = 1) {
   // clear water and is no slower than following the track. Grow the reach in doubling steps,
   // then narrow it down.
   const ok = (a, b) => b === a + 1 || (legTime(pts[a], pts[b], skill) <= (along[b] - along[a]) * 1.005 &&
-    clearWater(pts[a][0], pts[a][1], pts[b][0], pts[b][1]));
+    clearWater(pts[a][0], pts[a][1], pts[b][0], pts[b][1]) && (!maxOff || inshore(pts[a][0], pts[a][1], pts[b][0], pts[b][1], maxOff)));
   const last = pts.length - 1;
   const out = [];
   let k = 0;

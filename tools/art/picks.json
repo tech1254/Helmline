@@ -2,7 +2,11 @@
   "note": "The art chosen for the game (picks of 27 Oct 2026). publish.py turns these into public/img. Paths are inside the art branch (art/<batch>/<file>).",
   "ports": {
     "lisbon": "production-1/lisbon-clean-a.png",
+    "porto": "production-6/porto-b.png",
     "lagos": "production-1/lagos-b.png",
+    "cadiz": "production-6/cadiz-b.png",
+    "ceuta": "production-6/ceuta-b.png",
+    "safi": "production-6/safi-a.png",
     "funchal": "production-1/funchal-b.png",
     "lanzarote": "production-1/lanzarote-a.png",
     "arguin": {
@@ -54,6 +58,16 @@
       "src": "production-1/ship-nau-cross-b-cut.png",
       "waterline": 0.09,
       "length": 30
+    },
+    "largecaravel": {
+      "src": "production-8/ship-largecaravel-b-cut.png",
+      "waterline": 0.1,
+      "length": 25
+    },
+    "largecaravel-cross": {
+      "src": "production-9/ship-largecaravel-cross-b-cut.png",
+      "waterline": 0.1,
+      "length": 25
     }
   },
   "stocks": {
@@ -216,6 +230,66 @@
       "bright": 0.95,
       "sat": 0.9,
       "haze": 0.07
+    },
+    "porto": {
+      "light": [
+        238,
+        232,
+        218
+      ],
+      "shade": [
+        30,
+        32,
+        32
+      ],
+      "bright": 0.9,
+      "sat": 0.85,
+      "haze": 0.08
+    },
+    "cadiz": {
+      "light": [
+        255,
+        240,
+        215
+      ],
+      "shade": [
+        30,
+        34,
+        44
+      ],
+      "bright": 1.0,
+      "sat": 1.0,
+      "haze": 0.04
+    },
+    "ceuta": {
+      "light": [
+        255,
+        236,
+        205
+      ],
+      "shade": [
+        34,
+        32,
+        32
+      ],
+      "bright": 1.0,
+      "sat": 1.0,
+      "haze": 0.04
+    },
+    "safi": {
+      "light": [
+        255,
+        222,
+        175
+      ],
+      "shade": [
+        42,
+        32,
+        24
+      ],
+      "bright": 1.0,
+      "sat": 1.0,
+      "haze": 0.05
     }
   }
 }

@@ -5,7 +5,7 @@ import { PORTS, isLand, inBounds } from './world.js';
 import { S, ui } from './state.js';
 import { isRevealed } from './fog.js';
 import { W, cam, canvas, clampCam, toScreen, toWorld } from './view.js';
-import { confirmVoyage, planCourse } from './voyage.js';
+import { confirmVoyage, noPassage, planCourse } from './voyage.js';
 import { renderPanel, setSpeed, togglePanel, toggleWind } from './panels.js';
 import { passage } from './pricebook.js';
 import { closeModal } from './dialog.js';
@@ -50,7 +50,7 @@ export function chartClick(sx, sy, append) {
   if (p) {
     if (S.ship.docked === p.id) { ui.panelMode = 'port'; renderPanel(); return; }
     const plan = planCourse(p.lon, p.lat, p.id, append);
-    if (!plan) { hint('The pilot can find no passage there.'); return; }
+    if (!plan) { hint(noPassage()); return; }
     confirmVoyage(plan);
     return;
   }
@@ -61,7 +61,7 @@ export function chartClick(sx, sy, append) {
     return;
   }
   const plan = planCourse(lon, lat, null, append);
-  if (!plan) { hint('The pilot can find no passage there.'); return; }
+  if (!plan) { hint(noPassage()); return; }
   confirmVoyage(plan);
 }
 
