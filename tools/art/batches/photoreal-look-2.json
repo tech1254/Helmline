@@ -1,0 +1,45 @@
+{
+  "note": "Scale fixes: Lisbon with no close-up quay (so a 20-metre ship in the near water reads at true size), and the shipyard painted with our caravel in it at true scale.",
+  "items": [
+    {
+      "id": "lisbon-photo-3a",
+      "model": "black-forest-labs/flux-2-pro-preview",
+      "width": 1600,
+      "height": 896,
+      "seed": 1453,
+      "refs": [],
+      "prompt": "A photorealistic photograph of Lisbon in 1451 taken from a small boat out on the river Tagus, about 300 metres from the shore, late afternoon golden light, light haze. Camera at water level, horizon exactly at mid-height. The lower half is calm open river water with soft ripples and reflections, completely empty in the foreground and across the left two-thirds: no boats, no quay, no posts, nothing in the near water. On the far shore, in the middle distance on the right, a long stone quay at the foot of the city with two small moored caravels and a few rowing boats, seen small at that distance. Lisbon as it really was in 1451: a medieval city climbing from the riverbank up a steep hill, crowned by the Castle of São Jorge with plain stone walls and square towers; small two- and three-storey whitewashed houses with terracotta roofs packed down to the water; the twin square towers of the Romanesque cathedral (Sé) halfway up; a low stone town wall along the river. No tall townhouse facades, no Baroque or Gothic spires, no three-masted ships, no Belém Tower, no bridges, nothing modern. No text, no border."
+    },
+    {
+      "id": "lisbon-photo-3b",
+      "model": "black-forest-labs/flux-2-pro-preview",
+      "width": 1600,
+      "height": 896,
+      "seed": 1454,
+      "refs": [],
+      "prompt": "A photorealistic photograph of Lisbon in 1451 seen from the deck level of a ship on the river Tagus, about 250 metres out, warm early evening light. Horizon at mid-height. The near water across the whole lower half is open and empty, gently rippled, with long reflections of the city. The riverfront in the middle distance runs from left to right: a low stone wall with gates, a few fishing boats pulled up on a small beach, and on the right a stone quay with two moored caravels, all small with distance. Lisbon as it really was in 1451: a medieval city climbing from the riverbank up a steep hill, crowned by the Castle of São Jorge with plain stone walls and square towers; small two- and three-storey whitewashed houses with terracotta roofs packed down to the water; the twin square towers of the Romanesque cathedral (Sé) halfway up; a low stone town wall along the river. No tall townhouse facades, no Baroque or Gothic spires, no three-masted ships, no Belém Tower, no bridges, nothing modern. No text, no border."
+    },
+    {
+      "id": "yard-slipway",
+      "model": "black-forest-labs/flux-2-pro-preview",
+      "width": 1600,
+      "height": 896,
+      "seed": 1455,
+      "refs": [
+        "tools/art/refs/caravel-photo-green.jpg"
+      ],
+      "prompt": "A photorealistic photograph of the royal shipyard on the riverbank of Lisbon in the 1450s, soft morning light through haze. The caravel from the reference photo stands out of the water on a timber slipway cradle for a refit, seen side-on from about 35 metres away so the whole ship fits in the frame with room around her, bow to the right, sails furled on the yards. The ship is exactly the caravel in the reference photo: about 20 metres long, two masts with large triangular lateen sails, dark weathered tarred hull, small raised stern deck, plain white ensign. Ignore the green background and the display stand in the reference. Shipwrights at real human scale work around her: a man on a ladder against the hull, two men carrying a plank, one tending a smoking tar cauldron; stacks of timber, coils of rope. The river Tagus behind with the city faint in the haze. Everything at true scale: people about a tenth of the ship's length. Historically accurate 15th-century tools and clothing, nothing modern, no text."
+    },
+    {
+      "id": "yard-quay",
+      "model": "black-forest-labs/flux-2-pro-preview",
+      "width": 1600,
+      "height": 896,
+      "seed": 1456,
+      "refs": [
+        "tools/art/refs/caravel-photo-green.jpg"
+      ],
+      "prompt": "A photorealistic photograph of the fitting-out quay of the royal shipyard of Lisbon in the 1450s, soft morning light: the caravel from the reference photo is moored alongside a stone quay, seen side-on from across the water about 40 metres away, bow to the right, sails loosed and hanging as riggers work aloft. The ship is exactly the caravel in the reference photo: about 20 metres long, two masts with large triangular lateen sails, dark weathered tarred hull, small raised stern deck, plain white ensign. Ignore the green background and the display stand in the reference. On the quay at true human scale: shipwrights, a hand crane of timber, barrels, coils of rope and stacked planks. Behind, the shipyard sheds and the city of Lisbon on its hill in the haze. People about a tenth of the ship's length. Historically accurate, nothing modern, no text."
+    }
+  ]
+}
