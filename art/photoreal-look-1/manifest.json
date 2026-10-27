@@ -1,0 +1,78 @@
+{
+  "batch": "photoreal-look-1",
+  "note": "What the game would look like shifted toward photorealism: Lisbon (more true to 1451), the caravel and the nau on chroma-key green for cutting out, the shipyard, a ship on the stocks, and vellum for the chart.",
+  "commit": "99e9c2d1d82316dbfdee81c4a4db565729b8d9d2",
+  "generated": "2026-10-27T13:35:13.901Z",
+  "items": [
+    {
+      "id": "lisbon-photo-2",
+      "model": "black-forest-labs/flux-2-pro-preview",
+      "width": 1600,
+      "height": 896,
+      "seed": 1452,
+      "refs": [
+        "tools/art/refs/lisbon-layout.jpg"
+      ],
+      "prompt": "A photorealistic photograph of Lisbon seen from a boat on the river Tagus, late afternoon golden light, light haze, calm water with soft reflections, 35mm lens. Keep the composition of the reference image: the river fills the lower half, the horizon at mid-height, the city on its hill in the centre and right distance, a weathered stone quay with three wooden barrels and an iron bollard in the lower right corner. The left two-thirds of the water are open and empty: no ships, boats or people there. Lisbon as it really was in 1451: a medieval city that climbs from the riverbank up a steep hill, crowned by the Castle of São Jorge with plain stone curtain walls and square towers; below it small two- and three-storey whitewashed houses with terracotta tile roofs, packed tightly and running right down to the water; the twin square towers of the Romanesque cathedral (Sé) halfway up; a low stone town wall with gates along the river. No tall townhouse facades, no Baroque or Gothic churches with spires, no Belém Tower, no bridges, no modern buildings, no electric lights. No text, no border.",
+      "file": "lisbon-photo-2.png",
+      "seconds": 22.8
+    },
+    {
+      "id": "caravel-green",
+      "model": "black-forest-labs/flux-2-pro-preview",
+      "width": 1280,
+      "height": 896,
+      "seed": 1452,
+      "refs": [
+        "tools/art/refs/caravel-drawing.png"
+      ],
+      "prompt": "A photorealistic photograph of a full-size 15th-century caravel replica under sail, warm late afternoon light from the right, isolated on a solid flat pure chroma-key green background (#00b140) filling everything around the ship, including below the waterline, no sea and no sky. The ship is exactly the one in the reference drawing: a small 15th-century Portuguese caravel, about 20 metres long, lateen-rigged with two masts carrying large triangular lateen sails on long slanted yards, the taller mainmast forward and a smaller mizzen aft, a dark tarred hull, a raised deck at the stern, a small plain white ensign at the stern. No modern fittings, no flags at the bow. Seen exactly side-on, bow pointing right, the whole ship from mastheads to keel in frame with a margin all round. Weathered linen sails, real rope rigging, wet tarred timber.",
+      "file": "caravel-green.png",
+      "seconds": 11.5
+    },
+    {
+      "id": "nau-green",
+      "model": "black-forest-labs/flux-2-pro-preview",
+      "width": 1280,
+      "height": 896,
+      "seed": 1452,
+      "refs": [],
+      "prompt": "A photorealistic photograph of a full-size late 15th-century Portuguese nau (carrack) replica: high rounded hull of dark tarred timber, tall forecastle and sterncastle, three masts with square sails on the fore and main masts and a topsail above the mainsail, a triangular lateen sail on the mizzen, a bowsprit, square sails painted with the red cross of the Order of Christ. Seen exactly side-on, bow pointing right, warm late afternoon light, isolated on a solid flat pure chroma-key green background (#00b140) all round, no sea, no sky, the whole ship in frame with a margin.",
+      "file": "nau-green.png",
+      "seconds": 11.3
+    },
+    {
+      "id": "shipyard-photo",
+      "model": "black-forest-labs/flux-2-pro-preview",
+      "width": 1600,
+      "height": 896,
+      "seed": 1452,
+      "refs": [],
+      "prompt": "A photorealistic photograph of the royal shipyard on the riverbank of Lisbon in the 1450s, soft morning light through haze: a half-built caravel on wooden slipway stocks, her curved oak ribs and partly planked hull, scaffolding, stacks of timber, adzes and saws, coils of rope, a tar cauldron smoking, the river Tagus behind with a finished caravel at anchor. The left half of the frame is an open timber-paved yard, uncluttered. Historically accurate 15th-century tools and clothing, no modern objects, no text.",
+      "file": "shipyard-photo.png",
+      "seconds": 12.4
+    },
+    {
+      "id": "frames-photo",
+      "model": "black-forest-labs/flux-2-pro-preview",
+      "width": 1280,
+      "height": 896,
+      "seed": 1452,
+      "refs": [],
+      "prompt": "A photorealistic photograph of the skeleton of a large 15th-century wooden ship under construction on slipway stocks: keel, stem and sternpost raised, rows of curved oak frames standing up, no planking yet, side view, warm light, sawdust, a riverside shipyard softly out of focus behind. No people, no modern objects, no text.",
+      "file": "frames-photo.png",
+      "seconds": 10.8
+    },
+    {
+      "id": "vellum",
+      "model": "black-forest-labs/flux-2-pro-preview",
+      "width": 1600,
+      "height": 896,
+      "seed": 1452,
+      "refs": [],
+      "prompt": "A top-down photograph of a blank sheet of old vellum parchment, evenly lit, warm cream and light brown tones, natural skin texture, faint creases, foxing and small stains, slightly darker toward the edges. Completely blank: no writing, no drawings, no lines, no objects, filling the whole frame.",
+      "file": "vellum.png",
+      "seconds": 11.1
+    }
+  ]
+}
