@@ -1,0 +1,23 @@
+{
+  "note": "Materials for a photoreal interface mock-up: oak boards and leather.",
+  "items": [
+    {
+      "id": "oak",
+      "model": "black-forest-labs/flux-2-pro-preview",
+      "width": 1600,
+      "height": 896,
+      "seed": 7,
+      "refs": [],
+      "prompt": "A top-down photograph of a ship's dark oak deck boards, evenly lit, aged and oiled, fine grain, tight seams with tarred caulking between planks running horizontally, no objects, no nails heads in the middle, filling the whole frame, seamless texture."
+    },
+    {
+      "id": "leather",
+      "model": "black-forest-labs/flux-2-pro-preview",
+      "width": 1280,
+      "height": 896,
+      "seed": 7,
+      "refs": [],
+      "prompt": "A top-down photograph of dark brown aged leather, like the cover of a 15th-century sea chest, evenly lit, natural grain, subtle scuffs and patina, no stitching, no tooling, no objects, filling the whole frame, seamless texture."
+    }
+  ]
+}
