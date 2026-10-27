@@ -477,7 +477,7 @@ body.scene-open #panel, body.scene-open #toast, body.scene-open #tip { visibilit
 #dock button.on .ico { color: #1d1209; }
 #dock { border-top-color: #120b06; }
 #panel button:not(.close):not(.opt), #modal .card button { background: var(--leather); color: var(--on-dark); border-color: #120b06; text-shadow: 0 1px 1px #000; }
-#panel button.primary, #modal .card button.primary, .yard-card button.primary { background: linear-gradient(#a8442e, #6d2617); color: #fff6e6; border-color: #3d120a; }
+
 #panel .tabs button, #panel .tabs button:not(.close) { background: none; color: var(--ink); border: none; text-shadow: none; }
 #panel .tabs button.on { border-bottom: 2px solid var(--red); }
 .scene-cap { color: var(--on-dark); }
@@ -528,3 +528,4 @@ body.scene-open #panel, body.scene-open #toast, body.scene-open #tip { visibilit
 @keyframes bob { 50% { transform: translateY(1.5%) rotate(-0.4deg); } }
 .tag { white-space: nowrap; }
 #panel button:not(.close):not(.opt):hover:not(:disabled), #modal .card button:hover:not(:disabled), .yard-card button:not(.opt):not([role=tab]):hover:not(:disabled) { filter: brightness(1.18); }
+#panel button.primary:not(.close):not(.opt), #modal .card button.primary, .yard-card button.primary:not(.opt):not([role=tab]) { background: linear-gradient(#a8442e, #6d2617); color: #fff6e6; border-color: #3d120a; }
