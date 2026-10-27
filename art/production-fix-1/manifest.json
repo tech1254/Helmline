@@ -1,0 +1,57 @@
+{
+  "batch": "production-fix-1",
+  "note": "Fixes before the production run: Lisbon with the castle on the hilltop, the Lisbon yard with nothing modern, and the caravel as a real ship (not a model) on green, cut out by the new step.",
+  "commit": "62002b5ebe3df73da579823618f9be61d1332adc",
+  "generated": "2026-10-27T14:24:09.884Z",
+  "items": [
+    {
+      "id": "lisbon-a",
+      "model": "black-forest-labs/flux-2-pro-preview",
+      "width": 1600,
+      "height": 896,
+      "seed": 2001,
+      "refs": [],
+      "prompt": "A photorealistic photograph of Lisbon in 1451 taken from a boat on the river Tagus about 300 metres from the shore, late afternoon golden light, light haze. Camera at water level, horizon exactly at mid-height. The lower half is calm open river water with soft ripples and long reflections, completely empty across the near water and the left two-thirds: no boats, no quay, no posts. On the far shore, small with distance: a stone quay on the right with two moored caravels with lateen sails furled, and a few fishing boats pulled up on a small beach. Lisbon as it really was in 1451. The highest point of the hill is the Castle of São Jorge: long crenellated stone curtain walls with many square towers running along the hilltop, nothing taller above it. Halfway down, near the river, the cathedral (Sé): a plain fortress-like Romanesque church with two square towers and a rose window, smaller than the castle and below it. Between them small two- and three-storey whitewashed houses with terracotta tile roofs packed tightly down to the water, and a low stone town wall with gates along the river. No church or tower on the hilltop, no tall townhouse facades, no Baroque or Gothic spires, no three-masted ships, no Belém Tower, no bridges, nothing modern. Nothing modern anywhere in the frame: no motorboats, ferries, cars, tyres, electric poles, plastic, concrete or modern clothing. No text, no border.",
+      "file": "lisbon-a.png",
+      "seconds": 22.4
+    },
+    {
+      "id": "lisbon-b",
+      "model": "black-forest-labs/flux-2-pro-preview",
+      "width": 1600,
+      "height": 896,
+      "seed": 2002,
+      "refs": [],
+      "prompt": "A photorealistic photograph of Lisbon in 1451 from the deck of a ship on the river Tagus about 250 metres out, warm early evening light, soft haze over the hill. Horizon at mid-height. The near water across the whole lower half is open and empty, gently rippled, with long golden reflections. The riverfront in the middle distance: the low town wall with gates, a small beach with fishing boats, and on the right a stone quay with two moored caravels, all small with distance. Lisbon as it really was in 1451. The highest point of the hill is the Castle of São Jorge: long crenellated stone curtain walls with many square towers running along the hilltop, nothing taller above it. Halfway down, near the river, the cathedral (Sé): a plain fortress-like Romanesque church with two square towers and a rose window, smaller than the castle and below it. Between them small two- and three-storey whitewashed houses with terracotta tile roofs packed tightly down to the water, and a low stone town wall with gates along the river. No church or tower on the hilltop, no tall townhouse facades, no Baroque or Gothic spires, no three-masted ships, no Belém Tower, no bridges, nothing modern. Nothing modern anywhere in the frame: no motorboats, ferries, cars, tyres, electric poles, plastic, concrete or modern clothing. No text, no border.",
+      "file": "lisbon-b.png",
+      "seconds": 20.7
+    },
+    {
+      "id": "yard-lisbon-caravel",
+      "model": "black-forest-labs/flux-2-pro-preview",
+      "width": 1600,
+      "height": 896,
+      "seed": 2003,
+      "refs": [
+        "tools/art/refs/caravel-photo-green.jpg"
+      ],
+      "prompt": "A photorealistic photograph of the royal shipyard on the riverbank of Lisbon in the 1450s, soft morning light through haze. The caravel from the reference photo stands out of the water on a timber slipway cradle for a refit, seen side-on from about 35 metres away so the whole ship fits in the frame with room around her, bow to the right. The ship is exactly the caravel in the reference photo: about 20 metres long, two masts with large triangular lateen sails on long slanted yards, the taller mainmast forward, a dark weathered tarred hull, a small raised stern deck with a rail, a plain white ensign on a thin pole at the stern, a bowsprit. Ignore the green background and the display stand in the reference. Shipwrights at true human scale work around her (a man on a ladder against the hull, two men carrying a plank, one tending a smoking tar cauldron); stacks of timber, coils of rope, wooden sheds. Behind, the river Tagus with only small 15th-century sailing boats, and the medieval city faint in the haze. People about a tenth of the ship's length. Historically accurate 15th-century tools and clothing. Nothing modern anywhere in the frame: no motorboats, ferries, cars, tyres, electric poles, plastic, concrete or modern clothing. No text, no border.",
+      "file": "yard-lisbon-caravel.png",
+      "seconds": 11.3
+    },
+    {
+      "id": "caravel-plain",
+      "model": "black-forest-labs/flux-2-pro-preview",
+      "width": 1280,
+      "height": 896,
+      "seed": 2004,
+      "refs": [
+        "tools/art/refs/caravel-photo-green.jpg"
+      ],
+      "cutout": true,
+      "prompt": "A photorealistic photograph of a real full-size 15th-century Portuguese caravel under sail, seen exactly side-on, bow pointing right, warm late afternoon light from the right. The ship is exactly the caravel in the reference photo: about 20 metres long, two masts with large triangular lateen sails on long slanted yards, the taller mainmast forward, a dark weathered tarred hull, a small raised stern deck with a rail, a plain white ensign on a thin pole at the stern, a bowsprit. Weathered linen sails, real hemp rigging, wet tarred timber. She is isolated on a solid, flat, evenly lit chroma-key green background (#00b140) that fills everything around her, including below the hull: no sea, no sky, no shadow, no floor, no display stand, no cradle. The whole ship from the mastheads to the keel in frame, with a margin all round. Not a model: a real ship.",
+      "file": "caravel-plain.png",
+      "seconds": 11.2
+    }
+  ]
+}
