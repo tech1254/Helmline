@@ -1,0 +1,64 @@
+{
+  "batch": "production-8",
+  "note": "Production run 8: the large caravel made from the picked caravel pictures, so her colours match.",
+  "commit": "ac08366677c227c74771e899c87d772ac1788283",
+  "generated": "2026-10-27T20:29:46.819Z",
+  "items": [
+    {
+      "id": "ship-largecaravel-a",
+      "model": "black-forest-labs/flux-2-pro-preview",
+      "width": 1280,
+      "height": 896,
+      "seed": 5401,
+      "cutout": true,
+      "refs": [
+        "art:production-1/ship-caravel-a.png"
+      ],
+      "prompt": "Edit this photograph and keep her exactly as she is in colour, materials and light: the same warm golden sails, the same dark tarred wood and weathering, the same rigging, the same flat chroma-green background and the same side-on view, bow to the right. Make her a larger caravel (caravela latina grande): a longer hull, about a quarter longer, and a THIRD mast with its own triangular lateen sail on a long slanted yard, so she has three lateen sails in all, the tallest forward. Nothing else changes: no square sails, no gunports, no portholes. The whole ship from the mastheads to the keel in frame, with a margin all round, on flat green.",
+      "file": "ship-largecaravel-a.png",
+      "seconds": 12.9
+    },
+    {
+      "id": "ship-largecaravel-cross-a",
+      "model": "black-forest-labs/flux-2-pro-preview",
+      "width": 1280,
+      "height": 896,
+      "seed": 5411,
+      "cutout": true,
+      "refs": [
+        "art:production-1/ship-caravel-cross-b.png"
+      ],
+      "prompt": "Edit this photograph and keep her exactly as she is in colour, materials and light: the same warm golden sails with their red crosses of the Order of Christ (and the new sail with the same cross), the same dark tarred wood and weathering, the same rigging, the same flat chroma-green background and the same side-on view, bow to the right. Make her a larger caravel (caravela latina grande): a longer hull, about a quarter longer, and a THIRD mast with its own triangular lateen sail on a long slanted yard, so she has three lateen sails in all, the tallest forward. Nothing else changes: no square sails, no gunports, no portholes. The whole ship from the mastheads to the keel in frame, with a margin all round, on flat green.",
+      "file": "ship-largecaravel-cross-a.png",
+      "seconds": 11.8
+    },
+    {
+      "id": "ship-largecaravel-b",
+      "model": "black-forest-labs/flux-2-pro-preview",
+      "width": 1280,
+      "height": 896,
+      "seed": 5402,
+      "cutout": true,
+      "refs": [
+        "art:production-1/ship-caravel-a.png"
+      ],
+      "prompt": "Edit this photograph and keep her exactly as she is in colour, materials and light: the same warm golden sails, the same dark tarred wood and weathering, the same rigging, the same flat chroma-green background and the same side-on view, bow to the right. Make her a larger caravel (caravela latina grande): a longer hull, about a quarter longer, and a THIRD mast with its own triangular lateen sail on a long slanted yard, so she has three lateen sails in all, the tallest forward. Nothing else changes: no square sails, no gunports, no portholes. The whole ship from the mastheads to the keel in frame, with a margin all round, on flat green.",
+      "file": "ship-largecaravel-b.png",
+      "seconds": 11.2
+    },
+    {
+      "id": "ship-largecaravel-cross-b",
+      "model": "black-forest-labs/flux-2-pro-preview",
+      "width": 1280,
+      "height": 896,
+      "seed": 5412,
+      "cutout": true,
+      "refs": [
+        "art:production-1/ship-caravel-cross-b.png"
+      ],
+      "prompt": "Edit this photograph and keep her exactly as she is in colour, materials and light: the same warm golden sails with their red crosses of the Order of Christ (and the new sail with the same cross), the same dark tarred wood and weathering, the same rigging, the same flat chroma-green background and the same side-on view, bow to the right. Make her a larger caravel (caravela latina grande): a longer hull, about a quarter longer, and a THIRD mast with its own triangular lateen sail on a long slanted yard, so she has three lateen sails in all, the tallest forward. Nothing else changes: no square sails, no gunports, no portholes. The whole ship from the mastheads to the keel in frame, with a margin all round, on flat green.",
+      "file": "ship-largecaravel-cross-b.png",
+      "seconds": 11.4
+    }
+  ]
+}
