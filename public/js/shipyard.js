@@ -116,7 +116,7 @@ function registerHtml() {
     const art = o.kind === 'hull'
       ? shipSVG({ hull: o.hull, fit: Ships.normalFit(o.hull, {}), name: o.name }, { stage: p >= 1 ? 1 : Math.max(0.05, p), sea: p >= 1 })
       : shipSVG({ hull: sh.hull, fit: { ...sh.fit, [o.group]: o.choice }, name: sh.name }, { style: p >= 1 ? 'colour' : 'ink', sea: true });
-    const what = o.kind === 'hull' ? `${Ships.HULLS[o.hull].name}${o.name ? `: <i>${o.name}</i>` : ''}` : Ships.choice(o.group, o.choice).name;
+    const what = o.kind === 'hull' ? `${Ships.HULLS[o.hull].name}${o.name ? `: <i>${esc(o.name)}</i>` : ''}` : Ships.choice(o.group, o.choice).name;
     return `<li class="order-card">
         <div class="art">${art}</div>
         <div><h4>${what}</h4>
@@ -268,7 +268,7 @@ export function initShipyard() {
   const el = $('yard');
   el.addEventListener('click', (e) => {
     const t = e.target.closest('button');
-    if (!t || !ui.screen) return;
+    if (!t || !ui.screen || ui.modal) return; // the dialog does not block the screen behind it
     const y = ui.screen;
     const act = t.dataset.yard;
     if (act === 'close') { closeShips(); return; }
@@ -287,7 +287,7 @@ export function initShipyard() {
       const old = S.ship.name;
       S.ship.name = name;
       toast(`The <i>${esc(old)}</i> is now the <b>${esc(name)}</b>.`, 'port');
-      log(`Renamed the ${old} the ${name}.`);
+      log(`Renamed the ${esc(old)} the ${esc(name)}.`);
       save();
       renderShips();
       return;
@@ -322,6 +322,8 @@ function commission() {
   const y = ui.screen;
   const q = Ships.quoteFit(S, y.draft);
   if (q.error || !q.lines.length) return;
+  const newHold = Ships.stats({ hull: S.ship.hull, fit: { ...S.ship.fit, ...Object.fromEntries(q.lines.filter((l) => !l.order).map((l) => [l.g.id, l.c.id])) } }).hold;
+  if (newHold < held()) { hint(`That leaves a hold of ${newHold}, and you carry ${held()}. Sell some cargo first.`); return; }
   const total = q.cost + q.down;
   if (S.purse < total) { hint(`You need ${fmt(total)} cz.`); return; }
   const sh = S.ship;
@@ -340,7 +342,7 @@ function commission() {
       const done = q.lines.filter((l) => !l.order);
       if (done.length) toast(`The <b>${esc(sh.name)}</b> comes out of the yard: ${done.map((l) => lc(l.c.name)).join(', ')}.`, 'discover');
       if (q.ordered.length) toast(`Ordered: ${q.ordered.map((o) => lc(Ships.choice(o.group, o.choice).name)).join(', ')}. The yard will send word when it is ready.`, 'port');
-      log(`Shipyard work on the ${sh.name}: ${q.lines.map((l) => lc(l.c.name)).join(', ')} (${total} cz).`);
+      log(`Shipyard work on the ${esc(sh.name)}: ${q.lines.map((l) => lc(l.c.name)).join(', ')} (${total} cz).`);
       save();
       renderShips();
     },
@@ -365,12 +367,11 @@ function tradeUp(hullId) {
     kind: 'yard',
     onOk: () => {
       S.purse -= net;
-      Accounts.record(S, { kind: 'ships', amount: -net, text: `Traded the ${sh.hull} ${sh.name} for a ${H.name.toLowerCase()}` });
+      Accounts.record(S, { kind: 'ships', amount: -net, text: `Traded the ${sh.hull} ${esc(sh.name)} for a ${H.name.toLowerCase()}` });
       Ships.tradeUp(S, hullId, name);
-      ui.screen.draft = { ...S.ship.fit };
-      ui.screen.tab = 'hull';
+      if (ui.screen) { ui.screen.draft = { ...S.ship.fit }; ui.screen.tab = 'hull'; }
       toast(`The <b>${esc(name)}</b>, a ${H.name.toLowerCase()}, is yours. Fit her out as you please.`, 'discover');
-      log(`New flagship: the ${H.name.toLowerCase()} ${name}.`);
+      log(`New flagship: the ${H.name.toLowerCase()} ${esc(name)}.`);
       save();
       renderShips();
     },
@@ -414,7 +415,7 @@ function deliver(i) {
       S.yard.orders.splice(i, 1);
       S.purse += o.paid;
       Accounts.record(S, { kind: 'ships', amount: o.paid, text: `Refund: ${lc(Ships.choice(o.group, o.choice).name)} no longer fits your ship` });
-      toast(`The ${lc(Ships.choice(o.group, o.choice).name)} does not fit the ${sh.name}. The yard returns your ${fmt(o.paid)} cz.`, 'port');
+      toast(`The ${lc(Ships.choice(o.group, o.choice).name)} does not fit the ${esc(sh.name)}. The yard returns your ${fmt(o.paid)} cz.`, 'port');
       save(); renderShips(); return;
     }
     if (S.purse < due) { hint(`You need ${fmt(due)} cz.`); return; }
@@ -425,11 +426,13 @@ function deliver(i) {
       ok: `Pay ${fmt(due)} cz`,
       kind: 'yard',
       onOk: () => {
-        S.yard.orders.splice(i, 1);
+        const k = S.yard.orders.indexOf(o);
+        if (k < 0) return;
+        S.yard.orders.splice(k, 1);
         S.purse -= due;
         Accounts.record(S, { kind: 'ships', amount: -due, text: `Shipyard: ${lc(c.name)} (balance)` });
         sh.fit[o.group] = o.choice;
-        ui.screen.draft = { ...sh.fit };
+        if (ui.screen) ui.screen.draft = { ...sh.fit };
         waitInPort(c.days);
         toast(`The <b>${esc(sh.name)}</b> comes out of the yard with her ${lc(c.name)}.`, 'discover');
         save(); renderShips();
@@ -451,14 +454,15 @@ function deliver(i) {
     ok: net >= 0 ? `Pay ${fmt(net)} cz` : 'Take her',
     kind: 'yard',
     onOk: () => {
-      S.yard.orders.splice(i, 1);
+      const k = S.yard.orders.indexOf(o);
+      if (k < 0) return;
+      S.yard.orders.splice(k, 1);
       S.purse -= net;
-      Accounts.record(S, { kind: 'ships', amount: -net, text: `Delivery of the ${H.name.toLowerCase()} ${name}, less the ${sh.name} in part exchange` });
+      Accounts.record(S, { kind: 'ships', amount: -net, text: `Delivery of the ${H.name.toLowerCase()} ${esc(name)}, less the ${esc(sh.name)} in part exchange` });
       Ships.tradeUp(S, o.hull, name);
-      ui.screen.draft = { ...S.ship.fit };
-      ui.screen.name = S.ship.name;
+      if (ui.screen) { ui.screen.draft = { ...S.ship.fit }; ui.screen.name = S.ship.name; }
       toast(`The <b>${esc(name)}</b> slides down the ways into the Tagus. Your ${H.name.toLowerCase()} is ready for sea.`, 'discover');
-      log(`Took delivery of the ${H.name.toLowerCase()} ${name}.`);
+      log(`Took delivery of the ${H.name.toLowerCase()} ${esc(name)}.`);
       save(); renderShips();
     },
   });

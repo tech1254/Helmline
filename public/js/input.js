@@ -118,7 +118,7 @@ export function initInput() {
     }
     if (ui.screen) { if (e.key === 'Escape') closeShips(); return; }
     if (e.target.closest('input, textarea, select, button') && e.key !== 'Escape') return;
-    if (e.key === 's' || e.key === 'S') openShips('register');
+    if ((e.key === 's' || e.key === 'S') && ui.introDone) openShips('register');
     if (e.key === ' ') { e.preventDefault(); setSpeed(ui.speed === 0 ? ui.lastSpeed : 0); }
     if (e.key === '1') setSpeed(1);
     if (e.key === '2') setSpeed(2);

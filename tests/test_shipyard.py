@@ -9,14 +9,19 @@ async def main():
     async with async_playwright() as p:
         b = await p.chromium.launch(); pg = await b.new_page(viewport={'width': 1360, 'height': 860})
         errs = []; pg.on('pageerror', lambda e: errs.append(str(e)))
-        await pg.goto(URL); await pg.evaluate("localStorage.clear()"); await pg.reload()
-        await pg.click('#intro-new'); await pg.wait_for_timeout(400)
+        await pg.goto(URL); await pg.wait_for_selector('#intro:not([hidden])'); await pg.evaluate("localStorage.clear()"); await pg.reload()
+        await pg.wait_for_selector('#intro:not([hidden])'); await pg.click('#intro-new'); await pg.wait_for_timeout(400)
         await pg.evaluate("() => { window.helmline.state.pirates.cooldown = 1e9; }")
         st = lambda js: pg.evaluate(f"() => {{ const S = window.helmline.state; return {js}; }}")
         print('new game ship:', await st("({ hull: S.ship.hull, name: S.ship.name, cloth: S.ship.fit.cloth })"), 'hud', await pg.inner_text('#hud-hold'))
 
         # the register opens with S, and time stands still behind it
-        await pg.keyboard.press('s'); await pg.wait_for_selector('#yard:not([hidden]) .register')
+        await pg.evaluate('document.activeElement?.blur()'); await pg.keyboard.press('s')
+        try:
+            await pg.wait_for_selector('#yard:not([hidden]) .register', timeout=4000)
+        except Exception:
+            print('DEBUG', await pg.evaluate("() => ({ active: document.activeElement?.outerHTML?.slice(0, 80), modal: !document.querySelector('#modal').hidden, title: document.querySelector('#modal-title').textContent, intro: document.querySelector('#intro').hidden, yard: document.querySelector('#yard').hidden, scene: document.querySelector('#scene').hidden })"), errs)
+            raise
         d0 = await st("S.day"); await pg.wait_for_timeout(800); d1 = await st("S.day")
         print('register cards:', await pg.locator('.hull-card').count(), 'time frozen:', d0 == d1, 'pencil hulls:', await pg.locator('.hull-card.pencil').count())
         await pg.screenshot(path=f'{OUT}/shipyard_register_start.png')
@@ -34,6 +39,11 @@ async def main():
         await pg.click('[data-yard="commission"]'); await pg.click('#modal-ok'); await pg.wait_for_timeout(200)
         after = await st("({ purse: S.purse, day: S.day, fit: S.ship.fit })")
         print('refit paid:', round(before['purse'] - after['purse']), 'days in yard:', round(after['day'] - before['day'], 1), 'fit:', after['fit'])
+        # a refit may not leave less hold than the cargo aboard
+        await pg.evaluate("() => { const S = window.helmline.state; S.ship.fit.stow = 'extra'; S.cargo.wine = 46; }")
+        await pg.click('[data-yard-tab="hull"]'); await pg.click('[data-opt="stow:standard"]'); await pg.click('[data-yard="commission"]'); await pg.wait_for_timeout(200)
+        print('shrinking the hold below the cargo refused:', await st("S.ship.fit.stow"), 'dialog open', await pg.is_visible('#modal'))
+        await pg.evaluate("() => { const S = window.helmline.state; S.cargo.wine = 30; }"); await pg.click('[data-yard="reset"]')
         # square rig: may be ordered from 1470, fitted from 1480
         await pg.click('[data-yard-tab="rig"]'); await pg.click('[data-opt="rig:square"]')
         await pg.click('[data-yard="commission"]'); await pg.click('#modal-ok'); await pg.wait_for_timeout(200)
@@ -47,7 +57,7 @@ async def main():
         await pg.click('[data-yard="close"]')
         # four years on: the nau is half built
         await pg.evaluate("() => { const S = window.helmline.state; S.day = window.helmline.yearDay(1476); }")
-        await pg.keyboard.press('s'); await pg.wait_for_selector('.register')
+        await pg.evaluate('document.activeElement?.blur()'); await pg.keyboard.press('s'); await pg.wait_for_selector('.register')
         print('on the stocks:', await pg.locator('.order-card').count(), await pg.locator('.order-card h4').all_inner_texts())
         await pg.screenshot(path=f'{OUT}/shipyard_register_building.png', full_page=False)
         await pg.locator('.orders').scroll_into_view_if_needed(); await pg.screenshot(path=f'{OUT}/shipyard_register_orders.png')
@@ -78,7 +88,7 @@ async def main():
         # phone
         await pg.set_viewport_size({'width': 390, 'height': 800}); await pg.wait_for_timeout(200)
         await pg.evaluate("() => { document.querySelector('#panel [data-close]')?.click(); }")
-        await pg.keyboard.press('s'); await pg.wait_for_selector('.register'); await pg.screenshot(path=f'{OUT}/shipyard_phone_register.png')
+        await pg.evaluate('document.activeElement?.blur()'); await pg.keyboard.press('s'); await pg.wait_for_selector('.register'); await pg.screenshot(path=f'{OUT}/shipyard_phone_register.png')
         await pg.click('[data-yard="open-yard"]'); await pg.wait_for_selector('.shipyard'); await pg.screenshot(path=f'{OUT}/shipyard_phone_yard.png')
         wide = await pg.evaluate("() => document.documentElement.scrollWidth <= window.innerWidth + 1")
         print('phone fits width:', wide)
@@ -86,7 +96,8 @@ async def main():
 
         # an old save with no ship details loads as a lateen caravel
         await pg.evaluate("""() => { const raw = JSON.parse(localStorage.getItem('helmline-proto0-v1')); delete raw.S.ship.hull; delete raw.S.ship.fit; delete raw.S.ship.name; delete raw.S.yard;
-          for (const x of raw.S.fleet.ships) delete x.hull; localStorage.setItem('helmline-proto0-v1', JSON.stringify(raw)); }""")
+          for (const x of raw.S.fleet.ships) delete x.hull; localStorage.setItem('helmline-proto0-v1', JSON.stringify(raw));
+          Storage.prototype.setItem = () => {}; }""")  # so the save on unload does not overwrite it
         await pg.reload(); await pg.click('#intro-continue'); await pg.wait_for_timeout(300)
         print('old save:', await st("({ hull: S.ship.hull, name: S.ship.name, rig: S.ship.fit.rig, fleet: S.fleet.ships.map(x => x.hull) })"))
         print('ERRORS', errs); await b.close()

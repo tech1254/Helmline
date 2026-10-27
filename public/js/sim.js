@@ -62,7 +62,7 @@ export function update(dtSec) {
       if (S.trail.length > 4000) S.trail.splice(0, S.trail.length - 4000);
     }
     if (!sh.route.length) {
-      if (sh.dest?.port) { startArrival(sh.dest.port); dock(sh.dest.port); }
+      if (sh.dest?.port) { try { startArrival(sh.dest.port); } catch (e) { console.error(e); } dock(sh.dest.port); }
       else { sh.dest = null; toast('Arrived at the mark. Awaiting orders.'); save(); }
       break;
     }
@@ -201,7 +201,7 @@ export function advanceTime(dd, atSea, away = false) {
   for (const o of Ships.ready(S)) {
     if (o.told) continue;
     o.told = true;
-    const what = o.kind === 'hull' ? `Your ${Ships.HULLS[o.hull].name.toLowerCase()}${o.name ? ` <b>${o.name}</b>` : ''} is` : `The ${Ships.choice(o.group, o.choice).name.toLowerCase()} you ordered is`;
+    const what = o.kind === 'hull' ? `Your ${Ships.HULLS[o.hull].name.toLowerCase()}${o.name ? ` <b>${String(o.name).replace(/[<>&"]/g, '')}</b>` : ''} is` : `The ${Ships.choice(o.group, o.choice).name.toLowerCase()} you ordered is`;
     report([{ html: `${what} ready at the Lisbon shipyard. Call there to take delivery.`, kind: 'discover', log: `${what.replace(/<[^>]+>/g, '')} ready in Lisbon.` }]);
   }
 }

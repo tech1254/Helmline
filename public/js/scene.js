@@ -69,8 +69,8 @@ function run() {
   A.painting = PAINTED.includes(A.portId) ? Object.assign(new Image(), { src: `img/ports/${A.portId}.webp` }) : null;
   const skip = () => finish(true);
   el.onclick = skip;
-  A.onKey = (e) => { if (!ui.modal) { e.preventDefault(); skip(); } };
-  window.addEventListener('keydown', A.onKey, { capture: true, once: true });
+  A.onKey = (e) => { if (!ui.modal) { e.preventDefault(); e.stopImmediatePropagation(); skip(); } };
+  window.addEventListener('keydown', A.onKey, { capture: true });
   sizeCanvas();
   A.onResize = () => sizeCanvas();
   window.addEventListener('resize', A.onResize);

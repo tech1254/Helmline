@@ -10,8 +10,8 @@ async def main():
     async with async_playwright() as p:
         b = await p.chromium.launch(); pg = await b.new_page(viewport={'width': 1280, 'height': 800})
         errs = []; pg.on('pageerror', lambda e: errs.append(str(e)))
-        await pg.goto(URL); await pg.evaluate("localStorage.clear()"); await pg.reload()
-        await pg.click('#intro-new'); await pg.wait_for_timeout(300)
+        await pg.goto(URL); await pg.wait_for_selector('#intro:not([hidden])'); await pg.evaluate("localStorage.clear()"); await pg.reload()
+        await pg.wait_for_selector('#intro:not([hidden])'); await pg.click('#intro-new'); await pg.wait_for_timeout(300)
         await pg.evaluate("() => { window.helmline.state.pirates.cooldown = 1e9; window.helmlineScenes = true; }")
         st = lambda js: pg.evaluate(f"() => {{ const S = window.helmline.state; return {js}; }}")
         # sail to Lagos and watch her come in
@@ -31,6 +31,9 @@ async def main():
         await pg.evaluate("() => window.helmline.scene('lisbon')"); await pg.wait_for_timeout(500)
         await pg.mouse.click(400, 400); await pg.wait_for_selector('#scene', state='hidden', timeout=3000)
         print('skipped with a tap')
+        await pg.evaluate("() => { window.helmline.setSpeed(1); window.helmline.scene('lisbon'); }"); await pg.wait_for_timeout(500)
+        await pg.evaluate('document.activeElement?.blur()'); await pg.keyboard.press(' '); await pg.wait_for_selector('#scene', state='hidden', timeout=3000)
+        print('space skips without pausing:', await pg.evaluate("() => document.querySelector('[data-speed=\"1\"]').classList.contains('on')"), 'register stays shut:', await pg.is_hidden('#yard'))
         # setting: first visits only
         await pg.evaluate("() => { window.helmline.state.settings = { arrivals: 'first' }; }")
         played = await pg.evaluate("() => { window.helmline.state.called.lagos = true; return window.helmline.state.settings.arrivals; }")

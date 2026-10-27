@@ -239,10 +239,11 @@ export const FLAGSHIP_NAME = 'São Cristóvão';
 export function ensureFlagship(S) {
   const sh = S.ship;
   if (!sh.hull || !HULLS[sh.hull]) sh.hull = 'caravel';
-  if (!sh.name) sh.name = FLAGSHIP_NAME;
+  sh.name = String(sh.name || FLAGSHIP_NAME).replace(/[<>]/g, '').slice(0, 40) || FLAGSHIP_NAME;
   sh.fit = normalFit(sh.hull, sh.fit);
   if (!S.yard) S.yard = { orders: [], built: 0 };
   if (!S.called) S.called = Object.fromEntries(Object.keys(S.seen || {}).filter((p) => (S.seen[p].day ?? -1) >= 0).map((p) => [p, true]));
+  if (sh.docked) S.called[sh.docked] = true;
   return sh;
 }
 
