@@ -7,6 +7,7 @@ import * as Events from './events.js';
 import * as Fleet from './fleet.js';
 import * as Accounts from './accounts.js';
 import * as Pirates from './pirates.js';
+import * as Ships from './ships.js';
 import { SAVE_KEY, START_PURSE } from './config.js';
 import { S, market, setGame } from './state.js';
 import { fogToString, initFog, markFogDirty } from './fog.js';
@@ -21,7 +22,7 @@ export function freshState() {
     purse: START_PURSE,
     cargo: Object.fromEntries(GOODS.map((g) => [g.id, 0])),
     paid: Object.fromEntries(GOODS.map((g) => [g.id, 0])), // total paid for current stock, for average cost
-    ship: { lon: lis.lon, lat: lis.lat, heading: 210, route: [], dest: null, docked: 'lisbon' },
+    ship: { lon: lis.lon, lat: lis.lat, heading: 210, route: [], dest: null, docked: 'lisbon', hull: 'caravel', name: Ships.FLAGSHIP_NAME, fit: { ...Ships.DEFAULT_FIT } },
     discovered: Object.fromEntries(PORTS.map((p) => [p.id, p.known])),
     sighted: { iberia: true, africa: true, madeira: true, canaries: true },
     unpaidCharts: [],
@@ -70,6 +71,7 @@ export function applySaveData(d) {
     S.tips = S.tips || {};
     Pirates.ensurePirates(S);
     Accounts.ensureAccounts(S);
+    Ships.ensureFlagship(S);
     syncMarket();
     return true;
   } catch (e) {
@@ -89,6 +91,7 @@ export function newGame() {
   Fleet.ensureFleet(S);
   Pirates.ensurePirates(S);
   Accounts.ensureAccounts(S);
+  Ships.ensureFlagship(S);
   syncMarket();
   observe('lisbon');
   centerOn(-13, 29, 0.85);

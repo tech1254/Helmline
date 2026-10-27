@@ -7,7 +7,8 @@ import * as Fleet from './fleet.js';
 import * as Cloud from './cloud.js';
 import * as Accounts from './accounts.js';
 import * as Pirates from './pirates.js';
-import { SHIP, WAGE_RESERVE } from './config.js';
+import { WAGE_RESERVE_DAYS } from './config.js';
+import * as Ships from './ships.js';
 import { S, market, ui } from './state.js';
 import { newGame, save } from './save.js';
 import { cloudSync, loadFromCloud, renderCloudButton, startCloudSave } from './cloudsync.js';
@@ -60,11 +61,12 @@ export function initActions() {
     }
     if (t.dataset.buy && pid) {
       const g = t.dataset.buy;
-      const free = SHIP.hold - held();
+      const st = Ships.flagStats(S);
+      const free = st.hold - held();
       const max = t.dataset.n === 'max';
       const n = max ? free : +t.dataset.n;
       // "Max" keeps back two weeks of wages so the crew is paid on the way.
-      const budget = Math.floor(S.purse - (max ? Math.min(WAGE_RESERVE, Math.max(0, S.purse - market.buyPrice(pid, g))) : 0));
+      const budget = Math.floor(S.purse - (max ? Math.min(WAGE_RESERVE_DAYS * st.upkeep, Math.max(0, S.purse - market.buyPrice(pid, g))) : 0));
       const doBuy = () => {
         const { bought, cost } = market.buy(pid, g, n, budget, free);
         S.cargo[g] += bought; S.paid[g] += cost; S.purse -= cost;

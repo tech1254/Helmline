@@ -1,4 +1,5 @@
 import * as Accounts from './accounts.js';
+import * as Ships from './ships.js';
 // Contracts: jobs from the crown and the merchant houses that give each voyage a goal.
 // Two kinds for now:
 //  - discover: chart and anchor at a port no one in Lisbon trades with yet, then report home.
@@ -95,7 +96,6 @@ export function discoveryContract(S) {
 // Every offer is checked to be completable: the goods are on sale at a charted port that is
 // open, the destination genuinely wants them (its price clearly beats the source's), the
 // cargo fits the hold and the captain's purse, and the deadline allows for a real passage.
-const HOLD = 40;
 const DEMAND_RATIO = 1.25; // destination price must beat the source's by this much
 const NM_PER_DAY = 60; // a cautious pace, allowing for contrary winds
 const REFRESH_DAYS = 15; // the whole board is reposted this often
@@ -146,7 +146,7 @@ function makeOffer(S, market, portId, cand) {
   if (nm1 == null || nm2 == null) return null;
   const unit = market.buyPrice(src.id, g.id);
   const budget = Math.max(120, Math.min(S.purse * 0.8, 3000));
-  const most = Math.min(HOLD, Math.floor(budget / unit));
+  const most = Math.min(S.ship?.hull ? Ships.flagStats(S).hold : 40, Math.floor(budget / unit));
   const want = g.id === 'gold' ? 3 + Math.floor(Math.random() * 6) : 10 + 5 * Math.floor(Math.random() * 5);
   const qty = Math.min(want, most);
   if (qty < (g.id === 'gold' ? 2 : 5)) return null;

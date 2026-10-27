@@ -6,7 +6,8 @@ import * as Contracts from './contracts.js';
 import * as Events from './events.js';
 import * as Fleet from './fleet.js';
 import * as Pirates from './pirates.js';
-import { CHART_REWARD, OFFLINE_MAX_DAYS, SHIP, STANDING_FADES_AFTER_HOURS } from './config.js';
+import { CHART_REWARD, OFFLINE_MAX_DAYS, STANDING_FADES_AFTER_HOURS } from './config.js';
+import * as Ships from './ships.js';
 import { S, market, ui } from './state.js';
 import { load, save } from './save.js';
 import { renderCloud } from './cloudsync.js';
@@ -45,7 +46,7 @@ export function renderHud() {
   const purse = Math.floor(S.purse);
   $('hud-purse').textContent = `${purse.toLocaleString()} cz`;
   $('hud-purse').classList.toggle('debt', purse < 0);
-  $('hud-hold').textContent = `${held()} / ${SHIP.hold}`;
+  $('hud-hold').textContent = `${held()} / ${Ships.flagStats(S).hold}`;
   const sh = S.ship;
   let status;
   if (sh.docked) {
@@ -119,7 +120,8 @@ export function renderPort(el) {
   if (!pid) { ui.panelMode = null; el.hidden = true; return; }
   const p = PORTS.find((x) => x.id === pid);
   observe(pid);
-  const free = SHIP.hold - held();
+  const st = Ships.flagStats(S);
+  const free = st.hold - held();
   const shut = Events.closure(S, pid);
   const rows = GOODS.map((g) => {
     const sells = market.sells(pid, g.id) && !shut;
@@ -149,7 +151,7 @@ export function renderPort(el) {
       <thead><tr><th>Good</th><th class="num">Buy</th><th class="num">Sell</th><th class="num">Hold</th><th></th></tr></thead>
       <tbody>${rows}</tbody>
     </table>
-    <p class="foot">Hold ${held()} / ${SHIP.hold} · purse ${Math.floor(S.purse).toLocaleString()} cz · upkeep ${SHIP.upkeep} cz a day at sea.<br>
+    <p class="foot">Hold ${held()} / ${st.hold} · purse ${Math.floor(S.purse).toLocaleString()} cz · upkeep ${st.upkeep} cz a day at sea.<br>
     Buying pushes the price up; selling pushes it down. Prices recover over a few weeks. <i>Max</i> keeps two weeks of wages in the purse.</p>
     <div class="row"><button data-wait title="Let a week pass: prices recover, news arrives, your fleet sails on. Your crew draws no wages in port; hired captains are still paid.">Wait a week</button><button class="primary" data-tab="sail">Set sail…</button></div>`;
 }
