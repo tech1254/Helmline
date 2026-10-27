@@ -381,7 +381,9 @@ export function renderHelp(el) {
     <h3>Growing</h3>
     <ul class="help">
       <li><b>Contracts</b> open up at 500 cz. Completing them builds standing; missing deadlines costs it.</li>
-      <li><b>Standing</b> brings better pay, better prices in Portuguese ports, and the right to buy a second caravel.</li>
+      <li><b>Standing</b> brings better pay, better prices in Portuguese ports, the right to command hired ships, and bigger hulls at the shipyard.</li>
+      <li><b>Your ship:</b> the ship register (S, or <i>Ship</i>) shows your flagship, ships on order and the hulls ahead. The Lisbon shipyard refits her (sails, rig, guns, stores, colours), trades her up for a bigger hull, or builds one to order; Lagos and Funchal refit. A nau can be ordered from 1470 and is delivered in 1480.</li>
+      <li><b>Arriving:</b> your ship sails into each port in a short scene. Tap to skip it; choose every port, first visits only or off in the ship register.</li>
       <li><b>Your fleet:</b> a hired captain runs a trade route for you, paid from your purse.</li>
       <li><b>The ledger</b> accounts for every cruzado in and out. Your own dealings are entered at once. A hired captain's are entered when you are in any port on his route, so until then part of your purse is not yet accounted for.</li>
       <li><b>Time away:</b> if you have hired captains and your own ship is in port, the world moves on while you are gone: at a tenth of its usual pace at first, more slowly after a few weeks, up to ${OFFLINE_MAX_DAYS} days. Contract deadlines wait for you. A night's sleep or a working day is safe; stay away longer than ${Fleet.STRAY_AFTER_HOURS} hours and captains start to stray (skimming, then going ashore), and after ${STANDING_FADES_AFTER_HOURS} hours your standing starts to fade.</li>
@@ -391,7 +393,7 @@ export function renderHelp(el) {
       <li><b>On this device</b> your game saves by itself as you play.</li>
       <li><b>Cloud save:</b> tap the cloud button to get a save code. Enter it on another device to continue there; both stay in sync. A green dot means synced, red means it needs attention.</li>
     </ul>
-    <p class="foot">Keyboard: space pause · 1 2 3 speed · P price book · L ledger · N notices · W winds · Esc close.</p>`;
+    <p class="foot">Keyboard: space pause · 1 2 3 speed · P price book · L ledger · N notices · S ship register · W winds · Esc close.</p>`;
 }
 
 // Captain's notes: a gentle nudge through the first voyages, until contracts open up.

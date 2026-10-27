@@ -44,10 +44,11 @@ export function startArrival(portId) {
   S.called[portId] = true;
   if (!enabled(first)) return false;
   const port = PORTS.find((p) => p.id === portId);
+  if (!port) return false;
   const reduced = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
   ui.arrival = { portId, port, first, newlyCharted: first && !port.known, held: [], t0: performance.now(), reduced,
     from: { x: cam.x, y: cam.y, scale: cam.scale }, ship: { hull: S.ship.hull, fit: { ...S.ship.fit }, name: S.ship.name } };
-  run();
+  try { run(); } catch (e) { console.error(e); done(); return false; }
   return true;
 }
 
@@ -90,8 +91,12 @@ const ease = (t) => (t <= 0 ? 0 : t >= 1 ? 1 : 1 - Math.pow(1 - t, 3));
 const easeIn = (t) => (t <= 0 ? 0 : t >= 1 ? 1 : t * t * (3 - 2 * t));
 
 function frame(now) {
+  if (!ui.arrival) return;
+  try { step(now); } catch (e) { console.error(e); done(); } // never leave the game frozen behind the scene
+}
+
+function step(now) {
   const A = ui.arrival;
-  if (!A) return;
   const t = (now - A.t0) / 1000;
   const el = $('scene');
   // 1. the chart zooms in on the harbour
@@ -122,6 +127,7 @@ function finish() {
 
 function done() {
   const A = ui.arrival;
+  if (!A) return;
   cancelAnimationFrame(raf);
   window.removeEventListener('resize', A.onResize);
   window.removeEventListener('keydown', A.onKey, { capture: true });

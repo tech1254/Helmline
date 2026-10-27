@@ -37,6 +37,10 @@ Every test except `corsairs` calms the seas (no random corsair attacks) so its c
 | `feedback` | Report a bug or idea from Help; typing does not trigger shortcuts; the draft survives a reload; reports are stored with or without game details |
 | `captain_prices` | Captains' price notes reach the price book only at ports on their route; the course home from Mina swings out to sea |
 | `routes_file` | The ready-made routes match what the pathfinder plans |
+| `shipyard` | Ship register, refits, an order (square rig, a nau), trading up, delivery and refund, a hull for a captain, phone layout, old saves |
+| `arrival` | The arrival scene on a real port call: pop-ups held until it ends, tap to skip, the first-visits setting, every harbour, phone |
+
+Automated browsers skip the arrival scene unless the page sets `window.helmlineScenes = true` (as `test_arrival` does), so other tests are not held up by it. `tests/tools/ship_gallery.html` shows every hull and fit side by side (serve the repo root and open it).
 
 The debug hooks the tests use (`window.helmline.dockAt`, `advance`, `away`, `accounts`, `encounter`) are defined at the bottom of `public/js/main.js`.
 
@@ -58,6 +62,8 @@ Results on 26 October 2026, cash per ship per 200 days:
 | Lisbon → Arguin → Lanzarote, best goods (★★★★★) | +483 | +852 | +1,550 |
 | Lisbon ⇄ Lanzarote, best goods (★★★) | −124 | +121 | +298 |
 | Lisbon ⇄ Gambia, best goods (★★★) | +1,255 | +1,569 | +1,401 |
+
+`node tests/sim/fleet_sim.mjs --hulls` sails every route with each hull. On 27 October 2026, after tuning, the barinel and nau earn about what a caravel does as hired ships: market depth caps any hold.
 
 `node tests/sim/passages.mjs --skill` shows passage times by navigation stars (Costa da Mina → Lisbon: 86 days at one star, 64 at five).
 

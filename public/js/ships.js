@@ -11,6 +11,8 @@ import { START_DATE } from './config.js';
 export const KNOWN = 5, RESPECTED = 20, TRUSTED = 40;
 export const TIER_NAMES = { 0: 'anyone', 5: 'Known on the quays', 20: 'Respected', 40: 'Trusted by the crown' };
 
+// Tuned 27 Oct 2026 with tests/sim/fleet_sim.mjs --hulls: as hired ships the barinel and nau earn about
+// what a caravel does on Africa routes, since market depth caps any hold (open for the tuning pass).
 // orderYear: may be ordered from this year (a third paid down); year: delivered or bought outright.
 export const HULLS = {
   barca: {
@@ -24,13 +26,13 @@ export const HULLS = {
     blurb: 'Two lateen masts and a shallow draft. The best ship afloat for beating home against the trade winds.',
   },
   barinel: {
-    id: 'barinel', name: 'Barinel', year: 1451, standing: KNOWN, price: 2200, hold: 60, knots: 4.5, up: 0.85, down: 1,
-    upkeep: 4, hiredUpkeep: 2, scale: 1.3, size: 1.15, oars: 2,
+    id: 'barinel', name: 'Barinel', year: 1451, standing: KNOWN, price: 2200, hold: 60, knots: 4.8, up: 0.9, down: 1,
+    upkeep: 4, hiredUpkeep: 1, scale: 1.3, size: 1.15, oars: 2,
     blurb: 'A broad oared sailing ship. Sweeps keep her moving at about 2 knots in a calm, as in the Gulf of Guinea.',
   },
   nau: {
-    id: 'nau', name: 'Nau', year: 1480, orderYear: 1470, standing: TRUSTED, price: 6000, hold: 120, knots: 5, up: 0.7, down: 1.05,
-    upkeep: 8, hiredUpkeep: 4, scale: 2, size: 1.45, fight: 0.1, shy: 0.8,
+    id: 'nau', name: 'Nau', year: 1480, orderYear: 1470, standing: TRUSTED, price: 6000, hold: 120, knots: 5.5, up: 0.75, down: 1.1,
+    upkeep: 6, hiredUpkeep: 2, scale: 2, size: 1.45, fight: 0.1, shy: 0.8,
     blurb: 'A great carrack with high castles fore and aft. A huge hold and room for bombards; slow to windward. Galleys think twice before taking her on.',
   },
 };

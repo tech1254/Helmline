@@ -5,7 +5,10 @@ An age-of-sail exploration and trade game. This is **Prototype 0**: the West Afr
 ## What's in the prototype
 
 - **Chart:** a portolan-style map from the Azores and Iberia down to the Gulf of Guinea. Everything outside the known coast is fogged and clears as you sail.
-- **One caravel**, hold 40, about 5 knots, 3 cruzados a day in wages at sea.
+- **Your flagship**, the caravel *São Cristóvão* to start: hold 40, about 5 knots, 3 cruzados a day in wages at sea.
+- **Ships and the shipyard:** four hulls (barca, caravel, barinel and, ordered from 1470 for delivery in 1480, the nau), unlocked by standing and year. The Lisbon shipyard refits your flagship (rig, sailcloth, bonnets, tacking sails, a tallowed hull, stowage, guns, casks, and her colours, sails and stern) and redraws her as you choose, trades her up for a bigger hull, or takes an order for one not yet built; Lagos and Funchal refit. Captains can be given any hull you have unlocked.
+- **Ship register** (S): your flagship, ships on the stocks drawn as they are built, the hulls ahead on a timeline, and your captains' ships.
+- **Arrival scenes:** when your flagship reaches a port, the chart eases in and your ship sails into a painted harbour (six settings). Tap to skip; set to every port, first visits or off in the ship register.
 - **Winds:** north-east trades in the south, northerlies off Portugal, westerlies out at sea, light south-westerlies and calms in the Gulf of Guinea. Sailing home against the trades is slow; swinging out to sea (the *volta do mar*) is usually faster.
 - **Nine ports:** Lisbon, Lagos, Funchal, Lanzarote (known at the start); Arguin, the Gambia River, Serra Leoa, Rio dos Cestos (the Grain Coast) and the Costa da Mina (to be discovered).
 - **Seven goods** with reactive prices: trading moves the price, and it recovers over weeks.
@@ -31,10 +34,10 @@ Not yet included: ship-to-ship combat beyond auto-resolve, navigation drift, dyn
 
 - `src/worker.js` is the Worker: it serves `public/` and answers `/api/saves` for cloud saves and `/api/feedback` for players' reports, stored in the D1 database `helmline-saves` (schema in `migrations/`). Only a hash of each save code is stored.
 - `public/` holds the game's static files (no build step). The game is plain ES modules in `public/js/`:
-  - Game rules: `world.js` (coastlines, ports, winds, sea routes), `economy.js` (goods and the market), `contracts.js` (contracts and standing), `events.js` (market events and news), `fleet.js` (hired ships and captains), `accounts.js` (the ledger), `pirates.js` (corsairs), `cloud.js` (the cloud-save API).
+  - Game rules: `world.js` (coastlines, ports, winds, sea routes), `ships.js` (hulls, shipyard options and what they do), `economy.js` (goods and the market), `contracts.js` (contracts and standing), `events.js` (market events and news), `fleet.js` (hired ships and captains), `accounts.js` (the ledger), `pirates.js` (corsairs), `cloud.js` (the cloud-save API).
   - The game itself: `state.js` (the shared game state), `config.js` (tunable numbers), `save.js`, `cloudsync.js`, `fog.js`, `sim.js` (time passing, time away), `voyage.js` (courses, docking, corsairs).
   - Drawing and input: `view.js` (canvas and camera), `render.js`, `input.js`.
-  - Interface: `panels.js` (HUD, market, contracts, sail, fleet, help), `pricebook.js`, `ledgerview.js`, `notices.js`, `dialog.js`, `actions.js` (what the buttons do), `util.js`.
+  - Interface: `panels.js` (HUD, market, contracts, sail, fleet, help), `shipyard.js` (ship register and shipyard), `shipart.js` (ships drawn from their parts), `scene.js` (the arrival scene), `pricebook.js`, `ledgerview.js`, `notices.js`, `dialog.js`, `actions.js` (what the buttons do), `util.js`.
   - `main.js` starts everything up and runs the main loop.
 - `tests/` holds the browser tests and a local stand-in for Cloudflare; see `tests/README.md`.
 - `wrangler.jsonc` configures the Worker. Pushes to `main` deploy through Cloudflare Workers Builds.
@@ -43,7 +46,7 @@ Not yet included: ship-to-ship combat beyond auto-resolve, navigation drift, dyn
 
 Any static server works, for example `python3 -m http.server -d public 8000`, or `npm install && npm run dev` for Wrangler.
 
-Keyboard: space pauses, 1/2/3 set the speed, P opens the price book, L the ledger, N the notices, W toggles the wind arrows.
+Keyboard: space pauses, 1/2/3 set the speed, P opens the price book, L the ledger, N the notices, S the ship register, W toggles the wind arrows.
 
 
  
