@@ -29,7 +29,7 @@ concurrency:
 jobs:
   generate:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
         with:
@@ -48,6 +48,23 @@ jobs:
         run: |
           # inputs reach the script as arguments, never pasted into the shell command
           node tools/art/generate.mjs "$BATCH" $(printf '%s' "$ONLY" | tr -cd 'a-z0-9 -')
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Cache the cut-out model
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/helmline-models
+          key: helmline-cutout-models-v1
+
+      - name: Cut out (items marked cutout)
+        env:
+          BATCH: ${{ inputs.batch }}
+        run: |
+          pip install --quiet onnxruntime numpy pillow
+          python tools/art/cutout.py "art/$(printf '%s' "$BATCH" | tr -cd 'a-z0-9-')"
 
       - name: Keep the images with the run
         if: always()

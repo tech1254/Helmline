@@ -6,8 +6,9 @@ Concept and production art made with Cloudflare Workers AI (FLUX.2 image models)
 
 1. A **batch** is a JSON file in `batches/`: a list of images, each with an `id`, a `model`, a `prompt`, a size, a `seed` and optional reference images (`refs`, paths in this repo).
 2. Run the **Generate art** workflow (Actions tab → Generate art → Run workflow) with the batch name. Claude can start it from a session too.
-3. The images land on the **`art` branch** under `art/<batch>/`, with a `manifest.json` recording each prompt, and are attached to the run as an artifact. Nothing is committed to `main`, so nothing deploys.
-4. Chosen images are compressed to WebP and copied into `public/img/` by hand (for a harbour: `public/img/ports/<port id>.webp`, then add the port to `PAINTED` in `public/js/scene.js`).
+3. Items marked `"cutout": true` (prompted on flat chroma green) are also cut out by `cutout.py`: the green is keyed away, a segmentation model (IS-Net, run with onnxruntime) drops anything that isn't the subject, and the result is saved as `<id>-cut.png` with a transparent background.
+4. The images land on the **`art` branch** under `art/<batch>/`, with a `manifest.json` recording each prompt, and are attached to the run as an artifact. Nothing is committed to `main`, so nothing deploys.
+5. Chosen images are compressed to WebP and copied into `public/img/` by hand (for a harbour: `public/img/ports/<port id>.webp`, then add the port to `PAINTED` in `public/js/scene.js`).
 
 ## Models
 
