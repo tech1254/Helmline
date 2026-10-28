@@ -136,7 +136,7 @@ export const PORTS = [
     blurb: 'Portugal\'s fortress across the Strait since 1415. The garrison pays dearly for wheat, wine and cloth.' },
   { id: 'safi', name: 'Safi', lon: -9.38, lat: 32.3, known: true,
     blurb: 'A Moroccan port where Portuguese merchants buy wheat and the striped Moorish cloth the traders of Arguin want for their gold.' },
-  { id: 'funchal', name: 'Funchal', lon: -16.9, lat: 32.6, known: true,
+  { id: 'funchal', name: 'Funchal', lon: -16.9, lat: 32.6, known: false, // Madeira lies out in the open sea: found by sailing there
     blurb: 'Madeira. The new cane fields make sugar cheap.' },
   { id: 'lanzarote', name: 'Lanzarote', lon: -13.38, lat: 28.92, known: true,
     blurb: 'A Canary outpost. Islanders gather orchil lichen for red dye.' },
@@ -355,7 +355,7 @@ export function loadRoutes(table) {
 export function findPath(aLon, aLat, bLon, bLat, skill = 1, coastal = false) {
   skill = Math.round(Math.min(1, Math.max(0, skill)) * 4) / 4;
   const key = routeKey(aLon, aLat, bLon, bLat, skill) + (coastal ? 'c' : '');
-  const hit = !coastal && portRoutes.has(key) ? portRoutes.get(key) : pathCache.get(key);
+  const hit = portRoutes.has(key) ? portRoutes.get(key) : pathCache.get(key); // coastal routes are ready-made too
   if (hit !== undefined) return hit && hit.map((pt) => [pt[0], pt[1]]);
   const route = computePath(aLon, aLat, bLon, bLat, skill, coastal ? COASTAL_NM : 0);
   if (pathCache.size >= PATH_CACHE_MAX) pathCache.delete(pathCache.keys().next().value);
@@ -364,8 +364,8 @@ export function findPath(aLon, aLat, bLon, bLat, skill = 1, coastal = false) {
 }
 
 // Plan a route afresh, ignoring every cache (for building and checking data/routes.json).
-export function planRoute(aLon, aLat, bLon, bLat, skill = 1) {
-  return computePath(aLon, aLat, bLon, bLat, skill);
+export function planRoute(aLon, aLat, bLon, bLat, skill = 1, coastal = false) {
+  return computePath(aLon, aLat, bLon, bLat, skill, coastal ? COASTAL_NM : 0);
 }
 
 // The prevailing wind in each grid cell: the wind averaged over a spread of days (the daily

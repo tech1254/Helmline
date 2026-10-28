@@ -11,6 +11,9 @@ async def main():
         await pg.goto(URL)
         await pg.click('#intro-new'); await pg.wait_for_timeout(300)
         await pg.evaluate("() => { const p = window.helmline?.state?.pirates; if (p) p.cooldown = 1e9; }")  # calm seas: no random corsairs
+        start = await pg.evaluate("() => ({ hull: window.helmline.state.ship.hull, funchal: !!window.helmline.state.discovered.funchal })")
+        print('new game:', start)
+        if start['funchal']: errs.append('Funchal is charted at the start; it should be found by sailing there')
         # Reveal every port's prices, as if the captain had seen them all today.
         await pg.evaluate("""() => { const h = window.helmline, S = h.state, m = h.market();
           for (const id of ['lisbon','lagos','funchal','lanzarote','arguin','gambia']) { S.discovered[id] = true; S.seen[id] = { day: S.day, prices: m.observe(id) }; }
@@ -19,10 +22,15 @@ async def main():
         t0 = await pg.evaluate("() => performance.now()")
         txt = await pg.evaluate("() => [...document.querySelectorAll('#panel h3')].find(h => h.textContent.includes('harbourmaster')).nextElementSibling.innerText")
         print(txt)
+        if start['hull'] == 'barca' and 'Funchal' in txt: errs.append('the harbourmaster suggests Funchal to a barca, which cannot sail there')
         await pg.screenshot(path=f'{SP}/38-harbour.png')
+        # In a caravel, the open-sea runs come back.
+        await pg.evaluate("() => { window.helmline.state.ship.hull = 'caravel'; document.getElementById('btn-prices').click(); document.getElementById('btn-prices').click(); }")
+        txt2 = await pg.evaluate("() => [...document.querySelectorAll('#panel h3')].find(h => h.textContent.includes('harbourmaster')).nextElementSibling.innerText")
+        print('in a caravel:', txt2.replace('\n', ' | ')[:300])
         # timing of a re-render
         ms = await pg.evaluate("() => { const t = performance.now(); document.getElementById('btn-prices').click(); document.getElementById('btn-prices').click(); return performance.now() - t; }")
         print('re-render ms', round(ms))
-        print('errors', errs)
+        print('ERRORS', errs)
         await b.close()
 asyncio.run(main())

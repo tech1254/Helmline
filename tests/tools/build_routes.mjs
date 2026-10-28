@@ -10,9 +10,9 @@ const routes = {};
 const t0 = performance.now();
 for (const a of PORTS) for (const b of PORTS) {
   if (a === b) continue;
-  for (const skill of ROUTE_SKILLS) {
-    const r = planRoute(a.lon, a.lat, b.lon, b.lat, skill);
-    routes[routeKey(a.lon, a.lat, b.lon, b.lat, skill)] = r && r.map(([x, y]) => [+x.toFixed(4), +y.toFixed(4)]);
+  for (const skill of ROUTE_SKILLS) for (const coastal of [false, true]) {
+    const r = planRoute(a.lon, a.lat, b.lon, b.lat, skill, coastal);
+    routes[routeKey(a.lon, a.lat, b.lon, b.lat, skill) + (coastal ? 'c' : '')] = r && r.map(([x, y]) => [+x.toFixed(4), +y.toFixed(4)]);
   }
 }
 const out = JSON.stringify({ built: new Date().toISOString().slice(0, 10), routes });
