@@ -12,6 +12,7 @@ import { PORTS } from './world.js';
 import * as Ships from './ships.js';
 import * as Fleet from './fleet.js';
 import * as Pirates from './pirates.js';
+import * as Wear from './wear.js';
 import * as Accounts from './accounts.js';
 import { S, ui } from './state.js';
 import { save } from './save.js';
@@ -158,6 +159,7 @@ function registerHtml() {
           <p class="kicker">Your flagship</p>
           <h3>${esc(sh.name)}</h3>
           <p class="muted">${h.name}${sh.hull === 'caravel' ? (sh.fit.rig === 'square' ? ', square-rigged' : ', lateen-rigged') : ''} · ${fitSummary(sh.hull, sh.fit)}${S.hull < 100 ? ` · hull ${Math.round(S.hull)}%` : ''}</p>
+          <p class="muted">${Ships.ageText(sh.hull, Ships.serviceYears(sh, S.day))}${Wear.soundCap(sh.hull, Ships.serviceYears(sh, S.day)) < 100 ? `: the yards can make her no better than ${Wear.soundCap(sh.hull, Ships.serviceYears(sh, S.day))}%` : ''}.</p>
           ${statRows(st)}
           <div class="row start">
             ${yard ? '<button class="primary" data-yard="open-yard">Go to the shipyard</button>' : '<p class="fine">Shipyards: Lisbon builds ships and refits them; Lagos and Funchal refit.</p>'}
@@ -241,7 +243,9 @@ function newShipHtml() {
   const sh = S.ship;
   const repair = Pirates.repairCost(S);
   const value = Ships.tradeInValue(S, repair);
-  return `<p class="blurb">Trade up your flagship: the yard takes the <i>${esc(sh.name)}</i> in part exchange for ${fmt(value)} cz (half her hull price${repair ? ', less her repairs' : ''}). Her fittings stay with her; her name and colours go with you. Ships for your captains are bought in the Fleet tab.</p>
+  const years = Ships.serviceYears(sh, S.day);
+  const old = Ships.lifeShare(sh.hull, years) >= 0.5;
+  return `<p class="blurb">Trade up your flagship: the yard takes the <i>${esc(sh.name)}</i> in part exchange for ${fmt(value)} cz (half her hull price new, less for her ${Math.floor(years)} years${repair ? ' and her repairs' : ''}). Her fittings stay with her; her name and colours go with you. Ships for your captains are bought in the Fleet tab.</p>
     <ol class="hulls compact">${Ships.HULL_ORDER.map((id) => {
       const H = Ships.HULLS[id];
       const av = Ships.availability(S, H);
@@ -251,7 +255,8 @@ function newShipHtml() {
       const onOrder = Ships.hasOrder(S, 'hull', id);
       const fits = held() <= st.hold;
       let act;
-      if (mine) act = '<span class="tag own">Your ship</span>';
+      if (mine && old && av.ok === 'yes') act = `<span class="tag own">Your ship, ${Math.floor(years)} years old</span><button class="primary" data-trade-up="${id}" ${S.purse < net ? 'disabled' : ''}>A new one: ${fmt(net)} cz</button>`;
+      else if (mine) act = '<span class="tag own">Your ship</span>';
       else if (onOrder) act = '<span class="tag order">On order</span>';
       else if (av.ok === 'yes') act = `<button class="primary" data-trade-up="${id}" ${S.purse < net || !fits ? 'disabled' : ''}>${H.price > Ships.HULLS[sh.hull].price ? 'Trade up' : 'Exchange'}: ${net >= 0 ? `${fmt(net)} cz` : `you receive ${fmt(-net)} cz`}</button>${!fits ? `<span class="warn fine">Lighten your hold to ${st.hold} first.</span>` : ''}`;
       else if (av.ok === 'order') act = `<button class="primary" data-order-hull="${id}" ${S.purse < Math.round(H.price / 3) ? 'disabled' : ''}>Order: ${fmt(Math.round(H.price / 3))} cz down</button><span class="fine">Delivered in ${H.year}; ${fmt(H.price - Math.round(H.price / 3))} cz then.</span>`;

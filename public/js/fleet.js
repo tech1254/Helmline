@@ -70,7 +70,7 @@ export function buyShip(S, captainId, maxShips, hullId = 'caravel') {
   F.candidates.list = F.candidates.list.filter((c) => c !== cap);
   const used = new Set(F.ships.map((s) => s.name));
   const name = SHIP_NAMES.find((n) => !used.has(n) && n !== S.ship.name) || `${h.name} ${F.nextId}`;
-  const ship = { id: F.nextId++, name, hull: hullId, captain: cap, at: 'lisbon', status: 'idle', route: null, leg: null, hold: {}, profit: 0, trips: 0, last: null };
+  const ship = { id: F.nextId++, name, hull: hullId, captain: cap, at: 'lisbon', status: 'idle', route: null, leg: null, hold: {}, profit: 0, trips: 0, last: null, built: S.day, tropic: 0 };
   F.ships.push(ship);
   S.purse -= h.price;
   Accounts.record(S, { kind: 'ships', amount: -h.price, text: `Bought the ${h.name.toLowerCase()} ${name} and hired Captain ${cap.name}` });
@@ -490,6 +490,7 @@ export function tick(S, market, days, ownerPresent = true) {
   const msgs = [];
   for (const ship of F.ships) {
     upgradeShip(ship);
+    if (ship.built == null) { ship.built = S.day - 2 * 365; ship.tropic = 0; } // from before ships aged
     const pay = dailyCost(ship) * (ship.status === 'sailing' ? 1 : IDLE_PAY) * days;
     S.purse -= pay;
     roundOf(ship).net -= pay;
@@ -529,14 +530,19 @@ export function tick(S, market, days, ownerPresent = true) {
 // leaking hull spoils cargo; a hull in danger can founder with all she carries.
 function wearOnPassage(S, ship, leg, lat) {
   const before = ship.hullPct ?? 100;
+  if (lat < Wear.TROPIC_LAT) ship.tropic = (ship.tropic || 0) + leg.days; // shipworm waters
+  if (before < Wear.LEAKS_BELOW) ship.strain = (ship.strain || 0) + leg.days; // sailed leaking
+  const years = Ships.serviceYears(ship, S.day);
   const storm = Wear.storms(leg.days);
-  ship.hullPct = Math.max(5, before - Wear.wearPerDay(lat) * leg.days - storm);
+  ship.hullPct = Math.max(5, before - Wear.wearPerDay(lat, ship.hull, years) * leg.days - storm);
   const share = Wear.leakShare(ship.hullPct);
   if (share) for (const [g, lot] of Object.entries(holdOf(ship))) { lot.qty -= Math.round(lot.qty * share); if (lot.qty <= 0) delete holdOf(ship)[g]; }
   if (ship.hullPct < Wear.DANGER_BELOW && Math.random() < 0.1) {
     ship.sunk = true;
     return { html: `<b>${ship.name} is lost.</b> Her hull gave way on the passage to ${port(leg.to).name}; Captain ${ship.captain.name} and the crew got off in the boat, but the ship and her cargo are gone.`, kind: 'alert', level: 'alert', log: `${ship.name} foundered on the way to ${port(leg.to).name}.` };
   }
+  const aged = Wear.ageNotice(ship, ship.hull, years, `the <b>${ship.name}</b>`);
+  if (aged) return { html: aged, kind: 'alert', level: 'alert', log: aged.replace(/<[^>]+>/g, '') };
   if (storm) return { html: `<b>${ship.name}</b> came through a storm on the way to ${port(leg.to).name}: hull ${Math.round(ship.hullPct)}%.`, kind: '', level: 'routine' };
   return null;
 }
@@ -564,7 +570,8 @@ function repairIfNeeded(S, ship) {
   const h = ship.hullPct ?? 100;
   const yard = Wear.YARDS.includes(ship.at);
   if (!(yard ? h < Wear.CAPTAIN_YARD_BELOW : h < Wear.CAPTAIN_BEACH_BELOW)) return null;
-  const q = yard ? Wear.yardQuote(ship.hull, h) : Wear.beachQuote(ship.hull, h);
+  const years = Ships.serviceYears(ship, S.day);
+  const q = yard ? Wear.yardQuote(ship.hull, h, years) : Wear.beachQuote(ship.hull, h, years);
   if (!q.pts) return null;
   S.purse -= q.cost;
   roundOf(ship).net -= q.cost;
@@ -573,6 +580,49 @@ function repairIfNeeded(S, ship) {
   ship.status = 'repair';
   ship.repairUntil = S.day + q.days;
   return { html: `<b>${ship.name}</b> ${yard ? `goes into the yard at ${port(ship.at).name}` : `is careened on the beach at ${port(ship.at).name}`} for ${q.days} days: ${q.cost.toLocaleString()} cz.`, kind: 'port', level: 'routine', log: `${ship.name}: repairs at ${port(ship.at).name}, ${q.days} days, ${q.cost} cz.` };
+}
+
+// ---- Age ------------------------------------------------------------------------------------
+
+export const yearsOf = (S, ship) => Ships.serviceYears(ship, S.day);
+
+// What a new hull for a hired ship costs at the Lisbon yard, the old one taken in part exchange.
+export function replaceQuote(S, ship, hullId) {
+  const years = yearsOf(S, ship);
+  const repair = Wear.yardQuote(ship.hull, ship.hullPct ?? 100, years).cost;
+  const value = Ships.hullValue(ship.hull, years, repair);
+  const H = Ships.HULLS[hullId];
+  return { price: H.price, value, net: H.price - value };
+}
+
+// Replace a hired ship's hull. She must be in Lisbon (not at sea). Her cargo goes across as far
+// as it fits; the rest is sold where she lies. Returns the cost, or null.
+export function replaceHull(S, market, ship, hullId) {
+  if (ship.at !== 'lisbon' || ship.status === 'sailing' || ship.status === 'repair') return null;
+  const q = replaceQuote(S, ship, hullId);
+  if (S.purse < q.net) return null;
+  S.purse -= q.net;
+  Accounts.record(S, { kind: 'ships', amount: -q.net, text: `A new ${Ships.HULLS[hullId].name.toLowerCase()} for the ${ship.name}, the old hull taken in part exchange` });
+  ship.hull = hullId;
+  ship.built = S.day;
+  ship.tropic = 0;
+  ship.strain = 0;
+  ship.rebuilt = 0;
+  ship.hullPct = 100;
+  ship.ageWarned = 0;
+  const cap = holdSize(ship);
+  let over = holdUsed(ship) - cap;
+  for (const [g, lot] of Object.entries(holdOf(ship))) {
+    if (over <= 0) break;
+    const n = Math.min(lot.qty, over);
+    const res = market.sell('lisbon', g, n);
+    S.purse += res.income;
+    lot.paid *= (lot.qty - n) / lot.qty;
+    lot.qty -= n;
+    over -= n;
+    if (!lot.qty) delete holdOf(ship)[g];
+  }
+  return q.net;
 }
 
 // Where a ship is on the chart right now, and which way it is heading.

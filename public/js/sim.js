@@ -268,8 +268,13 @@ export function advanceTime(dd, atSea, away = false) {
 // she starts to leak and again when she is in danger; the factor in port tells you the rest.
 function wearHull(dd) {
   if (S.hull == null) S.hull = 100;
+  if (S.ship.lat < Wear.TROPIC_LAT) S.ship.tropic = (S.ship.tropic || 0) + dd; // shipworm waters: she ages faster
+  if (S.hull < Wear.LEAKS_BELOW) S.ship.strain = (S.ship.strain || 0) + dd; // sailing her leaking wears her out
+  const years = Ships.serviceYears(S.ship, S.day);
   const storm = Wear.storms(dd);
-  S.hull = Math.max(5, S.hull - Wear.wearPerDay(S.ship.lat) * dd - storm);
+  S.hull = Math.max(5, S.hull - Wear.wearPerDay(S.ship.lat, S.ship.hull, years) * dd - storm);
+  const aged = Wear.ageNotice(S.ship, S.ship.hull, years, `the <b>${S.ship.name}</b>`, true);
+  if (aged) toast(aged, 'alert', true, 'alert');
   if (storm) toast(`A storm batters the <b>${S.ship.name}</b>: her hull is at ${Math.round(S.hull)}%.`, '');
   const warned = S.hullWarned || 0;
   if (S.hull < Wear.DANGER_BELOW && warned < 2) {

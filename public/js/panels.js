@@ -300,9 +300,16 @@ export function renderContracts(el) {
 // on the beach where there is no yard.
 function hullBanner(pid) {
   const h = S.hull ?? 100;
-  if (h >= 90) return '';
+  const years = Ships.serviceYears(S.ship, S.day);
+  const cap = Wear.soundCap(S.ship.hull, years);
+  const rb = pid === 'lisbon' ? Ships.rebuildQuote(S.ship, S.ship.hull, S.day) : null;
+  const ageLine = cap < 100 || rb
+    ? `<br><span class="fine">She has ${Ships.ageText(S.ship.hull, years)}${cap < 100 ? `; the yards can make her no better than ${cap}%` : ''}.</span>${rb ? ` <button data-rebuild ${S.purse < rb.cost ? 'disabled' : ''}>A great rebuild: ${rb.cost.toLocaleString()} cz, ${rb.days} days, gives back about ${Math.round(rb.years)} years${rb.n ? ' (her last)' : ''}</button>` : ''}`
+    : '';
+  if (h >= 90 && !ageLine) return '';
+  if (h >= Math.min(90, cap - 1) && ageLine) return `<p class="banner ${cap < Wear.LEAKS_BELOW ? 'warn' : ''}"><b>Hull ${Math.round(h)}%</b>${ageLine}</p>`;
   const yard = Wear.YARDS.includes(pid);
-  const q = yard ? Wear.yardQuote(S.ship.hull, h) : Wear.beachQuote(S.ship.hull, h);
+  const q = yard ? Wear.yardQuote(S.ship.hull, h, years) : Wear.beachQuote(S.ship.hull, h, years);
   const days = (n) => `${n} ${n === 1 ? 'day' : 'days'}`;
   const state = h < Wear.DANGER_BELOW ? 'in danger, ' : h < Wear.LEAKS_BELOW ? 'leaking, ' : '';
   const act = yard
@@ -310,7 +317,7 @@ function hullBanner(pid) {
     : q.pts > 0
       ? `<button data-careen ${S.purse < q.cost ? 'disabled' : ''}>Careen her on the beach: ${q.cost.toLocaleString()} cz, ${days(q.days)}, to ${Wear.BEACH_TO}%</button> <span class="fine">The yards of Lisbon, Lagos and Funchal make her fully sound.</span>`
       : '<span class="fine">The yards of Lisbon, Lagos and Funchal can make her fully sound.</span>';
-  return `<p class="banner ${h < Wear.LEAKS_BELOW ? 'warn' : ''}"><b>Hull ${Math.round(h)}%</b> · ${state}sailing at ${Math.round(Pirates.hullFactor(S) * 100)}% speed. ${act}</p>`;
+  return `<p class="banner ${h < Wear.LEAKS_BELOW ? 'warn' : ''}"><b>Hull ${Math.round(h)}%</b> · ${state}sailing at ${Math.round(Pirates.hullFactor(S) * 100)}% speed. ${act}${ageLine}</p>`;
 }
 
 export function renderSail(el) {
@@ -423,7 +430,8 @@ export function renderFleet(el) {
           ${routeEditor(ship)}
           <p class="foot">Stops are visited in order, then back to the first. Orders run top to bottom, so sell before you buy to make room. "Best available" picks what pays most where it will next be sold; a named good is bought as long as it should sell without loss where it is next sold.</p>
         </details>
-        <div class="row">${ship.route ? `<button data-halt="${ship.id}">Stop at next port</button>` : ''}<button class="primary" data-route="${ship.id}">${ship.route ? 'Change route' : 'Start route'}</button></div>
+        <p class="muted">${Ships.ageText(ship.hull || 'caravel', Fleet.yearsOf(S, ship))}${Wear.soundCap(ship.hull || 'caravel', Fleet.yearsOf(S, ship)) < 100 ? `; the yards can make her no better than ${Wear.soundCap(ship.hull || 'caravel', Fleet.yearsOf(S, ship))}%` : ''}.</p>
+        <div class="row">${ship.route ? `<button data-halt="${ship.id}">Stop at next port</button>` : ''}${S.ship.docked === 'lisbon' && Ships.lifeShare(ship.hull || 'caravel', Fleet.yearsOf(S, ship)) >= 0.5 ? `<button data-ship-yard="${ship.id}" ${ship.at !== 'lisbon' || ship.status === 'sailing' ? 'disabled title="When she is next in Lisbon"' : ''}>Rebuild or replace her…</button>` : ''}<button class="primary" data-route="${ship.id}">${ship.route ? 'Change route' : 'Start route'}</button></div>
       </li>`;
   }).join('');
   let yard = '';

@@ -85,13 +85,13 @@ for (const s of SETS) {
 // hires:     most hired captains; mixed: fits hulls to harbours (false = the biggest, always)
 // ladder:    hulls he is willing to sail, smallest to largest
 export const PERSONAS = {
-  cautious: { label: 'Cautious', spare: true, reserve: 0.5, spendAt: 3, explore: 1500, contracts: 1, slack: 1.6, minGain: 0.3, detour: 0,
+  cautious: { label: 'Cautious', spare: true, replaceAt: 0.8, reserve: 0.5, spendAt: 3, explore: 1500, contracts: 1, slack: 1.6, minGain: 0.3, detour: 0,
     corsair: 'pay', hires: 1, mixed: true, ladder: ['barca', 'caravel', 'barinel'] },
   steady: { label: 'Steady', reserve: 0.25, spendAt: 2, explore: 800, contracts: 2, slack: 1.25, minGain: 0.15, detour: 12,
     corsair: 'sensible', hires: 2, mixed: true, ladder: ['barca', 'caravel', 'barinel', 'largecaravel', 'nau'] },
   bold: { label: 'Bold', reserve: 0.1, spendAt: 1.4, explore: 400, contracts: 3, slack: 1.05, minGain: 0.05, detour: 25,
     corsair: 'bold', hires: 3, mixed: true, ladder: ['barca', 'caravel', 'barinel', 'largecaravel', 'redonda', 'nau'] },
-  reckless: { label: 'Reckless', reserve: 0, spendAt: 1.1, explore: 300, contracts: 9, slack: 0.85, minGain: 0, detour: 45,
+  reckless: { label: 'Reckless', replaceAt: 1.3, reserve: 0, spendAt: 1.1, explore: 300, contracts: 9, slack: 0.85, minGain: 0, detour: 45,
     corsair: 'reckless', hires: 3, mixed: false, ladder: ['barca', 'caravel', 'barinel', 'largecaravel', 'redonda', 'nau'] },
 };
 // Controlled comparisons: the Steady player with one thing changed, so that any difference in
@@ -178,7 +178,7 @@ function career(persona) {
   const route = (loop) => ({ stops: LOOPS[loop].map((s) => ({ port: s.port, orders: s.orders.map((o) => ({ ...o })) })), next: 0 });
 
   const add = (role, hull, loop, captain) => {
-    const ship = { id: nextId++, name: role, role, loop, hull, realHull: hull, cHold: {}, fit: { ...Ships.DEFAULT_FIT }, captain: { id: nextId, name: role, ...captain, loyalty: 100 },
+    const ship = { id: nextId++, name: role, role, loop, hull, realHull: hull, cHold: {}, fit: { ...Ships.DEFAULT_FIT }, built: S.day, tropic: 0, captain: { id: nextId, name: role, ...captain, loyalty: 100 },
       at: 'lisbon', status: 'idle', route: null, leg: null, hold: {}, profit: 0, trips: 0, last: null, hullPct: 100 };
     S.fleet.ships.push(ship);
     if (role === 'flagship') setFlagHull(ship);
@@ -247,6 +247,29 @@ function career(persona) {
         break;
       }
     }
+    // old ships: in Lisbon, a great rebuild while the hull will take one, else a new hull of the
+    // same kind (the old taken in part exchange), once she is as old as he will put up with
+    for (const x of S.fleet.ships) {
+      // in Lisbon, or just out of it (a hired ship sails the moment her trading is done)
+      if (x.at !== 'lisbon' || x.status === 'repair' || (x.leg && S.day - x.leg.start > 20)) continue;
+      const yrs = Ships.serviceYears(x, S.day), share = Ships.lifeShare(x.realHull || x.hull, yrs);
+      if (share < (P.replaceAt ?? 0.9)) continue;
+      const hull = x.realHull || x.hull;
+      const rb = Ships.rebuildQuote(x, hull, S.day);
+      if (rb && S.purse > rb.cost * 2) {
+        S.purse -= rb.cost; R.rebuilds = (R.rebuilds || 0) + 1;
+        Accounts.record(S, { kind: 'repairs', amount: -rb.cost, text: 'a great rebuild' });
+        Ships.rebuild(x, hull, S.day); x.hullPct = 100; x.status = 'repair'; x.repairUntil = S.day + rb.days;
+        note(`rebuilds the ${x.role === 'flagship' ? 'flagship' : x.loop + ' ship'} (${rb.cost} cz)`);
+        continue;
+      }
+      const net = Ships.HULLS[hull].price - Ships.hullValue(hull, yrs);
+      if (S.purse > net * 1.5) {
+        spend(net, `a new ${Ships.HULLS[hull].name} for the ${x.role === 'flagship' ? 'flagship' : x.loop + ' run'}`);
+        x.built = S.day; x.tropic = 0; x.strain = 0; x.rebuilt = 0; x.ageWarned = 0; x.hullPct = 100;
+        R.replaced = (R.replaced || 0) + 1;
+      }
+    }
     // a captain who wants a third ship looks up the Gambia river to Cantor once (a shallow ship can)
     if (S.discovered.gambia && !S.discovered.cantor && P.hires >= 3 && f.loop === 'africa' && Ships.HULLS[f.realHull].draft[1] <= 2.2 &&
         !f.route.stops.some((st) => st.port === 'cantor')) {
@@ -268,6 +291,7 @@ function career(persona) {
         setFlagHull(ship);
 
       } else ship.hull = to;
+      Object.assign(ship, { built: S.day, tropic: 0, strain: 0, rebuilt: 0, ageWarned: 0 }); // a new hull
       if (to === 'nau' && R.nau == null) R.nau = yearOf(S.day);
       return true;
     };
@@ -652,6 +676,7 @@ export function summarise(list) {
     corsairs: { met: c('met'), pay: c('pay'), run: c('run'), fight: c('fight'), won: c('won'), lost: c('lost'), plundered: c('plundered'), notoriety: avg(list.map((r) => r.pirates.notoriety)), caution: avg(list.map((r) => r.pirates.caution)),
       byDecade: Object.fromEntries([...new Set(list.flatMap((r) => Object.keys(r.attention)))].sort().map((d) => [d, { met: avg(list.map((r) => r.byDecade[d] || 0)), attention: avg(list.map((r) => r.attention[d] ?? 0)) }])) },
     firstHire: med(list.map((r) => r.firstHire ?? end)), explored: med(list.map((r) => r.explored ?? end)), nau: list.filter((r) => r.nau).length / list.length,
+    rebuilds: avg(list.map((r) => r.rebuilds || 0)), replaced: avg(list.map((r) => r.replaced || 0)),
     shipsLost: avg(list.map((r) => r.lost)), broke: list.filter((r) => r.broke != null).length / list.length,
     riverWaitDays: avg(list.map((r) => r.riverWaitDays)), boatDays: avg(list.map((r) => r.boatDays)),
     series: list[0].series.map((pt, i) => {
@@ -683,6 +708,7 @@ export function printSummary(s) {
   const K = s.corsairs;
   console.log(`  corsairs: met ${K.met.toFixed(0)} (${(K.met / yrs).toFixed(1)}/yr) · paid ${K.pay.toFixed(0)}, ran ${K.run.toFixed(0)}, fought ${K.fight.toFixed(0)} · won ${K.won.toFixed(0)} (plundered ${K.plundered.toFixed(0)}), beaten ${K.lost.toFixed(0)} · notoriety ${K.notoriety.toFixed(0)}`);
   console.log(`  corsairs by decade (encounters · how strongly they are drawn to him): ${Object.entries(K.byDecade).map(([d, v]) => `${d}s ${v.met.toFixed(1)}·${v.attention.toFixed(2)}`).join('  ')}`);
+  console.log(`  old ships: ${s.rebuilds.toFixed(1)} great rebuilds, ${s.replaced.toFixed(1)} new hulls`);
   console.log(`  at sea: ships lost ${s.shipsLost.toFixed(1)}, ruined ${Math.round(s.broke * 100)}% · ${cz(s.boatDays)} ship-days with the boats, ${cz(s.riverWaitDays)} waiting for the river`);
   console.log(`  fleet at the end (one career): ${s.fleet}`);
 }

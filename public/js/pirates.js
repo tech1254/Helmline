@@ -210,12 +210,13 @@ export function collectBounty(S, portId) {
 
 // What the shipyard asks to make your flagship sound (wear.js).
 export function repairCost(S) {
-  return Wear.yardQuote(S.ship?.hull, S.hull ?? 100).cost;
+  return Wear.yardQuote(S.ship?.hull, S.hull ?? 100, Ships.serviceYears(S.ship, S.day)).cost;
 }
 
 // Pay for a repair, in the yard or on a beach. The days it takes are spent by the caller.
 export function repair(S, beach = false) {
-  const q = beach ? Wear.beachQuote(S.ship?.hull, S.hull ?? 100) : Wear.yardQuote(S.ship?.hull, S.hull ?? 100);
+  const yrs = Ships.serviceYears(S.ship, S.day);
+  const q = beach ? Wear.beachQuote(S.ship?.hull, S.hull ?? 100, yrs) : Wear.yardQuote(S.ship?.hull, S.hull ?? 100, yrs);
   S.purse -= q.cost;
   Accounts.record(S, { kind: 'repairs', amount: -q.cost, text: beach ? 'Careened on the beach' : 'Hull repaired in the shipyard' });
   S.hull = Math.max(S.hull ?? 100, q.to);

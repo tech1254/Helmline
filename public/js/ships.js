@@ -18,49 +18,49 @@ export const HULLS = {
   barca: {
     draft: [1.0, 1.5], // metres, light and fully laden
     id: 'barca', name: 'Barca', year: 1451, standing: KNOWN, price: 1050, hold: 25, knots: 4.5, up: 0.75, down: 1,
-    upkeep: 2, hiredUpkeep: 1, scale: 0.5, size: 0.8, coastal: true, lure: 0.55, // little worth taking: corsairs seldom bother with her
+    life: 14, upkeep: 2, hiredUpkeep: 1, scale: 0.5, size: 0.8, coastal: true, lure: 0.55, // little worth taking: corsairs seldom bother with her
     blurb: 'A small, single-masted coaster with a square sail. Cheap to buy and run, but she keeps within sight of the coast: no Madeira, no open-sea passages. Corsairs seldom think her worth the trouble.',
   },
   caravel: {
     draft: [1.6, 2.2], // metres, light and fully laden
     id: 'caravel', name: 'Caravel', year: 1451, standing: KNOWN, price: 1950, hold: 40, knots: 5, up: 1, down: 1,
-    upkeep: 3, hiredUpkeep: 1, scale: 1, size: 1,
+    life: 15, upkeep: 3, hiredUpkeep: 1, scale: 1, size: 1,
     blurb: 'Two lateen masts and a shallow draft. The best ship afloat for beating home against the trade winds.',
   },
   barinel: {
     draft: [1.8, 2.5], // metres, light and fully laden
     id: 'barinel', name: 'Barinel', year: 1451, standing: KNOWN, price: 2850, hold: 60, knots: 4.8, up: 0.9, down: 1,
-    upkeep: 4, hiredUpkeep: 1, scale: 1.3, size: 1.15, oars: 2,
+    life: 15, upkeep: 4, hiredUpkeep: 1, scale: 1.3, size: 1.15, oars: 2,
     blurb: 'A broad oared sailing ship. Sweeps keep her moving at about 2 knots in a calm, as in the Gulf of Guinea.',
   },
   largecaravel: {
     draft: [2.0, 2.7], // metres, light and fully laden
     id: 'largecaravel', name: 'Large caravel', year: 1456, standing: RESPECTED, price: 2600, hold: 55, knots: 5.2, up: 1.05, down: 1,
-    upkeep: 4, hiredUpkeep: 1, scale: 1.2, size: 1.1,
+    life: 16, upkeep: 4, hiredUpkeep: 1, scale: 1.2, size: 1.1,
     blurb: 'A caravela latina grande: three lateen masts on a longer hull. More hold than a caravel and even closer to the wind.',
   },
   redonda: {
     draft: [2.3, 3.0], // metres, light and fully laden
     id: 'redonda', name: 'Caravela redonda', year: 1462, standing: RESPECTED, price: 3500, hold: 65, knots: 5.4, up: 0.85, down: 1.2,
-    upkeep: 5, hiredUpkeep: 1, scale: 1.4, size: 1.2,
+    life: 16, upkeep: 5, hiredUpkeep: 1, scale: 1.4, size: 1.2,
     blurb: 'A caravel with square sails on her fore and main masts and a lateen mizzen: fast with the wind behind her, a little slower into it.',
   },
   nau: {
     draft: [3.2, 4.5], // metres, light and fully laden
     id: 'nau', name: 'Nau', year: 1470, orderYear: 1466, standing: TRUSTED, price: 7800, hold: 120, knots: 5.5, up: 0.75, down: 1.1,
-    upkeep: 6, hiredUpkeep: 2, scale: 2, size: 1.45, fight: 0.1, shy: 0.8,
+    life: 18, upkeep: 6, hiredUpkeep: 2, scale: 2, size: 1.45, fight: 0.1, shy: 0.8,
     blurb: 'A great carrack with high castles fore and aft. A huge hold and room for bombards; slow to windward. Galleys think twice before taking her on.',
   },
   naudaindia: {
     draft: [4.0, 5.6], // metres, light and fully laden
     id: 'naudaindia', name: 'Nau da Índia', year: 1500, orderYear: 1497, standing: TRUSTED, price: 15600, hold: 200, knots: 5.4, up: 0.7, down: 1.15,
-    upkeep: 10, hiredUpkeep: 3, scale: 2.4, size: 1.7, fight: 0.15, shy: 0.6,
+    life: 12, upkeep: 10, hiredUpkeep: 3, scale: 2.4, size: 1.7, fight: 0.15, shy: 0.6,
     blurb: 'A great carrack built for the Carreira da Índia: four decks, a vast hold for pepper, and room for a hundred men. Clumsy to windward and too deep for most African ports, but nothing else carries so much round the Cape.',
   },
   galeao: {
     draft: [3.4, 4.6], // metres, light and fully laden
     id: 'galeao', name: 'Galleon', year: 1525, orderYear: 1521, standing: TRUSTED, price: 12500, hold: 150, knots: 6.0, up: 0.9, down: 1.15,
-    upkeep: 8, hiredUpkeep: 2, scale: 2.1, size: 1.55, fight: 0.25, shy: 0.5,
+    life: 22, upkeep: 8, hiredUpkeep: 2, scale: 2.1, size: 1.55, fight: 0.25, shy: 0.5,
     blurb: 'A long, low warship-merchantman with a beaked bow and four masts: faster and handier than a nau, with gun decks that make corsairs keep their distance.',
   },
 };
@@ -304,6 +304,7 @@ export function ensureFlagship(S) {
   }
   sh.name = String(sh.name || FLAGSHIP_NAME).replace(/[<>]/g, '').slice(0, 40) || FLAGSHIP_NAME;
   sh.fit = normalFit(sh.hull, sh.fit);
+  if (sh.built == null) { sh.built = (S.day || 0) - 3 * 365; sh.tropic = 0; } // a ship from before ships aged: a few years old
   if (!S.yard) S.yard = { orders: [], built: 0 };
   if (!S.called) S.called = Object.fromEntries(Object.keys(S.seen || {}).filter((p) => (S.seen[p].day ?? -1) >= 0).map((p) => [p, true]));
   if (sh.docked) S.called[sh.docked] = true;
@@ -344,9 +345,60 @@ export function applyFit(S, fit, q) {
   }
 }
 
-// Part exchange for the flagship: half her hull price, less unrepaired damage.
+// ---- Age ------------------------------------------------------------------------------------
+// Every hull has a serviceable life (`life`, in years). Service in tropical waters counts double
+// toward it: shipworm and rot eat a hull there. See wear.js for what age does to her.
+export const TROPIC_AGE = 2;
+// Years of service: `rec` is the flagship (S.ship) or a hired ship, with `built` (the day she was
+// built) and `tropic` (days she has spent in tropical waters).
+// `strain`: days she sailed leaking (below 60%), which age her half as fast again: a hull kept in
+// good repair lasts longer. A great rebuild in the yard gives back years (`rebuilt` times, at most
+// REBUILDS), but no ship lasts for ever.
+export const STRAIN_AGE = 1.5;
+export function serviceYears(rec, day) {
+  if (rec?.built == null) return 0;
+  return Math.max(0, (day - rec.built + (TROPIC_AGE - 1) * (rec.tropic || 0) + (STRAIN_AGE - 1) * (rec.strain || 0)) / 365);
+}
+
+// ---- A great rebuild ------------------------------------------------------------------------
+// New frames and planking where the rot has got in: the first rebuild gives back 30% of her
+// serviceable life, the second 15%, and that is all a hull will take.
+export const REBUILDS = [{ back: 0.3, cost: 0.4, days: 30 }, { back: 0.15, cost: 0.5, days: 40 }];
+export function rebuildQuote(rec, hullId, day) {
+  const n = rec?.rebuilt || 0;
+  if (n >= REBUILDS.length) return null;
+  const r = REBUILDS[n];
+  const H = HULLS[hullId] || HULLS.caravel;
+  const years = serviceYears(rec, day);
+  if (lifeShare(hullId, years) < 0.5) return null; // nothing to rebuild yet
+  return { n, years: Math.min(years, r.back * H.life), cost: Math.round(r.cost * H.price / 10) * 10, days: r.days };
+}
+export function rebuild(rec, hullId, day) {
+  const q = rebuildQuote(rec, hullId, day);
+  if (!q) return null;
+  rec.built += q.years * 365;
+  rec.rebuilt = (rec.rebuilt || 0) + 1;
+  rec.ageWarned = 0;
+  return q;
+}
+// Share of her serviceable life used up (1 = at its end).
+export const lifeShare = (hullId, years) => years / ((HULLS[hullId] || HULLS.caravel).life || 15);
+// What a yard gives for a hull in part exchange: half her price new, less as she ages (a tenth
+// of it at the end of her life), less the repairs she needs.
+export function hullValue(hullId, years, repairCost = 0) {
+  const f = Math.max(0.1, 1 - 0.9 * Math.min(1, lifeShare(hullId, years)));
+  return Math.max(0, Math.round((HULLS[hullId] || HULLS.caravel).price / 2 * f - repairCost));
+}
+export function ageText(hullId, years) {
+  const y = Math.floor(years), life = (HULLS[hullId] || HULLS.caravel).life || 15;
+  const f = lifeShare(hullId, years);
+  const how = f >= 1 ? 'past her serviceable life' : f >= 0.7 ? 'growing old' : f >= 0.35 ? 'in her prime' : 'still new';
+  return `${y < 1 ? 'less than a year' : `${y} ${y === 1 ? 'year' : 'years'}`} in service of about ${life}: ${how}`;
+}
+
+// Part exchange for the flagship: half her hull price, less her age and unrepaired damage.
 export function tradeInValue(S, repairCost) {
-  return Math.max(0, Math.round(HULLS[S.ship.hull].price / 2 - repairCost));
+  return hullValue(S.ship.hull, serviceYears(S.ship, S.day), repairCost);
 }
 
 // Replace the flagship with a new hull. Fittings are not carried over, except her colours.
@@ -356,6 +408,11 @@ export function tradeUp(S, hullId, name) {
   sh.hull = hullId;
   sh.fit = normalFit(hullId, keep);
   if (name) sh.name = name;
+  sh.built = S.day; // a new hull
+  sh.tropic = 0;
+  sh.strain = 0;
+  sh.rebuilt = 0;
+  sh.ageWarned = 0;
   S.hull = 100;
   S.hullWarned = 0;
   S.yard.built = (S.yard.built || 0) + 1;

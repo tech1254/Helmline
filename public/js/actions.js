@@ -155,6 +155,30 @@ export function initActions() {
       return;
     } else if (t.hasAttribute('data-wait') && pid) {
       waitInPort(7);
+    } else if (t.hasAttribute('data-rebuild') && pid === 'lisbon') {
+      const q = Ships.rebuildQuote(S.ship, S.ship.hull, S.day);
+      if (!q) return;
+      confirmDialog({
+        title: `A great rebuild for the ${S.ship.name}?`,
+        body: `<p>The shipwrights strip her to her frames and put in new timbers and planking wherever the rot and the worm have got in.${q.n ? ' This is the last time her hull will take it.' : ' A hull will take this twice at most.'}</p>
+          <dl class="facts"><dt>Cost</dt><dd>${q.cost.toLocaleString()} cz</dd><dt>In the yard</dt><dd>${q.days} days</dd><dt>Gives back</dt><dd>about ${Math.round(q.years)} years of her life</dd></dl>`,
+        ok: `Rebuild her: ${q.cost.toLocaleString()} cz`,
+        onOk: () => {
+          if (S.purse < q.cost) return;
+          S.purse -= q.cost;
+          Accounts.record(S, { kind: 'repairs', amount: -q.cost, text: `A great rebuild of the ${S.ship.name}` });
+          Ships.rebuild(S.ship, S.ship.hull, S.day);
+          S.hull = 100;
+          waitInPort(q.days);
+          toast(`The <b>${S.ship.name}</b> comes out of the yard rebuilt, good for years yet.`, 'port');
+          log(`Rebuilt the ${S.ship.name}: ${q.cost} cz, ${q.days} days.`);
+          renderPanel(); save();
+        },
+      });
+      return;
+    } else if (t.dataset.shipYard && pid === 'lisbon') {
+      shipYardDialog(+t.dataset.shipYard);
+      return;
     } else if (t.hasAttribute('data-house') && pid === 'lisbon') {
       openHouse();
       return;
@@ -330,5 +354,46 @@ export function initActions() {
   $('btn-ship').addEventListener('click', () => centerOn(S.ship.lon, S.ship.lat));
   $('btn-port').addEventListener('click', () => {
     if (S.ship.docked) { ui.panelMode = 'port'; renderPanel(); } else hint('You can only trade at anchor in a port.');
+  });
+}
+
+// A hired ship in Lisbon, old: a great rebuild, or a new hull of any kind the yard sells (the
+// old one taken in part exchange). Her captain, route and cargo stay.
+function shipYardDialog(id) {
+  const ship = S.fleet.ships.find((x) => x.id === id);
+  if (!ship) return;
+  const hull = ship.hull || 'caravel';
+  const rb = Ships.rebuildQuote(ship, hull, S.day);
+  const hulls = Ships.HULL_ORDER.filter((h) => Ships.availability(S, Ships.HULLS[h]).ok === 'yes');
+  const rows = hulls.map((h) => {
+    const q = Fleet.replaceQuote(S, ship, h);
+    return `<li class="house-item"><div><b>A new ${Ships.HULLS[h].name.toLowerCase()}</b><small>${Ships.HULLS[h].price.toLocaleString()} cz, less ${q.value.toLocaleString()} for the old hull · hold ${Ships.stats({ hull: h }).hold}</small></div><div class="house-act"><button data-modal-action="new-${h}" ${S.purse < q.net ? 'disabled' : ''}>${q.net.toLocaleString()} cz</button></div></li>`;
+  }).join('');
+  const actions = Object.fromEntries(hulls.map((h) => [`new-${h}`, () => {
+    const cost = Fleet.replaceHull(S, market, ship, h);
+    if (cost != null) { toast(`The <b>${ship.name}</b> is a new ${Ships.HULLS[h].name.toLowerCase()}. Captain ${ship.captain.name} takes her out on his route.`, 'discover'); log(`New hull for the ${ship.name}: ${cost} cz.`); }
+    renderPanel(); save();
+  }]));
+  if (rb) actions.rebuild = () => {
+    if (S.purse < rb.cost) return;
+    S.purse -= rb.cost;
+    Accounts.record(S, { kind: 'repairs', amount: -rb.cost, text: `A great rebuild of the ${ship.name}` });
+    Ships.rebuild(ship, hull, S.day);
+    ship.hullPct = 100;
+    ship.status = 'repair';
+    ship.repairUntil = S.day + rb.days;
+    toast(`The <b>${ship.name}</b> goes into the Lisbon yard for a great rebuild: ${rb.days} days.`, 'port');
+    renderPanel(); save();
+  };
+  confirmDialog({
+    title: `The ${ship.name} at the Lisbon yard`,
+    body: `<p>She has ${Ships.ageText(hull, Fleet.yearsOf(S, ship))}.</p>
+      ${rb ? `<div class="row"><button data-modal-action="rebuild" ${S.purse < rb.cost ? 'disabled' : ''}>A great rebuild: ${rb.cost.toLocaleString()} cz, ${rb.days} days, about ${Math.round(rb.years)} years back${rb.n ? ' (her last)' : ''}</button></div>` : '<p class="fine">Her hull will not take another rebuild.</p>'}
+      <ul class="house-list">${rows}</ul>`,
+    ok: 'Close',
+    cancel: false,
+    kind: 'summary',
+    onOk: () => {},
+    actions,
   });
 }

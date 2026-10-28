@@ -27,8 +27,24 @@ export const DANGER_BELOW = 25;
 export const CAPTAIN_YARD_BELOW = 70;
 export const CAPTAIN_BEACH_BELOW = 45;
 
-export function wearPerDay(lat) {
-  return lat < TROPIC_LAT ? WEAR_PER_DAY.tropic : WEAR_PER_DAY.temperate;
+export function wearPerDay(lat, hullId = null, years = 0) {
+  return (lat < TROPIC_LAT ? WEAR_PER_DAY.tropic : WEAR_PER_DAY.temperate) * (hullId ? ageWear(hullId, years) : 1);
+}
+
+// ---- Age ------------------------------------------------------------------------------------
+// A ship has a serviceable life (ships.js HULLS life; tropical service counts double). Until 70%
+// of it is used, a yard makes her fully sound. After that the best any yard can do falls, to 50%
+// at the end of her life and 20% at one and a half lives: she leaks, slows and at last founders.
+// An old hull also wears faster at sea.
+export const SOUND_UNTIL = 0.7;
+export function soundCap(hullId, years) {
+  const f = Ships.lifeShare(hullId, years);
+  if (f <= SOUND_UNTIL) return 100;
+  if (f <= 1) return Math.round(100 - 50 * (f - SOUND_UNTIL) / (1 - SOUND_UNTIL));
+  return Math.max(20, Math.round(50 - 60 * (f - 1)));
+}
+export function ageWear(hullId, years) {
+  return 1 + 2 * Math.max(0, Ships.lifeShare(hullId, years) - SOUND_UNTIL);
 }
 
 // Points lost to storms over a stretch of days at sea (0 most of the time).
@@ -47,13 +63,29 @@ export function leakShare(pct) {
 const price = (hullId) => (Ships.HULLS[hullId] || Ships.HULLS.caravel).price;
 
 // What the shipyard asks to make her sound: money and days.
-export function yardQuote(hullId, pct) {
-  const pts = Math.max(0, 100 - pct);
-  return { pts, cost: Math.ceil(pts * YARD_COST * price(hullId)), days: Math.ceil(pts / YARD_PTS_PER_DAY), to: 100 };
+// `years`: her years of service, for what an old hull can still be brought back to.
+export function yardQuote(hullId, pct, years = 0) {
+  const to = soundCap(hullId, years);
+  const pts = Math.max(0, to - pct);
+  return { pts, cost: Math.ceil(pts * YARD_COST * price(hullId)), days: Math.ceil(pts / YARD_PTS_PER_DAY), to };
 }
 
 // Careening on a beach: cheaper, slower, and only back to 80%.
-export function beachQuote(hullId, pct) {
-  const pts = Math.max(0, BEACH_TO - pct);
-  return { pts, cost: Math.ceil(pts * YARD_COST * BEACH_COST * price(hullId)), days: Math.ceil(pts / BEACH_PTS_PER_DAY), to: BEACH_TO };
+export function beachQuote(hullId, pct, years = 0) {
+  const to = Math.min(BEACH_TO, soundCap(hullId, years));
+  const pts = Math.max(0, to - pct);
+  return { pts, cost: Math.ceil(pts * YARD_COST * BEACH_COST * price(hullId)), days: Math.ceil(pts / BEACH_PTS_PER_DAY), to };
+}
+
+// Word once as a ship grows old (70% of her serviceable life: the yards can no longer make her
+// fully sound) and once as she passes it. `rec` keeps the flag (the flagship or a hired ship).
+export function ageNotice(rec, hullId, years, name, flagship = false) {
+  const f = Ships.lifeShare(hullId, years);
+  const stage = f >= 1 ? 2 : f >= SOUND_UNTIL ? 1 : 0;
+  if (stage <= (rec.ageWarned || 0)) return null;
+  rec.ageWarned = stage;
+  const cap = soundCap(hullId, years);
+  return stage === 2
+    ? `${name[0].toUpperCase() + name.slice(1)} is past her serviceable life: no yard can make her better than ${cap}% now, and she will only get worse. ${flagship ? 'The Lisbon yard will build you a new ship and take her in part exchange.' : 'Replace her hull at the Lisbon yard (Fleet), before the sea takes her.'}`
+    : `${name[0].toUpperCase() + name.slice(1)} is growing old: ${Math.floor(years)} years of hard service. The yards can no longer make her fully sound (${cap}% at best), and it will only get worse.`;
 }
