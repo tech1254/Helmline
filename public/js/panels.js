@@ -424,15 +424,15 @@ function captainBox(ship) {
   const c = ship.captain;
   const out = [];
   if (c.asks) out.push(`<div class="note warn-note"><p>Captain ${c.name} asks for <b>${c.asks.wage} cz a day</b> (now ${c.wage}). Refuse and his loyalty falls; leave him unanswered ${Math.max(1, Math.ceil(Captains.ANSWER_DAYS - (S.day - c.asks.day)))} more days and he takes it as a no.</p>
-    <div class="row"><button data-raise="refuse" data-ship="${ship.id}">Refuse</button><button class="primary" data-raise="grant" data-ship="${ship.id}">Pay him ${c.asks.wage} cz a day</button></div></div>`);
+    <div class="row"><button data-raise="refuse" data-cap="${ship.id}">Refuse</button><button class="primary" data-raise="grant" data-cap="${ship.id}">Pay him ${c.asks.wage} cz a day</button></div></div>`);
   if (ship.status === 'training') return out.join('');
   const opts = Object.entries(Captains.TRAINING).filter(([k]) => Captains.canTrain(c, k));
   if (ship.trainNext) {
     const T = Captains.TRAINING[ship.trainNext];
     const calls = !ship.route || ship.route.stops.some((st) => st.port === T.port) || ship.at === T.port;
-    out.push(`<p class="muted">A season ${T.where} (${Captains.trainFee(c, ship.trainNext)} cz, ${T.days} days, his ship waiting) when she next calls there.${calls ? '' : ` <span class="warn">Her route does not call at ${PORTS.find((p) => p.id === T.port).name}.</span>`} <button class="mini" data-train="none" data-ship="${ship.id}">Cancel</button></p>`);
+    out.push(`<p class="muted">A season ${T.where} (${Captains.trainFee(c, ship.trainNext)} cz, ${T.days} days, his ship waiting) when she next calls there.${calls ? '' : ` <span class="warn">Her route does not call at ${PORTS.find((p) => p.id === T.port).name}.</span>`} <button class="mini" data-train="none" data-cap="${ship.id}">Cancel</button></p>`);
   } else if (opts.length) {
-    out.push(`<details class="train"><summary>Train Captain ${c.name}…</summary><p class="fine">A season ashore teaches him a star sooner (to four at most; the fifth is earned). His ship waits in port, his wage still paid.</p><div class="row">${opts.map(([k, T]) => `<button data-train="${k}" data-ship="${ship.id}">${T.learns[0].toUpperCase() + T.learns.slice(1)} ${T.where} · ${Captains.trainFee(c, k)} cz</button>`).join('')}</div></details>`);
+    out.push(`<details class="train"><summary>Train Captain ${c.name}…</summary><p class="fine">A season ashore teaches him a star sooner (to four at most; the fifth is earned). His ship waits in port, his wage still paid.</p><div class="row">${opts.map(([k, T]) => `<button data-train="${k}" data-cap="${ship.id}">${T.learns[0].toUpperCase() + T.learns.slice(1)} ${T.where} · ${Captains.trainFee(c, k)} cz</button>`).join('')}</div></details>`);
   }
   return out.join('');
 }
@@ -448,7 +448,7 @@ export function renderFleet(el) {
         <p>${Fleet.statusText(S, ship)} ${ship.trips} ${ship.trips === 1 ? 'sale' : 'sales'} so far.</p>
         ${ship.route ? `<p class="muted">Route: ${routeSummary(ship.route)}</p>` : ''}
         <p class="muted">${last}</p>
-        <details ${ship.route ? '' : 'open'}><summary>${ship.route ? 'Edit route' : 'Set a route'}</summary>
+        <details class="route-edit" ${ship.route ? '' : 'open'}><summary>${ship.route ? 'Edit route' : 'Set a route'}</summary>
           ${routeEditor(ship)}
           <p class="foot">Stops are visited in order, then back to the first. Orders run top to bottom, so sell before you buy to make room. "Best available" picks what pays most where it will next be sold; a named good is bought as long as it should sell without loss where it is next sold.</p>
         </details>

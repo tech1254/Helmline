@@ -31,7 +31,7 @@ import { hint, toast } from './notices.js';
 // Route editor: keep the draft in step with the selects.
 
 export function keepDetailsOpen(shipId) {
-  const det = document.querySelector(`[data-ship="${shipId}"] details`);
+  const det = document.querySelector(`[data-ship="${shipId}"] details.route-edit`);
   if (det) det.open = true;
 }
 
@@ -254,11 +254,11 @@ export function initActions() {
       delete routeDrafts[ship.id];
       toast(`<b>${ship.name}</b> will run ${routeSummary(ship.route)}`, 'port');
     } else if (t.dataset.raise) { // a captain's raise: grant or refuse
-      const ship = S.fleet.ships.find((x) => x.id === +t.dataset.ship);
+      const ship = S.fleet.ships.find((x) => x.id === +t.dataset.cap);
       const r = t.dataset.raise === 'grant' ? Captains.grant(S, ship) : Captains.refuse(S, ship);
       if (typeof r === 'string') toast(r, 'port'); else if (r) report([r]);
     } else if (t.dataset.train) { // a season of training, at her next call there
-      const ship = S.fleet.ships.find((x) => x.id === +t.dataset.ship);
+      const ship = S.fleet.ships.find((x) => x.id === +t.dataset.cap);
       const skill = t.dataset.train === 'none' ? null : t.dataset.train;
       if (Fleet.orderTraining(ship, skill)) toast(skill ? `Captain ${ship.captain.name} will spend a season ${Captains.TRAINING[skill].where} when the <b>${ship.name}</b> next calls there.` : `No training for Captain ${ship.captain.name}.`, 'port');
     } else if (t.dataset.halt) {

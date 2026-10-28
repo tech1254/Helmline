@@ -18,7 +18,7 @@ async def main():
             await pg.click('[data-tab="fleet"]'); await pg.click('[data-hire]'); await pg.click('#modal-ok'); await pg.wait_for_timeout(200)
             cards = await J("() => document.querySelectorAll('[data-ship]').length")
             card = f'[data-ship]:nth-of-type({cards}) ' if False else ''
-            await J("() => { const d = [...document.querySelectorAll('[data-ship] details')]; d[d.length-1].open = true; }")
+            await J("() => { const d = [...document.querySelectorAll('[data-ship] details.route-edit')]; d[d.length-1].open = true; }")
             last = await J("() => document.querySelectorAll('[data-ship]').length")
             sc = f'[data-ship]:nth-last-of-type(1)'
             await pg.locator('[data-ship]').last.locator('[data-stop-i="1"] [data-f="port"]').select_option(dest); await pg.wait_for_timeout(60)
