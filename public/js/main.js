@@ -6,6 +6,7 @@ import * as Contracts from './contracts.js';
 import * as Cloud from './cloud.js';
 import * as Accounts from './accounts.js';
 import { S, market, ui } from './state.js';
+import { DAYS_PER_SEC } from './config.js';
 import { load, newGame, save } from './save.js';
 import { checkCloudOnStart, cloudSync, loadFromCloud, remoteAhead, renderCloudButton } from './cloudsync.js';
 import { centerOn, clampCam, resize, toScreen } from './view.js';
@@ -106,6 +107,13 @@ setSpeed(1);
 startIntro(hasSave);
 requestAnimationFrame(frame);
 
+// The top bar wraps to more rows on narrower screens: panels and notes start below it.
+{
+  const hud = document.getElementById('hud');
+  const fit = () => document.documentElement.style.setProperty('--hud-h', `${Math.ceil(hud.getBoundingClientRect().bottom)}px`);
+  new ResizeObserver(fit).observe(hud); fit();
+}
+
 // Exposed for debugging in the console.
 window.helmline = {
   get state() { return S; }, market: () => market, offers: (pid) => Contracts.offersAt(S, market, pid), setCourse, setSpeed, screenOf: (lon, lat) => toScreen(lon, lat),
@@ -127,5 +135,7 @@ window.helmline = {
   sail: (id) => { const p = PORTS.find((x) => x.id === id); const plan = planCourse(p.lon, p.lat, id, false); if (plan) confirmVoyage(plan); return !!plan; },
   fleetRoute: (id, route) => Fleet.setRoute(S, market, S.fleet.ships.find((x) => x.id === id), route),
   fleetStatus: (id) => Fleet.statusText(S, S.fleet.ships.find((x) => x.id === id)),
+  // sail on for some days of game time, as the frame loop would (stops for dialogs and arrivals)
+  sailFor: (days) => { const sp = ui.speed; ui.speed = 1; for (let d = 0; d < days && !ui.modal && !ui.arrival; d += 0.25) update(0.25 / DAYS_PER_SEC); ui.speed = sp; renderPanel(); return S.ship.docked; },
   advance: (days) => { for (let i = 0; i < days * 4; i++) advanceTime(0.25, !S.ship.docked); renderPanel(); },
 };

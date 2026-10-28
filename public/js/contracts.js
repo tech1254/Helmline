@@ -111,8 +111,10 @@ const NM_PER_DAY = 60; // a cautious pace, allowing for contrary winds
 const REFRESH_DAYS = 15; // the whole board is reposted this often
 const REFILL_DAYS = 7; // a taken offer is replaced after about a week
 
-function routeNm(a, b) {
-  const path = findPath(a.lon, a.lat, b.lon, b.lat);
+// The passage as your flagship would sail it: a barca keeps to the coast, so a contract never
+// sends her out to Madeira.
+function routeNm(a, b, coastal = false) {
+  const path = findPath(a.lon, a.lat, b.lon, b.lat, 1, coastal);
   if (!path) return null;
   let nm = 0, lon = a.lon, lat = a.lat;
   for (const [x, y] of path) { nm += distNm(lon, lat, x, y); lon = x; lat = y; }
@@ -123,7 +125,9 @@ function routeNm(a, b) {
 function candidates(S, market, portId) {
   const C = ensureContracts(S);
   const here = PORTS.find((p) => p.id === portId);
-  const known = PORTS.filter((p) => S.discovered[p.id] && !p.beyond && !market.closed(p.id)); // no contracts for the Indies
+  const coastal = !!(S.ship?.hull && Ships.hullOf(S.ship).coastal);
+  const known = PORTS.filter((p) => S.discovered[p.id] && !p.beyond && !market.closed(p.id) && // no contracts for the Indies
+    (!coastal || p.id === portId || routeNm(here, p, true) != null)); // nor beyond a barca's reach
   const taken = new Set([...C.active, ...(C.offers[portId]?.list || [])].map((c) => `${c.good}>${c.to}`));
   const out = [];
   for (const g of GOODS) {
@@ -151,8 +155,9 @@ function makeOffer(S, market, portId, cand) {
   const { g, src, dest, kind } = cand;
   const here = PORTS.find((p) => p.id === portId);
   // Passage: here -> source (if elsewhere) -> destination.
-  const nm1 = src.id === portId ? 0 : routeNm(here, src);
-  const nm2 = routeNm(src, dest);
+  const coastal = !!(S.ship?.hull && Ships.hullOf(S.ship).coastal);
+  const nm1 = src.id === portId ? 0 : routeNm(here, src, coastal);
+  const nm2 = routeNm(src, dest, coastal);
   if (nm1 == null || nm2 == null) return null;
   const unit = market.buyPrice(src.id, g.id);
   const budget = Math.max(120, Math.min(S.purse * 0.8, 3000));

@@ -342,7 +342,12 @@ export function initActions() {
   $('btn-register').addEventListener('click', () => openShips('register'));
   $('btn-help').addEventListener('click', () => togglePanel('help'));
   $('btn-cloud').addEventListener('click', () => togglePanel('cloud'));
-  $('tip-close').addEventListener('click', () => { S.tips.off = true; renderTip(); save(); });
+  // × puts this note away (the early nudges, or one system's note); 'No more notes' stops them all.
+  $('tip-close').addEventListener('click', () => {
+    if (ui.tipKey) { S.tips.seen = S.tips.seen || {}; S.tips.seen[ui.tipKey] = true; }
+    renderTip(); save();
+  });
+  $('tip-off').addEventListener('click', () => { S.tips.off = true; renderTip(); save(); });
   $('zoom-in').addEventListener('click', () => zoomBy(1.35));
   $('zoom-out').addEventListener('click', () => zoomBy(1 / 1.35));
   $('btn-prices').addEventListener('click', () => togglePanel('prices'));

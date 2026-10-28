@@ -489,23 +489,42 @@ export function renderHelp(el) {
       <li><b>Corsairs</b> prowl off Morocco, the Algarve and the Canaries. When challenged, run, fight or pay. Beat a galley and you can plunder her, and the crown pays a bounty for her in any Portuguese port; but plundering makes your name feared and draws more of them, while avoiding fights calms the seas. Fighting men and boarding nets from the shipyard improve your odds. Battle damage slows you until a shipwright in Lisbon, Lagos or Funchal repairs it.</li>
       <li><b>Charts:</b> the crown pays ${CHART_REWARD} cz for each new port or island group, on your return to Lisbon.</li>
     </ul>
-    <h3>Growing</h3>
+    <p class="fine">Captain's notes explain each of these as it first matters. The rest, in full:</p>
+    <details class="help-more"><summary>Contracts and standing</summary>
     <ul class="help">
       <li><b>Contracts</b> open up at 500 cz. Completing them builds standing; missing deadlines costs it.</li>
       <li><b>Standing</b> brings better pay, better prices in Portuguese ports, the right to command hired ships, and bigger hulls at the shipyard.</li>
+    </ul></details>
+    <details class="help-more"><summary>Your ship</summary>
+    <ul class="help">
       <li><b>Your ship:</b> the ship register (S, or <i>Ship</i>) shows your flagship, ships on order and the hulls ahead. The Lisbon shipyard refits her (sails, rig, guns, stores, colours), trades her up for a bigger hull, or builds one to order; Lagos and Funchal refit. A nau can be ordered from 1466 and is delivered from 1470; later come the galleon and the great Nau da Índia.</li>
       <li><b>Arriving:</b> your ship sails into each port in a short scene. Tap to skip it; choose every port, first visits only or off in the ship register.</li>
-      <li><b>Your fleet:</b> a hired captain runs a trade route for you, paid from your purse.</li>
-      <li><b>The road to the Indies:</b> history moves on as you sail. Diogo Cão reaches the Kongo (1483), São Tomé is settled (1486), Dias rounds the Cape (1488), da Gama comes home from India (1499) and Cabral finds Brazil (1500); each opens new ports. The chart ends beyond the Cape: sail to its edge to go on to <b>Calicut</b>, months away across the Indian Ocean. Go with the monsoon (round the Cape June to August, leave India December to February) or pay for it in days, scurvy and storms. Hired captains can sail there too.</li>
-      <li><b>Rivals and the crown:</b> where trade pays, others follow. Rival merchants reach each part of the coast in their time, and crowd onto any route you work hard; they narrow the gap between where a good is cheap and where it is dear, so old routes pay less and new frontiers pay best. And once your gains pass 3,000 cz a year the crown's officials take a share each New Year (10%, then 20% over 10,000, 30% over 25,000), less for a man of renown. The Ledger shows this year's reckoning so far.</li>
-      <li><b>Your house:</b> once your purse passes 5,000 cz, the House panel in Lisbon offers what a rich merchant bought for honour: a house on the Rua Nova, a quinta at Sintra, a family chapel, knighthood of the Order of Christ, a place in the Royal Household, loans to the crown, a palace on the Tagus. They bring renown and titles, some cost upkeep, and none earns its price back.</li>
-      <li><b>Investments:</b> once you are Respected, found a <b>feitoria</b> in a port: a factor of your own gets you better prices there and finds you work, for his wages. From 1500, buy shares in the crown's India fleet in Lisbon: paid out when it comes home, if it comes home.</li>
+    </ul></details>
+    <details class="help-more"><summary>Harbours and rivers</summary>
+    <ul class="help">
       <li><b>Draft:</b> a laden ship sits deeper. Where she draws more than the harbour has, she anchors offshore and her boats ferry the cargo: some days, and a small fee to the boatmen. A nau keeps outside the Arguin banks. River bars rise in the rains and fall in the dry season.</li>
       <li><b>Up the Gambia:</b> Cantor, far upriver, trades gold and ivory from the caravans and pays well for salt. Only a shallow ship gets there: a barca, or a caravel not too deeply laden.</li>
       <li><b>Ports grow:</b> with their history and with the trade through them. A bigger port has a deeper market, and some build quays that let deeper ships come in. The market panel shows each port's size.</li>
+    </ul></details>
+    <details class="help-more"><summary>Your fleet and time away</summary>
+    <ul class="help">
+      <li><b>Your fleet:</b> a hired captain runs a trade route for you, paid from your purse.</li>
       <li><b>The ledger</b> accounts for every cruzado in and out. Your own dealings are entered at once. A hired captain's are entered when you are in any port on his route, so until then part of your purse is not yet accounted for.</li>
       <li><b>Time away:</b> if you have hired captains and your own ship is in port, the world moves on while you are gone: at a tenth of its usual pace at first, more slowly after a few weeks, up to ${OFFLINE_MAX_DAYS} days. Contract deadlines wait for you. A night's sleep or a working day is safe; stay away longer than ${Fleet.STRAY_AFTER_HOURS} hours and captains start to stray (skimming, then going ashore), and after ${STANDING_FADES_AFTER_HOURS} hours your standing starts to fade.</li>
-    </ul>
+    </ul></details>
+    <details class="help-more"><summary>History and the Indies</summary>
+    <ul class="help">
+      <li><b>The road to the Indies:</b> history moves on as you sail. Diogo Cão reaches the Kongo (1483), São Tomé is settled (1486), Dias rounds the Cape (1488), da Gama comes home from India (1499) and Cabral finds Brazil (1500); each opens new ports. The chart ends beyond the Cape: sail to its edge to go on to <b>Calicut</b>, months away across the Indian Ocean. Go with the monsoon (round the Cape June to August, leave India December to February) or pay for it in days, scurvy and storms. Hired captains can sail there too.</li>
+    </ul></details>
+    <details class="help-more"><summary>Rivals and the crown</summary>
+    <ul class="help">
+      <li><b>Rivals and the crown:</b> where trade pays, others follow. Rival merchants reach each part of the coast in their time, and crowd onto any route you work hard; they narrow the gap between where a good is cheap and where it is dear, so old routes pay less and new frontiers pay best. And once your gains pass 3,000 cz a year the crown's officials take a share each New Year (10%, then 20% over 10,000, 30% over 25,000), less for a man of renown. The Ledger shows this year's reckoning so far.</li>
+    </ul></details>
+    <details class="help-more"><summary>Wealth and honours</summary>
+    <ul class="help">
+      <li><b>Your house:</b> once your purse passes 5,000 cz, the House panel in Lisbon offers what a rich merchant bought for honour: a house on the Rua Nova, a quinta at Sintra, a family chapel, knighthood of the Order of Christ, a place in the Royal Household, loans to the crown, a palace on the Tagus. They bring renown and titles, some cost upkeep, and none earns its price back.</li>
+      <li><b>Investments:</b> once you are Respected, found a <b>feitoria</b> in a port: a factor of your own gets you better prices there and finds you work, for his wages. From 1500, buy shares in the crown's India fleet in Lisbon: paid out when it comes home, if it comes home.</li>
+    </ul></details>
     <h3>Saving</h3>
     <ul class="help">
       <li><b>On this device</b> your game saves by itself as you play.</li>
@@ -514,18 +533,48 @@ export function renderHelp(el) {
     <p class="foot">Keyboard: space pause · 1 2 3 speed · P price book · L ledger · N notices · S ship register · W winds · Esc close.</p>`;
 }
 
-// Captain's notes: a gentle nudge through the first voyages, until contracts open up.
+// Captain's notes: a nudge through the first voyages, then one short note for each part of the
+// game as it first matters (shown until dismissed with ×; 'No more notes' turns them all off).
+// Each later note: [key, when it applies, text].
+const NOTES = [
+  ['contracts', () => S.contracts?.unlocked, 'Contracts are open: merchants in each port post jobs (the Contracts tab). Deliver on time and your standing rises; standing lets you hire captains and buy bigger ships.'],
+  ['fleet', () => Contracts.perks(S).maxShips > 0 && !S.fleet.ships.length, 'Your standing lets you hire a captain. In Lisbon, open Fleet: buy him a ship and give him a route, and he trades on his own with your purse.'],
+  ['accounts', () => S.fleet.ships.length > 0, 'Your captains\' dealings enter your Ledger when you are in any port on their route. Until then part of your purse is "not yet accounted for".'],
+  ['corsairs', () => ['won', 'lost', 'paid', 'fled'].some((k) => (S.pirates?.[k] || 0) > 0), 'Corsairs: running depends on your speed; crossbowmen, men-at-arms and boarding nets (the shipyard\'s Arms tab) improve your fighting odds. Beat a galley and the crown pays a bounty for her.'],
+  ['hull', () => (S.hull ?? 100) < 70, 'A worn hull is slower, and below 60% she leaks and spoils cargo. The yards of Lisbon, Lagos and Funchal make her sound; anywhere else her crew can careen her on a beach.'],
+  ['boats', () => S.ship.offshore, 'She draws too much for this harbour, so she lies at the anchorage and her boats ferry the cargo: some days, and a small fee. Shallow hulls lie alongside.'],
+  ['rivals', () => S.ship.docked && Competition.level(S, S.ship.docked) >= 0.15, 'Rival merchants trade here now. On busy, old routes they narrow the gap between where goods are cheap and where they are dear: new frontiers pay best.'],
+  ['crown', () => (S.taxes?.last?.tax || 0) > 0, 'The crown has taken its share of last year\'s gains (the Ledger shows this year\'s so far). Renown, from your house in Lisbon, lowers it.'],
+  ['age', () => Ships.lifeShare(S.ship.hull, Ships.serviceYears(S.ship, S.day)) >= 0.7, 'Your ship is growing old: the yards can no longer make her fully sound. A great rebuild in Lisbon gives back years, twice at most; in the end she must be replaced.'],
+  ['house', () => S.ship.docked === 'lisbon' && S.purse >= 5000, 'Rich enough for honours: Your house, in the Lisbon market panel. A house, a knighthood, a chapel: renown, and a smaller share for the crown.'],
+  ['history', () => S.discovered.mpinda || S.discovered.saotome, 'History moves on: as the explorers come home, new ports open and appear on your chart. Watch the notices.'],
+  ['indies', () => S.discovered.calicut, 'The way to the Indies is open. Sail to the edge of the chart beyond the Cape, and on to Calicut. Go with the monsoon: round the Cape June to August, leave India December to February.'],
+];
+
 export function tipText() {
-  if (!S.tips || S.tips.off || S.contracts?.unlocked || !ui.introDone || ui.modal) return null;
+  if (!S.tips || S.tips.off || !ui.introDone || ui.modal) return null;
+  ui.tipKey = null;
   const sh = S.ship;
-  if (sh.docked) {
-    if (held() === 0 && S.voyages === 0) return 'Buy wine or wool cloth here: both sell for close to double in the Canaries and further south.';
-    if (held() > 0 && S.voyages === 0) return 'Now set sail: tap Sail to…, or a port on the chart. Lanzarote is an easy first run.';
-    if (held() > 0) return 'Sell where the price beats what you paid (shown under Hold). Then load something the next port wants.';
-    return 'Open the Price book: the harbourmaster suggests runs from the prices you have seen.';
+  const seen = S.tips.seen || {};
+  if (!S.contracts?.unlocked) {
+    if (seen.early) return null;
+    ui.tipKey = 'early';
+    if (sh.docked) {
+      if (held() === 0 && S.voyages === 0) return 'Buy wine or wool cloth here: both sell for close to double in the Canaries and further south.';
+      if (held() > 0 && S.voyages === 0) return 'Now set sail: tap Sail to…, or a port on the chart. Lanzarote is an easy first run.';
+      if (held() > 0) return 'Sell where the price beats what you paid (shown under Hold). Then load something the next port wants.';
+      return 'Open the Price book: the harbourmaster suggests runs from the prices you have seen.';
+    }
+    if (S.voyages === 0) return 'The arrows show the wind. Running before it is fast; beating into it is slow.';
+    return 'Reach 500 cruzados and Prince Henry will notice you.';
   }
-  if (S.voyages === 0) return 'The arrows show the wind. Running before it is fast; beating into it is slow.';
-  return 'Reach 500 cruzados and Prince Henry will notice you.';
+  for (const [key, when, text] of NOTES) {
+    if (seen[key]) continue;
+    let applies = false;
+    try { applies = !!when(); } catch { /* not readable yet */ }
+    if (applies) { ui.tipKey = key; return text; }
+  }
+  return null;
 }
 
 export function renderTip() {
@@ -533,6 +582,13 @@ export function renderTip() {
   const el = $('tip');
   el.hidden = !t;
   if (t && $('tip-text').textContent !== t) $('tip-text').textContent = t;
+  // beside an open panel the note narrows; on phones the panel fills the screen, so it shortens
+  // by the note's height instead (style.css)
+  const open = !$('panel').hidden;
+  const narrow = window.matchMedia('(max-width: 700px)').matches;
+  if (document.body.classList.contains('panel-open') !== open) document.body.classList.toggle('panel-open', open);
+  const h = open && narrow && t ? `${el.offsetHeight + 6}px` : '0px';
+  if (document.body.style.getPropertyValue('--tip-h') !== h) document.body.style.setProperty('--tip-h', h);
 }
 
 // Market, Price book and other tabs, shown while in port so either is one click away.

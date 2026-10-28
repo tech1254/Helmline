@@ -69,7 +69,7 @@ button.danger { color: var(--red); border-color: var(--red); }
 
 /* Panel */
 #panel {
-  position: fixed; top: 76px; right: 10px; width: min(520px, calc(100vw - 20px)); max-height: calc(100vh - 140px); overflow: auto;
+  position: fixed; top: calc(var(--hud-h, 66px) + 10px); right: 10px; width: min(520px, calc(100vw - 20px)); max-height: calc(100vh - var(--hud-h, 66px) - 74px); overflow: auto; /* --hud-h: the top bar, however many rows it wraps to (main.js) */
   background: var(--paper); border: 1px solid var(--ink-2); border-radius: 8px; box-shadow: var(--shadow); padding: 14px 16px 16px;
   z-index: 4; /* above the zoom buttons and tips */
   background-image: linear-gradient(rgba(255,255,255,0.25), rgba(0,0,0,0.02));
@@ -144,9 +144,12 @@ th small, td small { display: block; font-size: 12px; font-weight: 400; color: v
 #zoom button { width: 40px; height: 40px; font-size: 22px; line-height: 1; padding: 0; border-radius: 0; }
 #zoom button:first-child { border-radius: 6px 6px 0 0; }
 #zoom button:last-child { border-radius: 0 0 6px 6px; margin-top: -1px; }
-#tip { position: fixed; left: 10px; bottom: calc(max(14px, env(safe-area-inset-bottom)) + 44px); max-width: min(360px, calc(100vw - 80px)); background: rgba(244, 234, 210, 0.96); border: 1px solid var(--gold); border-radius: 6px; box-shadow: var(--shadow); padding: 7px 30px 8px 12px; font-size: 14px; line-height: 1.35; z-index: 2; }
+/* the note sits under the top bar, clear of the toasts at the bottom and beside an open panel */
+#tip { position: fixed; left: 10px; top: calc(var(--hud-h, 66px) + 10px); max-width: min(360px, calc(100vw - 80px)); background: rgba(244, 234, 210, 0.96); border: 1px solid var(--gold); border-radius: 6px; box-shadow: var(--shadow); padding: 7px 30px 8px 12px; font-size: 14px; line-height: 1.35; z-index: 2; }
 #tip[hidden] { display: none; }
+body.panel-open #tip { max-width: min(360px, calc(100vw - min(520px, 100vw - 20px) - 40px)); }
 #tip .tip-label { display: block; font-family: var(--display); color: var(--gold); font-size: 14px; }
+#tip .tip-off { display: block; margin-top: 4px; border: 0; background: none; padding: 0; font-size: 12px; text-decoration: underline; color: inherit; opacity: 0.75; cursor: pointer; }
 #tip-close { position: absolute; top: 2px; right: 2px; border: 0; background: none; font-size: 18px; padding: 2px 6px; color: var(--ink-2); }
 
 /* Cloud save */
@@ -195,7 +198,7 @@ button.mini { font-size: 13px; padding: 3px 8px; justify-self: start; }
 /* Confirmation dialog */
 /* The dialog floats over the chart: the chart underneath can still be zoomed and panned. */
 #modal { position: fixed; inset: 0; background: rgba(46, 36, 27, 0.18); display: grid; place-items: center; z-index: 20; padding: 16px; pointer-events: none; }
-#modal.aside { background: transparent; place-items: start; padding: 76px 10px 10px; }
+#modal.aside { background: transparent; place-items: start; padding: calc(var(--hud-h, 66px) + 10px) 10px 10px; }
 #modal .card { pointer-events: auto; width: min(420px, 100%); background: var(--paper); border: 1px solid var(--ink-2); border-radius: 10px; padding: 20px 22px 16px; box-shadow: var(--shadow);
   /* never taller than the screen: the body scrolls and the buttons stay in view */
   display: flex; flex-direction: column; max-height: calc(100vh - 32px); max-height: calc(100dvh - 32px); }
@@ -237,7 +240,7 @@ button.mini { font-size: 13px; padding: 3px 8px; justify-self: start; }
   #modal.aside .card { max-height: calc(100vh - 70px); max-height: calc(100dvh - 70px); }
   #zoom { bottom: 64px; }
   #zoom button { width: 44px; height: 44px; }
-  #tip { left: 8px; bottom: calc(max(14px, env(safe-area-inset-bottom)) + 58px); max-width: calc(100vw - 72px); font-size: 13px; }
+  #tip, body.panel-open #tip { left: 8px; right: 8px; top: calc(var(--hud-h, 60px) + 8px); max-width: none; font-size: 13px; z-index: 6; }
   .route { grid-template-columns: minmax(0, 1fr); }
   .order { grid-template-columns: 66px minmax(0, 1fr) 30px; }
   .order select[data-f="pct"] { grid-column: 2 / 3; }
@@ -328,8 +331,8 @@ button.mini { font-size: 13px; padding: 3px 8px; justify-self: start; }
   /* everything that sat at the bottom moves up above the bar */
   #status { bottom: calc(var(--dock) + 8px); }
   #zoom { bottom: calc(var(--dock) + 10px); }
-  #panel { bottom: calc(var(--dock) + 6px); max-height: calc(100vh - var(--dock) - 84px); max-height: calc(100dvh - var(--dock) - 84px); }
-  #tip { bottom: calc(var(--dock) + 52px); }
+  #panel { bottom: calc(var(--dock) + 6px); max-height: calc(100vh - var(--dock) - 84px - var(--tip-h, 0px)); max-height: calc(100dvh - var(--dock) - 84px - var(--tip-h, 0px)); }
+  /* with a panel open the panel gives the note room (--tip-h, panels.js) */
   #modal.aside { padding: 10px 8px calc(var(--dock) + 8px); }
   #modal.aside .card { max-height: calc(100vh - var(--dock) - 24px); max-height: calc(100dvh - var(--dock) - 24px); }
 }
@@ -549,3 +552,7 @@ body.scene-open #panel, body.scene-open #toast, body.scene-open #tip { visibilit
 .house-act { text-align: right; flex: 0 0 auto; max-width: 45%; }
 .house-act small { max-width: 14em; margin-left: auto; }
 .house-act .owned { font-style: italic; color: var(--muted); }
+
+.help-more { margin: 6px 0; }
+.help-more summary { cursor: pointer; font-weight: 600; padding: 4px 0; }
+.help-more[open] summary { margin-bottom: 2px; }
