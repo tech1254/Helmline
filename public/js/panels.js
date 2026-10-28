@@ -12,6 +12,7 @@ import * as House from './house.js';
 import * as Competition from './competition.js';
 import { CHART_REWARD, OFFLINE_MAX_DAYS, STANDING_FADES_AFTER_HOURS } from './config.js';
 import * as Ships from './ships.js';
+import * as Captains from './captains.js';
 import { shipFigure } from './photos.js';
 import { S, market, ui } from './state.js';
 import { load, save } from './save.js';
@@ -346,7 +347,7 @@ export function fleetUnlocked() {
   return !!(S.fleet?.ships.length || (S.contracts?.unlocked && Contracts.perks(S).shipyard));
 }
 
-export const stars = (n) => '★'.repeat(n) + '☆'.repeat(5 - n);
+export const stars = (n) => { const k = Captains.stars(n); return '★'.repeat(k) + '☆'.repeat(5 - k); };
 
 export function portOptions(selected) {
   return PORTS.filter((p) => S.discovered[p.id]).map((p) => `<option value="${p.id}" ${p.id === selected ? 'selected' : ''}>${p.name}</option>`).join('');
@@ -418,6 +419,24 @@ export function routeSummary(route) {
   return route.stops.map((st) => PORTS.find((p) => p.id === st.port).name).join(' → ') + ' → …';
 }
 
+// A captain's raise request, and his training: what's asked, what's ordered, what can be.
+function captainBox(ship) {
+  const c = ship.captain;
+  const out = [];
+  if (c.asks) out.push(`<div class="note warn-note"><p>Captain ${c.name} asks for <b>${c.asks.wage} cz a day</b> (now ${c.wage}). Refuse and his loyalty falls; leave him unanswered ${Math.max(1, Math.ceil(Captains.ANSWER_DAYS - (S.day - c.asks.day)))} more days and he takes it as a no.</p>
+    <div class="row"><button data-raise="refuse" data-cap="${ship.id}">Refuse</button><button class="primary" data-raise="grant" data-cap="${ship.id}">Pay him ${c.asks.wage} cz a day</button></div></div>`);
+  if (ship.status === 'training') return out.join('');
+  const opts = Object.entries(Captains.TRAINING).filter(([k]) => Captains.canTrain(c, k));
+  if (ship.trainNext) {
+    const T = Captains.TRAINING[ship.trainNext];
+    const calls = !ship.route || ship.route.stops.some((st) => st.port === T.port) || ship.at === T.port;
+    out.push(`<p class="muted">A season ${T.where} (${Captains.trainFee(c, ship.trainNext)} cz, ${T.days} days, his ship waiting) when she next calls there.${calls ? '' : ` <span class="warn">Her route does not call at ${PORTS.find((p) => p.id === T.port).name}.</span>`} <button class="mini" data-train="none" data-cap="${ship.id}">Cancel</button></p>`);
+  } else if (opts.length) {
+    out.push(`<details class="train"><summary>Train Captain ${c.name}…</summary><p class="fine">A season ashore teaches him a star sooner (to four at most; the fifth is earned). His ship waits in port, his wage still paid.</p><div class="row">${opts.map(([k, T]) => `<button data-train="${k}" data-cap="${ship.id}">${T.learns[0].toUpperCase() + T.learns.slice(1)} ${T.where} · ${Captains.trainFee(c, k)} cz</button>`).join('')}</div></details>`);
+  }
+  return out.join('');
+}
+
 export function renderFleet(el) {
   const F = Fleet.ensureFleet(S);
   const ships = F.ships.map((ship) => {
@@ -425,10 +444,11 @@ export function renderFleet(el) {
     return `<li class="contract" data-ship="${ship.id}">
         <div class="c-head"><span class="c-title">${ship.name} <small class="muted">${Ships.HULLS[ship.hull || 'caravel'].name.toLowerCase()} · hold ${Fleet.holdSize(ship)} · hull ${Math.round(ship.hullPct ?? 100)}%</small></span><span class="c-pay">${ship.profit >= 0 ? '+' : ''}${ship.profit.toLocaleString()} cz</span></div>
         <div class="c-patron">Captain ${ship.captain.name} · navigation ${stars(ship.captain.nav)} · trade ${stars(ship.captain.trade)} · ${Fleet.dailyCost(ship)} cz a day at sea, half in port · ${Fleet.loyaltyText(ship.captain.loyalty)}</div>
+        ${captainBox(ship)}
         <p>${Fleet.statusText(S, ship)} ${ship.trips} ${ship.trips === 1 ? 'sale' : 'sales'} so far.</p>
         ${ship.route ? `<p class="muted">Route: ${routeSummary(ship.route)}</p>` : ''}
         <p class="muted">${last}</p>
-        <details ${ship.route ? '' : 'open'}><summary>${ship.route ? 'Edit route' : 'Set a route'}</summary>
+        <details class="route-edit" ${ship.route ? '' : 'open'}><summary>${ship.route ? 'Edit route' : 'Set a route'}</summary>
           ${routeEditor(ship)}
           <p class="foot">Stops are visited in order, then back to the first. Orders run top to bottom, so sell before you buy to make room. "Best available" picks what pays most where it will next be sold; a named good is bought as long as it should sell without loss where it is next sold.</p>
         </details>
@@ -451,7 +471,7 @@ export function renderFleet(el) {
         <p class="blurb">A ${H.name.toLowerCase()}: hold ${hst.hold}, ${hst.knots} knots, ${Ships.HULLS[H.id].hiredUpkeep} cz a day upkeep on top of her captain's wage. ${H.blurb} Choose the captain who will sail her.</p>
         <ul class="contracts">${Fleet.candidates(S).map((c) => `<li class="contract">
           <div class="c-head"><span class="c-title">Captain ${c.name}</span><span class="c-pay">${c.wage} cz a day</span></div>
-          <p>Navigation ${stars(c.nav)} (faster passages) · Trade ${stars(c.trade)} (better sale prices)</p>
+          <p>Navigation ${stars(c.nav)} (faster passages) · Trade ${stars(c.trade)} (better sale prices) · ${c.nav + c.trade <= 4 ? 'green: he will learn at sea and in the market' : 'seasoned'}</p>
           <div class="row"><button class="primary" data-hire="${c.id}" ${S.purse < H.price ? 'disabled' : ''}>Buy a ${H.name.toLowerCase()} and hire him</button></div>
         </li>`).join('')}</ul>
         ${S.purse < H.price ? `<p class="foot">You need ${H.price.toLocaleString()} cz in your purse.</p>` : ''}`;
@@ -509,6 +529,7 @@ export function renderHelp(el) {
     <details class="help-more"><summary>Your fleet and time away</summary>
     <ul class="help">
       <li><b>Your fleet:</b> a hired captain runs a trade route for you, paid from your purse.</li>
+      <li><b>Captains learn:</b> most men on the quay are green (one or two stars) and cheap; a seasoned man asks more. Navigation grows with days at sea, faster in the tropics and beyond the Cape; trade with every cargo sold. A season with the pilots at Lagos or a factor in Lisbon buys a star sooner (to four; the fifth is earned). A captain who has grown asks for a raise: refuse and his loyalty falls.</li>
       <li><b>The ledger</b> accounts for every cruzado in and out. Your own dealings are entered at once. A hired captain's are entered when you are in any port on his route, so until then part of your purse is not yet accounted for.</li>
       <li><b>Time away:</b> if you have hired captains and your own ship is in port, the world moves on while you are gone: at a tenth of its usual pace at first, more slowly after a few weeks, up to ${OFFLINE_MAX_DAYS} days. Contract deadlines wait for you. A night's sleep or a working day is safe; stay away longer than ${Fleet.STRAY_AFTER_HOURS} hours and captains start to stray (skimming, then going ashore), and after ${STANDING_FADES_AFTER_HOURS} hours your standing starts to fade.</li>
     </ul></details>
@@ -539,6 +560,7 @@ export function renderHelp(el) {
 const NOTES = [
   ['contracts', () => S.contracts?.unlocked, 'Contracts are open: merchants in each port post jobs (the Contracts tab). Deliver on time and your standing rises; standing lets you hire captains and buy bigger ships.'],
   ['fleet', () => Contracts.perks(S).maxShips > 0 && !S.fleet.ships.length, 'Your standing lets you hire a captain. In Lisbon, open Fleet: buy him a ship and give him a route, and he trades on his own with your purse.'],
+  ['captains', () => S.fleet.ships.some((x) => x.captain.nav >= 2 || x.captain.trade >= 2 || x.captain.asks), 'Your captains learn: stars for navigation come with days at sea, for trade with every cargo sold. One who grows good will ask for a raise. You can also send him to train (Fleet).'],
   ['accounts', () => S.fleet.ships.length > 0, 'Your captains\' dealings enter your Ledger when you are in any port on their route. Until then part of your purse is "not yet accounted for".'],
   ['corsairs', () => ['won', 'lost', 'paid', 'fled'].some((k) => (S.pirates?.[k] || 0) > 0), 'Corsairs: running depends on your speed; crossbowmen, men-at-arms and boarding nets (the shipyard\'s Arms tab) improve your fighting odds. Beat a galley and the crown pays a bounty for her.'],
   ['hull', () => (S.hull ?? 100) < 70, 'A worn hull is slower, and below 60% she leaks and spoils cargo. The yards of Lisbon, Lagos and Funchal make her sound; anywhere else her crew can careen her on a beach.'],
@@ -560,9 +582,9 @@ export function tipText() {
     if (seen.early) return null;
     ui.tipKey = 'early';
     if (sh.docked) {
-      if (held() === 0 && S.voyages === 0) return 'Buy wine or wool cloth here: both sell for close to double in the Canaries and further south.';
+      if (held() === 0 && S.voyages === 0) return 'Buy ten casks of wine or bolts of wool cloth: they sell for close to double in the Canaries and further south. Not a full hold: a small port\'s price falls with every one you sell.';
       if (held() > 0 && S.voyages === 0) return 'Now set sail: tap Sail to…, or a port on the chart. Lanzarote is an easy first run.';
-      if (held() > 0) return 'Sell where the price beats what you paid (shown under Hold). Then load something the next port wants.';
+      if (held() > 0) return 'Sell where the price beats what you paid (shown under Hold); watch it fall as you sell, and keep the rest for a better market. Then load something the next port wants.';
       return 'Open the Price book: the harbourmaster suggests runs from the prices you have seen.';
     }
     if (S.voyages === 0) return 'The arrows show the wind. Running before it is fast; beating into it is slow.';

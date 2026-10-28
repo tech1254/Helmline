@@ -9,6 +9,7 @@ import { GOODS } from './economy.js';
 import * as Accounts from './accounts.js';
 import * as Ships from './ships.js';
 import * as Wear from './wear.js';
+import * as Captains from './captains.js';
 
 export const SHIP_COST = Ships.HULLS.caravel.price;
 // Upkeep is the hull's hiredUpkeep (a caravel 1 cz a day, tuned 26 Oct 2026 with tests/sim), on top of the captain's wage.
@@ -47,11 +48,7 @@ export function candidates(S) {
   const F = ensureFleet(S);
   if (!F.candidates || S.day - F.candidates.day > CANDIDATE_DAYS) {
     const list = [];
-    for (let i = 0; i < 3; i++) {
-      const nav = 1 + Math.floor(Math.random() * 5);
-      const trade = 1 + Math.floor(Math.random() * 5);
-      list.push({ id: F.nextId++, name: `${pick(FIRST)} ${pick(LAST)}`, nav, trade, wage: 1 + Math.round((nav + trade) / 3), loyalty: 100 });
-    }
+    for (let i = 0; i < 3; i++) list.push({ id: F.nextId++, name: `${pick(FIRST)} ${pick(LAST)}`, ...Captains.applicant() }); // captains.js
     F.candidates = { day: S.day, list };
   }
   return F.candidates.list;
@@ -120,7 +117,7 @@ function planLeg(S, ship, fromId, toId) {
   if (riverOf(toId) && !Ports.canGoUpriver(S, toId, hull, loadOf(ship))) return null;
   const a = berth(fromId, deep), b = berth(toId, deep); // a deep ship lies outside the Arguin banks
   // A better navigator plans for the winds; a poor one keeps to the shortest course.
-  const route = findPath(a.lon, a.lat, b.lon, b.lat, (ship.captain.nav - 1) / 4, !!Ships.HULLS[hull]?.coastal, deep);
+  const route = findPath(a.lon, a.lat, b.lon, b.lat, (Captains.stars(ship.captain.nav) - 1) / 4, !!Ships.HULLS[hull]?.coastal, deep);
   if (!route) return null;
   const path = [[a.lon, a.lat], ...route];
   let day = S.day, total = 0;
@@ -314,6 +311,8 @@ function visit(S, market, ship, fresh = false) {
     ship.profit += profit;
     ship.trips++;
     ship.last = { day: S.day, at: here, text: sold.join(', '), income: income - skim, profit };
+    const better = Captains.learnTrade(ship.captain, ship.name); // every cargo sold teaches him
+    if (better) msgs.push(better);
     parts.push(`sold ${sold.join(', ')} for ${(income - skim).toLocaleString()} cz (${profit >= 0 ? '+' : ''}${profit.toLocaleString()})`);
     if (skim) {
       parts.push(`Captain ${ship.captain.name} kept ${skim} cz for himself`);
@@ -346,6 +345,8 @@ function visit(S, market, ship, fresh = false) {
   if (r) roundOf(ship).visits++;
   const fix = repairIfNeeded(S, ship);
   if (fix) { msgs.push(fix); return msgs; }
+  const school = startTraining(S, ship);
+  if (school) { msgs.push(school); return msgs; }
   if (r && (ship.captain.loyalty ?? 100) < LOYALTY_DESERT) {
     ship.route = null;
     ship.status = 'ashore';
@@ -520,6 +521,8 @@ export function tick(S, market, days, ownerPresent = true) {
       if (w) msgs.push(w);
       if (!ship.sunk && (leg.pre || leg.post)) { const b = beyondHazards(S, ship, leg); if (b) msgs.push(b); }
       if (ship.sunk) continue;
+      const better = Captains.learnAtSea(ship.captain, leg.days, lat < Wear.TROPIC_LAT ? leg.days - (leg.pre || 0) - (leg.post || 0) : 0, (leg.pre || 0) + (leg.post || 0), ship.name);
+      if (better) msgs.push(better);
       msgs.push(...visit(S, market, ship));
     } else if (ship.status === 'waiting' && !market.closed(ship.at)) {
       msgs.push(...visit(S, market, ship));
@@ -527,13 +530,51 @@ export function tick(S, market, days, ownerPresent = true) {
       msgs.push(...buyAndSail(S, market, ship));
     } else if ((ship.status === 'boats' && S.day >= (ship.boatsUntil ?? 0)) || ((ship.status === 'river' || ship.status === 'monsoon') && S.day >= (ship.nextCheck ?? 0))) {
       msgs.push(...sailOn(S, ship, [], false));
+    } else if (ship.status === 'training' && S.day >= (ship.trainUntil ?? 0)) {
+      msgs.push(endTraining(S, ship));
+      msgs.push(...(ship.route ? buyAndSail(S, market, ship) : []));
     } else if (ship.status === 'repair' && S.day >= (ship.repairUntil ?? 0)) {
       ship.status = 'idle';
       msgs.push(...(ship.route ? buyAndSail(S, market, ship) : []));
     }
   }
   if (F.ships.some((x) => x.sunk)) F.ships = F.ships.filter((x) => !x.sunk);
+  for (const ship of F.ships) { const ask = Captains.considerRaise(S, ship); if (ask) msgs.push(ask); }
   return msgs;
+}
+
+// ---- Training (captains.js) ---------------------------------------------------------------
+// The owner asks for it; it starts when she next calls at the right port, and her ship waits.
+export function orderTraining(ship, skill) {
+  if (skill && !Captains.canTrain(ship.captain, skill)) return false;
+  ship.trainNext = skill || null;
+  return true;
+}
+
+function startTraining(S, ship) {
+  const skill = ship.trainNext;
+  const T = skill && Captains.TRAINING[skill];
+  if (!T || ship.at !== T.port) return null;
+  const c = ship.captain;
+  if (!Captains.canTrain(c, skill)) { ship.trainNext = null; return null; }
+  const fee = Captains.trainFee(c, skill);
+  if (S.purse - fee < RESERVE) return null; // when the purse allows
+  S.purse -= fee;
+  Accounts.record(S, { kind: 'wages', amount: -fee, port: ship.at, text: `Captain ${c.name}'s season ${T.where}` });
+  ship.trainNext = null;
+  ship.training = skill;
+  ship.status = 'training';
+  ship.trainUntil = S.day + T.days;
+  return { html: `<b>${ship.name}</b> lies in ${port(ship.at).name} while Captain ${c.name} spends a season ${T.where} (${fee} cz).`, kind: 'port', level: 'normal', log: `Captain ${c.name} begins a season ${T.where}.` };
+}
+
+function endTraining(S, ship) {
+  const T = Captains.TRAINING[ship.training];
+  const n = Captains.finishTraining(ship.captain, ship.training);
+  ship.status = 'idle';
+  ship.training = null;
+  const text = `Captain ${ship.captain.name} is back aboard the ${ship.name} after his season ${T.where}: ${T.learns} ${'★'.repeat(n)}${'☆'.repeat(Captains.MAX_STARS - n)}.`;
+  return { html: text.replace(`the ${ship.name}`, `the <b>${ship.name}</b>`), kind: 'port', level: 'normal', log: text };
 }
 
 // Wear on a passage (wear.js): the hull loses condition, more in the tropics and in storms; a
@@ -635,6 +676,7 @@ export function position(S, ship) {
   if (ship.status === 'sailing' && ship.leg) {
     const { path, cum, total, start, days, pre = 0, post = 0 } = ship.leg;
     if (S.day - start < pre || S.day - start > days - post) return { lon: path[S.day - start < pre ? 0 : path.length - 1][0], lat: path[S.day - start < pre ? 0 : path.length - 1][1], heading: 90, atSea: true, beyond: true };
+    if (path.length < 2) { const [x, y] = path[0] || [port(ship.leg.to).lon, port(ship.leg.to).lat]; return { lon: x, lat: y, heading: 90, atSea: true }; } // a one-point passage
     const d = Math.min(1, Math.max(0, (S.day - start - pre) / (days - pre - post))) * total;
     let i = 1;
     while (i < cum.length - 1 && cum[i] < d) i++;
@@ -664,6 +706,7 @@ export function statusText(S, ship) {
   if (ship.status === 'boats') return `Anchored off ${port(ship.at).name}: her boats are working the cargo, about ${Math.max(1, Math.ceil((ship.boatsUntil ?? S.day) - S.day))} more days.`;
   if (ship.status === 'monsoon') return `In ${port(ship.at).name}, waiting for the monsoon to sail ${isBeyond(ship.at) ? 'home' : 'for the Indies'}.`;
   if (ship.status === 'river') return `In ${port(ship.at).name}, too deep for the river as she is loaded: waiting for the water to rise.`;
+  if (ship.status === 'training') return `In ${port(ship.at).name}: Captain ${ship.captain.name} is ${Captains.TRAINING[ship.training].where.replace('with', 'learning with')}, ${Math.max(1, Math.ceil((ship.trainUntil ?? S.day) - S.day))} more days.`;
   if (ship.status === 'repair') return `${Wear.YARDS.includes(ship.at) ? `In the yard at ${port(ship.at).name}` : `Careened on the beach at ${port(ship.at).name}`} for ${Math.max(1, Math.ceil((ship.repairUntil ?? S.day) - S.day))} more days.`;
   if (ship.status === 'loading') return `Waiting in ${port(ship.at).name} for prices to recover, on half pay (${Math.max(0, Math.round(S.day - (ship.waitSince ?? S.day)))} of up to ${MAX_WAIT_DAYS} days).`;
   if (ship.status === 'ashore') return `Ashore in ${port(ship.at).name}: Captain ${ship.captain.name} will not sail until you give him orders there in person.`;

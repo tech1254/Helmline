@@ -71,7 +71,8 @@ async def play(b, label, viewport, mobile):
         plan = await J(PLAN)
         if not plan:  # nothing for sale here (Ceuta is a garrison): on, empty, to Lisbon
             plan = {'port': 'lisbon' if here != 'lisbon' else 'lagos', 'good': '-', 'r': 0}
-        btn = pg.locator(f'#panel [data-buy="{plan["good"]}"][data-n="max"]')
+        # as the first note advises: ten, not a full hold, into a small port; a full load into Lisbon's deep market
+        btn = pg.locator(f'#panel [data-buy="{plan["good"]}"][data-n="{"max" if plan["port"] == "lisbon" else "10"}"]')
         if await btn.count() and await btn.is_enabled():
             await btn.scroll_into_view_if_needed(); await btn.click(); await pg.wait_for_timeout(100)
             if not await J("() => document.getElementById('modal').hidden"): await pg.click('#modal-ok')

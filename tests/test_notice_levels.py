@@ -18,7 +18,7 @@ async def main():
         for i in range(2):
             await pg.click('[data-tab="fleet"]'); await pg.click('[data-hire]:not([disabled])'); await pg.click('#modal-ok'); await pg.wait_for_timeout(150)
             await pg.click('[data-tab="fleet"]')
-            await J(f"() => {{ const d = document.querySelectorAll('[data-ship] details')[{i}]; if (d) d.open = true; }}")
+            await J(f"() => {{ const d = document.querySelectorAll('[data-ship] details.route-edit')[{i}]; if (d) d.open = true; }}")
             await pg.locator('[data-ship]').nth(i).locator('[data-route]').click(); await pg.wait_for_timeout(150)
         await J("""() => { window.__toasts = []; new MutationObserver((ms) => { for (const m of ms) for (const n of m.addedNodes) window.__toasts.push(n.className + ' | ' + n.textContent.slice(0, 90)); }).observe(document.getElementById('toast'), { childList: true }); }""")
         n0 = await J("() => window.helmline.state.noticeSeq || 0")

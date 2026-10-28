@@ -40,7 +40,7 @@ async def main():
         print('ship:', await J("() => { const s = window.helmline.state.fleet.ships[0]; return {sales: s.trips, profit: s.profit, status: s.status}; }"), '| wages paid', round(await J("() => window.helmline.state.fleet.wagesPaid")))
         # validation messages
         await pg.click('[data-tab="fleet"]'); await pg.wait_for_timeout(100)
-        await J("() => { document.querySelector('[data-ship] details').open = true; }")
+        await J("() => { document.querySelector('[data-ship] details.route-edit').open = true; }")
         await choose('[data-stop-i="1"] [data-f="port"]', 'lisbon')
         await click('[data-route]'); print('same-port validation:', await J("() => [...document.querySelectorAll('#toast .t')].pop().innerText"))
         print('ERRORS', errs); await b.close()
