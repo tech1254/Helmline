@@ -1,0 +1,64 @@
+{
+  "batch": "production-11",
+  "note": "Production run 11: plainer second tries at the Nau da Índia and the galleon, from the picked nau.",
+  "commit": "74856b46645c24ceb7f5685febe9068e04c8f7ec",
+  "generated": "2026-10-28T03:41:20.279Z",
+  "items": [
+    {
+      "id": "ship-naudaindia-c",
+      "model": "black-forest-labs/flux-2-pro-preview",
+      "width": 1280,
+      "height": 896,
+      "seed": 6121,
+      "refs": [
+        "art:production-1/ship-nau-a.png"
+      ],
+      "cutout": true,
+      "prompt": "A photorealistic photograph of a real full-size Portuguese nau da Índia of about 1505: the same kind of ship as the carrack in the reference photo, but bigger and heavier, about 40 metres long, with a deeper, fuller hull, one more deck, a taller plain sterncastle and forecastle, a short row of small square gunport lids low on the hull. Masts as in the reference: square sails on the foremast and mainmast, each with a small topsail above, a lateen mizzen, a spritsail under the bowsprit. Seen exactly side-on, bow pointing right, warm late afternoon light from the right, the same light and style as the reference photo. A plain working ship, as the reference photo: weathered undyed linen sails, hemp rigging, dark tarred planking, bare wood. No carving, no gilding, no balconies, no galleries, no windows in the castles, no towers, no turrets, no flags, no pennants, no figurehead, no steering wheel, no lanterns. Not a fantasy ship, not a pirate ship, not a 17th-century ship. Not a model: a real ship, photographed. She is isolated on a solid, flat, evenly lit chroma-key green background (#00b140) filling everything around her, including below the hull: no sea, no sky, no shadow, no floor, no stand, no cradle. The whole ship from the mastheads to the keel in frame, with a margin all round.",
+      "file": "ship-naudaindia-c.png",
+      "seconds": 21.9
+    },
+    {
+      "id": "ship-naudaindia-d",
+      "model": "black-forest-labs/flux-2-pro-preview",
+      "width": 1280,
+      "height": 896,
+      "seed": 6122,
+      "refs": [
+        "art:production-1/ship-nau-a.png"
+      ],
+      "cutout": true,
+      "prompt": "A photorealistic photograph of a real full-size Portuguese nau da Índia of about 1505: the same kind of ship as the carrack in the reference photo, but bigger and heavier, about 40 metres long, with a deeper, fuller hull, one more deck, a taller plain sterncastle and forecastle, a short row of small square gunport lids low on the hull. Masts as in the reference: square sails on the foremast and mainmast, each with a small topsail above, a lateen mizzen, a spritsail under the bowsprit. Seen exactly side-on, bow pointing right, warm late afternoon light from the right, the same light and style as the reference photo. A plain working ship, as the reference photo: weathered undyed linen sails, hemp rigging, dark tarred planking, bare wood. No carving, no gilding, no balconies, no galleries, no windows in the castles, no towers, no turrets, no flags, no pennants, no figurehead, no steering wheel, no lanterns. Not a fantasy ship, not a pirate ship, not a 17th-century ship. Not a model: a real ship, photographed. She is isolated on a solid, flat, evenly lit chroma-key green background (#00b140) filling everything around her, including below the hull: no sea, no sky, no shadow, no floor, no stand, no cradle. The whole ship from the mastheads to the keel in frame, with a margin all round.",
+      "file": "ship-naudaindia-d.png",
+      "seconds": 20.7
+    },
+    {
+      "id": "ship-galeao-c",
+      "model": "black-forest-labs/flux-2-pro-preview",
+      "width": 1280,
+      "height": 896,
+      "seed": 6131,
+      "refs": [
+        "art:production-1/ship-nau-a.png"
+      ],
+      "cutout": true,
+      "prompt": "A photorealistic photograph of a real full-size Portuguese galleon of about 1530: longer, lower and slimmer than the carrack in the reference photo, about 38 metres long, with a low forecastle set back from the bow and a long pointed beak projecting forward under the bowsprit, a plain square sterncastle, a row of small square gunport lids along the hull, four masts: square sails with topsails on the foremast and mainmast, lateen sails on the mizzen and on a small fourth mast right at the stern, a spritsail under the bowsprit. Seen exactly side-on, bow pointing right, warm late afternoon light from the right, the same light and style as the reference photo. A plain working ship, as the reference photo: weathered undyed linen sails, hemp rigging, dark tarred planking, bare wood. No carving, no gilding, no balconies, no galleries, no windows in the castles, no towers, no turrets, no flags, no pennants, no figurehead, no steering wheel, no lanterns. Not a fantasy ship, not a pirate ship, not a 17th-century ship. Not a model: a real ship, photographed. She is isolated on a solid, flat, evenly lit chroma-key green background (#00b140) filling everything around her, including below the hull: no sea, no sky, no shadow, no floor, no stand, no cradle. The whole ship from the mastheads to the keel in frame, with a margin all round.",
+      "file": "ship-galeao-c.png",
+      "seconds": 21.3
+    },
+    {
+      "id": "ship-galeao-d",
+      "model": "black-forest-labs/flux-2-pro-preview",
+      "width": 1280,
+      "height": 896,
+      "seed": 6132,
+      "refs": [
+        "art:production-1/ship-nau-a.png"
+      ],
+      "cutout": true,
+      "prompt": "A photorealistic photograph of a real full-size Portuguese galleon of about 1530: longer, lower and slimmer than the carrack in the reference photo, about 38 metres long, with a low forecastle set back from the bow and a long pointed beak projecting forward under the bowsprit, a plain square sterncastle, a row of small square gunport lids along the hull, four masts: square sails with topsails on the foremast and mainmast, lateen sails on the mizzen and on a small fourth mast right at the stern, a spritsail under the bowsprit. Seen exactly side-on, bow pointing right, warm late afternoon light from the right, the same light and style as the reference photo. A plain working ship, as the reference photo: weathered undyed linen sails, hemp rigging, dark tarred planking, bare wood. No carving, no gilding, no balconies, no galleries, no windows in the castles, no towers, no turrets, no flags, no pennants, no figurehead, no steering wheel, no lanterns. Not a fantasy ship, not a pirate ship, not a 17th-century ship. Not a model: a real ship, photographed. She is isolated on a solid, flat, evenly lit chroma-key green background (#00b140) filling everything around her, including below the hull: no sea, no sky, no shadow, no floor, no stand, no cradle. The whole ship from the mastheads to the keel in frame, with a margin all round.",
+      "file": "ship-galeao-d.png",
+      "seconds": 20.8
+    }
+  ]
+}
