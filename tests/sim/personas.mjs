@@ -32,6 +32,7 @@ import * as Ports from '../../public/js/ports.js';
 import * as Contracts from '../../public/js/contracts.js';
 import * as Pirates from '../../public/js/pirates.js';
 import * as Investments from '../../public/js/investments.js';
+import * as House from '../../public/js/house.js';
 import { PORTS, HARBOURS, distNm, findPath, loadRoutes } from '../../public/js/world.js';
 
 loadRoutes(JSON.parse(readFileSync(new URL('../../public/data/routes.json', import.meta.url))));
@@ -107,10 +108,11 @@ Object.assign(PERSONAS, {
   bigships: { ...steady, label: 'Biggest ships (else Steady)', mixed: false },
   // After 1480: a rich owner who sends ships to India and puts money into feitorias and the
   // crown's India fleets.
-  indies: { ...steady, label: 'The Indies: India runs and investments (else Steady)', hires: 3, indies: true, invest: true, feitorias: 3,
+  grandee: { ...steady, label: 'Grandee: buys honours (else Steady)', prestige: true },
+  indies: { ...steady, prestige: true, label: 'The Indies: India runs, investments and honours (else Steady)', hires: 3, indies: true, invest: true, feitorias: 3,
     ladder: [...steady.ladder, 'galeao', 'naudaindia'] },
 });
-export const GROUPS = { late: ['steady', 'indies'], styles: ['cautious', 'steady', 'bold', 'reckless'], corsairs: ['runner', 'fighter', 'armed', 'payer'], contracts: ['merchant', 'courier'], fleet: ['bigships'] };
+export const GROUPS = { late: ['steady', 'grandee', 'indies'], styles: ['cautious', 'steady', 'bold', 'reckless'], corsairs: ['runner', 'fighter', 'armed', 'payer'], contracts: ['merchant', 'courier'], fleet: ['bigships'] };
 
 // ---- Routes --------------------------------------------------------------------------------
 const stop = (port, ...orders) => ({ port, orders });
@@ -295,6 +297,15 @@ function career(persona) {
       if (h && h !== x.realHull) upgrade(x, h);
     }
     // a rich man's investments: shares in the India fleet, and feitorias where his ships trade
+    // honours: the next thing his house can have, when he could pay for it three times over
+    if (P.prestige && f.at === 'lisbon') {
+      for (const x of House.THINGS) {
+        if (!House.canHave(S, x.id).ok || (x.loan && House.ensureHouse(S).owned.loan >= 3)) continue;
+        if (!affordable(x.cost * 3)) break;
+        House.acquire(S, x.id); R.house = (R.house || 0) + x.cost; note(`${x.name} (${x.cost} cz)`);
+        break;
+      }
+    }
     if (P.invest && f.at === 'lisbon' && Investments.fleetsOpen(S)) {
       const spare = S.purse * (1 - P.reserve) - 5000;
       const n = Math.floor(Math.min(spare * 0.25, Investments.SHARE * Investments.MAX_SHARES) / Investments.SHARE);
@@ -514,6 +525,7 @@ function career(persona) {
     market.edge = Object.fromEntries(PORTUGUESE_PORTS.map((p) => [p, edge]));
     for (const [pid, e] of Object.entries(Investments.edges(S))) market.edge[pid] = (market.edge[pid] || 0) + e;
     Investments.tick(S, STEP);
+    House.tick(S, STEP);
     const f = fl();
     if (f) {
       if (f.leg && f.leg !== f.lastLeg) { // a new passage: remember how long it takes
@@ -605,7 +617,7 @@ function snapshot(S, year) {
   const A = Accounts.ensureAccounts(S);
   const tot = { ...A.totals };
   for (const e of A.pending) tot[e.kind] = (tot[e.kind] || 0) + e.amount;
-  return { year, worth: worth(S), purse: S.purse, ships: S.fleet.ships.length, tot };
+  return { year, worth: worth(S), purse: S.purse, ships: S.fleet.ships.length, tot, renown: House.renown(S) };
 }
 
 // What he is worth: the purse, plus his ships at what a yard would give for them.
@@ -648,7 +660,8 @@ export function summarise(list) {
       const flow = (k) => avg(list.map((r) => ((at(r).tot[k] || 0) - (prev(r).tot[k] || 0)) / 5));
       return { year: pt.year, worth: med(list.map((r) => at(r).worth)), low: Math.min(...list.map((r) => at(r).worth)), high: Math.max(...list.map((r) => at(r).worth)),
         ships: avg(list.map((r) => at(r).ships)),
-        perYear: { trade: flow('sale') + flow('purchase'), contracts: flow('contract') + flow('contractGoods'), wages: flow('wages'), repairs: flow('repairs'), ships: flow('ships'), invest: flow('invest'), other: flow('charts') + flow('corsairs') + flow('bounty') + flow('boats') } };
+        renown: med(list.map((r) => at(r).renown || 0)),
+        perYear: { house: flow('house'), trade: flow('sale') + flow('purchase'), contracts: flow('contract') + flow('contractGoods'), wages: flow('wages'), repairs: flow('repairs'), ships: flow('ships'), invest: flow('invest'), other: flow('charts') + flow('corsairs') + flow('bounty') + flow('boats') } };
     }),
     standing: med(list.map((r) => r.standing)), fleet: list[0].fleet + (list[0].arms ? ` (fitted: ${list[0].arms})` : ''),
   };

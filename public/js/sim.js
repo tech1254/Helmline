@@ -9,6 +9,7 @@ import * as Fleet from './fleet.js';
 import * as Accounts from './accounts.js';
 import * as Pirates from './pirates.js';
 import * as Investments from './investments.js';
+import * as House from './house.js';
 import * as Ships from './ships.js';
 import * as Wear from './wear.js';
 import { DAYS_PER_SEC, OFFLINE_DAYS_PER_DOUBLING, OFFLINE_FULL_DAYS, OFFLINE_MAX_DAYS, OFFLINE_MIN_SECONDS, OFFLINE_RATE, SIGHT, STANDING_FADES_AFTER_HOURS } from './config.js';
@@ -233,6 +234,7 @@ export function advanceTime(dd, atSea, away = false) {
   for (const m of grown) if (m.opens) chartFromHistory(m.opens);
   report(grown);
   report(Investments.tick(S, dd));
+  report(House.tick(S, dd));
   syncMarket();
   if (atSea) {
     spoil(dd);

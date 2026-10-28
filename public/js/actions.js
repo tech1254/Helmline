@@ -8,6 +8,7 @@ import * as Cloud from './cloud.js';
 import * as Accounts from './accounts.js';
 import * as Pirates from './pirates.js';
 import * as Investments from './investments.js';
+import { openHouse } from './houseview.js';
 import { WAGE_RESERVE_DAYS } from './config.js';
 import * as Ships from './ships.js';
 import * as Ports from './ports.js';
@@ -154,6 +155,9 @@ export function initActions() {
       return;
     } else if (t.hasAttribute('data-wait') && pid) {
       waitInPort(7);
+    } else if (t.hasAttribute('data-house') && pid === 'lisbon') {
+      openHouse();
+      return;
     } else if (t.hasAttribute('data-feitoria') && pid) {
       const p = PORTS.find((x) => x.id === pid);
       const cost = Investments.feitoriaCost(S, pid);
