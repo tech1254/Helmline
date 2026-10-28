@@ -6,6 +6,7 @@ import { PORTS, planRoute, ROUTE_SKILLS, routeKey } from '../../public/js/world.
 const table = JSON.parse(readFileSync(new URL('../../public/data/routes.json', import.meta.url), 'utf8')).routes;
 let bad = 0, n = 0;
 for (const a of PORTS) for (const b of PORTS) {
+  if (a.river || b.river) continue; // river ports are reached through their mouths
   if (a === b) continue;
   for (const skill of ROUTE_SKILLS) for (const coastal of [false, true]) {
     n++;

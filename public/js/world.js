@@ -150,7 +150,67 @@ export const PORTS = [
     blurb: 'The Grain Coast, named for the melegueta pepper its people sell cheaply by the basket.' },
   { id: 'mina', name: 'Costa da Mina', lon: -1.4, lat: 4.85, known: false,
     blurb: 'The Gold Coast. Akan traders bring gold dust down from the forests and pay richly for cloth.' },
+  { id: 'cantor', name: 'Cantor', lon: -14.9, lat: 13.66, known: false, river: 'gambia',
+    blurb: 'A Mandinka market town far up the Gambia, where caravans from the gold country meet the river. Only a shallow ship can come this far.' },
 ];
+
+// ---- Harbours ------------------------------------------------------------------------
+// Depth at the berth, in metres, at the mean of the year. A ship that draws more anchors
+// offshore and works her cargo with boats (see ports.js). `seasonal`: a river bar or channel
+// that rises in the rains (July to October) and falls in the dry season.
+export const HARBOURS = {
+  lisbon: { depth: 9, kind: 'the deep anchorage of the Tagus' },
+  porto: { depth: 3.2, kind: 'a harbour behind the Douro bar' },
+  lagos: { depth: 5, kind: 'a sheltered bay' },
+  cadiz: { depth: 7, kind: 'a deep bay' },
+  ceuta: { depth: 6, kind: 'a deep harbour under the fortress' },
+  safi: { depth: 3.5, kind: 'an open roadstead off the beach' },
+  funchal: { depth: 4.5, kind: 'an open roadstead under the town' },
+  lanzarote: { depth: 3.4, kind: 'a harbour inside the reef' },
+  arguin: { depth: 2.6, kind: 'an island behind the Arguin banks' },
+  gambia: { depth: 2.6, kind: 'a river mouth with a bar', seasonal: true },
+  serraleoa: { depth: 10, kind: 'a great natural harbour' },
+  cestos: { depth: 2.2, kind: 'a river mouth with a shallow bar', seasonal: true },
+  mina: { depth: 2.8, kind: 'a surf beach with the anchorage offshore' },
+  cantor: { depth: 2.0, kind: 'a river town, far upstream', seasonal: true },
+};
+for (const p of PORTS) Object.assign(p, HARBOURS[p.id] || { depth: 5 });
+
+// ---- Shoals --------------------------------------------------------------------------
+// Banks too shallow for a deep-draught ship. Ships that draw more than DEEP_DRAFT when laden
+// plan their courses round them, and anchor outside them (see anchorage()).
+export const DEEP_DRAFT = 3;
+export const SHOALS = [
+  { id: 'arguin', name: 'the Arguin banks', depth: 3,
+    pts: [[-15.8, 21.15], [-16.85, 21.1], [-17.25, 20.9], [-17.45, 20.55], [-17.4, 20.15], [-17.15, 19.85], [-16.85, 19.5], [-16.6, 19.3], [-15.8, 19.3]] },
+];
+// Depth of the shoal water at a point, or Infinity where there is no shoal.
+export function shoalDepth(lon, lat) {
+  let d = Infinity;
+  for (const sh of SHOALS) if (inPoly(lon, lat, sh.pts)) d = Math.min(d, sh.depth);
+  return d;
+}
+
+// ---- Rivers --------------------------------------------------------------------------
+// A river runs inland from its mouth port to a port upstream. Ships go up by the tide, by
+// towing and by sweeps, so the passage takes no account of the wind (RIVER_KNOTS), and only a
+// ship that draws less than the channel (the upstream port's depth) can go.
+export const RIVER_KNOTS = 2.4;
+export const RIVERS = {
+  gambia: { name: 'the Gambia', mouth: 'gambia', port: 'cantor',
+    pts: [[-16.85, 13.45], [-16.62, 13.43], [-16.38, 13.36], [-16.08, 13.34], [-15.82, 13.43], [-15.55, 13.56], [-15.32, 13.68], [-15.1, 13.65], [-14.9, 13.66]] },
+};
+export const riverOf = (portId) => Object.values(RIVERS).find((r) => r.port === portId) || null;
+const samePt = (a, b) => Math.abs(a[0] - b[0]) < 0.0005 && Math.abs(a[1] - b[1]) < 0.0005;
+function riverPortAt(lon, lat) {
+  return PORTS.find((p) => p.river && samePt([p.lon, p.lat], [lon, lat])) || null;
+}
+// The river legs from the mouth up to the port (flagged with a third element 1), or back down.
+function riverLegs(r, upstream) {
+  const pts = upstream ? r.pts.slice(1) : r.pts.slice(0, -1).reverse();
+  return pts.map(([x, y]) => [x, y, 1]);
+}
+export const isRiverLeg = (pt) => pt?.[2] === 1;
 
 // Nautical miles between two points (flat-earth approximation, fine at this scale).
 export function distNm(aLon, aLat, bLon, bLat) {
@@ -313,14 +373,37 @@ function inshore(aLon, aLat, bLon, bLat, limit) {
   return true;
 }
 
-function nearestSeaCell(lon, lat) {
+// Shoal depth for each grid cell (Infinity where there is none).
+let shoalGrid = null;
+function getShoalGrid() {
+  if (shoalGrid) return shoalGrid;
+  shoalGrid = new Float32Array(NW * NH).fill(Infinity);
+  for (let j = 0; j < NH; j++) for (let i = 0; i < NW; i++) {
+    const [x, y] = cellCenter(i, j);
+    shoalGrid[j * NW + i] = shoalDepth(x, y);
+  }
+  return shoalGrid;
+}
+// True if a straight course stays out of water shallower than minDepth.
+function clearOfShoals(aLon, aLat, bLon, bLat, minDepth) {
+  if (!minDepth) return true;
+  const steps = Math.ceil(Math.hypot(bLon - aLon, bLat - aLat) / 0.05);
+  for (let s = 0; s <= steps; s++) {
+    const t = steps ? s / steps : 0;
+    if (shoalDepth(aLon + (bLon - aLon) * t, aLat + (bLat - aLat) * t) < minDepth) return false;
+  }
+  return true;
+}
+
+function nearestSeaCell(lon, lat, minDepth = 0) {
   const g = getNavGrid();
+  const sg = minDepth ? getShoalGrid() : null;
   const ci = Math.floor((lon - BOUNDS.west) / NAV_CELL), cj = Math.floor((lat - BOUNDS.south) / NAV_CELL);
   for (let r = 0; r < 6; r++) {
     let best = null, bd = Infinity;
     for (let dj = -r; dj <= r; dj++) for (let di = -r; di <= r; di++) {
       const i = ci + di, j = cj + dj;
-      if (i < 0 || j < 0 || i >= NW || j >= NH || g[j * NW + i]) continue;
+      if (i < 0 || j < 0 || i >= NW || j >= NH || g[j * NW + i] || (sg && sg[j * NW + i] < minDepth)) continue;
       const [x, y] = cellCenter(i, j);
       const d = Math.hypot(x - lon, y - lat);
       if (d < bd && clearWater(lon, lat, x, y)) { bd = d; best = j * NW + i; }
@@ -352,15 +435,61 @@ export function loadRoutes(table) {
 // sailing time, a novice (0) for the shortest distance, hugging the coast; between the two,
 // the winds count for less.
 // `coastal`: a ship that must keep within COASTAL_NM of land (a barca).
-export function findPath(aLon, aLat, bLon, bLat, skill = 1, coastal = false) {
+// `deep`: a ship that draws more than DEEP_DRAFT, which keeps off the shoals.
+// A river port is reached through its river's mouth; river legs carry a third element, 1.
+export function findPath(aLon, aLat, bLon, bLat, skill = 1, coastal = false, deep = false) {
+  const ra = riverPortAt(aLon, aLat), rb = riverPortAt(bLon, bLat);
+  if (ra || rb) {
+    if (ra && rb) return ra === rb ? [] : null; // no river joins another
+    if (rb) {
+      const r = riverOf(rb.id), m = PORTS.find((p) => p.id === r.mouth);
+      const sea = samePt([aLon, aLat], [m.lon, m.lat]) ? [] : findPath(aLon, aLat, m.lon, m.lat, skill, coastal, deep);
+      return sea && [...sea, ...riverLegs(r, true)];
+    }
+    const r = riverOf(ra.id), m = PORTS.find((p) => p.id === r.mouth);
+    const sea = samePt([bLon, bLat], [m.lon, m.lat]) ? [] : findPath(m.lon, m.lat, bLon, bLat, skill, coastal, deep);
+    return sea && [...riverLegs(r, false), ...sea];
+  }
   skill = Math.round(Math.min(1, Math.max(0, skill)) * 4) / 4;
-  const key = routeKey(aLon, aLat, bLon, bLat, skill) + (coastal ? 'c' : '');
-  const hit = portRoutes.has(key) ? portRoutes.get(key) : pathCache.get(key); // coastal routes are ready-made too
+  const key = routeKey(aLon, aLat, bLon, bLat, skill) + (coastal ? 'c' : '') + (deep ? 'd' : '');
+  const hit = !deep && portRoutes.has(key) ? portRoutes.get(key) : pathCache.get(key); // coastal routes are ready-made too
   if (hit !== undefined) return hit && hit.map((pt) => [pt[0], pt[1]]);
-  const route = computePath(aLon, aLat, bLon, bLat, skill, coastal ? COASTAL_NM : 0);
+  const route = computePath(aLon, aLat, bLon, bLat, skill, coastal ? COASTAL_NM : 0, deep ? DEEP_DRAFT + 0.01 : 0);
   if (pathCache.size >= PATH_CACHE_MAX) pathCache.delete(pathCache.keys().next().value);
   pathCache.set(key, route);
   return route && route.map((pt) => [pt[0], pt[1]]);
+}
+
+// Where a ship anchors off a port when she draws too much to come in: the nearest open water
+// a little offshore, and for a deep ship outside any shoal. Remembered per port.
+const anchorCache = new Map();
+export function anchorage(portId, deep = false) {
+  const key = portId + (deep ? 'd' : '');
+  if (anchorCache.has(key)) return anchorCache.get(key);
+  const p = PORTS.find((x) => x.id === portId);
+  let found = null;
+  for (let r = 0.12; r <= 1.6 && !found; r += 0.04) {
+    let best = null;
+    for (let a = 0; a < 360; a += 10) {
+      const x = p.lon + (r * Math.sin(a * D2R)) / Math.cos(p.lat * D2R), y = p.lat + r * Math.cos(a * D2R);
+      if (isLand(x, y) || (deep && shoalDepth(x, y) <= DEEP_DRAFT)) continue;
+      if (!clearWater(p.lon, p.lat, x, y)) continue;
+      const room = offshoreNm(x, y);
+      if (!best || room > best.room) best = { lon: +x.toFixed(4), lat: +y.toFixed(4), room };
+    }
+    found = best;
+  }
+  const out = found ? { lon: found.lon, lat: found.lat, nm: distNm(p.lon, p.lat, found.lon, found.lat) } : { lon: p.lon, lat: p.lat, nm: 0 };
+  anchorCache.set(key, out);
+  return out;
+}
+
+// Where a ship's course to a port ends: the port, or for a deep ship at a port inside a shoal
+// (Arguin), her anchorage outside it.
+export function berth(portId, deep = false) {
+  const p = PORTS.find((x) => x.id === portId);
+  if (deep && shoalDepth(p.lon, p.lat) <= DEEP_DRAFT) return anchorage(portId, true);
+  return { lon: p.lon, lat: p.lat, nm: 0 };
 }
 
 // Plan a route afresh, ignoring every cache (for building and checking data/routes.json).
@@ -422,13 +551,14 @@ function legTime(a, b, skill = 1) {
 const STEPS = [];
 for (let dj = -1; dj <= 1; dj++) for (let di = -1; di <= 1; di++) if (di || dj) STEPS.push([di, dj]);
 
-function computePath(aLon, aLat, bLon, bLat, skill = 1, maxOff = 0) {
+function computePath(aLon, aLat, bLon, bLat, skill = 1, maxOff = 0, minDepth = 0) {
   // A short hop in clear water goes straight.
-  if (distNm(aLon, aLat, bLon, bLat) < 90 && clearWater(aLon, aLat, bLon, bLat) && (!maxOff || inshore(aLon, aLat, bLon, bLat, maxOff))) return [[bLon, bLat]];
+  if (distNm(aLon, aLat, bLon, bLat) < 90 && clearWater(aLon, aLat, bLon, bLat) && (!maxOff || inshore(aLon, aLat, bLon, bLat, maxOff)) && clearOfShoals(aLon, aLat, bLon, bLat, minDepth)) return [[bLon, bLat]];
   const g = getNavGrid();
   const off = maxOff ? getLandDist() : null;
+  const sg = minDepth ? getShoalGrid() : null;
   const W = getMeanWind();
-  const start = nearestSeaCell(aLon, aLat), goal = nearestSeaCell(bLon, bLat);
+  const start = nearestSeaCell(aLon, aLat, minDepth), goal = nearestSeaCell(bLon, bLat, minDepth);
   if (start === null || goal === null) return null;
   const gi = goal % NW, gj = Math.floor(goal / NW);
   const cost = new Float64Array(NW * NH).fill(Infinity); // double precision: float rounding on long routes can loop the path
@@ -478,7 +608,7 @@ function computePath(aLon, aLat, bLon, bLat, skill = 1, maxOff = 0) {
       const ni = i + di, nj = j + dj;
       if (ni < 0 || nj < 0 || ni >= NW || nj >= NH) continue;
       const m = nj * NW + ni;
-      if (g[m] || closed[m] || (off && off[m] > maxOff)) continue;
+      if (g[m] || closed[m] || (off && off[m] > maxOff) || (sg && sg[m] < minDepth)) continue;
       if (di && dj && (g[j * NW + ni] || g[nj * NW + i])) continue; // no corner cutting
       // the true heading of this step, allowing for the narrower degrees of longitude
       const hd = (Math.atan2(di * cl, dj) / D2R + 360) % 360;
@@ -498,7 +628,8 @@ function computePath(aLon, aLat, bLon, bLat, skill = 1, maxOff = 0) {
   // clear water and is no slower than following the track. Grow the reach in doubling steps,
   // then narrow it down.
   const ok = (a, b) => b === a + 1 || (legTime(pts[a], pts[b], skill) <= (along[b] - along[a]) * 1.005 &&
-    clearWater(pts[a][0], pts[a][1], pts[b][0], pts[b][1]) && (!maxOff || inshore(pts[a][0], pts[a][1], pts[b][0], pts[b][1], maxOff)));
+    clearWater(pts[a][0], pts[a][1], pts[b][0], pts[b][1]) && (!maxOff || inshore(pts[a][0], pts[a][1], pts[b][0], pts[b][1], maxOff)) &&
+    clearOfShoals(pts[a][0], pts[a][1], pts[b][0], pts[b][1], minDepth));
   const last = pts.length - 1;
   const out = [];
   let k = 0;

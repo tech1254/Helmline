@@ -34,6 +34,8 @@ Every test except `corsairs` calms the seas (no random corsair attacks) so its c
 | `old_save` | A save from before events and the fleet still loads |
 | `phone` | Phone layout: one row at the top, the bottom bar (pause, speed, Books reopening the last tab, More), help, and a long summary that scrolls |
 | `cloud_two_devices` | Cloud save on one device, load on another, conflicts |
+| `draft_boats` | A nau anchors outside the Arguin banks and her boats work the cargo (fee, days); deep courses keep off the banks; a barca goes up to Cantor, a nau is refused; a hired nau uses boats; route editor notes |
+| `ports_rules` | Port growth, history and harbour works, river bars through the seasons, draft rules (in Node) |
 | `feedback` | Report a bug or idea from Help; typing does not trigger shortcuts; the draft survives a reload; reports are stored with or without game details |
 | `captain_prices` | Captains' price notes reach the price book only at ports on their route; the course home from Mina swings out to sea |
 | `routes_file` | The ready-made routes match what the pathfinder plans |
@@ -71,3 +73,24 @@ Results on 26 October 2026, cash per ship per 200 days:
 ## Ready-made sea routes
 
 `public/data/routes.json` holds every port-to-port route for each level of navigator skill, so the game never plans them while you play. After changing the coastline, ports, winds or pathfinder, rebuild it with `node tests/tools/build_routes.mjs` (about 20 s); `test_routes_file` fails until you do.
+
+## Ports through the century
+
+`node tests/sim/port_growth.mjs` prints every port's size by decade from 1451 to 1501, its market depth and berth in 1501, and the news of history and harbour works (`--trade 800` adds steady trade through every port). `tests/sim/economy_sim.mjs` grows ports too; `--static-ports` turns growth off, and `--depth-exp`, `--trade-max`, `--trade-per-point` and `--depth-min` try other settings for `ports.js` TUNING.
+
+## Simulated players
+
+`node tests/sim/personas.mjs` plays whole careers (1451 to 1551) as different kinds of player, on the game's own market, fleet, port, contract and corsair code. Each starts as a new game does (300 cz, a barca, the home waters known), trades his own ship, explores south, takes contracts from the boards, meets corsairs and answers them by temperament, hires captains as standing allows and trades up his hulls.
+
+- Whole play styles: `cautious`, `steady`, `bold`, `reckless`.
+- Controlled comparisons, each the Steady player with one thing changed: `runner` (always runs from corsairs), `fighter` (always fights), `payer` (always pays tribute), `merchant` (never takes contracts), `courier` (every contract he can), `bigships` (the biggest hull everywhere instead of a mixed fleet).
+
+```
+node tests/sim/personas.mjs                          # all ten, 8 careers each (about 4 minutes)
+node tests/sim/personas.mjs --only corsairs --runs 20  # a group (styles, corsairs, contracts, fleet) or names
+node tests/sim/personas.mjs --only steady --log --worst # the poorest career's log
+node tests/sim/personas.mjs --set ports.depthExp=0.4    # try a ports.js TUNING value
+node tests/sim/personas.mjs --seed 2                    # other luck (the same seed gives the same careers)
+```
+
+Personas run side by side in separate processes. `tests/test_sim_personas.py` runs a short career of each so the simulator keeps up with the game.

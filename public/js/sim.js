@@ -1,6 +1,7 @@
 // Time passing: sailing, wages, spoilage, events, the fleet, and time away.
 
-import { D2R, isLand, windAt, sailFactor, bearing, distNm, angleDiff } from './world.js';
+import { D2R, PORTS, isLand, windAt, sailFactor, bearing, distNm, angleDiff, isRiverLeg, RIVER_KNOTS, shoalDepth, SHOALS } from './world.js';
+import * as Ports from './ports.js';
 import { GOODS, PORTUGUESE_PORTS } from './economy.js';
 import * as Contracts from './contracts.js';
 import * as Events from './events.js';
@@ -29,16 +30,45 @@ export function shipWind() {
   return { w, off, f, knots: Ships.knotsAt(Ships.flagStats(S), off, f, Pirates.hullFactor(S)) };
 }
 
+// How full the flagship's hold is, 0 to 1 (her draft follows it).
+export function loadOf() {
+  const hold = Ships.flagStats(S).hold || 1;
+  return Math.min(1, GOODS.reduce((n, g) => n + (S.cargo[g.id] || 0), 0) / hold);
+}
+
+// At anchor offshore, her boats ferry the cargo; the days pass in port while they work, at the
+// game's speed, so you see it done.
+function workBoats(dtSec) {
+  const b = S.ship.boats;
+  if (!b || b.moved >= b.total) return;
+  let days = Math.min(dtSec * DAYS_PER_SEC * ui.speed, (b.total - b.moved) / b.rate);
+  while (days > 1e-6) {
+    const dd = Math.min(0.25, days);
+    days -= dd;
+    advanceTime(dd, false);
+    b.moved = Math.min(b.total, b.moved + b.rate * dd);
+  }
+  if (b.moved >= b.total - 1e-6) {
+    S.ship.boats = null;
+    toast(`Her boats have finished: the cargo is worked at ${PORTS.find((p) => p.id === S.ship.docked).name}.`, 'port', true, 'routine');
+    save();
+  }
+}
+
 export function update(dtSec) {
   const sh = S.ship;
-  if (sh.docked || !sh.route.length || ui.speed === 0 || ui.modal || ui.screen || ui.arrival) return;
+  if (ui.speed === 0 || ui.modal || ui.screen || ui.arrival) return;
+  if (sh.docked) { workBoats(dtSec); return; }
+  if (!sh.route.length) return;
   let days = dtSec * DAYS_PER_SEC * ui.speed;
   while (days > 0 && sh.route.length) {
     const dd = Math.min(0.05, days);
     days -= dd;
     const [tl, ta] = sh.route[0];
+    const river = isRiverLeg(sh.route[0]);
     sh.heading = bearing(sh.lon, sh.lat, tl, ta);
-    const { knots } = shipWind();
+    // up or down a river she is towed, kedged and swept along, whatever the wind
+    const knots = river ? RIVER_KNOTS * Pirates.hullFactor(S) : shipWind().knots;
     const nm = knots * 24 * dd;
     const rem = distNm(sh.lon, sh.lat, tl, ta);
     advanceTime(dd, true);
@@ -48,13 +78,15 @@ export function update(dtSec) {
     } else {
       const nlat = sh.lat + (nm * Math.cos(sh.heading * D2R)) / 60;
       const nlon = sh.lon + (nm * Math.sin(sh.heading * D2R)) / (60 * Math.cos(sh.lat * D2R));
-      if (isLand(nlon, nlat)) {
+      if (!river && isLand(nlon, nlat)) {
         // Shouldn't happen on a planned route; re-plan from here rather than run aground.
         const fix = sh.dest ? replan(sh.dest) : false;
         if (!fix) { sh.route = []; toast('Breakers ahead! The pilot heaves to. Set a new course.'); }
         continue;
       }
       sh.lon = nlon; sh.lat = nlat;
+      // a deep ship that strays onto a shoal runs aground
+      if (!river && Ships.isDeep(sh.hull) && shoalDepth(nlon, nlat) < Ships.draftOf(sh.hull, loadOf())) { aground(); break; }
     }
     revealAt(sh.lon, sh.lat, SIGHT);
     const last = S.trail[S.trail.length - 1];
@@ -68,6 +100,23 @@ export function update(dtSec) {
       break;
     }
   }
+}
+
+// Aground on a shoal: the crew kedge her off over a few days, and the hull suffers.
+function aground() {
+  const sh = S.ship;
+  const bank = SHOALS.find((x) => shoalDepth(sh.lon, sh.lat) <= x.depth) || { name: 'the shoals' };
+  for (let i = 0; i < 12; i++) advanceTime(0.25, false);
+  S.hull = Math.max(5, (S.hull ?? 100) - 10);
+  // back the way she came, to the last deep water
+  for (let back = 0; back < 40 && shoalDepth(sh.lon, sh.lat) < Ships.draftOf(sh.hull, loadOf()); back++) {
+    sh.lon -= Math.sin(sh.heading * D2R) * 0.03 / Math.cos(sh.lat * D2R);
+    sh.lat -= Math.cos(sh.heading * D2R) * 0.03;
+  }
+  sh.route = [];
+  sh.dest = null;
+  toast(`The <b>${sh.name}</b> runs aground on ${bank.name}. It takes three days to kedge her off, and her hull is at ${Math.round(S.hull)}%. A ship this deep must keep outside the banks.`, 'alert', true, 'alert');
+  save();
 }
 
 // Show a batch of messages from the game's systems.
@@ -179,6 +228,7 @@ export function advanceTime(dd, atSea, away = false) {
   }
   market.tick(dd);
   report(Events.tick(S, dd));
+  report(Ports.grow(S, dd, market));
   syncMarket();
   if (atSea) {
     spoil(dd);
@@ -228,6 +278,7 @@ function wearHull(dd) {
 // Events shape prices and close ports; standing earns better prices in Portuguese ports.
 export function syncMarket() {
   Events.applyToMarket(S, market);
+  market.scale = Object.fromEntries(PORTS.map((p) => [p.id, Ports.depthScale(S, p.id)]));
   const edge = Contracts.perks(S).priceEdge;
   market.edge = Object.fromEntries(PORTUGUESE_PORTS.map((p) => [p, edge]));
 }

@@ -33,7 +33,15 @@ import * as Events from '../../public/js/events.js';
 import * as Ships from '../../public/js/ships.js';
 import { PORTS } from '../../public/js/world.js';
 import * as Accounts from '../../public/js/accounts.js';
+import * as Ports from '../../public/js/ports.js';
 
+// --static-ports: ports as they were before 27 Oct 2026 (no growth; draft and boats still apply).
+const STATIC_PORTS = process.argv.includes('--static-ports');
+// --depth-exp 0.3, --trade-max 0.01: how much growing ports deepen their markets (ports.js TUNING)
+for (const [flag, key] of [['--depth-exp', 'depthExp'], ['--trade-max', 'tradeMax'], ['--trade-per-point', 'tradePerPoint'], ['--depth-min', 'depthMin']]) {
+  const i = process.argv.indexOf(flag);
+  if (i > 0) Ports.TUNING[key] = Number(process.argv[i + 1]);
+}
 const arg = (name, dflt) => {
   const i = process.argv.indexOf(`--${name}`);
   return i > 0 ? process.argv[i + 1] : dflt;
@@ -123,6 +131,7 @@ function career(cfg) {
   Fleet.ensureFleet(S);
   Events.ensureEvents(S);
   Accounts.ensureAccounts(S);
+  if (!STATIC_PORTS) Ports.ensurePorts(S);
   const market = new Market();
   const R = { repairs: 0, repairDays: 0, lost: 0, shipsBought: 0, spentOnShips: 0, at: {}, events: [] };
   let nextId = 1;
@@ -174,6 +183,11 @@ function career(cfg) {
     market.tick(STEP);
     Events.tick(S, STEP);
     Events.applyToMarket(S, market);
+    // ports grow (with history and trade), and a bigger port has a deeper market (ports.js)
+    if (!STATIC_PORTS) {
+      Ports.grow(S, STEP, market);
+      market.scale = Object.fromEntries(PORTS.map((p) => [p.id, Ports.depthScale(S, p.id)]));
+    }
     // ships in a shipyard sit out the work (their crews on half pay)
     const all = S.fleet.ships;
     const out = all.filter((x) => x.repairUntil && S.day < x.repairUntil);

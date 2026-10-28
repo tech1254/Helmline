@@ -2,7 +2,8 @@
 // They sail the same winds and trade in the same markets as the player, so their
 // buying and selling moves real prices. Money comes from, and goes to, the player's purse.
 
-import { PORTS, findPath, windAt, sailFactor, angleDiff, bearing, distNm, D2R } from './world.js';
+import { PORTS, findPath, windAt, sailFactor, angleDiff, bearing, distNm, D2R, berth, anchorage, isRiverLeg, RIVER_KNOTS, riverOf, shoalDepth, DEEP_DRAFT } from './world.js';
+import * as Ports from './ports.js';
 import { GOODS } from './economy.js';
 import * as Accounts from './accounts.js';
 import * as Ships from './ships.js';
@@ -103,11 +104,22 @@ export function dailyCost(ship) {
   return hullStats(ship).hiredUpkeep + ship.captain.wage;
 }
 
+// How full a hired ship's hold is, 0 to 1 (her draft follows it).
+export const loadOf = (ship) => Math.min(1, holdUsed(ship) / (hullStats(ship).hold || 1));
+const inBanks = (id) => shoalDepth(port(id).lon, port(id).lat) <= DEEP_DRAFT;
+// Where she lies at a port: alongside, or at the anchorage if she draws too much.
+export function anchoredAt(ship, id) {
+  const deep = Ships.isDeep(ship.hull || 'caravel');
+  return anchorage(id, deep && inBanks(id));
+}
+
 // Estimate a passage for a hired captain: today's winds, adjusted for his navigation.
 function planLeg(S, ship, fromId, toId) {
-  const a = port(fromId), b = port(toId);
+  const hull = ship.hull || 'caravel', deep = Ships.isDeep(hull);
+  if (riverOf(toId) && !Ports.canGoUpriver(S, toId, hull, loadOf(ship))) return null;
+  const a = berth(fromId, deep), b = berth(toId, deep); // a deep ship lies outside the Arguin banks
   // A better navigator plans for the winds; a poor one keeps to the shortest course.
-  const route = findPath(a.lon, a.lat, b.lon, b.lat, (ship.captain.nav - 1) / 4, !!Ships.HULLS[ship.hull || 'caravel']?.coastal);
+  const route = findPath(a.lon, a.lat, b.lon, b.lat, (ship.captain.nav - 1) / 4, !!Ships.HULLS[hull]?.coastal, deep);
   if (!route) return null;
   const path = [[a.lon, a.lat], ...route];
   let day = S.day, total = 0;
@@ -116,13 +128,14 @@ function planLeg(S, ship, fromId, toId) {
   for (let i = 1; i < path.length; i++) {
     let [lon, lat] = path[i - 1];
     const [tl, ta] = path[i];
+    const river = isRiverLeg(path[i]);
     for (let guard = 0; guard < 20000; guard++) {
       const rem = distNm(lon, lat, tl, ta);
       if (rem < 0.5) break;
       const br = bearing(lon, lat, tl, ta);
       const w = windAt(lon, lat, day);
       const off = angleDiff(br, w.from);
-      const perDay = Ships.knotsAt(st, off, sailFactor(off) * (0.45 + 0.55 * w.strength)) * 24;
+      const perDay = (river ? RIVER_KNOTS : Ships.knotsAt(st, off, sailFactor(off) * (0.45 + 0.55 * w.strength))) * 24;
       const step = Math.min(perDay * 0.1, rem);
       lat += (step * Math.cos(br * D2R)) / 60;
       lon += (step * Math.sin(br * D2R)) / (60 * Math.cos(lat * D2R));
@@ -265,6 +278,9 @@ function visit(S, market, ship, fresh = false) {
   }
   const parts = [];
   const stop = r ? r.stops[r.next] : null;
+  // Units worked here, and how laden she came in: for her boats if she lies offshore.
+  ship.boatUnits = 0;
+  ship.arrivalLoad = loadOf(ship);
   // Sell. With no route, the captain sells everything and waits for orders.
   const sellOrders = stop ? stop.orders.filter((o) => o.act === 'sell') : [{ act: 'sell', good: 'all' }];
   const h = holdOf(ship);
@@ -280,6 +296,7 @@ function visit(S, market, ship, fresh = false) {
       Accounts.captain(S, ship, { kind: 'sale', good: g, qty: lot.qty, amount: gross });
       profit += gross - lot.paid;
       sold.push(`${lot.qty} ${lot.qty === 1 ? good(g).one : good(g).unit} of ${good(g).name.toLowerCase()}`);
+      ship.boatUnits = (ship.boatUnits || 0) + lot.qty;
       delete h[g];
     }
   }
@@ -376,6 +393,7 @@ function buyAndSail(S, market, ship, parts = [], fresh = false) {
       roundOf(ship).net -= cost;
       Accounts.captain(S, ship, { kind: 'purchase', good: g, qty, amount: -cost });
       addToHold(ship, g, qty, cost);
+      ship.boatUnits = (ship.boatUnits || 0) + qty;
       boughtAny = true;
       parts.push(`loaded ${qty} ${good(g).unit} of ${good(g).name.toLowerCase()} for ${cost.toLocaleString()} cz`);
     }
@@ -403,8 +421,38 @@ function buyAndSail(S, market, ship, parts = [], fresh = false) {
 function sailOn(S, ship, parts, fresh) {
   const msgs = [];
   const next = ship.route.stops[ship.route.next].port;
-  const leg = planLeg(S, ship, ship.at, next);
-  if (!leg) { ship.status = 'idle'; return msgs; }
+  const here = ship.at, hull = ship.hull || 'caravel';
+  // Too deep to lie in this port (coming in, or going out laden): she works her cargo at
+  // the anchorage with her boats first, and pays the boatmen.
+  const units = ship.boatUnits || 0;
+  ship.boatUnits = 0;
+  const deepBanks = Ships.isDeep(hull) && inBanks(here);
+  if (units && (deepBanks || Ports.needsBoats(S, here, hull, Math.max(ship.arrivalLoad || 0, loadOf(ship))))) {
+    const w = Ports.boatWork(here, hull, units, deepBanks);
+    if (w.fee) {
+      S.purse -= w.fee;
+      roundOf(ship).net -= w.fee;
+      Accounts.captain(S, ship, { kind: 'boats', amount: -w.fee, text: `Boatmen at ${port(here).name}, ${units} units` });
+    }
+    ship.status = 'boats';
+    ship.boatsUntil = S.day + w.days;
+    const d = Math.max(1, Math.round(w.days));
+    parts.push(`anchored off, her boats need about ${d} ${d === 1 ? 'day' : 'days'} for the cargo`);
+    msgs.push({ html: `<b>${ship.name}</b> at ${port(here).name}: ${parts.join('. ')}.`, kind: 'port', level: 'routine', log: `${ship.name}: ${parts.join('; ')} at ${port(here).name}.` });
+    return msgs;
+  }
+  const leg = planLeg(S, ship, here, next);
+  if (!leg) {
+    if (riverOf(next) && !Ports.canGoUpriver(S, next, hull, loadOf(ship))) {
+      // too deep for the river as she is loaded: wait for the rains, and say so once
+      if (ship.status !== 'river') msgs.push({ html: `<b>${ship.name}</b> at ${port(here).name}: she draws ${Ships.draftOf(hull, loadOf(ship))} m as loaded, too deep for the river up to ${port(next).name} (${Ports.depthOf(S, next)} m). She waits for the water to rise; a shallower ship or a lighter load would go now.`, kind: 'alert', level: 'alert' });
+      ship.status = 'river';
+      ship.nextCheck = S.day + 10;
+      return msgs;
+    }
+    ship.status = 'idle';
+    return msgs;
+  }
   Accounts.bookCaptainWages(S, ship, 'in port');
   ship.leg = leg;
   ship.status = 'sailing';
@@ -459,6 +507,8 @@ export function tick(S, market, days, ownerPresent = true) {
       msgs.push(...visit(S, market, ship));
     } else if (ship.status === 'loading' && ship.route && S.day >= (ship.nextCheck ?? 0)) {
       msgs.push(...buyAndSail(S, market, ship));
+    } else if ((ship.status === 'boats' && S.day >= (ship.boatsUntil ?? 0)) || (ship.status === 'river' && S.day >= (ship.nextCheck ?? 0))) {
+      msgs.push(...sailOn(S, ship, [], false));
     } else if (ship.status === 'repair' && S.day >= (ship.repairUntil ?? 0)) {
       ship.status = 'idle';
       msgs.push(...(ship.route ? buyAndSail(S, market, ship) : []));
@@ -514,6 +564,12 @@ export function position(S, ship) {
     return { lon: x0 + (x1 - x0) * t, lat: y0 + (y1 - y0) * t, heading: bearing(x0, y0, x1, y1), atSea: true };
   }
   const p = port(ship.at);
+  // lying off a port too shallow for her, she is drawn at the anchorage
+  const deep = Ships.isDeep(ship.hull || 'caravel');
+  if (ship.status === 'boats' || (deep && inBanks(ship.at))) {
+    const a = anchoredAt(ship, ship.at);
+    return { lon: a.lon, lat: a.lat, heading: 200, atSea: false, anchored: true, port: p };
+  }
   return { lon: p.lon - 0.18, lat: p.lat - 0.12, heading: 200, atSea: false };
 }
 
@@ -524,6 +580,8 @@ export function statusText(S, ship) {
     return `Bound for ${port(ship.leg.to).name} with ${holdText(ship)}, about ${left} ${left === 1 ? 'day' : 'days'} out.`;
   }
   if (ship.status === 'waiting') return `Waiting outside ${port(ship.at).name} for the port to reopen.`;
+  if (ship.status === 'boats') return `Anchored off ${port(ship.at).name}: her boats are working the cargo, about ${Math.max(1, Math.ceil((ship.boatsUntil ?? S.day) - S.day))} more days.`;
+  if (ship.status === 'river') return `In ${port(ship.at).name}, too deep for the river as she is loaded: waiting for the water to rise.`;
   if (ship.status === 'repair') return `${Wear.YARDS.includes(ship.at) ? `In the yard at ${port(ship.at).name}` : `Careened on the beach at ${port(ship.at).name}`} for ${Math.max(1, Math.ceil((ship.repairUntil ?? S.day) - S.day))} more days.`;
   if (ship.status === 'loading') return `Waiting in ${port(ship.at).name} for prices to recover, on half pay (${Math.max(0, Math.round(S.day - (ship.waitSince ?? S.day)))} of up to ${MAX_WAIT_DAYS} days).`;
   if (ship.status === 'ashore') return `Ashore in ${port(ship.at).name}: Captain ${ship.captain.name} will not sail until you give him orders there in person.`;

@@ -36,6 +36,8 @@ const MARKETS = {
   serraleoa: { k: 0.03, p: { wine: [24], cloth: [31], sugar: [23], dye: [19], gold: [85], ivory: [15, 1], pepper: [11, 1], wheat: [14], salt: [20], alquices: [22] } },
   cestos:    { k: 0.035, p: { wine: [26], cloth: [32], sugar: [24], dye: [20], gold: [90], ivory: [24], pepper: [7, 1], wheat: [14], salt: [20], alquices: [22] } },
   mina:      { k: 0.025, p: { wine: [30], cloth: [40], sugar: [26], dye: [22], gold: [52, 1], ivory: [21, 1], pepper: [16], wheat: [16], salt: [22], alquices: [30] } },
+  // Upriver on the Gambia: gold and ivory straight from the caravans, and salt worth its weight.
+  cantor:    { k: 0.03, p: { wine: [28], cloth: [36], sugar: [24], dye: [20], gold: [58, 1], ivory: [13, 1], pepper: [14], wheat: [16], salt: [30], alquices: [32] } },
 };
 
 const GOLD_K = 1.6; // gold is scarce: each pouch moves the price more
@@ -79,8 +81,9 @@ export class Market {
     return !!MARKETS[port].p[good][1];
   }
 
+  // `scale[port]`: how a port's size changes its depth (ports.js; 1 in 1451, less as it grows).
   k(port, good) {
-    return MARKETS[port].k * DEPTH * (good === 'gold' ? GOLD_K : 1);
+    return MARKETS[port].k * DEPTH * (good === 'gold' ? GOLD_K : 1) * (this.scale?.[port] ?? 1);
   }
 
   basePrice(port, good) {
@@ -116,6 +119,8 @@ export class Market {
       this.press[port][good] -= 0.5; // producers have deep stocks
       bought++;
     }
+    this.vol = this.vol || {};
+    this.vol[port] = (this.vol[port] || 0) + bought; // units traded, for the port's growth (ports.js)
     return { bought, cost };
   }
 
@@ -126,6 +131,8 @@ export class Market {
       this.press[port][good] += 1;
       sold++;
     }
+    this.vol = this.vol || {};
+    this.vol[port] = (this.vol[port] || 0) + sold;
     return { sold, income };
   }
 

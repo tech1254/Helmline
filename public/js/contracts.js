@@ -51,6 +51,7 @@ export const PATRONS = {
   serraleoa: 'The Temne chiefs',
   cestos: 'The headmen of the Grain Coast',
   mina: 'The Akan gold traders',
+  cantor: 'The merchants of Cantor',
 };
 
 const portName = (id) => PORTS.find((p) => p.id === id).name;

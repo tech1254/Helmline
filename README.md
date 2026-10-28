@@ -25,6 +25,8 @@ An age-of-sail exploration and trade game. This is **Prototype 0**: the West Afr
 - **Notices:** pop-ups stay up long enough to read (longer for longer messages), pause while hovered and close on a tap; every notice is also kept in a feed under the bell, with an unread count.
 - **Feedback:** Report a bug or Suggest an idea from the How to play screen. Reports go to the `feedback` table in D1 (with game details, if the player agrees) and are reviewed nightly into the design doc's backlog.
 - **Phones:** one row at the top (date, purse, hold, notices) and a bar at the bottom: play or pause, speed, Sail, Books (market, price book, ledger, contracts and fleet as tabs) and More (winds, find my ship, cloud save, how to play, feedback).
+- **Draft and ships' boats:** every hull draws more laden than light; every port has a depth (river bars rise in the rains). A ship too deep anchors offshore and her boats work the cargo, a few units a day for a fee; the chart shows her at anchor and the boat rowing. A nau keeps off the Arguin banks. Cantor, up the Gambia, is reached only by shallow ships.
+- **Ports that grow:** populations change with history (Madeira's sugar, the Arguin fort, São Jorge da Mina in 1482, the Casa da Guiné), trade, plague and closures; a bigger port has a deeper market, and some build quays. Tuning in `public/js/ports.js` (TUNING).
 - **Wait in port**, zoom buttons, Captain's notes for the first voyages, and a How to play screen.
 - Saves to the browser, and optionally to the cloud with a save code to play across devices.
 
@@ -34,7 +36,7 @@ Not yet included: ship-to-ship combat beyond auto-resolve, navigation drift, dyn
 
 - `src/worker.js` is the Worker: it serves `public/` and answers `/api/saves` for cloud saves and `/api/feedback` for players' reports, stored in the D1 database `helmline-saves` (schema in `migrations/`). Only a hash of each save code is stored.
 - `public/` holds the game's static files (no build step). The game is plain ES modules in `public/js/`:
-  - Game rules: `world.js` (coastlines, ports, winds, sea routes), `ships.js` (hulls, shipyard options and what they do), `economy.js` (goods and the market), `contracts.js` (contracts and standing), `events.js` (market events and news), `fleet.js` (hired ships and captains), `accounts.js` (the ledger), `pirates.js` (corsairs), `cloud.js` (the cloud-save API).
+  - Game rules: `world.js` (coastlines, ports, winds, sea routes), `ships.js` (hulls, shipyard options and what they do), `economy.js` (goods and the market), `contracts.js` (contracts and standing), `events.js` (market events and news), `fleet.js` (hired ships and captains), `accounts.js` (the ledger), `ports.js` (port growth, depth, seasons and ships' boats), `pirates.js` (corsairs), `cloud.js` (the cloud-save API).
   - The game itself: `state.js` (the shared game state), `config.js` (tunable numbers), `save.js`, `cloudsync.js`, `fog.js`, `sim.js` (time passing, time away), `voyage.js` (courses, docking, corsairs).
   - Drawing and input: `view.js` (canvas and camera), `render.js`, `input.js`.
   - Interface: `panels.js` (HUD, market, contracts, sail, fleet, help), `shipyard.js` (ship register and shipyard), `shipart.js` (ships drawn from their parts), `scene.js` (the arrival scene), `pricebook.js`, `ledgerview.js`, `notices.js`, `dialog.js`, `actions.js` (what the buttons do), `util.js`.

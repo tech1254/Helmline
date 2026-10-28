@@ -1,6 +1,7 @@
 // Helmline: start-up, the intro, and the main loop. The game itself lives in the modules.
 
-import { PORTS, findPath, loadRoutes } from './world.js';
+import { PORTS, findPath, loadRoutes, shoalDepth } from './world.js';
+import * as Fleet from './fleet.js';
 import * as Contracts from './contracts.js';
 import * as Cloud from './cloud.js';
 import * as Accounts from './accounts.js';
@@ -10,7 +11,7 @@ import { checkCloudOnStart, cloudSync, loadFromCloud, remoteAhead, renderCloudBu
 import { centerOn, clampCam, resize, toScreen } from './view.js';
 import { render } from './render.js';
 import { advanceTime, catchUp, showSummary, update } from './sim.js';
-import { dock, openEncounter, setCourse, undock, unlockContracts } from './voyage.js';
+import { dock, noPassage, openEncounter, planCourse, setCourse, undock, unlockContracts } from './voyage.js';
 import { $ } from './util.js';
 import { renderHud, renderPanel, setSpeed, warmRoutes } from './panels.js';
 import { initInput } from './input.js';
@@ -110,6 +111,11 @@ window.helmline = {
   away: (minutes) => { S.lastSeen = Date.now() - minutes * 60000; const sum = catchUp(); if (sum) ui.pendingSummary = sum; return sum && { days: sum.days, purse: Math.round(sum.purse), capped: sum.capped }; },
   encounter: (big = false) => { ui.pendingEncounter = { where: 'the Barbary coast', big, strength: big ? 1.35 : 1 }; },
   route: (lon, lat) => findPath(S.ship.lon, S.ship.lat, lon, lat),
+  plan: (lon, lat, port) => planCourse(lon, lat, port, false),
+  why: () => noPassage(),
+  ports: PORTS,
+  shoal: (lon, lat) => shoalDepth(lon, lat),
+  route77: () => Fleet.setRoute(S, market, S.fleet.ships.find((x) => x.id === 77), { stops: [{ port: 'lisbon', orders: [{ act: 'sell', good: 'all' }, { act: 'buy', good: 'cloth', pct: 50 }] }, { port: 'arguin', orders: [{ act: 'sell', good: 'all' }, { act: 'buy', good: 'gold', pct: 25 }] }], next: 0 }),
   dockAt: (id) => { if (S.ship.docked) undock(); dock(id); },
   accounts: () => ({ purse: S.purse, known: Accounts.known(S), unaccounted: Accounts.unaccounted(S), pending: S.accounts.pending.reduce((t, e) => t + e.amount, 0), due: S.fleet.ships.reduce((t, x) => t + (x.wagesDue || 0), 0), voyage: S.accounts.voyage?.wages || 0, entries: S.accounts.entries.length }),
   scene: (portId) => { window.helmlineScenes = true; if (S.called) delete S.called[portId]; return startArrival(portId); },

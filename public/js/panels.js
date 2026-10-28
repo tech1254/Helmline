@@ -1,6 +1,6 @@
 // The HUD and the side panels: market, contracts, sail, fleet, help, tips and tabs.
 
-import { PORTS, pointOfSail, compassPoint, distNm, findPath } from './world.js';
+import { PORTS, pointOfSail, compassPoint, distNm, findPath, shoalDepth, DEEP_DRAFT } from './world.js';
 import { GOODS, Market } from './economy.js';
 import * as Wear from './wear.js';
 import * as Contracts from './contracts.js';
@@ -14,7 +14,8 @@ import { S, market, ui } from './state.js';
 import { load, save } from './save.js';
 import { renderCloud } from './cloudsync.js';
 import { W } from './view.js';
-import { report, shipWind, spoil, syncMarket } from './sim.js';
+import { report, shipWind, spoil, syncMarket, loadOf } from './sim.js';
+import * as Ports from './ports.js';
 import { estimateVoyage, observe, planCourse } from './voyage.js';
 import { drag } from './input.js';
 import { $, cz, fmtDate, held } from './util.js';
@@ -53,7 +54,14 @@ export function renderHud() {
   const sh = S.ship;
   let status;
   if (sh.docked) {
-    status = `At anchor in ${PORTS.find((p) => p.id === sh.docked).name}. Click the chart to set sail.`;
+    const pn = PORTS.find((p) => p.id === sh.docked).name;
+    const b = sh.boats;
+    if (b && b.moved < b.total) {
+      const left = Math.max(1, Math.ceil((b.total - b.moved) / b.rate));
+      status = `At anchor off ${pn} · her boats are working the cargo: ${Math.floor(b.moved)} of ${b.total} units, about ${left} ${left === 1 ? 'day' : 'days'} more${ui.speed === 0 ? ' (paused)' : ''}.`;
+    } else {
+      status = `${sh.offshore ? `At anchor off ${pn}` : `At anchor in ${pn}`}. Click the chart to set sail.`;
+    }
   } else {
     const { w, off, knots } = shipWind();
     const windTxt = `Wind from the ${compassPoint(w.from)}`;
@@ -118,6 +126,20 @@ export function renderPanel() {
   renderDock();
 }
 
+// The port's size and the water at its berth, against what the flagship draws.
+function harbourLine(pid) {
+  const p = PORTS.find((x) => x.id === pid);
+  const L = Ports.portLine(S, pid);
+  const sh = S.ship;
+  const draft = Ships.draftOf(sh.hull, loadOf()), laden = Ships.draftOf(sh.hull, 1), depth = Ports.depthOf(S, pid);
+  const name = Ships.hullOf(sh).name.toLowerCase();
+  const fit = sh.offshore
+    ? (() => { const w = Ports.boatWork(pid, sh.hull, 1, Ships.isDeep(sh.hull) && shoalDepth(p.lon, p.lat) <= DEEP_DRAFT); return `She draws ${draft} m: she lies at the anchorage${w.nm > 15 ? `, ${Math.round(w.nm)} miles out,` : ''} and her boats work the cargo (${w.rate} units a day, the boatmen ${w.fee} cz a unit).`; })()
+    : laden > depth ? `Your ${name} draws ${draft} m now, ${laden} m fully laden: load her deep and she must move out to the anchorage.` : `Your ${name} draws up to ${laden} m: she can lie here laden.`;
+  const season = Ports.seasonText(pid, S.day);
+  return `<p class="harbour">${L ? `A ${L.tier} of about ${L.people.toLocaleString()} people, ${L.trend}. ` : ''}${p.kind[0].toUpperCase() + p.kind.slice(1)}, ${depth} m at the berth. ${season ? `${season} ` : ''}${fit}</p>`;
+}
+
 export function renderPort(el) {
   const pid = S.ship.docked;
   if (!pid) { ui.panelMode = null; el.hidden = true; return; }
@@ -147,6 +169,7 @@ export function renderPort(el) {
     ${tabs('port')}
     <header><h2>${p.name}</h2><button class="close" data-close aria-label="Close">×</button></header>
     <p class="blurb">${p.blurb}</p>
+    ${harbourLine(pid)}
     ${hullBanner(pid)}
     ${shut ? `<p class="banner warn"><b>Closed to trade:</b> ${Events.template(shut).title.toLowerCase()}. Expected to reopen around ${fmtDate(shut.end)}.</p>` : ''}
     <table class="market">
@@ -315,6 +338,21 @@ export function orderGoodOptions(order, portId) {
     GOODS.filter((g) => market.sells(portId, g.id)).map((g) => `<option value="${g.id}" ${order.good === g.id ? 'selected' : ''}>${g.name}</option>`).join('');
 }
 
+// Whether this ship can lie at a stop, or must work her cargo with boats, or cannot get up the river.
+function stopWaterNote(ship, pid) {
+  const hull = ship.hull || 'caravel', p = PORTS.find((x) => x.id === pid);
+  if (!p) return '';
+  const light = Ships.draftOf(hull, 0), laden = Ships.draftOf(hull, 1), depth = Ports.depthOf(S, pid);
+  const name = Ships.HULLS[hull].name.toLowerCase();
+  if (p.river) {
+    if (light > depth + 0.8) return `<p class="stop-note warn">Too deep for the river: a ${name} draws ${light} m even light, and the channel to ${p.name} is ${depth} m (a little more in the rains).</p>`;
+    if (laden > depth) return `<p class="stop-note">Up the river only part laden: the channel is ${depth} m just now and she draws up to ${laden} m. Laden deep, she waits for the water to rise.</p>`;
+    return '';
+  }
+  if (laden > depth) return `<p class="stop-note">${light > depth ? 'She lies' : 'Laden, she lies'} at the anchorage here (${depth} m, she draws up to ${laden} m): her boats work the cargo, which takes some days.</p>`;
+  return '';
+}
+
 export function routeEditor(ship) {
   const d = draftFor(ship);
   const stops = d.stops.map((st, i) => `
@@ -324,6 +362,7 @@ export function routeEditor(ship) {
           <select data-f="port" aria-label="Stop ${i + 1} port">${portOptions(st.port)}</select>
           ${d.stops.length > 2 ? `<button class="mini" data-draft="del-stop" aria-label="Remove stop ${i + 1}">Remove</button>` : ''}
         </div>
+        ${stopWaterNote(ship, st.port)}
         ${st.orders.map((o, j) => `
           <div class="order" data-order-j="${j}">
             <select data-f="act" aria-label="Order"><option value="sell" ${o.act === 'sell' ? 'selected' : ''}>Sell</option><option value="buy" ${o.act === 'buy' ? 'selected' : ''}>Buy</option></select>
@@ -412,7 +451,7 @@ export function renderHelp(el) {
       <li><b>Prices move</b> as you buy and sell, and recover over weeks. Contracts and events move them too.</li>
       <li><b>The price book</b> remembers only the prices you have seen, and they go stale. News of events reaches you in port, late for distant places.</li>
       <li><b>Perishables</b> such as wine, dye and pepper slowly spoil at sea, faster in the tropics. Gold and ivory keep.</li>
-      <li><b>Corsairs</b> prowl off Morocco, the Algarve and the Canaries. When challenged, run, fight or pay. Fighting makes your name feared and draws more of them; avoiding fights calms the seas. Battle damage slows you until a shipwright in Lisbon, Lagos or Funchal repairs it.</li>
+      <li><b>Corsairs</b> prowl off Morocco, the Algarve and the Canaries. When challenged, run, fight or pay. Beat a galley and you can plunder her, and the crown pays a bounty for her in any Portuguese port; but plundering makes your name feared and draws more of them, while avoiding fights calms the seas. Fighting men and boarding nets from the shipyard improve your odds. Battle damage slows you until a shipwright in Lisbon, Lagos or Funchal repairs it.</li>
       <li><b>Charts:</b> the crown pays ${CHART_REWARD} cz for each new port or island group, on your return to Lisbon.</li>
     </ul>
     <h3>Growing</h3>
@@ -422,6 +461,9 @@ export function renderHelp(el) {
       <li><b>Your ship:</b> the ship register (S, or <i>Ship</i>) shows your flagship, ships on order and the hulls ahead. The Lisbon shipyard refits her (sails, rig, guns, stores, colours), trades her up for a bigger hull, or builds one to order; Lagos and Funchal refit. A nau can be ordered from 1470 and is delivered in 1480.</li>
       <li><b>Arriving:</b> your ship sails into each port in a short scene. Tap to skip it; choose every port, first visits only or off in the ship register.</li>
       <li><b>Your fleet:</b> a hired captain runs a trade route for you, paid from your purse.</li>
+      <li><b>Draft:</b> a laden ship sits deeper. Where she draws more than the harbour has, she anchors offshore and her boats ferry the cargo: some days, and a small fee to the boatmen. A nau keeps outside the Arguin banks. River bars rise in the rains and fall in the dry season.</li>
+      <li><b>Up the Gambia:</b> Cantor, far upriver, trades gold and ivory from the caravans and pays well for salt. Only a shallow ship gets there: a barca, or a caravel not too deeply laden.</li>
+      <li><b>Ports grow:</b> with their history and with the trade through them. A bigger port has a deeper market, and some build quays that let deeper ships come in. The market panel shows each port's size.</li>
       <li><b>The ledger</b> accounts for every cruzado in and out. Your own dealings are entered at once. A hired captain's are entered when you are in any port on his route, so until then part of your purse is not yet accounted for.</li>
       <li><b>Time away:</b> if you have hired captains and your own ship is in port, the world moves on while you are gone: at a tenth of its usual pace at first, more slowly after a few weeks, up to ${OFFLINE_MAX_DAYS} days. Contract deadlines wait for you. A night's sleep or a working day is safe; stay away longer than ${Fleet.STRAY_AFTER_HOURS} hours and captains start to stray (skimming, then going ashore), and after ${STANDING_FADES_AFTER_HOURS} hours your standing starts to fade.</li>
     </ul>

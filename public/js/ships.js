@@ -16,43 +16,64 @@ export const TIER_NAMES = { 0: 'anyone', 5: 'Known on the quays', 20: 'Respected
 // orderYear: may be ordered from this year (a third paid down); year: delivered or bought outright.
 export const HULLS = {
   barca: {
+    draft: [1.0, 1.5], // metres, light and fully laden
     id: 'barca', name: 'Barca', year: 1451, standing: KNOWN, price: 1050, hold: 25, knots: 4.5, up: 0.75, down: 1,
-    upkeep: 2, hiredUpkeep: 1, scale: 0.5, size: 0.8, coastal: true,
-    blurb: 'A small, single-masted coaster with a square sail. Cheap to buy and run, but she keeps within sight of the coast: no Madeira, no open-sea passages.',
+    upkeep: 2, hiredUpkeep: 1, scale: 0.5, size: 0.8, coastal: true, lure: 0.55, // little worth taking: corsairs seldom bother with her
+    blurb: 'A small, single-masted coaster with a square sail. Cheap to buy and run, but she keeps within sight of the coast: no Madeira, no open-sea passages. Corsairs seldom think her worth the trouble.',
   },
   caravel: {
+    draft: [1.6, 2.2], // metres, light and fully laden
     id: 'caravel', name: 'Caravel', year: 1451, standing: KNOWN, price: 1950, hold: 40, knots: 5, up: 1, down: 1,
     upkeep: 3, hiredUpkeep: 1, scale: 1, size: 1,
     blurb: 'Two lateen masts and a shallow draft. The best ship afloat for beating home against the trade winds.',
   },
   barinel: {
+    draft: [1.8, 2.5], // metres, light and fully laden
     id: 'barinel', name: 'Barinel', year: 1451, standing: KNOWN, price: 2850, hold: 60, knots: 4.8, up: 0.9, down: 1,
     upkeep: 4, hiredUpkeep: 1, scale: 1.3, size: 1.15, oars: 2,
     blurb: 'A broad oared sailing ship. Sweeps keep her moving at about 2 knots in a calm, as in the Gulf of Guinea.',
   },
   largecaravel: {
+    draft: [2.0, 2.7], // metres, light and fully laden
     id: 'largecaravel', name: 'Large caravel', year: 1456, standing: RESPECTED, price: 2600, hold: 55, knots: 5.2, up: 1.05, down: 1,
     upkeep: 4, hiredUpkeep: 1, scale: 1.2, size: 1.1,
     blurb: 'A caravela latina grande: three lateen masts on a longer hull. More hold than a caravel and even closer to the wind.',
   },
   redonda: {
+    draft: [2.3, 3.0], // metres, light and fully laden
     id: 'redonda', name: 'Caravela redonda', year: 1462, standing: RESPECTED, price: 3500, hold: 65, knots: 5.4, up: 0.85, down: 1.2,
     upkeep: 5, hiredUpkeep: 1, scale: 1.4, size: 1.2,
     blurb: 'A caravel with square sails on her fore and main masts and a lateen mizzen: fast with the wind behind her, a little slower into it.',
   },
   nau: {
+    draft: [3.2, 4.5], // metres, light and fully laden
     id: 'nau', name: 'Nau', year: 1470, orderYear: 1466, standing: TRUSTED, price: 7800, hold: 120, knots: 5.5, up: 0.75, down: 1.1,
     upkeep: 6, hiredUpkeep: 2, scale: 2, size: 1.45, fight: 0.1, shy: 0.8,
     blurb: 'A great carrack with high castles fore and aft. A huge hold and room for bombards; slow to windward. Galleys think twice before taking her on.',
   },
 };
+// How deep a ship draws with her hold this full (0 to 1): light, laden, and between.
+export function draftOf(hullId, load = 1) {
+  const [light, laden] = (HULLS[hullId] || HULLS.caravel).draft;
+  return Math.round((light + (laden - light) * Math.max(0, Math.min(1, load))) * 10) / 10;
+}
+// A deep ship keeps off the shoals (see world.js DEEP_DRAFT).
+export const isDeep = (hullId) => (HULLS[hullId] || HULLS.caravel).draft[1] > 3;
+// How many units of cargo her boats move between ship and shore in a day, at an anchorage
+// `nm` miles out: a bigger ship has more boats and hands.
+export function boatRate(hullId, nm = 7) {
+  const h = HULLS[hullId] || HULLS.caravel;
+  return Math.round((6 + 8 * h.size) * Math.min(1, 10 / Math.max(10, nm)));
+}
+
 export const HULL_ORDER = ['barca', 'caravel', 'barinel', 'largecaravel', 'redonda', 'nau'];
 // Hull prices above, and refits, are 30% dearer than first set (economy change C, 27 Oct 2026):
 // close to what ships cost per ton in the period, and enough to make buying one a decision.
 export const PRICE_RISE = 1.3;
 
 // Option groups. Each choice may change: knots (a factor), up (a factor), down, upAdd, hold (factor),
-// holdAdd, offWind (factor beyond 75° off the wind), wage (cz a day), fight (odds added), spoil (factor).
+// holdAdd, offWind (factor beyond 75° off the wind), wage (cz a day), fight (odds added), spoil (factor),
+// guard (share of what boarders would carry off that they cannot).
 // price is for a caravel (scaled by the hull), days in the yard, standing and year needed.
 export const GROUPS = [
   {
@@ -97,6 +118,21 @@ export const GROUPS = [
       { id: 'none', name: 'None' },
       { id: 'bercos', name: 'Swivel guns (berços)', note: 'Light breech-loaders on the rails.', fight: 0.08, price: 500, days: 3, standing: KNOWN },
       { id: 'bombards', name: 'Bombards', note: 'Heavy guns on the main deck. Only a nau can carry them.', fight: 0.15, price: 1200, days: 5, standing: TRUSTED, hulls: ['nau'] },
+    ],
+  },
+  {
+    id: 'crew', name: 'Fighting men', tab: 'arms',
+    choices: [
+      { id: 'sailors', name: 'Sailors only' },
+      { id: 'crossbows', name: 'Crossbowmen', note: 'A dozen crossbowmen, paid by the day, to sweep a galley\'s deck as she closes.', fight: 0.08, wage: 1, price: 300, days: 1, standing: KNOWN },
+      { id: 'menatarms', name: 'Men-at-arms', note: 'Soldiers in mail with pikes and crossbows, enough to board a galley and take her.', fight: 0.15, wage: 2, price: 600, days: 1, standing: RESPECTED },
+    ],
+  },
+  {
+    id: 'defence', name: 'Defences', tab: 'arms',
+    choices: [
+      { id: 'open', name: 'Open rails' },
+      { id: 'nets', name: 'Boarding nets and pavises', note: 'Nets rigged above the rails and wooden shields along them. Boarders struggle to get aboard, and to get off again with your goods.', fight: 0.05, guard: 0.4, price: 250, days: 2 },
     ],
   },
   {
@@ -168,7 +204,7 @@ export function stats(ship) {
   const h = hullOf(ship);
   const fit = normalFit(h.id, ship?.fit);
   const st = { hull: h.id, name: h.name, knots: h.knots, up: h.up, down: h.down, offWind: 1, hold: h.hold, upkeep: h.upkeep,
-    hiredUpkeep: h.hiredUpkeep, oars: h.oars || 0, fight: h.fight || 0, spoil: 1, shy: h.shy || 1 };
+    hiredUpkeep: h.hiredUpkeep, oars: h.oars || 0, fight: h.fight || 0, spoil: 1, shy: h.shy || 1, lure: h.lure || 1 };
   let holdFactor = 1, holdAdd = 0, upAdd = 0;
   for (const g of groupsFor(h.id)) {
     const c = choice(g.id, fit[g.id]);
@@ -182,6 +218,7 @@ export function stats(ship) {
     if (c.holdAdd) holdAdd += c.holdAdd;
     if (c.wage) st.upkeep += c.wage;
     if (c.fight) st.fight += c.fight;
+    if (c.guard) st.guard = (st.guard || 0) + c.guard;
     if (c.spoil) st.spoil *= c.spoil;
   }
   st.up += upAdd;

@@ -9,6 +9,7 @@ import { PORTS, planRoute, ROUTE_SKILLS, routeKey } from '../../public/js/world.
 const routes = {};
 const t0 = performance.now();
 for (const a of PORTS) for (const b of PORTS) {
+  if (a.river || b.river) continue; // river ports are reached through their mouths
   if (a === b) continue;
   for (const skill of ROUTE_SKILLS) for (const coastal of [false, true]) {
     const r = planRoute(a.lon, a.lat, b.lon, b.lat, skill, coastal);
