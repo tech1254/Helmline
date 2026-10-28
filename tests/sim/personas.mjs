@@ -161,7 +161,7 @@ function career(persona) {
     persona, at: {}, log: [], shipsBought: 0, spentOnShips: 0, lost: 0, broke: null,
     contracts: { taken: 0, done: 0, failed: 0, reward: 0, cost: 0, detours: 0 },
     corsairs: { met: 0, pay: 0, run: 0, fight: 0, won: 0, lost: 0, cash: 0, cargo: 0, plundered: 0 },
-    byDecade: {}, attention: {}, riverWaitDays: 0, boatDays: 0, firstHire: null, explored: null, nau: null,
+    byDecade: {}, attention: {}, series: [], riverWaitDays: 0, boatDays: 0, firstHire: null, explored: null, nau: null,
   };
   const note = (s) => R.log.push(`${yearOf(S.day).toFixed(1)} ${s}`);
   let nextId = 1;
@@ -418,7 +418,7 @@ function career(persona) {
         continue;
       }
       S.purse -= res.cost;
-      Accounts.record(S, { kind: 'purchase', amount: -res.cost, good: c.good, qty: c.qty, text: `for a contract: ${c.title}` });
+      Accounts.record(S, { kind: 'contractGoods', amount: -res.cost, good: c.good, qty: c.qty, text: `for a contract: ${c.title}` });
       f.cHold[c.id] = { good: c.good, qty: c.qty, paid: res.cost };
       R.contracts.cost += res.cost;
     }
@@ -581,6 +581,9 @@ function career(persona) {
     if (R.broke == null && S.purse < -500) R.broke = yearOf(S.day);
     const y = yearOf(S.day);
     for (const m of marks) if (R.at[m] == null && y >= m + 2 / 12) R.at[m] = worth(S);
+    // every five years (1 March): what he is worth, and what has come in and gone out so far
+    const five = 1455 + 5 * (R.series.length);
+    if (y >= five + 2 / 12 && five <= 1451 + YEARS) R.series.push(snapshot(S, five));
     const dec = Math.floor(y / 10) * 10;
     if (R.attention[dec] == null && y >= dec + 5) R.attention[dec] = Pirates.attention(S); // mid-decade
   }
@@ -595,6 +598,14 @@ function career(persona) {
   R.fleet = S.fleet.ships.map((x) => `${x.role === 'flagship' ? 'you' : x.loop}: ${Ships.HULLS[x.realHull].name}`).join(', ');
   R.pirates = { ...Pirates.ensurePirates(S) };
   return R;
+}
+
+// A five-yearly snapshot: worth, and the running totals of the books by kind.
+function snapshot(S, year) {
+  const A = Accounts.ensureAccounts(S);
+  const tot = { ...A.totals };
+  for (const e of A.pending) tot[e.kind] = (tot[e.kind] || 0) + e.amount;
+  return { year, worth: worth(S), purse: S.purse, ships: S.fleet.ships.length, tot };
 }
 
 // What he is worth: the purse, plus his ships at what a yard would give for them.
@@ -617,7 +628,7 @@ export function summarise(list) {
   const end = 1451 + YEARS;
   const at = Object.fromEntries(Object.keys(list[0].at).map((m) => [m, med(list.map((r) => r.at[m] ?? 0))]));
   const tot = (k) => avg(list.map((r) => r.totals[k] || 0));
-  const trade = tot('sale') + tot('purchase') + avg(list.map((r) => r.contracts.cost)); // contract goods are not trade
+  const trade = tot('sale') + tot('purchase'); // contract goods are booked apart (contractGoods)
   const contracts = avg(list.map((r) => r.contracts.reward - r.contracts.cost));
   const crown = 400 * avg(list.map((r) => (r.log.some((l) => l.includes('Find a new trading partner')) ? 1 : 0)));
   const c = (k) => avg(list.map((r) => r.corsairs[k]));
@@ -631,6 +642,14 @@ export function summarise(list) {
     firstHire: med(list.map((r) => r.firstHire ?? end)), explored: med(list.map((r) => r.explored ?? end)), nau: list.filter((r) => r.nau).length / list.length,
     shipsLost: avg(list.map((r) => r.lost)), broke: list.filter((r) => r.broke != null).length / list.length,
     riverWaitDays: avg(list.map((r) => r.riverWaitDays)), boatDays: avg(list.map((r) => r.boatDays)),
+    series: list[0].series.map((pt, i) => {
+      const at = (r) => r.series[i] || r.series[r.series.length - 1];
+      const prev = (r) => (i ? r.series[i - 1] : { tot: {} });
+      const flow = (k) => avg(list.map((r) => ((at(r).tot[k] || 0) - (prev(r).tot[k] || 0)) / 5));
+      return { year: pt.year, worth: med(list.map((r) => at(r).worth)), low: Math.min(...list.map((r) => at(r).worth)), high: Math.max(...list.map((r) => at(r).worth)),
+        ships: avg(list.map((r) => at(r).ships)),
+        perYear: { trade: flow('sale') + flow('purchase'), contracts: flow('contract') + flow('contractGoods'), wages: flow('wages'), repairs: flow('repairs'), ships: flow('ships'), invest: flow('invest'), other: flow('charts') + flow('corsairs') + flow('bounty') + flow('boats') } };
+    }),
     standing: med(list.map((r) => r.standing)), fleet: list[0].fleet + (list[0].arms ? ` (fitted: ${list[0].arms})` : ''),
   };
 }

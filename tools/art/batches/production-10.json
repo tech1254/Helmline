@@ -1,0 +1,143 @@
+{
+ "note": "Production run 10: the Nau da Índia and the galleon (plain sails; crosses to follow on the picked ones), and harbours for the ports history opens: Mpinda, São Tomé, São Brás, Porto Seguro, Calicut.",
+ "items": [
+  {
+   "id": "ship-naudaindia-a",
+   "model": "black-forest-labs/flux-2-pro-preview",
+   "width": 1280,
+   "height": 896,
+   "seed": 6101,
+   "refs": [
+    "art:production-1/ship-nau-a.png"
+   ],
+   "cutout": true,
+   "prompt": "A photorealistic photograph of a real full-size Portuguese nau da Índia (great carrack) of about 1510, about 40 metres long, much bigger and taller than an ordinary nau: a very high rounded hull with four decks, a towering multi-storey sterncastle and a tall forecastle overhanging the bow, a row of small closed gunports low along the hull, square sails on the foremast and mainmast with topsails above them, a lateen mizzen and a small lateen bonaventure mast at the stern, a spritsail under the bowsprit, plain undyed sails. Same kind of ship as the reference photo but larger, taller and heavier. A working East Indiaman of the Carreira da Índia, no gilding, not a galleon, not a pirate ship. Seen exactly side-on, bow pointing right, warm late afternoon light from the right. Weathered linen sails, hemp rigging, dark tarred planking. Not a model: a real ship. She is isolated on a solid, flat, evenly lit chroma-key green background (#00b140) filling everything around her, including below the hull: no sea, no sky, no shadow, no floor, no stand, no cradle. The whole ship from the mastheads to the keel in frame, with a margin all round."
+  },
+  {
+   "id": "ship-naudaindia-b",
+   "model": "black-forest-labs/flux-2-pro-preview",
+   "width": 1280,
+   "height": 896,
+   "seed": 6102,
+   "refs": [
+    "art:production-1/ship-nau-a.png"
+   ],
+   "cutout": true,
+   "prompt": "A photorealistic photograph of a real full-size Portuguese nau da Índia (great carrack) of about 1510, about 40 metres long, much bigger and taller than an ordinary nau: a very high rounded hull with four decks, a towering multi-storey sterncastle and a tall forecastle overhanging the bow, a row of small closed gunports low along the hull, square sails on the foremast and mainmast with topsails above them, a lateen mizzen and a small lateen bonaventure mast at the stern, a spritsail under the bowsprit, plain undyed sails. Same kind of ship as the reference photo but larger, taller and heavier. A working East Indiaman of the Carreira da Índia, no gilding, not a galleon, not a pirate ship. Seen exactly side-on, bow pointing right, warm late afternoon light from the right. Weathered linen sails, hemp rigging, dark tarred planking. Not a model: a real ship. She is isolated on a solid, flat, evenly lit chroma-key green background (#00b140) filling everything around her, including below the hull: no sea, no sky, no shadow, no floor, no stand, no cradle. The whole ship from the mastheads to the keel in frame, with a margin all round."
+  },
+  {
+   "id": "ship-galeao-a",
+   "model": "black-forest-labs/flux-2-pro-preview",
+   "width": 1280,
+   "height": 896,
+   "seed": 6111,
+   "refs": [
+    "art:production-1/ship-nau-a.png"
+   ],
+   "cutout": true,
+   "prompt": "A photorealistic photograph of a real full-size Portuguese galleon of about 1530, about 38 metres long: a long, low, sleek hull compared with a carrack, a long projecting beakhead at the bow under a low forecastle, a high square sterncastle, a row of gunports along the side, four masts: square sails with topsails on the foremast and mainmast, lateen sails on the mizzen and the small bonaventure mast at the stern, a spritsail under the bowsprit, plain undyed sails. Same weathered look as the reference photo of a carrack, but a lower, longer, faster-looking ship. No gilding, not a pirate ship. Seen exactly side-on, bow pointing right, warm late afternoon light from the right. Weathered linen sails, hemp rigging, dark tarred planking. Not a model: a real ship. She is isolated on a solid, flat, evenly lit chroma-key green background (#00b140) filling everything around her, including below the hull: no sea, no sky, no shadow, no floor, no stand, no cradle. The whole ship from the mastheads to the keel in frame, with a margin all round."
+  },
+  {
+   "id": "ship-galeao-b",
+   "model": "black-forest-labs/flux-2-pro-preview",
+   "width": 1280,
+   "height": 896,
+   "seed": 6112,
+   "refs": [
+    "art:production-1/ship-nau-a.png"
+   ],
+   "cutout": true,
+   "prompt": "A photorealistic photograph of a real full-size Portuguese galleon of about 1530, about 38 metres long: a long, low, sleek hull compared with a carrack, a long projecting beakhead at the bow under a low forecastle, a high square sterncastle, a row of gunports along the side, four masts: square sails with topsails on the foremast and mainmast, lateen sails on the mizzen and the small bonaventure mast at the stern, a spritsail under the bowsprit, plain undyed sails. Same weathered look as the reference photo of a carrack, but a lower, longer, faster-looking ship. No gilding, not a pirate ship. Seen exactly side-on, bow pointing right, warm late afternoon light from the right. Weathered linen sails, hemp rigging, dark tarred planking. Not a model: a real ship. She is isolated on a solid, flat, evenly lit chroma-key green background (#00b140) filling everything around her, including below the hull: no sea, no sky, no shadow, no floor, no stand, no cradle. The whole ship from the mastheads to the keel in frame, with a margin all round."
+  },
+  {
+   "id": "mpinda-a",
+   "model": "black-forest-labs/flux-2-pro-preview",
+   "width": 1600,
+   "height": 896,
+   "seed": 6201,
+   "refs": [],
+   "prompt": "A photorealistic still from a big-budget historical film set in 1485, natural light, shot on a 35mm lens, meticulous period detail. The mouth of the great Congo river in Central Africa: a vast brown river many miles wide pouring into the sea, low banks of tall grass and mangrove, a village of rectangular houses of palm-leaf matting under thatched roofs among oil palms and baobabs, a stone pillar topped with a cross standing on a low point, large dugout canoes, humid haze, warm afternoon light. Camera on the water about 250 to 300 metres from the shore, at water level, horizon exactly at mid-height. The lower half of the frame is calm open water with soft ripples and long reflections, completely empty in the near water and across the left two-thirds: no boats, no quay, no posts, no rocks, nothing close to the camera. The shore and everything on it sit in the middle distance, small with distance. Nothing later than 1485 anywhere: no cars, street lamps, power lines, tyres, concrete, plastic, glass windows, motorboats, ferries, modern clothing, tall townhouse facades, Baroque spires. No text, no border, no watermark."
+  },
+  {
+   "id": "mpinda-b",
+   "model": "black-forest-labs/flux-2-pro-preview",
+   "width": 1600,
+   "height": 896,
+   "seed": 6202,
+   "refs": [],
+   "prompt": "A photorealistic still from a big-budget historical film set in 1485, natural light, shot on a 35mm lens, meticulous period detail. The mouth of the great Congo river in Central Africa: a vast brown river many miles wide pouring into the sea, low banks of tall grass and mangrove, a village of rectangular houses of palm-leaf matting under thatched roofs among oil palms and baobabs, a stone pillar topped with a cross standing on a low point, large dugout canoes, humid haze, warm afternoon light. Camera on the water about 250 to 300 metres from the shore, at water level, horizon exactly at mid-height. The lower half of the frame is calm open water with soft ripples and long reflections, completely empty in the near water and across the left two-thirds: no boats, no quay, no posts, no rocks, nothing close to the camera. The shore and everything on it sit in the middle distance, small with distance. Nothing later than 1485 anywhere: no cars, street lamps, power lines, tyres, concrete, plastic, glass windows, motorboats, ferries, modern clothing, tall townhouse facades, Baroque spires. No text, no border, no watermark."
+  },
+  {
+   "id": "saotome-a",
+   "model": "black-forest-labs/flux-2-pro-preview",
+   "width": 1600,
+   "height": 896,
+   "seed": 6211,
+   "refs": [],
+   "prompt": "A photorealistic still from a big-budget historical film set in 1495, natural light, shot on a 35mm lens, meticulous period detail. The island of São Tomé on the equator: steep green volcanic mountains rising into cloud, dense rainforest, a small new Portuguese colonial settlement on the bay with whitewashed houses with red tile roofs, a small chapel with a bell, a wooden jetty, fields of sugar cane on the slopes, warm humid tropical light. Camera on the water about 250 to 300 metres from the shore, at water level, horizon exactly at mid-height. The lower half of the frame is calm open water with soft ripples and long reflections, completely empty in the near water and across the left two-thirds: no boats, no quay, no posts, no rocks, nothing close to the camera. The shore and everything on it sit in the middle distance, small with distance. Nothing later than 1495 anywhere: no cars, street lamps, power lines, tyres, concrete, plastic, glass windows, motorboats, ferries, modern clothing, tall townhouse facades, Baroque spires. No text, no border, no watermark."
+  },
+  {
+   "id": "saotome-b",
+   "model": "black-forest-labs/flux-2-pro-preview",
+   "width": 1600,
+   "height": 896,
+   "seed": 6212,
+   "refs": [],
+   "prompt": "A photorealistic still from a big-budget historical film set in 1495, natural light, shot on a 35mm lens, meticulous period detail. The island of São Tomé on the equator: steep green volcanic mountains rising into cloud, dense rainforest, a small new Portuguese colonial settlement on the bay with whitewashed houses with red tile roofs, a small chapel with a bell, a wooden jetty, fields of sugar cane on the slopes, warm humid tropical light. Camera on the water about 250 to 300 metres from the shore, at water level, horizon exactly at mid-height. The lower half of the frame is calm open water with soft ripples and long reflections, completely empty in the near water and across the left two-thirds: no boats, no quay, no posts, no rocks, nothing close to the camera. The shore and everything on it sit in the middle distance, small with distance. Nothing later than 1495 anywhere: no cars, street lamps, power lines, tyres, concrete, plastic, glass windows, motorboats, ferries, modern clothing, tall townhouse facades, Baroque spires. No text, no border, no watermark."
+  },
+  {
+   "id": "saobras-a",
+   "model": "black-forest-labs/flux-2-pro-preview",
+   "width": 1600,
+   "height": 896,
+   "seed": 6221,
+   "refs": [],
+   "prompt": "A photorealistic still from a big-budget historical film set in 1490, natural light, shot on a 35mm lens, meticulous period detail. Mossel Bay on the south coast of Africa, beyond the Cape of Good Hope: a wide quiet bay, low green hills covered in fynbos scrub, a sandy beach with a freshwater spring and a stream running into the sea, a few Khoikhoi herders with cattle on the slope, a large old milkwood tree, no buildings at all, cool clear southern light, a few clouds. Camera on the water about 250 to 300 metres from the shore, at water level, horizon exactly at mid-height. The lower half of the frame is calm open water with soft ripples and long reflections, completely empty in the near water and across the left two-thirds: no boats, no quay, no posts, no rocks, nothing close to the camera. The shore and everything on it sit in the middle distance, small with distance. Nothing later than 1490 anywhere: no cars, street lamps, power lines, tyres, concrete, plastic, glass windows, motorboats, ferries, modern clothing, tall townhouse facades, Baroque spires. No text, no border, no watermark."
+  },
+  {
+   "id": "saobras-b",
+   "model": "black-forest-labs/flux-2-pro-preview",
+   "width": 1600,
+   "height": 896,
+   "seed": 6222,
+   "refs": [],
+   "prompt": "A photorealistic still from a big-budget historical film set in 1490, natural light, shot on a 35mm lens, meticulous period detail. Mossel Bay on the south coast of Africa, beyond the Cape of Good Hope: a wide quiet bay, low green hills covered in fynbos scrub, a sandy beach with a freshwater spring and a stream running into the sea, a few Khoikhoi herders with cattle on the slope, a large old milkwood tree, no buildings at all, cool clear southern light, a few clouds. Camera on the water about 250 to 300 metres from the shore, at water level, horizon exactly at mid-height. The lower half of the frame is calm open water with soft ripples and long reflections, completely empty in the near water and across the left two-thirds: no boats, no quay, no posts, no rocks, nothing close to the camera. The shore and everything on it sit in the middle distance, small with distance. Nothing later than 1490 anywhere: no cars, street lamps, power lines, tyres, concrete, plastic, glass windows, motorboats, ferries, modern clothing, tall townhouse facades, Baroque spires. No text, no border, no watermark."
+  },
+  {
+   "id": "portoseguro-a",
+   "model": "black-forest-labs/flux-2-pro-preview",
+   "width": 1600,
+   "height": 896,
+   "seed": 6231,
+   "refs": [],
+   "prompt": "A photorealistic still from a big-budget historical film set in 1500, natural light, shot on a 35mm lens, meticulous period detail. The coast of Brazil at Porto Seguro: a long white beach behind a coral reef, red sandstone cliffs, lush Atlantic rainforest, tall palms, a large wooden cross newly raised on the beach, Tupinambá people on the sand, a river mouth, bright tropical light. Camera on the water about 250 to 300 metres from the shore, at water level, horizon exactly at mid-height. The lower half of the frame is calm open water with soft ripples and long reflections, completely empty in the near water and across the left two-thirds: no boats, no quay, no posts, no rocks, nothing close to the camera. The shore and everything on it sit in the middle distance, small with distance. Nothing later than 1500 anywhere: no cars, street lamps, power lines, tyres, concrete, plastic, glass windows, motorboats, ferries, modern clothing, tall townhouse facades, Baroque spires. No text, no border, no watermark."
+  },
+  {
+   "id": "portoseguro-b",
+   "model": "black-forest-labs/flux-2-pro-preview",
+   "width": 1600,
+   "height": 896,
+   "seed": 6232,
+   "refs": [],
+   "prompt": "A photorealistic still from a big-budget historical film set in 1500, natural light, shot on a 35mm lens, meticulous period detail. The coast of Brazil at Porto Seguro: a long white beach behind a coral reef, red sandstone cliffs, lush Atlantic rainforest, tall palms, a large wooden cross newly raised on the beach, Tupinambá people on the sand, a river mouth, bright tropical light. Camera on the water about 250 to 300 metres from the shore, at water level, horizon exactly at mid-height. The lower half of the frame is calm open water with soft ripples and long reflections, completely empty in the near water and across the left two-thirds: no boats, no quay, no posts, no rocks, nothing close to the camera. The shore and everything on it sit in the middle distance, small with distance. Nothing later than 1500 anywhere: no cars, street lamps, power lines, tyres, concrete, plastic, glass windows, motorboats, ferries, modern clothing, tall townhouse facades, Baroque spires. No text, no border, no watermark."
+  },
+  {
+   "id": "calicut-a",
+   "model": "black-forest-labs/flux-2-pro-preview",
+   "width": 1600,
+   "height": 896,
+   "seed": 6241,
+   "refs": [],
+   "prompt": "A photorealistic still from a big-budget historical film set in 1500, natural light, shot on a 35mm lens, meticulous period detail. Calicut on the Malabar coast of India: an open beach roadstead lined with coconut palms, a busy trading town of tiled-roof wooden houses and warehouses, a Hindu temple tower and a mosque, Arab dhows and Indian sailing boats drawn up on the sand, porters carrying sacks of pepper, green hills of the Western Ghats behind in the haze, hot golden light. Camera on the water about 250 to 300 metres from the shore, at water level, horizon exactly at mid-height. The lower half of the frame is calm open water with soft ripples and long reflections, completely empty in the near water and across the left two-thirds: no boats, no quay, no posts, no rocks, nothing close to the camera. The shore and everything on it sit in the middle distance, small with distance. Nothing later than 1500 anywhere: no cars, street lamps, power lines, tyres, concrete, plastic, glass windows, motorboats, ferries, modern clothing, tall townhouse facades, Baroque spires. No text, no border, no watermark."
+  },
+  {
+   "id": "calicut-b",
+   "model": "black-forest-labs/flux-2-pro-preview",
+   "width": 1600,
+   "height": 896,
+   "seed": 6242,
+   "refs": [],
+   "prompt": "A photorealistic still from a big-budget historical film set in 1500, natural light, shot on a 35mm lens, meticulous period detail. Calicut on the Malabar coast of India: an open beach roadstead lined with coconut palms, a busy trading town of tiled-roof wooden houses and warehouses, a Hindu temple tower and a mosque, Arab dhows and Indian sailing boats drawn up on the sand, porters carrying sacks of pepper, green hills of the Western Ghats behind in the haze, hot golden light. Camera on the water about 250 to 300 metres from the shore, at water level, horizon exactly at mid-height. The lower half of the frame is calm open water with soft ripples and long reflections, completely empty in the near water and across the left two-thirds: no boats, no quay, no posts, no rocks, nothing close to the camera. The shore and everything on it sit in the middle distance, small with distance. Nothing later than 1500 anywhere: no cars, street lamps, power lines, tyres, concrete, plastic, glass windows, motorboats, ferries, modern clothing, tall townhouse facades, Baroque spires. No text, no border, no watermark."
+  }
+ ]
+}
