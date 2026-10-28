@@ -18,6 +18,8 @@ const ZONES = [
 
 const BASE_CHANCE = 0.035; // per day in the most dangerous waters
 const COOLDOWN_DAYS = 12;
+// A name at sea fades when it is not renewed: notoriety and caution halve in about five years.
+const NAME_HALF_LIFE_DAYS = 5 * 365;
 export const REPAIR_PORTS = Wear.YARDS;
 
 export function ensurePirates(S) {
@@ -47,12 +49,16 @@ export function hullFactor(S) {
 // Called as days pass at sea. Returns an encounter, or null.
 export function roll(S, days, lon, lat) {
   const P = ensurePirates(S);
+  const fade = Math.exp(-days * Math.LN2 / NAME_HALF_LIFE_DAYS);
+  P.notoriety *= fade;
+  P.caution *= fade;
   P.cooldown = Math.max(0, P.cooldown - days);
   if (P.cooldown > 0) return null;
   const { d, where } = danger(lon, lat);
   if (!d) return null;
-  const shy = S.ship?.hull ? Ships.flagStats(S).shy : 1; // galleys think twice about a big ship
-  const chance = 1 - Math.exp(-BASE_CHANCE * d * attention(S) * shy * days);
+  // galleys think twice about a big ship, and hardly bother with a poor little coaster
+  const st = S.ship?.hull ? Ships.flagStats(S) : { shy: 1, lure: 1 };
+  const chance = 1 - Math.exp(-BASE_CHANCE * d * attention(S) * st.shy * (st.lure ?? 1) * days);
   if (Math.random() > chance) return null;
   P.cooldown = COOLDOWN_DAYS;
   P.encounters++;
@@ -70,7 +76,7 @@ export function odds(S, enc, knots) {
 }
 
 export function tribute(S, enc) {
-  return Math.round(Math.max(60, Math.min(600, S.purse * (enc.big ? 0.3 : 0.2))));
+  return Math.round(Math.max(30, Math.min(600, S.purse * (enc.big ? 0.25 : 0.15))));
 }
 
 // Resolve the captain's choice. `cargo` and `paid` are the player's hold, changed in place.
@@ -96,13 +102,15 @@ export function resolve(S, enc, choice, knots) {
       out.kind = 'port';
       return out;
     }
-    const r = fight(S, enc, o.fight * 0.85); // caught tired and off guard
+    const r = fight(S, enc, o.fight * 0.85, true); // caught tired and off guard
     return { kind: r.kind, lines: ['The galley runs you down. There is no escape: you must fight.', ...r.lines] };
   }
   return fight(S, enc, o.fight);
 }
 
-function fight(S, enc, p) {
+// `forced`: he tried to run and was caught. Beating them off then makes less of a name than
+// choosing to fight, and being beaten makes none at all.
+function fight(S, enc, p, forced = false) {
   const P = ensurePirates(S);
   const lines = [];
   let kind;
@@ -112,7 +120,7 @@ function fight(S, enc, p) {
     S.purse += loot;
     Accounts.record(S, { kind: 'corsairs', amount: loot, port: null, text: `Taken from a corsair galley off ${enc.where}` });
     S.hull = Math.max(10, S.hull - dmg);
-    P.notoriety += 4;
+    P.notoriety += forced ? 1 : 4;
     P.won++;
     lines.push(`Your crew beats off the corsairs and takes ${loot} cz from their galley. The hull is damaged (${Math.round(S.hull)}%).`);
     kind = 'discover';
@@ -133,7 +141,7 @@ function fight(S, enc, p) {
     S.purse -= cash;
     Accounts.record(S, { kind: 'corsairs', amount: -cash, port: null, text: `Seized by corsairs off ${enc.where}` });
     S.hull = Math.max(10, S.hull - dmg);
-    P.notoriety += 2;
+    P.notoriety += forced ? 0 : 2;
     P.lost++;
     lines.push(`The corsairs board you and strip the ship: ${lostGoods.length ? lostGoods.join(', ') : 'no cargo'}${cash ? ` and ${cash} cz` : ''}. The hull is badly damaged (${Math.round(S.hull)}%).`);
     kind = '';
@@ -160,7 +168,7 @@ export function reputationText(S) {
   const P = ensurePirates(S);
   const a = attention(S);
   const mood = a >= 1.6 ? 'Corsairs hunt for your sails.' : a >= 1.15 ? 'Corsairs know your name.' : a <= 0.6 ? 'Corsairs rarely trouble you.' : 'Corsairs pay you no special mind.';
-  return `${mood} Notoriety ${P.notoriety}, caution ${P.caution}. Fights won ${P.won}, lost ${P.lost}; escapes ${P.fled}; tributes paid ${P.paid}.`;
+  return `${mood} Notoriety ${Math.round(P.notoriety)}, caution ${Math.round(P.caution)}. Fights won ${P.won}, lost ${P.lost}; escapes ${P.fled}; tributes paid ${P.paid}.`;
 }
 
 const clamp = (x, a, b) => Math.min(b, Math.max(a, x));

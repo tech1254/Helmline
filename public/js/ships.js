@@ -18,8 +18,8 @@ export const HULLS = {
   barca: {
     draft: [1.0, 1.5], // metres, light and fully laden
     id: 'barca', name: 'Barca', year: 1451, standing: KNOWN, price: 1050, hold: 25, knots: 4.5, up: 0.75, down: 1,
-    upkeep: 2, hiredUpkeep: 1, scale: 0.5, size: 0.8, coastal: true,
-    blurb: 'A small, single-masted coaster with a square sail. Cheap to buy and run, but she keeps within sight of the coast: no Madeira, no open-sea passages.',
+    upkeep: 2, hiredUpkeep: 1, scale: 0.5, size: 0.8, coastal: true, lure: 0.55, // little worth taking: corsairs seldom bother with her
+    blurb: 'A small, single-masted coaster with a square sail. Cheap to buy and run, but she keeps within sight of the coast: no Madeira, no open-sea passages. Corsairs seldom think her worth the trouble.',
   },
   caravel: {
     draft: [1.6, 2.2], // metres, light and fully laden
@@ -188,7 +188,7 @@ export function stats(ship) {
   const h = hullOf(ship);
   const fit = normalFit(h.id, ship?.fit);
   const st = { hull: h.id, name: h.name, knots: h.knots, up: h.up, down: h.down, offWind: 1, hold: h.hold, upkeep: h.upkeep,
-    hiredUpkeep: h.hiredUpkeep, oars: h.oars || 0, fight: h.fight || 0, spoil: 1, shy: h.shy || 1 };
+    hiredUpkeep: h.hiredUpkeep, oars: h.oars || 0, fight: h.fight || 0, spoil: 1, shy: h.shy || 1, lure: h.lure || 1 };
   let holdFactor = 1, holdAdd = 0, upAdd = 0;
   for (const g of groupsFor(h.id)) {
     const c = choice(g.id, fit[g.id]);
