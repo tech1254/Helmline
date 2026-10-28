@@ -9,6 +9,7 @@ import * as Fleet from './fleet.js';
 import * as Pirates from './pirates.js';
 import * as Investments from './investments.js';
 import * as House from './house.js';
+import * as Competition from './competition.js';
 import { CHART_REWARD, OFFLINE_MAX_DAYS, STANDING_FADES_AFTER_HOURS } from './config.js';
 import * as Ships from './ships.js';
 import { shipFigure } from './photos.js';
@@ -139,7 +140,8 @@ function harbourLine(pid) {
     ? (() => { const w = Ports.boatWork(pid, sh.hull, 1, Ships.isDeep(sh.hull) && shoalDepth(p.lon, p.lat) <= DEEP_DRAFT); return `She draws ${draft} m: she lies at the anchorage${w.nm > 15 ? `, ${Math.round(w.nm)} miles out,` : ''} and her boats work the cargo (${w.rate} units a day, the boatmen ${w.fee} cz a unit).`; })()
     : laden > depth ? `Your ${name} draws ${draft} m now, ${laden} m fully laden: load her deep and she must move out to the anchorage.` : `Your ${name} draws up to ${laden} m: she can lie here laden.`;
   const season = Ports.seasonText(pid, S.day);
-  return `<p class="harbour">${L ? `A ${L.tier} of about ${L.people.toLocaleString()} people, ${L.trend}. ` : ''}${p.kind[0].toUpperCase() + p.kind.slice(1)}, ${depth} m at the berth. ${season ? `${season} ` : ''}${fit}</p>`;
+  const rivals = Competition.levelText(Competition.level(S, pid));
+  return `<p class="harbour">${L ? `A ${L.tier} of about ${L.people.toLocaleString()} people, ${L.trend}${rivals ? `, ${rivals}` : ''}. ` : ''}${p.kind[0].toUpperCase() + p.kind.slice(1)}, ${depth} m at the berth. ${season ? `${season} ` : ''}${fit}</p>`;
 }
 
 // Investments ashore in this port: a feitoria of your own, and in Lisbon shares in the India fleet.
@@ -495,6 +497,7 @@ export function renderHelp(el) {
       <li><b>Arriving:</b> your ship sails into each port in a short scene. Tap to skip it; choose every port, first visits only or off in the ship register.</li>
       <li><b>Your fleet:</b> a hired captain runs a trade route for you, paid from your purse.</li>
       <li><b>The road to the Indies:</b> history moves on as you sail. Diogo Cão reaches the Kongo (1483), São Tomé is settled (1486), Dias rounds the Cape (1488), da Gama comes home from India (1499) and Cabral finds Brazil (1500); each opens new ports. The chart ends beyond the Cape: sail to its edge to go on to <b>Calicut</b>, months away across the Indian Ocean. Go with the monsoon (round the Cape June to August, leave India December to February) or pay for it in days, scurvy and storms. Hired captains can sail there too.</li>
+      <li><b>Rivals and the crown:</b> where trade pays, others follow. Rival merchants reach each part of the coast in their time, and crowd onto any route you work hard; they narrow the gap between where a good is cheap and where it is dear, so old routes pay less and new frontiers pay best. And once your gains pass 3,000 cz a year the crown's officials take a share each New Year (10%, then 20% over 10,000, 30% over 25,000), less for a man of renown. The Ledger shows this year's reckoning so far.</li>
       <li><b>Your house:</b> once your purse passes 5,000 cz, the House panel in Lisbon offers what a rich merchant bought for honour: a house on the Rua Nova, a quinta at Sintra, a family chapel, knighthood of the Order of Christ, a place in the Royal Household, loans to the crown, a palace on the Tagus. They bring renown and titles, some cost upkeep, and none earns its price back.</li>
       <li><b>Investments:</b> once you are Respected, found a <b>feitoria</b> in a port: a factor of your own gets you better prices there and finds you work, for his wages. From 1500, buy shares in the crown's India fleet in Lisbon: paid out when it comes home, if it comes home.</li>
       <li><b>Draft:</b> a laden ship sits deeper. Where she draws more than the harbour has, she anchors offshore and her boats ferry the cargo: some days, and a small fee to the boatmen. A nau keeps outside the Arguin banks. River bars rise in the rains and fall in the dry season.</li>

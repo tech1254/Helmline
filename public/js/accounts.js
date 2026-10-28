@@ -19,6 +19,7 @@ export const KINDS = {
   bounty: 'Corsair bounty',
   invest: 'Feitorias and fleet shares',
   house: 'Your house and honours',
+  crown: 'The crown\'s share',
   repairs: 'Repairs',
   boats: 'Boatmen',
 };

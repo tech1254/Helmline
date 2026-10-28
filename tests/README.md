@@ -91,7 +91,9 @@ node tests/sim/personas.mjs                          # all ten, 8 careers each (
 node tests/sim/personas.mjs --only corsairs --runs 20  # a group (styles, corsairs, contracts, fleet) or names
 node tests/sim/personas.mjs --only steady --log --worst # the poorest career's log
 node tests/sim/personas.mjs --set ports.depthExp=0.4    # try a ports.js TUNING value
+node tests/sim/personas.mjs --set rivals.cut=0.12       # try a competition.js TUNING value
+node tests/sim/personas.mjs --no-tax --no-rivals        # measure without the crown's share or rival merchants
 node tests/sim/personas.mjs --seed 2                    # other luck (the same seed gives the same careers)
 ```
 
-Personas run side by side in separate processes. `tests/test_sim_personas.py` runs a short career of each so the simulator keeps up with the game.
+Results carry worth every five years (`series` in `--json`), with income and costs per year by kind. Personas run side by side in separate processes. `tests/test_sim_personas.py` runs a short career of each so the simulator keeps up with the game.

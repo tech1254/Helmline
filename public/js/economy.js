@@ -91,6 +91,14 @@ export class Market {
     return { press: this.press, drift: this.drift };
   }
 
+  // Units of each good traded in each port: what draws rival merchants (competition.js).
+  countGood(port, good, n) {
+    if (!n) return;
+    this.volg = this.volg || {};
+    const v = (this.volg[port] = this.volg[port] || {});
+    v[good] = (v[good] || 0) + n;
+  }
+
   sells(port, good) {
     return !!MARKETS[port].p[good][1];
   }
@@ -107,7 +115,8 @@ export class Market {
   mid(port, good) {
     const base = MARKETS[port].p[good][0];
     const ev = this.effects[port]?.[good] ?? 1;
-    return base * ev * Math.exp(this.drift[port][good] - this.k(port, good) * this.press[port][good]);
+    const rival = this.rival?.[port]?.[good] ?? 1; // rival merchants narrow the gap (competition.js)
+    return base * ev * rival * Math.exp(this.drift[port][good] - this.k(port, good) * this.press[port][good]);
   }
 
   closed(port) {
@@ -135,6 +144,7 @@ export class Market {
     }
     this.vol = this.vol || {};
     this.vol[port] = (this.vol[port] || 0) + bought; // units traded, for the port's growth (ports.js)
+    this.countGood(port, good, bought);
     return { bought, cost };
   }
 
@@ -147,6 +157,7 @@ export class Market {
     }
     this.vol = this.vol || {};
     this.vol[port] = (this.vol[port] || 0) + sold;
+    this.countGood(port, good, sold);
     return { sold, income };
   }
 

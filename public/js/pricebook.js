@@ -114,10 +114,11 @@ export function renderPrices(el) {
 
 // Price a trade without making it: run it, then put the market back as it was.
 export function quote(fn) {
-  const saved = JSON.stringify(market.press), vol = JSON.stringify(market.vol || {});
+  const saved = JSON.stringify(market.press), vol = JSON.stringify(market.vol || {}), volg = JSON.stringify(market.volg || {});
   const r = fn();
   market.press = JSON.parse(saved);
   market.vol = JSON.parse(vol);
+  market.volg = JSON.parse(volg);
   return r;
 }
 

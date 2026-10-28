@@ -33,6 +33,8 @@ import * as Contracts from '../../public/js/contracts.js';
 import * as Pirates from '../../public/js/pirates.js';
 import * as Investments from '../../public/js/investments.js';
 import * as House from '../../public/js/house.js';
+import * as Taxes from '../../public/js/taxes.js';
+import * as Competition from '../../public/js/competition.js';
 import { PORTS, HARBOURS, distNm, findPath, loadRoutes } from '../../public/js/world.js';
 
 loadRoutes(JSON.parse(readFileSync(new URL('../../public/data/routes.json', import.meta.url))));
@@ -46,6 +48,9 @@ const YEARS = Number(arg('years', 100));
 const RUNS = Number(arg('runs', 8));
 const ONLY = arg('only', null);
 const STEP = 0.5;
+// --no-tax, --no-rivals: turn off the crown's share or rival merchants, to measure each
+const NO_TAX = process.argv.includes('--no-tax');
+const NO_RIVALS = process.argv.includes('--no-rivals');
 // Seeded luck: career n of a persona always gets seed (--seed) + n, so two settings can be
 // compared on the same winds of fortune.
 const SEED = Number(arg('seed', 1));
@@ -68,7 +73,7 @@ const SETS = process.argv.flatMap((a, i) => (a === '--set' ? [process.argv[i + 1
 for (const s of SETS) {
   const [path, v] = s.split('=');
   const [mod, key] = path.split('.');
-  const target = { ports: Ports.TUNING }[mod];
+  const target = { ports: Ports.TUNING, rivals: Competition.TUNING }[mod];
   if (!target || !(key in target)) throw new Error(`unknown setting ${path}`);
   target[key] = Number(v);
 }
@@ -550,6 +555,8 @@ function career(persona) {
     for (const [pid, e] of Object.entries(Investments.edges(S))) market.edge[pid] = (market.edge[pid] || 0) + e;
     Investments.tick(S, STEP);
     House.tick(S, STEP);
+    if (!NO_TAX) Taxes.tick(S, House.renown(S));
+    if (!NO_RIVALS) { Competition.tick(S, STEP, market); market.rival = Competition.factors(S, market); }
     const f = fl();
     if (f) {
       if (f.leg && f.leg !== f.lastLeg) { // a new passage: remember how long it takes
@@ -671,7 +678,7 @@ export function summarise(list) {
   return {
     persona: list[0].persona, runs: list.length, end,
     worth: at, worstEnd: Math.min(...list.map((r) => r.at[end])), bestEnd: Math.max(...list.map((r) => r.at[end])),
-    income: { trade, contracts, crown, wages: -tot('wages'), repairs: -tot('repairs'), boats: -tot('boats'), corsairs: c('cash'), corsairCargo: -c('cargo'), bounty: tot('bounty'), invest: tot('invest'), ships: avg(list.map((r) => r.spentOnShips)) },
+    income: { trade, contracts, crown, wages: -tot('wages'), repairs: -tot('repairs'), boats: -tot('boats'), corsairs: c('cash'), corsairCargo: -c('cargo'), bounty: tot('bounty'), crown: tot('crown'), invest: tot('invest'), ships: avg(list.map((r) => r.spentOnShips)) },
     contracts: { taken: avg(list.map((r) => r.contracts.taken)), done: avg(list.map((r) => r.contracts.done)), failed: avg(list.map((r) => r.contracts.failed)), detours: avg(list.map((r) => r.contracts.detours)) },
     corsairs: { met: c('met'), pay: c('pay'), run: c('run'), fight: c('fight'), won: c('won'), lost: c('lost'), plundered: c('plundered'), notoriety: avg(list.map((r) => r.pirates.notoriety)), caution: avg(list.map((r) => r.pirates.caution)),
       byDecade: Object.fromEntries([...new Set(list.flatMap((r) => Object.keys(r.attention)))].sort().map((d) => [d, { met: avg(list.map((r) => r.byDecade[d] || 0)), attention: avg(list.map((r) => r.attention[d] ?? 0)) }])) },
@@ -686,7 +693,7 @@ export function summarise(list) {
       return { year: pt.year, worth: med(list.map((r) => at(r).worth)), low: Math.min(...list.map((r) => at(r).worth)), high: Math.max(...list.map((r) => at(r).worth)),
         ships: avg(list.map((r) => at(r).ships)),
         renown: med(list.map((r) => at(r).renown || 0)),
-        perYear: { house: flow('house'), trade: flow('sale') + flow('purchase'), contracts: flow('contract') + flow('contractGoods'), wages: flow('wages'), repairs: flow('repairs'), ships: flow('ships'), invest: flow('invest'), other: flow('charts') + flow('corsairs') + flow('bounty') + flow('boats') } };
+        perYear: { crown: flow('crown'), house: flow('house'), trade: flow('sale') + flow('purchase'), contracts: flow('contract') + flow('contractGoods'), wages: flow('wages'), repairs: flow('repairs'), ships: flow('ships'), invest: flow('invest'), other: flow('charts') + flow('corsairs') + flow('bounty') + flow('boats') } };
     }),
     standing: med(list.map((r) => r.standing)), fleet: list[0].fleet + (list[0].arms ? ` (fitted: ${list[0].arms})` : ''),
   };
@@ -701,6 +708,7 @@ export function printSummary(s) {
   const I = s.income;
   const gross = I.trade + I.contracts + I.crown;
   console.log(`  income: trade ${per(I.trade)} · contracts ${per(I.contracts)} (${Math.round(100 * I.contracts / gross)}%) · crown ${cz(I.crown)}`);
+  console.log(`  the crown took ${per(-I.crown)}`);
   console.log(`  spent:  ships ${per(I.ships)} · investments net ${per(I.invest)} (feitorias, fleet shares)`);
   console.log(`  costs:  wages ${per(I.wages)} · repairs ${per(I.repairs)} · boatmen ${per(I.boats)} · corsairs ${per(-I.corsairs)} cash, ${per(-I.corsairCargo)} cargo · bounty earned ${per(I.bounty)}`);
   const C = s.contracts;

@@ -10,6 +10,8 @@ import * as Accounts from './accounts.js';
 import * as Pirates from './pirates.js';
 import * as Investments from './investments.js';
 import * as House from './house.js';
+import * as Taxes from './taxes.js';
+import * as Competition from './competition.js';
 import * as Ships from './ships.js';
 import * as Wear from './wear.js';
 import { DAYS_PER_SEC, OFFLINE_DAYS_PER_DOUBLING, OFFLINE_FULL_DAYS, OFFLINE_MAX_DAYS, OFFLINE_MIN_SECONDS, OFFLINE_RATE, SIGHT, STANDING_FADES_AFTER_HOURS } from './config.js';
@@ -235,6 +237,8 @@ export function advanceTime(dd, atSea, away = false) {
   report(grown);
   report(Investments.tick(S, dd));
   report(House.tick(S, dd));
+  report(Taxes.tick(S, House.renown(S)));
+  report(Competition.tick(S, dd, market));
   syncMarket();
   if (atSea) {
     spoil(dd);
@@ -292,7 +296,8 @@ export function syncMarket() {
   market.scale = Object.fromEntries(PORTS.map((p) => [p.id, Ports.depthScale(S, p.id)]));
   const edge = Contracts.perks(S).priceEdge;
   market.edge = Object.fromEntries(PORTUGUESE_PORTS.map((p) => [p, edge]));
-  for (const [pid, e] of Object.entries(Investments.edges(S))) market.edge[pid] = (market.edge[pid] || 0) + e; // your factors
+  for (const [pid, e] of Object.entries(Investments.edges(S))) market.edge[pid] = (market.edge[pid] || 0) + e;
+  market.rival = Competition.factors(S, market); // rival merchants // your factors
 }
 
 // Perishable cargo slowly spoils at sea, faster in the tropics.

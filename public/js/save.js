@@ -7,6 +7,7 @@ import * as Events from './events.js';
 import * as Fleet from './fleet.js';
 import * as Accounts from './accounts.js';
 import * as Pirates from './pirates.js';
+import * as Taxes from './taxes.js';
 import * as Ships from './ships.js';
 import * as Ports from './ports.js';
 import { SAVE_KEY, START_PURSE } from './config.js';
@@ -73,6 +74,7 @@ export function applySaveData(d) {
     S.tips = S.tips || {};
     Pirates.ensurePirates(S);
     Accounts.ensureAccounts(S);
+    Taxes.ensureTaxes(S); // a save from before taxes: the crown's reckoning starts now
     Ships.ensureFlagship(S);
     Ports.ensurePorts(S);
     // Ports and goods added since the save was made: the known ports charted, an empty hold for new goods.
@@ -103,6 +105,7 @@ export function newGame() {
   Fleet.ensureFleet(S);
   Pirates.ensurePirates(S);
   Accounts.ensureAccounts(S);
+  Taxes.ensureTaxes(S);
   Ships.ensureFlagship(S);
   Ports.ensurePorts(S);
   syncMarket();

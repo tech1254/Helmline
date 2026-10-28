@@ -1,5 +1,7 @@
 // The Ledger panel: the accounts of the purse.
 
+import * as Taxes from './taxes.js';
+import * as House from './house.js';
 import { GOODS } from './economy.js';
 import * as Accounts from './accounts.js';
 import { S, ui } from './state.js';
@@ -21,6 +23,15 @@ export function entryText(e) {
     return `Wages and upkeep, ${e.text}`;
   }
   return e.text || Accounts.KINDS[e.kind] || e.kind;
+}
+
+// What the crown will take of this year's gains, so far.
+function taxLine() {
+  const ren = House.renown(S);
+  const t = Taxes.sofar(S, ren);
+  const last = S.taxes?.last;
+  if (t.gains < Taxes.BANDS[1].from && !last?.tax) return '<p class="fine">The crown\'s officials take no notice of a trader your size. Above 3,000 cz of gains in a year they take a share each New Year.</p>';
+  return `<p class="fine">The crown's share: gains from trade this year so far ${cz(t.gains, false)}, on which the officials would take about <b>${t.tax.toLocaleString()} cz</b> at New Year${t.gross > t.tax ? ` (your renown spares ${Math.round(Taxes.relief(ren) * 100)}%)` : ''}.${last?.tax ? ` Last year: ${last.tax.toLocaleString()} cz.` : ''} 10% of gains over 3,000, 20% over 10,000, 30% over 25,000.</p>`;
 }
 
 export function renderLedger(el) {
@@ -66,6 +77,7 @@ export function renderLedger(el) {
     ${Math.abs(unacc) >= 1 ? `<p class="fine">${unacc < 0 ? 'Your purse is lighter' : 'Your purse is heavier'} than your books say: your hired captains have been trading and drawing pay, and you have not yet seen their accounts. Call at any port on a captain's route to collect his accounts.</p>` : ''}
     <h3>Totals</h3>
     ${totals}
+    ${taxLine()}
     <h3>Entries</h3>
     ${ships.length || A.entries.some((e) => e.who !== 'you') ? `<label class="who-filter">Show <select data-ledger-who>${options.map(([v, t]) => `<option value="${v}" ${v === ui.ledgerWho ? 'selected' : ''}>${t}</option>`).join('')}</select></label>` : ''}
     <div class="scroll">${entries}</div>`;
