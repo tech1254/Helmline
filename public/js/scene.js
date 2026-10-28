@@ -54,7 +54,7 @@ export function startArrival(portId) {
   const port = PORTS.find((p) => p.id === portId);
   if (!port) return false;
   const reduced = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
-  ui.arrival = { portId, port, first, newlyCharted: first && !port.known, held: [], t0: performance.now(), reduced,
+  ui.arrival = { portId, port, first, newlyCharted: first && !port.known && !port.from, held: [], t0: performance.now(), reduced,
     from: { x: cam.x, y: cam.y, scale: cam.scale }, ship: { hull: S.ship.hull, fit: { ...S.ship.fit }, name: S.ship.name } };
   try { run(); } catch (e) { console.error(e); done(); return false; }
   return true;

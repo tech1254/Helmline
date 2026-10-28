@@ -39,7 +39,8 @@ export function shipLook(ship) {
   if (ship.hull === 'caravel') return `caravel${cross}`;
   if (ship.hull === 'redonda') return `caravel-square${cross}`;
   if (ship.hull === 'largecaravel') return `largecaravel${cross}`;
-  if (ship.hull === 'nau' || ship.hull === 'naudaindia' || ship.hull === 'galeao') return `nau${cross}`; // no photographs of the later ships yet
+  if (ship.hull === 'nau') return `nau${cross}`;
+  if (ship.hull === 'naudaindia' || ship.hull === 'galeao') return ship.hull; // plain sails only, so far
   return ship.hull || 'caravel';
 }
 

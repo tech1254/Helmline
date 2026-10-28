@@ -13,7 +13,12 @@ export const PHOTOS = {
     "gambia",
     "serraleoa",
     "cestos",
-    "mina"
+    "mina",
+    "mpinda",
+    "saotome",
+    "saobras",
+    "portoseguro",
+    "calicut"
   ],
   "ships": {
     "caravel": {
@@ -164,6 +169,36 @@ export const PHOTOS = {
         233.5,
         240.4,
         231.7
+      ]
+    },
+    "naudaindia": {
+      "w": 900,
+      "h": 612,
+      "length": 40,
+      "lo": [
+        4.1,
+        0.2,
+        0.8
+      ],
+      "hi": [
+        215.3,
+        202.7,
+        132.6
+      ]
+    },
+    "galeao": {
+      "w": 900,
+      "h": 554,
+      "length": 38,
+      "lo": [
+        7.1,
+        1.0,
+        1.0
+      ],
+      "hi": [
+        220.9,
+        195.3,
+        136.8
       ]
     }
   },
@@ -441,6 +476,106 @@ export const PHOTOS = {
         154,
         138,
         116
+      ]
+    },
+    "mpinda": {
+      "light": [
+        255,
+        224,
+        178
+      ],
+      "shade": [
+        40,
+        34,
+        26
+      ],
+      "bright": 0.9,
+      "sat": 0.9,
+      "haze": 0.1,
+      "hazeColour": [
+        117,
+        83,
+        40
+      ]
+    },
+    "saotome": {
+      "light": [
+        255,
+        220,
+        170
+      ],
+      "shade": [
+        24,
+        26,
+        22
+      ],
+      "bright": 0.85,
+      "sat": 0.95,
+      "haze": 0.08,
+      "hazeColour": [
+        67,
+        60,
+        32
+      ]
+    },
+    "saobras": {
+      "light": [
+        240,
+        236,
+        225
+      ],
+      "shade": [
+        30,
+        34,
+        40
+      ],
+      "bright": 1.0,
+      "sat": 0.9,
+      "haze": 0.04,
+      "hazeColour": [
+        124,
+        127,
+        119
+      ]
+    },
+    "portoseguro": {
+      "light": [
+        255,
+        240,
+        215
+      ],
+      "shade": [
+        30,
+        34,
+        36
+      ],
+      "bright": 1.0,
+      "sat": 1.0,
+      "haze": 0.04,
+      "hazeColour": [
+        155,
+        150,
+        128
+      ]
+    },
+    "calicut": {
+      "light": [
+        255,
+        220,
+        165
+      ],
+      "shade": [
+        40,
+        32,
+        22
+      ],
+      "bright": 0.95,
+      "sat": 0.95,
+      "haze": 0.1,
+      "hazeColour": [
+        111,
+        76,
+        42
       ]
     }
   }
