@@ -83,7 +83,7 @@ for (const s of SETS) {
 // hires:     most hired captains; mixed: fits hulls to harbours (false = the biggest, always)
 // ladder:    hulls he is willing to sail, smallest to largest
 export const PERSONAS = {
-  cautious: { label: 'Cautious', reserve: 0.5, spendAt: 3, explore: 1500, contracts: 1, slack: 1.6, minGain: 0.3, detour: 0,
+  cautious: { label: 'Cautious', spare: true, reserve: 0.5, spendAt: 3, explore: 1500, contracts: 1, slack: 1.6, minGain: 0.3, detour: 0,
     corsair: 'pay', hires: 1, mixed: true, ladder: ['barca', 'caravel', 'barinel'] },
   steady: { label: 'Steady', reserve: 0.25, spendAt: 2, explore: 800, contracts: 2, slack: 1.25, minGain: 0.15, detour: 12,
     corsair: 'sensible', hires: 2, mixed: true, ladder: ['barca', 'caravel', 'barinel', 'largecaravel', 'nau'] },
@@ -96,14 +96,16 @@ export const PERSONAS = {
 // the results comes from that one choice.
 const steady = PERSONAS.steady;
 Object.assign(PERSONAS, {
-  runner: { ...steady, label: 'Always runs (else Steady)', corsair: 'run' },
+  runner: { ...steady, label: 'Always runs (else Steady)', corsair: 'run', spare: true },
   fighter: { ...steady, label: 'Always fights (else Steady)', corsair: 'fight' },
-  payer: { ...steady, label: 'Always pays (else Steady)', corsair: 'pay' },
+  armed: { ...steady, label: 'Armed fighter (else Steady)', corsair: 'fight',
+    arms: [['defence', 'nets'], ['crew', 'crossbows'], ['guns', 'bercos'], ['crew', 'menatarms'], ['guns', 'bombards']] },
+  payer: { ...steady, label: 'Always pays (else Steady)', corsair: 'pay', spare: true },
   merchant: { ...steady, label: 'No contracts (else Steady)', contracts: 0 },
   courier: { ...steady, label: 'Every contract he can (else Steady)', contracts: 9, minGain: 0, detour: 30 },
   bigships: { ...steady, label: 'Biggest ships (else Steady)', mixed: false },
 });
-export const GROUPS = { styles: ['cautious', 'steady', 'bold', 'reckless'], corsairs: ['runner', 'fighter', 'payer'], contracts: ['merchant', 'courier'], fleet: ['bigships'] };
+export const GROUPS = { styles: ['cautious', 'steady', 'bold', 'reckless'], corsairs: ['runner', 'fighter', 'armed', 'payer'], contracts: ['merchant', 'courier'], fleet: ['bigships'] };
 
 // ---- Routes --------------------------------------------------------------------------------
 const stop = (port, ...orders) => ({ port, orders });
@@ -152,7 +154,7 @@ function career(persona) {
   const R = {
     persona, at: {}, log: [], shipsBought: 0, spentOnShips: 0, lost: 0, broke: null,
     contracts: { taken: 0, done: 0, failed: 0, reward: 0, cost: 0, detours: 0 },
-    corsairs: { met: 0, pay: 0, run: 0, fight: 0, won: 0, lost: 0, cash: 0, cargo: 0 },
+    corsairs: { met: 0, pay: 0, run: 0, fight: 0, won: 0, lost: 0, cash: 0, cargo: 0, plundered: 0 },
     byDecade: {}, attention: {}, riverWaitDays: 0, boatDays: 0, firstHire: null, explored: null, nau: null,
   };
   const note = (s) => R.log.push(`${yearOf(S.day).toFixed(1)} ${s}`);
@@ -163,11 +165,12 @@ function career(persona) {
     const H = Ships.HULLS[h];
     return Ships.yearOf(S.day) >= (H.year || 0) && standing() >= (H.standing || 0) && P.ladder.includes(h);
   };
-  const flagWage = (h) => Ships.HULLS[h].upkeep - Ships.HULLS[h].hiredUpkeep;
+  // the owner's own wage bill: the hull's upkeep, plus fighting men he has signed on
+  const flagWage = (h, fit) => Ships.stats({ hull: h, fit }).upkeep - Ships.HULLS[h].hiredUpkeep;
   const route = (loop) => ({ stops: LOOPS[loop].map((s) => ({ port: s.port, orders: s.orders.map((o) => ({ ...o })) })), next: 0 });
 
   const add = (role, hull, loop, captain) => {
-    const ship = { id: nextId++, name: role, role, loop, hull, realHull: hull, cHold: {}, captain: { id: nextId, name: role, ...captain, loyalty: 100 },
+    const ship = { id: nextId++, name: role, role, loop, hull, realHull: hull, cHold: {}, fit: { ...Ships.DEFAULT_FIT }, captain: { id: nextId, name: role, ...captain, loyalty: 100 },
       at: 'lisbon', status: 'idle', route: null, leg: null, hold: {}, profit: 0, trips: 0, last: null, hullPct: 100 };
     S.fleet.ships.push(ship);
     if (role === 'flagship') setFlagHull(ship);
@@ -221,6 +224,21 @@ function career(persona) {
       Fleet.setRoute(S, market, f, route('deep'));
       note('sails for Serra Leoa');
     }
+    // fit her out for fighting, one thing at a time, as the purse allows (in a shipyard port)
+    if (P.arms && !f.leg && ['lisbon', 'lagos', 'funchal'].includes(f.at)) {
+      for (const [g, c] of P.arms) {
+        if (f.fit[g] === c || Ships.choicesFor(Ships.group(g), f.realHull).every((x) => x.id !== c)) continue;
+        if (g === 'crew' && c === 'crossbows' && f.fit.crew === 'menatarms') continue;
+        S.ship.hull = f.realHull; S.ship.fit = f.fit;
+        const fit = { ...f.fit, [g]: c };
+        const q = Ships.quoteFit(S, fit);
+        if (q.error || q.ordered.length || !affordable(q.cost)) break;
+        spend(q.cost, `fits ${Ships.choice(g, c).name.toLowerCase()}`);
+        f.fit = fit;
+        f.captain.wage = flagWage(f.realHull, fit);
+        break;
+      }
+    }
     // a captain who wants a third ship looks up the Gambia river to Cantor once (a shallow ship can)
     if (S.discovered.gambia && !S.discovered.cantor && P.hires >= 3 && f.loop === 'africa' && Ships.HULLS[f.realHull].draft[1] <= 2.2 &&
         !f.route.stops.some((st) => st.port === 'cantor')) {
@@ -237,7 +255,8 @@ function career(persona) {
       spend(cost, `${ship.role}: ${Ships.HULLS[ship.realHull].name} to ${Ships.HULLS[to].name}`);
       ship.realHull = to; ship.hullPct = 100;
       if (ship.role === 'flagship') {
-        ship.captain.wage = flagWage(to);
+        ship.fit = Ships.normalFit(to, ship.fit);
+        ship.captain.wage = flagWage(to, ship.fit);
         setFlagHull(ship);
 
       } else ship.hull = to;
@@ -323,9 +342,10 @@ function career(persona) {
   const atPort = (f, here) => {
     S.discovered[here] = true;
     S.ship.docked = here;
-    S.ship.hull = f.realHull;
+    S.ship.hull = f.realHull; S.ship.fit = f.fit;
     // discovery and reporting home (Prince Henry's contract)
     for (const m of Contracts.onDock(S, here)) if (m.log) note(m.log);
+    Pirates.collectBounty(S, here); // the crown's bounty for galleys taken, in a Portuguese port
     const C = Contracts.ensureContracts(S);
     // deliver what is aboard for this port
     for (const c of [...C.active]) {
@@ -416,7 +436,7 @@ function career(persona) {
   const corsairs = (f) => {
     if (f.status !== 'sailing' || !f.leg) return;
     const pos = Fleet.position(S, f);
-    S.ship.hull = f.realHull; S.hull = f.hullPct ?? 100;
+    S.ship.hull = f.realHull; S.ship.fit = f.fit; S.hull = f.hullPct ?? 100;
     const enc = Pirates.roll(S, STEP, pos.lon, pos.lat);
     if (!enc) return;
     R.corsairs.met++;
@@ -432,13 +452,23 @@ function career(persona) {
     for (const { g, l } of lots) { S.cargo[g] = (S.cargo[g] || 0) + l.qty; S.paid[g] = (S.paid[g] || 0) + l.paid; }
     const before = { ...S.cargo }, purse0 = S.purse, paid0 = lots.reduce((t2, x) => t2 + x.l.paid, 0);
     const P0 = { ...Pirates.ensurePirates(S) };
-    Pirates.resolve(S, enc, choice, knots);
+    const res = Pirates.resolve(S, enc, choice, knots);
+    if (res.spoils) {
+      const used = Object.values(S.cargo).reduce((t2, n) => t2 + n, 0);
+      const pl = Pirates.plunder(S, enc, res.spoils, !P.spare, Ships.HULLS[f.realHull].hold - used);
+      if (!P.spare) R.corsairs.plundered++;
+    }
     const Pn = Pirates.ensurePirates(S);
     if (Pn.won > P0.won) R.corsairs.won++;
     if (Pn.lost > P0.lost) R.corsairs.lost++;
     for (const { g, l } of lots) {
-      const keep = before[g] ? S.cargo[g] / before[g] : 1;
+      const keep = before[g] ? Math.min(1, S.cargo[g] / before[g]) : 1;
       l.qty = Math.round(l.qty * keep); l.paid *= keep;
+    }
+    // goods taken from a galley go into her own hold, at no cost
+    for (const [g, n] of Object.entries(S.cargo)) {
+      const extra = n - (before[g] || 0);
+      if (extra > 0) { f.hold[g] = f.hold[g] || { qty: 0, paid: 0 }; f.hold[g].qty += extra; }
     }
     for (const [g, l] of Object.entries(f.hold)) if (l.qty <= 0) delete f.hold[g];
     R.corsairs.cash += S.purse - purse0;
@@ -536,6 +566,7 @@ function career(persona) {
   for (const e of A.pending) R.totals[e.kind] = (R.totals[e.kind] || 0) + e.amount;
   R.final = S.purse;
   R.standing = standing();
+  R.arms = fl() ? Object.entries(fl().fit).filter(([g, c]) => c !== Ships.DEFAULT_FIT[g]).map(([, c]) => c).join(', ') : '';
   R.fleet = S.fleet.ships.map((x) => `${x.role === 'flagship' ? 'you' : x.loop}: ${Ships.HULLS[x.realHull].name}`).join(', ');
   R.pirates = { ...Pirates.ensurePirates(S) };
   return R;
@@ -568,14 +599,14 @@ export function summarise(list) {
   return {
     persona: list[0].persona, runs: list.length, end,
     worth: at, worstEnd: Math.min(...list.map((r) => r.at[end])), bestEnd: Math.max(...list.map((r) => r.at[end])),
-    income: { trade, contracts, crown, wages: -tot('wages'), repairs: -tot('repairs'), boats: -tot('boats'), corsairs: c('cash'), corsairCargo: -c('cargo') },
+    income: { trade, contracts, crown, wages: -tot('wages'), repairs: -tot('repairs'), boats: -tot('boats'), corsairs: c('cash'), corsairCargo: -c('cargo'), bounty: tot('bounty') },
     contracts: { taken: avg(list.map((r) => r.contracts.taken)), done: avg(list.map((r) => r.contracts.done)), failed: avg(list.map((r) => r.contracts.failed)), detours: avg(list.map((r) => r.contracts.detours)) },
-    corsairs: { met: c('met'), pay: c('pay'), run: c('run'), fight: c('fight'), won: c('won'), lost: c('lost'), notoriety: avg(list.map((r) => r.pirates.notoriety)), caution: avg(list.map((r) => r.pirates.caution)),
+    corsairs: { met: c('met'), pay: c('pay'), run: c('run'), fight: c('fight'), won: c('won'), lost: c('lost'), plundered: c('plundered'), notoriety: avg(list.map((r) => r.pirates.notoriety)), caution: avg(list.map((r) => r.pirates.caution)),
       byDecade: Object.fromEntries([...new Set(list.flatMap((r) => Object.keys(r.attention)))].sort().map((d) => [d, { met: avg(list.map((r) => r.byDecade[d] || 0)), attention: avg(list.map((r) => r.attention[d] ?? 0)) }])) },
     firstHire: med(list.map((r) => r.firstHire ?? end)), explored: med(list.map((r) => r.explored ?? end)), nau: list.filter((r) => r.nau).length / list.length,
     shipsLost: avg(list.map((r) => r.lost)), broke: list.filter((r) => r.broke != null).length / list.length,
     riverWaitDays: avg(list.map((r) => r.riverWaitDays)), boatDays: avg(list.map((r) => r.boatDays)),
-    standing: med(list.map((r) => r.standing)), fleet: list[0].fleet,
+    standing: med(list.map((r) => r.standing)), fleet: list[0].fleet + (list[0].arms ? ` (fitted: ${list[0].arms})` : ''),
   };
 }
 
@@ -588,11 +619,11 @@ export function printSummary(s) {
   const I = s.income;
   const gross = I.trade + I.contracts + I.crown;
   console.log(`  income: trade ${per(I.trade)} · contracts ${per(I.contracts)} (${Math.round(100 * I.contracts / gross)}%) · crown ${cz(I.crown)}`);
-  console.log(`  costs:  wages ${per(I.wages)} · repairs ${per(I.repairs)} · boatmen ${per(I.boats)} · corsairs ${per(-I.corsairs)} cash, ${per(-I.corsairCargo)} cargo`);
+  console.log(`  costs:  wages ${per(I.wages)} · repairs ${per(I.repairs)} · boatmen ${per(I.boats)} · corsairs ${per(-I.corsairs)} cash, ${per(-I.corsairCargo)} cargo · bounty earned ${per(I.bounty)}`);
   const C = s.contracts;
   console.log(`  contracts: ${C.taken.toFixed(0)} taken, ${C.done.toFixed(0)} done, ${C.failed.toFixed(1)} missed, ${C.detours.toFixed(0)} detours`);
   const K = s.corsairs;
-  console.log(`  corsairs: met ${K.met.toFixed(0)} (${(K.met / yrs).toFixed(1)}/yr) · paid ${K.pay.toFixed(0)}, ran ${K.run.toFixed(0)}, fought ${K.fight.toFixed(0)} · won ${K.won.toFixed(0)}, beaten ${K.lost.toFixed(0)} · notoriety ${K.notoriety.toFixed(0)}`);
+  console.log(`  corsairs: met ${K.met.toFixed(0)} (${(K.met / yrs).toFixed(1)}/yr) · paid ${K.pay.toFixed(0)}, ran ${K.run.toFixed(0)}, fought ${K.fight.toFixed(0)} · won ${K.won.toFixed(0)} (plundered ${K.plundered.toFixed(0)}), beaten ${K.lost.toFixed(0)} · notoriety ${K.notoriety.toFixed(0)}`);
   console.log(`  corsairs by decade (encounters · how strongly they are drawn to him): ${Object.entries(K.byDecade).map(([d, v]) => `${d}s ${v.met.toFixed(1)}·${v.attention.toFixed(2)}`).join('  ')}`);
   console.log(`  at sea: ships lost ${s.shipsLost.toFixed(1)}, ruined ${Math.round(s.broke * 100)}% · ${cz(s.boatDays)} ship-days with the boats, ${cz(s.riverWaitDays)} waiting for the river`);
   console.log(`  fleet at the end (one career): ${s.fleet}`);

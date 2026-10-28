@@ -72,7 +72,8 @@ export const HULL_ORDER = ['barca', 'caravel', 'barinel', 'largecaravel', 'redon
 export const PRICE_RISE = 1.3;
 
 // Option groups. Each choice may change: knots (a factor), up (a factor), down, upAdd, hold (factor),
-// holdAdd, offWind (factor beyond 75° off the wind), wage (cz a day), fight (odds added), spoil (factor).
+// holdAdd, offWind (factor beyond 75° off the wind), wage (cz a day), fight (odds added), spoil (factor),
+// guard (share of what boarders would carry off that they cannot).
 // price is for a caravel (scaled by the hull), days in the yard, standing and year needed.
 export const GROUPS = [
   {
@@ -117,6 +118,21 @@ export const GROUPS = [
       { id: 'none', name: 'None' },
       { id: 'bercos', name: 'Swivel guns (berços)', note: 'Light breech-loaders on the rails.', fight: 0.08, price: 500, days: 3, standing: KNOWN },
       { id: 'bombards', name: 'Bombards', note: 'Heavy guns on the main deck. Only a nau can carry them.', fight: 0.15, price: 1200, days: 5, standing: TRUSTED, hulls: ['nau'] },
+    ],
+  },
+  {
+    id: 'crew', name: 'Fighting men', tab: 'arms',
+    choices: [
+      { id: 'sailors', name: 'Sailors only' },
+      { id: 'crossbows', name: 'Crossbowmen', note: 'A dozen crossbowmen, paid by the day, to sweep a galley\'s deck as she closes.', fight: 0.08, wage: 1, price: 300, days: 1, standing: KNOWN },
+      { id: 'menatarms', name: 'Men-at-arms', note: 'Soldiers in mail with pikes and crossbows, enough to board a galley and take her.', fight: 0.15, wage: 2, price: 600, days: 1, standing: RESPECTED },
+    ],
+  },
+  {
+    id: 'defence', name: 'Defences', tab: 'arms',
+    choices: [
+      { id: 'open', name: 'Open rails' },
+      { id: 'nets', name: 'Boarding nets and pavises', note: 'Nets rigged above the rails and wooden shields along them. Boarders struggle to get aboard, and to get off again with your goods.', fight: 0.05, guard: 0.4, price: 250, days: 2 },
     ],
   },
   {
@@ -202,6 +218,7 @@ export function stats(ship) {
     if (c.holdAdd) holdAdd += c.holdAdd;
     if (c.wage) st.upkeep += c.wage;
     if (c.fight) st.fight += c.fight;
+    if (c.guard) st.guard = (st.guard || 0) + c.guard;
     if (c.spoil) st.spoil *= c.spoil;
   }
   st.up += upAdd;

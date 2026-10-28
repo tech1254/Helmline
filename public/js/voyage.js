@@ -38,7 +38,7 @@ export function openEncounter(enc) {
         <dt>Fight</dt><dd>${pct(o.fight)} chance to win${S.hull < 100 ? `, hull at ${Math.round(S.hull)}%` : ''}</dd>
         <dt>Pay tribute</dt><dd>${t} cz, and they let you pass</dd>
       </dl>
-      <p class="fine">Fighting makes your name feared, and corsairs seek you out. Avoiding fights makes the seas around you calmer.</p>
+      <p class="fine">Beat them and you may plunder the galley and claim the crown's bounty, but a feared name draws more corsairs. Avoiding fights makes the seas around you calmer. Crossbowmen, men-at-arms and boarding nets from the shipyard improve your odds.</p>
       <div class="row choice">
         <button data-modal-action="pay">Pay ${t} cz</button>
         <button data-modal-action="fight">Fight</button>
@@ -59,9 +59,43 @@ export function settleEncounter(enc, choice, knots) {
   const r = Pirates.resolve(S, enc, choice, knots);
   log(r.lines[r.lines.length - 1]);
   for (const line of r.lines) addNotice(line, r.kind);
+  if (r.spoils) { offerPlunder(enc, r); return; }
   afterEncounter(r);
   renderPanel();
   save();
+}
+
+// A beaten galley alongside: plunder her, or let her go.
+function offerPlunder(enc, r) {
+  const sp = r.spoils;
+  const free = Ships.flagStats(S).hold - GOODS.reduce((t, g) => t + (S.cargo[g.id] || 0), 0);
+  const goods = sp.goods.map(({ good: g, qty }) => { const gd = GOODS.find((x) => x.id === g); return `${qty} ${qty === 1 ? gd.one : gd.unit} of ${gd.name.toLowerCase()}`; });
+  const finish = (take) => {
+    const p = Pirates.plunder(S, enc, sp, take, free);
+    for (const line of p.lines) addNotice(line, p.kind);
+    log(p.lines[p.lines.length - 1]);
+    afterEncounter({ kind: 'discover', lines: [...r.lines, ...p.lines] });
+    renderPanel();
+    save();
+  };
+  confirmDialog({
+    title: 'The galley is yours',
+    body: `${r.lines.map((l) => `<p>${l}</p>`).join('')}
+      <dl class="facts">
+        <dt>Aboard her</dt><dd>${sp.cash} cz${goods.length ? `, ${goods.join(', ')}` : ''}</dd>
+        <dt>Room in your hold</dt><dd>${Math.max(0, free)}</dd>
+        <dt>Crown's bounty</dt><dd>${sp.bounty} cz, paid at any Portuguese port</dd>
+      </dl>
+      <p class="fine">Plundering corsairs makes your name feared on the Barbary coast: more of them will come looking for you. Letting her go keeps the seas calmer.</p>
+      <div class="row choice">
+        <button data-modal-action="spare">Let her go</button>
+        <button class="primary" data-modal-action="plunder">Plunder her</button>
+      </div>`,
+    ok: null,
+    cancel: false,
+    kind: 'encounter',
+    actions: { plunder: () => finish(true), spare: () => finish(false) },
+  });
 }
 
 const dayText = (d) => { const n = Math.max(1, Math.round(d)); return `${n} ${n === 1 ? 'day' : 'days'}`; };
@@ -348,6 +382,8 @@ export function dock(portId) {
     toast(`The tallow on the <b>${sh.name}</b>'s bottom has worn away and the weed is back. The shipyard can careen and tallow her again.`, '');
   }
   report(Contracts.onDock(S, portId));
+  const bounty = Pirates.collectBounty(S, portId);
+  if (bounty) report([bounty]);
   report(Events.hearNews(S, portId));
   const heard = Accounts.reveal(S, portId, S.fleet.ships);
   const prices = Fleet.sharePrices(S, portId, S.fleet.ships).filter((x) => x !== portId);

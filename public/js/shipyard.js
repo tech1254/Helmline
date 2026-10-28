@@ -85,6 +85,7 @@ function statRows(st, base) {
       ${row('Off the wind', st.down * st.offWind, base ? base.down * base.offWind : null, pct)}
       ${row('In a calm', st.oars, base?.oars, (v) => (v ? `oars, ${v} kn` : 'drifts'))}
       ${row('Fighting', st.fight, base?.fight, (v) => (v ? `+${Math.round(v * 100)} pts` : 'crew only'))}
+      ${row('Against boarders', st.guard || 0, base ? base.guard || 0 : null, (v) => (v ? `they carry off ${Math.round(v * 100)}% less` : 'open rails'))}
       ${row('Spoilage', st.spoil, base?.spoil, (v) => (v < 1 ? `−${Math.round((1 - v) * 100)}%` : 'ordinary'), -1)}
       ${row('Wages', st.upkeep, base?.upkeep, (v) => `${v} cz a day`, -1)}
     </dl>`;

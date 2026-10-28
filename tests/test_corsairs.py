@@ -14,7 +14,7 @@ async def main():
         await pg.click('[data-buy="wine"][data-n="10"]'); await pg.click('#modal-ok')
         await J("() => { window.helmline.setCourse(-13.38, 28.92, 'lanzarote'); window.helmline.setSpeed(1); }")
         await pg.wait_for_timeout(1500)
-        for choice in ['run', 'fight', 'pay', 'fight']:
+        for n, choice in enumerate(['run', 'fight', 'pay', 'fight']):
             await J("() => window.helmline.encounter(false)"); await pg.wait_for_timeout(300)
             title = await J("() => document.getElementById('modal-title').textContent")
             okHidden = await J("() => document.getElementById('modal-ok').hidden && document.getElementById('modal-cancel').hidden")
@@ -22,7 +22,16 @@ async def main():
                 await pg.screenshot(path=f'{SP}/28-corsairs.png')
                 await pg.keyboard.press('Escape'); still = await J("() => !document.getElementById('modal').hidden")
                 print('Escape cannot dismiss the encounter:', still)
+            if n == 1: await J("() => { Math._r = Math.random; Math.random = () => 0.02; }")  # the first fight is won
             await pg.click(f'[data-modal-action="{choice}"]'); await pg.wait_for_timeout(200)
+            if n == 1: await J("() => { Math.random = Math._r; }")
+            if await J("() => !!document.querySelector('[data-modal-action=\"plunder\"]')"):
+                await pg.screenshot(path=f'{SP}/28b-plunder.png')
+                body = await J("() => document.getElementById('modal-body').innerText.replace(/\\s+/g, ' ').slice(0, 200)")
+                print('  plunder offered:', body)
+                await pg.click('[data-modal-action="plunder"]'); await pg.wait_for_timeout(200)
+                print('  plundered: bounty owed', await J("() => window.helmline.state.pirates.bounty"))
+            elif n == 1: errs.append('no plunder offered after a won fight')
             after = await J("() => document.getElementById('modal').hidden ? null : document.getElementById('modal-title').textContent + ' | ' + document.getElementById('modal-body').innerText.replace(/\\s+/g, ' ').slice(0, 220)")
             paused = await J("() => document.querySelector('[data-speed=\"0\"]').classList.contains('on')")
             print(f'{title} [ok/cancel hidden: {okHidden}] -> {choice}: paused={paused} | {after} | {await st()}')
@@ -49,14 +58,17 @@ async def main():
             if await J("() => window.helmline.state.ship.docked") == 'lanzarote': break
             await pg.wait_for_timeout(200)
         print('natural encounters on the way:', seen, '| docked:', await J("() => window.helmline.state.ship.docked"))
-        # repair: sail to Funchal (a repair port)
-        await J("() => { window.helmline.state.hull = 60; window.helmline.state.purse = 800; window.helmline.state.pirates.notoriety = 0; window.helmline.state.pirates.caution = 100; window.helmline.setCourse(-16.9, 32.6, 'funchal'); window.helmline.setSpeed(4); }")
+        # repair: sail to Lagos (a repair port, and Portuguese: the bounty is paid there)
+        await J("() => { window.helmline.state.hull = 60; window.helmline.state.purse = 800; window.helmline.state.pirates.notoriety = 0; window.helmline.state.pirates.caution = 100; window.helmline.setCourse(-8.67, 37.03, 'lagos'); window.helmline.setSpeed(4); }")
         for _ in range(150):
-            if await J("() => window.helmline.state.ship.docked") == 'funchal': break
+            if await J("() => window.helmline.state.ship.docked") == 'lagos': break
             if await J("() => !document.getElementById('modal').hidden"):
                 await pg.click('[data-modal-action="pay"]' if await J("() => !!document.querySelector('[data-modal-action=\"pay\"]')") else '#modal-ok')
             await pg.wait_for_timeout(200)
         btn = await pg.query_selector('[data-repair]'); print('repair button:', await btn.inner_text() if btn else None)
+        pir = await J("() => window.helmline.state.pirates")
+        print('bounty in Lagos: owed', pir['bounty'], 'paid', pir['bountyPaid'])
+        if pir['bounty'] or not pir['bountyPaid']: errs.append('bounty not paid in a Portuguese port')
         await pg.screenshot(path=f'{SP}/29-repair.png')
         if btn: await btn.click(); print('after repair:', await st())
         await pg.click('#btn-prices'); print('ledger name at sea:', await J("() => [...document.querySelectorAll('#panel h3')].find(h => h.textContent.includes('name at sea')).nextElementSibling.textContent"))

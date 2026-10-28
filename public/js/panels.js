@@ -451,7 +451,7 @@ export function renderHelp(el) {
       <li><b>Prices move</b> as you buy and sell, and recover over weeks. Contracts and events move them too.</li>
       <li><b>The price book</b> remembers only the prices you have seen, and they go stale. News of events reaches you in port, late for distant places.</li>
       <li><b>Perishables</b> such as wine, dye and pepper slowly spoil at sea, faster in the tropics. Gold and ivory keep.</li>
-      <li><b>Corsairs</b> prowl off Morocco, the Algarve and the Canaries. When challenged, run, fight or pay. Fighting makes your name feared and draws more of them; avoiding fights calms the seas. Battle damage slows you until a shipwright in Lisbon, Lagos or Funchal repairs it.</li>
+      <li><b>Corsairs</b> prowl off Morocco, the Algarve and the Canaries. When challenged, run, fight or pay. Beat a galley and you can plunder her, and the crown pays a bounty for her in any Portuguese port; but plundering makes your name feared and draws more of them, while avoiding fights calms the seas. Fighting men and boarding nets from the shipyard improve your odds. Battle damage slows you until a shipwright in Lisbon, Lagos or Funchal repairs it.</li>
       <li><b>Charts:</b> the crown pays ${CHART_REWARD} cz for each new port or island group, on your return to Lisbon.</li>
     </ul>
     <h3>Growing</h3>
