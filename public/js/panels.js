@@ -582,9 +582,9 @@ export function tipText() {
     if (seen.early) return null;
     ui.tipKey = 'early';
     if (sh.docked) {
-      if (held() === 0 && S.voyages === 0) return 'Buy wine or wool cloth here: both sell for close to double in the Canaries and further south.';
+      if (held() === 0 && S.voyages === 0) return 'Buy ten casks of wine or bolts of wool cloth: they sell for close to double in the Canaries and further south. Not a full hold: a small port\'s price falls with every one you sell.';
       if (held() > 0 && S.voyages === 0) return 'Now set sail: tap Sail to…, or a port on the chart. Lanzarote is an easy first run.';
-      if (held() > 0) return 'Sell where the price beats what you paid (shown under Hold). Then load something the next port wants.';
+      if (held() > 0) return 'Sell where the price beats what you paid (shown under Hold); watch it fall as you sell, and keep the rest for a better market. Then load something the next port wants.';
       return 'Open the Price book: the harbourmaster suggests runs from the prices you have seen.';
     }
     if (S.voyages === 0) return 'The arrows show the wind. Running before it is fast; beating into it is slow.';
