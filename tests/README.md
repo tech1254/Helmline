@@ -83,7 +83,8 @@ Results on 26 October 2026, cash per ship per 200 days:
 `node tests/sim/personas.mjs` plays whole careers (1451 to 1551) as different kinds of player, on the game's own market, fleet, port, contract and corsair code. Each starts as a new game does (300 cz, a barca, the home waters known), trades his own ship, explores south, takes contracts from the boards, meets corsairs and answers them by temperament, hires captains as standing allows and trades up his hulls.
 
 - Whole play styles: `cautious`, `steady`, `bold`, `reckless`.
-- Controlled comparisons, each the Steady player with one thing changed: `runner` (always runs from corsairs), `fighter` (always fights), `payer` (always pays tribute), `merchant` (never takes contracts), `courier` (every contract he can), `bigships` (the biggest hull everywhere instead of a mixed fleet).
+- Controlled comparisons, each the Steady player with one thing changed: `runner` (always runs from corsairs), `fighter` (always fights), `armed` (always fights, and fits out crossbowmen, men-at-arms, nets and guns), `payer` (always pays tribute), `merchant` (never takes contracts), `courier` (every contract he can), `bigships` (the biggest hull everywhere instead of a mixed fleet), `indies` (from 1499 sends a ship to Calicut, buys shares in the India fleets and keeps up to three feitorias).
+- Groups for `--only`: `styles`, `corsairs`, `contracts`, `fleet`, `late` (Steady against the Indies player).
 
 ```
 node tests/sim/personas.mjs                          # all ten, 8 careers each (about 4 minutes)

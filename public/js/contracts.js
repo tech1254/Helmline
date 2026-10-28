@@ -52,6 +52,11 @@ export const PATRONS = {
   cestos: 'The headmen of the Grain Coast',
   mina: 'The Akan gold traders',
   cantor: 'The merchants of Cantor',
+  mpinda: 'The Manikongo\'s factors',
+  saotome: 'The captain-donee of São Tomé',
+  saobras: 'The watering party at São Brás',
+  portoseguro: 'The brazilwood cutters',
+  calicut: 'The Zamorin\'s merchants',
 };
 
 const portName = (id) => PORTS.find((p) => p.id === id).name;
@@ -68,7 +73,7 @@ export function maybeUnlock(S) {
   const C = ensureContracts(S);
   if (C.unlocked || S.purse < UNLOCK_PURSE) return null;
   C.unlocked = true;
-  if (PORTS.some((p) => !S.discovered[p.id])) {
+  if (PORTS.some((p) => !S.discovered[p.id] && !p.from)) { // a port there to be found now
     C.active.push(discoveryContract(S));
     return { html: 'Word of your trading reaches Prince Henry. He has a contract for you: <b>find a new trading partner</b> beyond the known coast.', kind: 'discover', log: 'Prince Henry offered a contract: find a new trading partner.' };
   }
@@ -118,7 +123,7 @@ function routeNm(a, b) {
 function candidates(S, market, portId) {
   const C = ensureContracts(S);
   const here = PORTS.find((p) => p.id === portId);
-  const known = PORTS.filter((p) => S.discovered[p.id] && !market.closed(p.id));
+  const known = PORTS.filter((p) => S.discovered[p.id] && !p.beyond && !market.closed(p.id)); // no contracts for the Indies
   const taken = new Set([...C.active, ...(C.offers[portId]?.list || [])].map((c) => `${c.good}>${c.to}`));
   const out = [];
   for (const g of GOODS) {
@@ -191,7 +196,7 @@ function fillOffers(S, market, portId, n) {
 export function offersAt(S, market, portId) {
   const C = ensureContracts(S);
   if (!C.unlocked) return [];
-  const want = perks(S).offers;
+  const want = perks(S).offers + (S.invest?.feitorias?.[portId] ? 1 : 0); // your factor finds you work
   let o = C.offers[portId];
   if (!o || !o.refill || S.day - o.day > REFRESH_DAYS) {
     o = C.offers[portId] = { day: S.day, list: [], refill: [] };

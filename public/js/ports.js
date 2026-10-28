@@ -24,8 +24,13 @@ export const START = {
   cestos: { size: 800, grow: 0.006 },
   mina: { size: 1500, grow: 0.01 },
   cantor: { size: 3000, grow: 0.005 },
+  mpinda: { size: 2500, grow: 0.006 },
+  saotome: { size: 300, grow: 0.05 }, // a sugar colony, from almost nothing
+  saobras: { size: 150, grow: 0.002 }, // a watering place
+  portoseguro: { size: 400, grow: 0.02 },
+  calicut: { size: 60000, grow: 0.005 },
 };
-const GROWTH_UNTIL = { funchal: 1490 }; // the boom slows after this year (to the ordinary 1%)
+const GROWTH_UNTIL = { funchal: 1490, saotome: 1530 }; // the boom slows after this year (to the ordinary 1%)
 
 // Turning points from history. size: a factor; depth: metres added at the berth.
 export const HISTORY = [
@@ -34,6 +39,18 @@ export const HISTORY = [
   { year: 1482, port: 'mina', size: 2, depth: 1.6, text: 'São Jorge da Mina: a castle and a pier rise on the Gold Coast. Ships can now come alongside.' },
   { year: 1482, port: 'lagos', size: 0.9, text: 'The Casa da Guiné moves from Lagos to Lisbon. The African trade follows it.' },
   { year: 1482, port: 'lisbon', size: 1.1, text: 'The Casa da Guiné opens in Lisbon. The African trade now comes up the Tagus.' },
+  // The road to the Indies. Entries with `opens` make a port known: history charts it for you.
+  // (Append only: saves remember these by their place in the list.)
+  { year: 1483, port: 'mpinda', opens: true, text: 'Diogo Cão has set up a stone pillar at the mouth of the great Zaire river, and the Manikongo welcomes Portuguese traders at Mpinda.' },
+  { year: 1486, port: 'saotome', opens: true, text: 'Settlers and sugar cane go out to São Tomé, on the line. A new Portuguese port in the Gulf of Guinea.' },
+  { year: 1488, port: 'saobras', opens: true, text: 'Bartolomeu Dias is home. He has rounded the southern cape of Africa, the Cape of Good Hope, the King calls it, and watered at São Brás beyond it. The westerlies far to the south carry a ship round.' },
+  { year: 1492, port: 'lisbon', text: 'Word from Castile: a Genoese, Columbus, sailing for Queen Isabella, claims to have reached the Indies by sailing west.' },
+  { year: 1494, port: 'lisbon', text: 'The Treaty of Tordesillas divides the unknown world between Portugal and Castile, 370 leagues west of the Cape Verde islands.' },
+  { year: 1499, port: 'calicut', opens: true, text: 'Vasco da Gama is home from India! His ships reached Calicut and came back with pepper and cinnamon. The way to the Indies lies round the Cape: the chart\'s edge beyond São Brás.' },
+  { year: 1500, port: 'portoseguro', opens: true, text: 'Cabral\'s India fleet, swinging wide into the ocean, has found a great land in the west: the Land of the Holy Cross. Its brazilwood makes a fine red dye.' },
+  { year: 1503, port: 'lisbon', size: 1.1, text: 'The Casa da Índia opens in Lisbon to handle the spice trade. Merchants from all Europe crowd the Tagus.' },
+  { year: 1510, port: 'calicut', text: 'Afonso de Albuquerque has taken Goa. Portuguese power on the Malabar coast grows.' },
+  { year: 1511, port: 'calicut', size: 1.1, text: 'Albuquerque takes Malacca: the clove and nutmeg trade of the Spice Islands now runs through Portuguese hands.' },
 ];
 // Harbour works a port builds once it is big enough: quays and moles that deepen the berth.
 export const WORKS = {
@@ -111,7 +128,8 @@ export function grow(S, days, market, from = S.day - days) {
     if (!P) continue;
     if (h.size) P.size *= h.size;
     if (h.depth) P.depthAdd = (P.depthAdd || 0) + h.depth;
-    msgs.push({ html: `<b>News:</b> ${h.text}`, kind: 'discover', port: h.port, log: h.text });
+    if (h.opens && S.discovered && !S.discovered[h.port]) S.discovered[h.port] = true; // charted by the crown's pilots
+    msgs.push({ html: `<b>News:</b> ${h.text}`, kind: 'discover', port: h.port, log: h.text, opens: h.opens ? h.port : null });
   }
   return msgs;
 }

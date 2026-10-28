@@ -31,6 +31,7 @@ import * as Accounts from '../../public/js/accounts.js';
 import * as Ports from '../../public/js/ports.js';
 import * as Contracts from '../../public/js/contracts.js';
 import * as Pirates from '../../public/js/pirates.js';
+import * as Investments from '../../public/js/investments.js';
 import { PORTS, HARBOURS, distNm, findPath, loadRoutes } from '../../public/js/world.js';
 
 loadRoutes(JSON.parse(readFileSync(new URL('../../public/data/routes.json', import.meta.url))));
@@ -104,8 +105,12 @@ Object.assign(PERSONAS, {
   merchant: { ...steady, label: 'No contracts (else Steady)', contracts: 0 },
   courier: { ...steady, label: 'Every contract he can (else Steady)', contracts: 9, minGain: 0, detour: 30 },
   bigships: { ...steady, label: 'Biggest ships (else Steady)', mixed: false },
+  // After 1480: a rich owner who sends ships to India and puts money into feitorias and the
+  // crown's India fleets.
+  indies: { ...steady, label: 'The Indies: India runs and investments (else Steady)', hires: 3, indies: true, invest: true, feitorias: 3,
+    ladder: [...steady.ladder, 'galeao', 'naudaindia'] },
 });
-export const GROUPS = { styles: ['cautious', 'steady', 'bold', 'reckless'], corsairs: ['runner', 'fighter', 'armed', 'payer'], contracts: ['merchant', 'courier'], fleet: ['bigships'] };
+export const GROUPS = { late: ['steady', 'indies'], styles: ['cautious', 'steady', 'bold', 'reckless'], corsairs: ['runner', 'fighter', 'armed', 'payer'], contracts: ['merchant', 'courier'], fleet: ['bigships'] };
 
 // ---- Routes --------------------------------------------------------------------------------
 const stop = (port, ...orders) => ({ port, orders });
@@ -119,6 +124,7 @@ const LOOPS = {
   gambia: [stop('lisbon', sell, buy('cloth')), stop('gambia', sell, buy('pepper'))],
   arguin: [best('lisbon'), stop('arguin', sell, buy('best', 50)), stop('lanzarote', buy('best', 50))],
   cantor: [best('lisbon'), stop('gambia', sell, buy('best', 50)), best('cantor')], // upriver
+  india: [stop('lisbon', sell, buy('copper', 50), buy('gold', 25)), stop('calicut', sell, buy('spices'))], // beyond the Cape
 };
 const CAPTAIN_LOOPS = ['gambia', 'arguin', 'cantor'];
 const port = (id) => PORTS.find((p) => p.id === id);
@@ -193,7 +199,7 @@ function career(persona) {
     const ok = P.ladder.filter((h) => canSail(h) && (coastalOk || !Ships.HULLS[h].coastal));
     // even the biggest-ship owner will not buy a ship that can never reach a port on the loop
     const reach = ok.filter((h) => portsOf(loop).every((id) => !HARBOURS[id]?.seasonal || !LOOPS[loop].length || id !== 'cantor' || Ships.HULLS[h].draft[0] <= HARBOURS[id].depth + 0.8));
-    const fits = P.mixed ? reach.filter((h) => Ships.HULLS[h].draft[1] <= shallowest(loop)) : reach;
+    const fits = P.mixed && loop !== 'india' ? reach.filter((h) => Ships.HULLS[h].draft[1] <= shallowest(loop)) : reach;
     const pool = fits.length ? fits : ok;
     return pool.sort((a, b) => Ships.HULLS[b].hold - Ships.HULLS[a].hold)[0];
   };
@@ -270,9 +276,11 @@ function career(persona) {
       f.loop = plan1.loop; Fleet.setRoute(S, market, f, route(plan1.loop));
     }
     // hire captains, as many as he wants and his standing allows, for loops already charted
-    const room = Math.min(P.hires, Contracts.perks(S).maxShips) - hireds.length;
+    const room = Math.min(P.hires + (P.indies && S.discovered.calicut ? 1 : 0), Contracts.perks(S).maxShips) - hireds.length;
     if (room > 0) {
-      const loop = CAPTAIN_LOOPS.find((l) => !hireds.some((x) => x.loop === l) && portsOf(l).every((id) => S.discovered[id]));
+      // the India man keeps a berth for the India run, which opens in 1499
+      const loops = P.indies ? (S.discovered.calicut ? ['india', ...CAPTAIN_LOOPS] : CAPTAIN_LOOPS.slice(0, P.hires - 1)) : CAPTAIN_LOOPS;
+      const loop = loops.find((l) => !hireds.some((x) => x.loop === l) && portsOf(l).every((id) => S.discovered[id]));
       if (loop) {
         const h = wantHull(loop, true);
         if (h && affordable(price(h))) {
@@ -285,6 +293,21 @@ function career(persona) {
     for (const x of hireds) {
       const h = wantHull(x.loop, true);
       if (h && h !== x.realHull) upgrade(x, h);
+    }
+    // a rich man's investments: shares in the India fleet, and feitorias where his ships trade
+    if (P.invest && f.at === 'lisbon' && Investments.fleetsOpen(S)) {
+      const spare = S.purse * (1 - P.reserve) - 5000;
+      const n = Math.floor(Math.min(spare * 0.25, Investments.SHARE * Investments.MAX_SHARES) / Investments.SHARE);
+      if (n > 0 && Investments.buyShares(S, n)) note(`buys ${n} shares in the India fleet`);
+    }
+    if (P.invest && Object.keys(Investments.ensureInvest(S).feitorias).length < (P.feitorias || 0)) {
+      // where his ships call most often
+      const calls = {};
+      for (const x of S.fleet.ships) for (const st of x.route?.stops || []) calls[st.port] = (calls[st.port] || 0) + 1;
+      for (const pid of Object.keys(calls).sort((a, b) => calls[b] - calls[a])) {
+        const c = Investments.canFound(S, pid);
+        if (c.ok && affordable(c.cost * 3)) { Investments.found(S, pid); R.feitorias = (R.feitorias || 0) + 1; note(`founds a feitoria at ${pid} (${c.cost} cz)`); break; }
+      }
     }
   };
 
@@ -489,6 +512,8 @@ function career(persona) {
     market.scale = Object.fromEntries(PORTS.map((p) => [p.id, Ports.depthScale(S, p.id)]));
     const edge = Contracts.perks(S).priceEdge;
     market.edge = Object.fromEntries(PORTUGUESE_PORTS.map((p) => [p, edge]));
+    for (const [pid, e] of Object.entries(Investments.edges(S))) market.edge[pid] = (market.edge[pid] || 0) + e;
+    Investments.tick(S, STEP);
     const f = fl();
     if (f) {
       if (f.leg && f.leg !== f.lastLeg) { // a new passage: remember how long it takes
@@ -599,7 +624,7 @@ export function summarise(list) {
   return {
     persona: list[0].persona, runs: list.length, end,
     worth: at, worstEnd: Math.min(...list.map((r) => r.at[end])), bestEnd: Math.max(...list.map((r) => r.at[end])),
-    income: { trade, contracts, crown, wages: -tot('wages'), repairs: -tot('repairs'), boats: -tot('boats'), corsairs: c('cash'), corsairCargo: -c('cargo'), bounty: tot('bounty') },
+    income: { trade, contracts, crown, wages: -tot('wages'), repairs: -tot('repairs'), boats: -tot('boats'), corsairs: c('cash'), corsairCargo: -c('cargo'), bounty: tot('bounty'), invest: tot('invest'), ships: avg(list.map((r) => r.spentOnShips)) },
     contracts: { taken: avg(list.map((r) => r.contracts.taken)), done: avg(list.map((r) => r.contracts.done)), failed: avg(list.map((r) => r.contracts.failed)), detours: avg(list.map((r) => r.contracts.detours)) },
     corsairs: { met: c('met'), pay: c('pay'), run: c('run'), fight: c('fight'), won: c('won'), lost: c('lost'), plundered: c('plundered'), notoriety: avg(list.map((r) => r.pirates.notoriety)), caution: avg(list.map((r) => r.pirates.caution)),
       byDecade: Object.fromEntries([...new Set(list.flatMap((r) => Object.keys(r.attention)))].sort().map((d) => [d, { met: avg(list.map((r) => r.byDecade[d] || 0)), attention: avg(list.map((r) => r.attention[d] ?? 0)) }])) },
@@ -619,6 +644,7 @@ export function printSummary(s) {
   const I = s.income;
   const gross = I.trade + I.contracts + I.crown;
   console.log(`  income: trade ${per(I.trade)} · contracts ${per(I.contracts)} (${Math.round(100 * I.contracts / gross)}%) · crown ${cz(I.crown)}`);
+  console.log(`  spent:  ships ${per(I.ships)} · investments net ${per(I.invest)} (feitorias, fleet shares)`);
   console.log(`  costs:  wages ${per(I.wages)} · repairs ${per(I.repairs)} · boatmen ${per(I.boats)} · corsairs ${per(-I.corsairs)} cash, ${per(-I.corsairCargo)} cargo · bounty earned ${per(I.bounty)}`);
   const C = s.contracts;
   console.log(`  contracts: ${C.taken.toFixed(0)} taken, ${C.done.toFixed(0)} done, ${C.failed.toFixed(1)} missed, ${C.detours.toFixed(0)} detours`);

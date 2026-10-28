@@ -1,6 +1,7 @@
 // Voyages and port calls: corsairs, planning a course, docking, milestones.
 
-import { COS0, D2R, PORTS, windAt, sailFactor, bearing, distNm, angleDiff, findPath, COASTAL_NM, berth, anchorage, isRiverLeg, RIVER_KNOTS, riverOf, shoalDepth, DEEP_DRAFT } from './world.js';
+import { COS0, D2R, PORTS, windAt, sailFactor, bearing, distNm, angleDiff, findPath, COASTAL_NM, berth, anchorage, isRiverLeg, RIVER_KNOTS, riverOf, shoalDepth, DEEP_DRAFT, isBeyond } from './world.js';
+import * as Indies from './indies.js';
 import * as Ports from './ports.js';
 import { GOODS } from './economy.js';
 import * as Contracts from './contracts.js';
@@ -271,6 +272,14 @@ export function setCourse(lon, lat, portId, append) {
 }
 
 export function applyCourse(plan) {
+  // Leaving Calicut: first the months home across the Indian Ocean, to the edge of the chart.
+  if (S.ship.docked && isBeyond(S.ship.docked) && S.ship.inIndies) {
+    const from = S.ship.docked;
+    finishBoats();
+    undock();
+    crossBeyond(from, 'home', () => { S.ship.inIndies = false; applyCourse(plan); });
+    return;
+  }
   if (S.ship.docked) finishBoats();
   S.ship.route = plan.route;
   S.ship.dest = plan.dest;
@@ -321,7 +330,9 @@ export function confirmVoyage(plan) {
   frameView([[S.ship.lon, S.ship.lat], ...plan.route]);
   const est = estimateVoyage(plan.route);
   const wait = S.ship.docked ? boatDaysLeft() : 0;
-  const days = est.days + wait, nm = est.nm, cost = est.cost;
+  const home = S.ship.docked && isBeyond(S.ship.docked) && S.ship.inIndies ? Indies.passage(S.day, 'home') : null;
+  const homeCost = home ? Math.round(home.days * Ships.flagStats(S).upkeep) : 0;
+  const days = est.days + wait + (home ? home.days : 0), nm = est.nm, cost = est.cost + homeCost;
   const to = plan.dest.port ? PORTS.find((p) => p.id === plan.dest.port).name : 'the mark on the chart';
   const left = Math.floor(S.purse) - cost;
   const d = Math.max(1, Math.round(days));
@@ -329,6 +340,7 @@ export function confirmVoyage(plan) {
     title: S.ship.docked || !S.ship.route.length ? `Set sail for ${to}?` : `Change course for ${to}?`,
     body: `<dl class="facts">
         ${wait ? `<dt>Her boats</dt><dd>about ${Math.max(1, Math.round(wait))} more ${Math.round(wait) <= 1 ? 'day' : 'days'} to finish the cargo first</dd>` : ''}
+        ${home ? `<dt>Home across the Indian Ocean</dt><dd>about ${home.days} days to the Cape, ${home.season}</dd>` : ''}
         <dt>Passage</dt><dd>about ${Math.max(1, Math.round(est.days))} ${Math.round(est.days) <= 1 ? 'day' : 'days'} · ${Math.round(nm).toLocaleString()} nm</dd>
         <dt>Arrival</dt><dd>around ${fmtDate(S.day + days)}</dd>
         <dt>Wages</dt><dd>${cost.toLocaleString()} cz (${Ships.flagStats(S).upkeep} cz a day)</dd>
@@ -343,7 +355,89 @@ export function confirmVoyage(plan) {
   });
 }
 
+// ---- The Indies -------------------------------------------------------------------------
+// Calicut lies beyond the edge of the chart. A ship that reaches the edge bound for it is asked
+// whether to sail on; the months across the Indian Ocean pass at once (indies.js), and she comes
+// back to the chart at the same place.
+
+function arriveAtEdge(portId) {
+  const p = PORTS.find((x) => x.id === portId);
+  const sh = S.ship;
+  sh.route = []; sh.dest = null; sh.lon = p.lon; sh.lat = p.lat;
+  setSpeed(0);
+  const pass = Indies.passage(S.day, 'out');
+  const cost = Math.round(pass.days * Ships.flagStats(S).upkeep);
+  const pct = (x) => `${Math.round(x * 100)}%`;
+  confirmDialog({
+    title: `Sail on for ${p.name}?`,
+    body: `<p>The chart ends here. ${p.name} lies far beyond it, across the Indian Ocean.</p>
+      <dl class="facts">
+        <dt>Passage</dt><dd>about ${pass.days} days, ${pass.season}</dd>
+        <dt>Arrival</dt><dd>around ${fmtDate(S.day + pass.days)}</dd>
+        <dt>Wages</dt><dd>${cost.toLocaleString()} cz${pass.scurvy ? ', and more for the sick once scurvy sets in' : ''}</dd>
+        <dt>Hull</dt><dd class="${S.hull < 70 ? 'warn' : ''}">${Math.round(S.hull)}% now. There is no shipyard beyond the Cape: the passage will wear her hard.</dd>
+        <dt>Danger</dt><dd>${pct(pass.loss)} chance of a great storm that strips her of cargo and rigging</dd>
+      </dl>
+      <p class="fine">${p.blurb}</p>`,
+    ok: 'Sail on',
+    cancel: 'Not now',
+    kind: 'voyage',
+    onOk: () => crossBeyond(portId, 'out', () => { S.ship.inIndies = true; dock(portId); }),
+  });
+}
+
+// The months beyond the chart, all at once: wages, wear and storms as at sea, scurvy on a long
+// passage, and perhaps a great storm. Then a summary, and `then` carries on (docking at Calicut,
+// or sailing on along the chart for home).
+function crossBeyond(portId, dir, then) {
+  const p = PORTS.find((x) => x.id === portId);
+  const pass = Indies.passage(S.day, dir);
+  const before = { purse: S.purse, hull: S.hull ?? 100 };
+  ui.offlineBuffer = [];
+  let msgs, storm = false;
+  try {
+    const steps = Math.ceil(pass.days * 2);
+    for (let i = 0; i < steps; i++) advanceTime(pass.days / steps, true);
+    if (pass.scurvy) {
+      const extra = Math.round(pass.scurvy * Ships.flagStats(S).upkeep * 0.5);
+      S.purse -= extra;
+      Accounts.accrueWages(S, extra, S.ship.lastPort);
+    }
+    if (Math.random() < pass.loss) {
+      storm = true;
+      S.hull = Math.max(10, (S.hull ?? 100) - 25);
+      for (const g of GOODS) { const n = Math.round((S.cargo[g.id] || 0) * 0.3); if (n) { S.paid[g.id] = S.cargo[g.id] - n ? S.paid[g.id] * (S.cargo[g.id] - n) / S.cargo[g.id] : 0; S.cargo[g.id] -= n; } }
+    }
+  } finally {
+    msgs = ui.offlineBuffer;
+    ui.offlineBuffer = null;
+  }
+  ui.pendingEncounter = null;
+  const strip = (h) => h.replace(/<[^>]+>/g, '');
+  const pick = msgs.filter((m) => !/^<b>[^<]+<\/b> at /.test(m.html)).slice(-5);
+  log(dir === 'out' ? `Crossed the Indian Ocean to ${p.name} in ${pass.days} days.` : `Back at the Cape from ${p.name} after ${pass.days} days.`);
+  confirmDialog({
+    title: dir === 'out' ? `Landfall on the Malabar coast` : 'The Cape again',
+    body: `<p>${dir === 'out'
+      ? `After ${pass.days} days at sea, ${pass.inSeason ? 'running before the monsoon' : 'beating against the monsoon'}, the <b>${S.ship.name}</b> raises the hills behind ${p.name}.`
+      : `After ${pass.days} days from ${p.name}, the <b>${S.ship.name}</b> rounds the Cape and is back on the chart.`}</p>
+      ${storm ? '<p class="warn">A great storm caught her on the way: she lost cargo overboard and her hull was badly strained.</p>' : ''}
+      ${pass.scurvy ? `<p>Scurvy came aboard after ${Indies.SCURVY_AFTER} days: the sick were nursed and paid, and fresh hands taken on.</p>` : ''}
+      <dl class="facts">
+        <dt>Date</dt><dd>${fmtDate(S.day)}</dd>
+        <dt>Hull</dt><dd class="${S.hull < 50 ? 'warn' : ''}">${Math.round(before.hull)}% → ${Math.round(S.hull)}%</dd>
+        <dt>Purse</dt><dd>${Math.floor(before.purse).toLocaleString()} → ${Math.floor(S.purse).toLocaleString()} cz</dd>
+      </dl>
+      ${pick.length ? `<p class="fine">Meanwhile:</p><ul class="help">${pick.map((m) => `<li>${strip(m.html)}</li>`).join('')}</ul>` : ''}`,
+    ok: 'Carry on',
+    cancel: false,
+    kind: 'summary',
+    onOk: () => { then(); renderPanel(); save(); },
+  });
+}
+
 export function dock(portId) {
+  if (isBeyond(portId) && !S.ship.inIndies) { arriveAtEdge(portId); return; }
   const sh = S.ship;
   const p = PORTS.find((x) => x.id === portId);
   sh.docked = portId;

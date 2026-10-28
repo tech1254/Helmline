@@ -9,9 +9,10 @@ import { S, market, ui } from './state.js';
 import { load, newGame, save } from './save.js';
 import { checkCloudOnStart, cloudSync, loadFromCloud, remoteAhead, renderCloudButton } from './cloudsync.js';
 import { centerOn, clampCam, resize, toScreen } from './view.js';
+import { revealAt } from './fog.js';
 import { render } from './render.js';
 import { advanceTime, catchUp, showSummary, update } from './sim.js';
-import { dock, noPassage, openEncounter, planCourse, setCourse, undock, unlockContracts } from './voyage.js';
+import { confirmVoyage, dock, noPassage, openEncounter, planCourse, setCourse, undock, unlockContracts } from './voyage.js';
 import { $ } from './util.js';
 import { renderHud, renderPanel, setSpeed, warmRoutes } from './panels.js';
 import { initInput } from './input.js';
@@ -121,5 +122,10 @@ window.helmline = {
   scene: (portId) => { window.helmlineScenes = true; if (S.called) delete S.called[portId]; return startArrival(portId); },
   yearDay: (year) => Ships.dayOfYear(year),
   arrival: () => ui.arrival && { port: ui.arrival.portId, photo: !!ui.arrival.usePhoto, ship: ui.arrival.photo?.id || null },
+  look: (lon, lat, zoom = 0.5) => centerOn(lon, lat, zoom),
+  reveal: (lon, lat) => revealAt(lon, lat, 1, true),
+  sail: (id) => { const p = PORTS.find((x) => x.id === id); const plan = planCourse(p.lon, p.lat, id, false); if (plan) confirmVoyage(plan); return !!plan; },
+  fleetRoute: (id, route) => Fleet.setRoute(S, market, S.fleet.ships.find((x) => x.id === id), route),
+  fleetStatus: (id) => Fleet.statusText(S, S.fleet.ships.find((x) => x.id === id)),
   advance: (days) => { for (let i = 0; i < days * 4; i++) advanceTime(0.25, !S.ship.docked); renderPanel(); },
 };

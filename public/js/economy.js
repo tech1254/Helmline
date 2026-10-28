@@ -14,33 +14,47 @@ export const GOODS = [
   { id: 'wheat', name: 'Wheat', unit: 'sacks', one: 'sack', spoil: 0.002, rot: 'gone mouldy' },
   { id: 'salt', name: 'Salt', unit: 'sacks', one: 'sack', spoil: 0.001, rot: 'dissolved in the damp' },
   { id: 'alquices', name: 'Moorish cloth', unit: 'bales', one: 'bale', spoil: 0.001, rot: 'mildewed' },
+  { id: 'copper', name: 'Copper', unit: 'bars', one: 'bar', spoil: 0, rot: '' },
+  { id: 'brazilwood', name: 'Brazilwood', unit: 'logs', one: 'log', spoil: 0.001, rot: 'rotted' },
+  { id: 'spices', name: 'Indian spices', unit: 'quintals', one: 'quintal', spoil: 0.002, rot: 'lost their savour' },
 ];
 // Wheat from Morocco fed Portugal, Madeira and the Ceuta garrison; salt from the pans of Cádiz
 // and Setúbal was prized all down the African coast; Moorish cloth (alquicés) bought at Safi was
 // what the factors at Arguin traded for gold.
 
-export const PORTUGUESE_PORTS = ['lisbon', 'porto', 'lagos', 'funchal', 'ceuta'];
+// Copper bars from Flanders were what the Kongo and Malabar wanted; brazilwood was the red dye
+// that gave Brazil its name; and pepper, cinnamon and cloves from Calicut were the prize of it all.
+
+export const PORTUGUESE_PORTS = ['lisbon', 'porto', 'lagos', 'funchal', 'ceuta', 'saotome'];
 
 // [base price, sold here?]. Every port buys every good; only some sell.
 const MARKETS = {
-  lisbon:    { k: 0.012, p: { wine: [9, 1], cloth: [11, 1], sugar: [26], dye: [24], gold: [120], ivory: [54], pepper: [44], wheat: [14], salt: [4, 1], alquices: [14] } },
-  porto:     { k: 0.02, p: { wine: [7, 1], cloth: [12, 1], sugar: [28], dye: [26], gold: [118], ivory: [52], pepper: [46], wheat: [12], salt: [7], alquices: [15] } },
-  lagos:     { k: 0.02, p: { wine: [8, 1], cloth: [12, 1], sugar: [24], dye: [22], gold: [110], ivory: [46], pepper: [38], wheat: [13], salt: [5], alquices: [14] } },
-  cadiz:     { k: 0.015, p: { wine: [9, 1], cloth: [13], sugar: [28], dye: [25], gold: [125], ivory: [56], pepper: [46], wheat: [13], salt: [3, 1], alquices: [15] } },
-  ceuta:     { k: 0.035, p: { wine: [16], cloth: [18], sugar: [24], dye: [22], gold: [105], ivory: [44], pepper: [40], wheat: [18], salt: [6], alquices: [14] } },
-  safi:      { k: 0.03, p: { wine: [18], cloth: [20], sugar: [20], dye: [16], gold: [90], ivory: [40], pepper: [32], wheat: [6, 1], salt: [6], alquices: [10, 1] } },
-  funchal:   { k: 0.03, p: { wine: [16], cloth: [18], sugar: [11, 1], dye: [20], gold: [100], ivory: [40], pepper: [34], wheat: [15], salt: [8], alquices: [15] } },
-  lanzarote: { k: 0.035, p: { wine: [17], cloth: [19], sugar: [18], dye: [9, 1], gold: [95], ivory: [38], pepper: [30], wheat: [15], salt: [7], alquices: [16] } },
-  arguin:    { k: 0.03, p: { wine: [22], cloth: [26], sugar: [20], dye: [16], gold: [68, 1], ivory: [34], pepper: [26], wheat: [16], salt: [10], alquices: [26] } },
-  gambia:    { k: 0.03, p: { wine: [25], cloth: [30], sugar: [22], dye: [18], gold: [78, 1], ivory: [18, 1], pepper: [12, 1], wheat: [14], salt: [18], alquices: [24] } },
-  serraleoa: { k: 0.03, p: { wine: [24], cloth: [31], sugar: [23], dye: [19], gold: [85], ivory: [15, 1], pepper: [11, 1], wheat: [14], salt: [20], alquices: [22] } },
-  cestos:    { k: 0.035, p: { wine: [26], cloth: [32], sugar: [24], dye: [20], gold: [90], ivory: [24], pepper: [7, 1], wheat: [14], salt: [20], alquices: [22] } },
-  mina:      { k: 0.025, p: { wine: [30], cloth: [40], sugar: [26], dye: [22], gold: [52, 1], ivory: [21, 1], pepper: [16], wheat: [16], salt: [22], alquices: [30] } },
+  lisbon:    { k: 0.012, p: { wine: [9, 1], cloth: [11, 1], sugar: [26], dye: [24], gold: [120], ivory: [54], pepper: [44], wheat: [14], salt: [4, 1], alquices: [14], copper: [16, 1], brazilwood: [30], spices: [110] } },
+  porto:     { k: 0.02, p: { wine: [7, 1], cloth: [12, 1], sugar: [28], dye: [26], gold: [118], ivory: [52], pepper: [46], wheat: [12], salt: [7], alquices: [15], copper: [18], brazilwood: [32], spices: [105] } },
+  lagos:     { k: 0.02, p: { wine: [8, 1], cloth: [12, 1], sugar: [24], dye: [22], gold: [110], ivory: [46], pepper: [38], wheat: [13], salt: [5], alquices: [14], copper: [18], brazilwood: [28], spices: [100] } },
+  cadiz:     { k: 0.015, p: { wine: [9, 1], cloth: [13], sugar: [28], dye: [25], gold: [125], ivory: [56], pepper: [46], wheat: [13], salt: [3, 1], alquices: [15], copper: [18], brazilwood: [31], spices: [118] } },
+  ceuta:     { k: 0.035, p: { wine: [16], cloth: [18], sugar: [24], dye: [22], gold: [105], ivory: [44], pepper: [40], wheat: [18], salt: [6], alquices: [14], copper: [22], brazilwood: [24], spices: [95] } },
+  safi:      { k: 0.03, p: { wine: [18], cloth: [20], sugar: [20], dye: [16], gold: [90], ivory: [40], pepper: [32], wheat: [6, 1], salt: [6], alquices: [10, 1], copper: [26], brazilwood: [22], spices: [90] } },
+  funchal:   { k: 0.03, p: { wine: [16], cloth: [18], sugar: [11, 1], dye: [20], gold: [100], ivory: [40], pepper: [34], wheat: [15], salt: [8], alquices: [15], copper: [22], brazilwood: [22], spices: [100] } },
+  lanzarote: { k: 0.035, p: { wine: [17], cloth: [19], sugar: [18], dye: [9, 1], gold: [95], ivory: [38], pepper: [30], wheat: [15], salt: [7], alquices: [16], copper: [24], brazilwood: [20], spices: [85] } },
+  arguin:    { k: 0.03, p: { wine: [22], cloth: [26], sugar: [20], dye: [16], gold: [68, 1], ivory: [34], pepper: [26], wheat: [16], salt: [10], alquices: [26], copper: [30], brazilwood: [18], spices: [70] } },
+  gambia:    { k: 0.03, p: { wine: [25], cloth: [30], sugar: [22], dye: [18], gold: [78, 1], ivory: [18, 1], pepper: [12, 1], wheat: [14], salt: [18], alquices: [24], copper: [32], brazilwood: [16], spices: [60] } },
+  serraleoa: { k: 0.03, p: { wine: [24], cloth: [31], sugar: [23], dye: [19], gold: [85], ivory: [15, 1], pepper: [11, 1], wheat: [14], salt: [20], alquices: [22], copper: [30], brazilwood: [16], spices: [60] } },
+  cestos:    { k: 0.035, p: { wine: [26], cloth: [32], sugar: [24], dye: [20], gold: [90], ivory: [24], pepper: [7, 1], wheat: [14], salt: [20], alquices: [22], copper: [30], brazilwood: [16], spices: [60] } },
+  mina:      { k: 0.025, p: { wine: [30], cloth: [40], sugar: [26], dye: [22], gold: [52, 1], ivory: [21, 1], pepper: [16], wheat: [16], salt: [22], alquices: [30], copper: [36], brazilwood: [16], spices: [70] } },
   // Upriver on the Gambia: gold and ivory straight from the caravans, and salt worth its weight.
-  cantor:    { k: 0.03, p: { wine: [28], cloth: [36], sugar: [24], dye: [20], gold: [58, 1], ivory: [13, 1], pepper: [14], wheat: [16], salt: [30], alquices: [32] } },
+  // Beyond the Gulf of Guinea, open to Portuguese ships as history reaches them (world.js PORTS `from`).
+  mpinda:    { k: 0.03, p: { wine: [28], cloth: [38], sugar: [26], dye: [9, 1], gold: [92], ivory: [14, 1], pepper: [18], wheat: [16], salt: [26], alquices: [30], copper: [10, 1], brazilwood: [18], spices: [70] } },
+  saotome:   { k: 0.035, p: { wine: [24], cloth: [30], sugar: [9, 1], dye: [20], gold: [88], ivory: [26], pepper: [15, 1], wheat: [22], salt: [18], alquices: [26], copper: [26], brazilwood: [18], spices: [75] } },
+  saobras:   { k: 0.06, p: { wine: [30], cloth: [30], sugar: [28], dye: [24], gold: [90], ivory: [17, 1], pepper: [24], wheat: [20], salt: [22], alquices: [28], copper: [28], brazilwood: [20], spices: [80] } },
+  portoseguro: { k: 0.04, p: { wine: [30], cloth: [34], sugar: [20], dye: [20], gold: [95], ivory: [30], pepper: [30], wheat: [18], salt: [20], alquices: [28], copper: [26], brazilwood: [5, 1], spices: [90] } },
+  // Calicut, beyond the chart: pepper and spices for gold, copper and good cloth.
+  calicut:   { k: 0.01, p: { wine: [40], cloth: [34], sugar: [30], dye: [20], gold: [150], ivory: [45], pepper: [12], wheat: [20], salt: [12], alquices: [20], copper: [42], brazilwood: [25], spices: [18, 1] } },
+  cantor:    { k: 0.03, p: { wine: [28], cloth: [36], sugar: [24], dye: [20], gold: [58, 1], ivory: [13, 1], pepper: [14], wheat: [16], salt: [30], alquices: [32], copper: [34], brazilwood: [16], spices: [60] } },
 };
 
 const GOLD_K = 1.6; // gold is scarce: each pouch moves the price more
+const SPICE_K = 0.35; // all Europe wants spices: a cargo moves the price far less than other goods
 // Thin markets: every load moves the price half as far again as it first did, so dumping a full
 // hold in one port costs dear (economy change B, 27 Oct 2026; see tests/sim/economy_sim.mjs).
 const DEPTH = 1.5;
@@ -83,7 +97,7 @@ export class Market {
 
   // `scale[port]`: how a port's size changes its depth (ports.js; 1 in 1451, less as it grows).
   k(port, good) {
-    return MARKETS[port].k * DEPTH * (good === 'gold' ? GOLD_K : 1) * (this.scale?.[port] ?? 1);
+    return MARKETS[port].k * DEPTH * (good === 'gold' ? GOLD_K : good === 'spices' ? SPICE_K : 1) * (this.scale?.[port] ?? 1);
   }
 
   basePrice(port, good) {
