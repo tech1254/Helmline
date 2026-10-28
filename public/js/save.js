@@ -95,7 +95,7 @@ export function newGame() {
   setGame(freshState(), new Market());
   initFog(null);
   // Hearsay from other captains: prices at the known ports, a while ago.
-  for (const [pid, ago] of [['lagos', 20], ['funchal', 75], ['lanzarote', 110]]) {
+  for (const [pid, ago] of [['lagos', 20], ['safi', 75], ['lanzarote', 110]]) {
     S.seen[pid] = { day: -ago, prices: market.observe(pid) };
   }
   Contracts.ensureContracts(S);

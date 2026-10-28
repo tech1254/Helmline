@@ -11,13 +11,16 @@ import { $, ageText, cz, fmtDate } from './util.js';
 import { tabs } from './panels.js';
 
 export const passageCache = new Map();
+// The passage is planned as the flagship would sail it: a barca keeps to the coast, so a run she
+// cannot make (out to Madeira, say) has no passage at all.
 export function passage(from, to, startDay) {
-  const key = `${from.lon.toFixed(1)},${from.lat.toFixed(1)}>${to.id}@${Math.floor(startDay / 5)}`;
+  const coastal = !!Ships.hullOf(S.ship).coastal;
+  const key = `${from.lon.toFixed(1)},${from.lat.toFixed(1)}>${to.id}@${Math.floor(startDay / 5)}${coastal ? 'c' : ''}`;
   if (passageCache.has(key)) return passageCache.get(key);
   let est = null;
   if (distNm(from.lon, from.lat, to.lon, to.lat) < 1) est = { days: 0, nm: 0, hot: 0 };
   else {
-    const route = findPath(from.lon, from.lat, to.lon, to.lat);
+    const route = findPath(from.lon, from.lat, to.lon, to.lat, 1, coastal);
     if (route) est = estimateVoyage(route, from, startDay);
   }
   if (passageCache.size > 300) passageCache.clear();
@@ -30,7 +33,8 @@ export function passage(from, to, startDay) {
 // he can expect to lose to rot on the way.
 export function suggestions() {
   const out = [];
-  const seen = Object.entries(S.seen);
+  // only ports on the chart: hearsay of a port not yet found is no use to a captain
+  const seen = Object.entries(S.seen).filter(([pid]) => S.discovered[pid]);
   const here = { lon: S.ship.lon, lat: S.ship.lat };
   const st = Ships.flagStats(S);
   for (const g of GOODS) {
