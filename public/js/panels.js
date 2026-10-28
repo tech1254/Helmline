@@ -7,6 +7,7 @@ import * as Contracts from './contracts.js';
 import * as Events from './events.js';
 import * as Fleet from './fleet.js';
 import * as Pirates from './pirates.js';
+import * as Investments from './investments.js';
 import { CHART_REWARD, OFFLINE_MAX_DAYS, STANDING_FADES_AFTER_HOURS } from './config.js';
 import * as Ships from './ships.js';
 import { shipFigure } from './photos.js';
@@ -140,6 +141,24 @@ function harbourLine(pid) {
   return `<p class="harbour">${L ? `A ${L.tier} of about ${L.people.toLocaleString()} people, ${L.trend}. ` : ''}${p.kind[0].toUpperCase() + p.kind.slice(1)}, ${depth} m at the berth. ${season ? `${season} ` : ''}${fit}</p>`;
 }
 
+// Investments ashore in this port: a feitoria of your own, and in Lisbon shares in the India fleet.
+function investLine(pid) {
+  const parts = [];
+  if (Investments.hasFeitoria(S, pid)) {
+    parts.push(`<p class="harbour">Your <b>feitoria</b> here: your factor gets you prices ${Math.round(Investments.FEITORIA_EDGE * 100)}% better and finds you an extra contract. He and his clerks draw ${Investments.FACTOR_WAGE} cz a day.</p>`);
+  } else if (pid !== 'lisbon') {
+    const c = Investments.canFound(S, pid);
+    const cost = Investments.feitoriaCost(S, pid);
+    if (S.contracts?.standing >= 5) parts.push(`<div class="row invest"><button data-feitoria ${c.ok ? '' : 'disabled'} title="${c.ok ? '' : c.why}">Found a feitoria here: ${cost.toLocaleString()} cz</button></div>`);
+  }
+  if (pid === 'lisbon' && Investments.fleetsOpen(S)) {
+    const f = Investments.nextFleet(S);
+    const have = Investments.sharesIn(S, f.year);
+    parts.push(`<div class="row invest"><button data-shares="5" ${S.purse < Investments.SHARE * 5 || have >= Investments.MAX_SHARES ? 'disabled' : ''}>Shares in the India fleet of ${f.year}: 5 for ${(Investments.SHARE * 5).toLocaleString()} cz</button></div>${have ? `<p class="fine">You hold ${have} shares in it. It sails ${fmtDate(f.sails)}.</p>` : ''}`);
+  }
+  return parts.join('');
+}
+
 export function renderPort(el) {
   const pid = S.ship.docked;
   if (!pid) { ui.panelMode = null; el.hidden = true; return; }
@@ -171,6 +190,7 @@ export function renderPort(el) {
     <p class="blurb">${p.blurb}</p>
     ${harbourLine(pid)}
     ${hullBanner(pid)}
+    ${investLine(pid)}
     ${shut ? `<p class="banner warn"><b>Closed to trade:</b> ${Events.template(shut).title.toLowerCase()}. Expected to reopen around ${fmtDate(shut.end)}.</p>` : ''}
     <table class="market">
       <thead><tr><th>Good</th><th class="num">Buy</th><th class="num">Sell</th><th class="num">Hold</th><th></th></tr></thead>
@@ -458,9 +478,11 @@ export function renderHelp(el) {
     <ul class="help">
       <li><b>Contracts</b> open up at 500 cz. Completing them builds standing; missing deadlines costs it.</li>
       <li><b>Standing</b> brings better pay, better prices in Portuguese ports, the right to command hired ships, and bigger hulls at the shipyard.</li>
-      <li><b>Your ship:</b> the ship register (S, or <i>Ship</i>) shows your flagship, ships on order and the hulls ahead. The Lisbon shipyard refits her (sails, rig, guns, stores, colours), trades her up for a bigger hull, or builds one to order; Lagos and Funchal refit. A nau can be ordered from 1470 and is delivered in 1480.</li>
+      <li><b>Your ship:</b> the ship register (S, or <i>Ship</i>) shows your flagship, ships on order and the hulls ahead. The Lisbon shipyard refits her (sails, rig, guns, stores, colours), trades her up for a bigger hull, or builds one to order; Lagos and Funchal refit. A nau can be ordered from 1466 and is delivered from 1470; later come the galleon and the great Nau da Índia.</li>
       <li><b>Arriving:</b> your ship sails into each port in a short scene. Tap to skip it; choose every port, first visits only or off in the ship register.</li>
       <li><b>Your fleet:</b> a hired captain runs a trade route for you, paid from your purse.</li>
+      <li><b>The road to the Indies:</b> history moves on as you sail. Diogo Cão reaches the Kongo (1483), São Tomé is settled (1486), Dias rounds the Cape (1488), da Gama comes home from India (1499) and Cabral finds Brazil (1500); each opens new ports. The chart ends beyond the Cape: sail to its edge to go on to <b>Calicut</b>, months away across the Indian Ocean. Go with the monsoon (round the Cape June to August, leave India December to February) or pay for it in days, scurvy and storms. Hired captains can sail there too.</li>
+      <li><b>Investments:</b> once you are Respected, found a <b>feitoria</b> in a port: a factor of your own gets you better prices there and finds you work, for his wages. From 1500, buy shares in the crown's India fleet in Lisbon: paid out when it comes home, if it comes home.</li>
       <li><b>Draft:</b> a laden ship sits deeper. Where she draws more than the harbour has, she anchors offshore and her boats ferry the cargo: some days, and a small fee to the boatmen. A nau keeps outside the Arguin banks. River bars rise in the rains and fall in the dry season.</li>
       <li><b>Up the Gambia:</b> Cantor, far upriver, trades gold and ivory from the caravans and pays well for salt. Only a shallow ship gets there: a barca, or a caravel not too deeply laden.</li>
       <li><b>Ports grow:</b> with their history and with the trade through them. A bigger port has a deeper market, and some build quays that let deeper ships come in. The market panel shows each port's size.</li>

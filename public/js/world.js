@@ -1,9 +1,19 @@
-// Geography, ports and winds for Prototype 0: the eastern Atlantic, 1450s.
+// Geography, ports and winds: the eastern Atlantic from Iberia to the Cape of Good Hope and Brazil.
 // Coordinates are [longitude, latitude] in degrees. Coastlines are hand-simplified.
 
-export const BOUNDS = { west: -32, east: 4, south: 2, north: 44 };
+export const BOUNDS = { west: -42, east: 24, south: -36, north: 44 };
 // The chart before the Gulf of Guinea was added, for reading older saves.
 export const OLD_BOUNDS = { west: -32, east: 0, south: 8, north: 44 };
+// Parts of the rectangle that are not on the chart: the open Atlantic west of the Azores north
+// of the line, and the Sahara and the Mediterranean east of Algiers. Treated as land by the
+// pathfinder and drawn as the bare margin of the parchment.
+export const OFF_CHART = [
+  { w: -42, e: -32, s: 2, n: 44 },
+  { w: 4.6, e: 24, s: 12, n: 44 },
+];
+// The edge of the chart, going round: the bounds less the parts off the chart.
+export const CHART_OUTLINE = [[-32, 44], [4.6, 44], [4.6, 12], [24, 12], [24, -36], [-42, -36], [-42, 2], [-32, 2]];
+export const offChart = (lon, lat) => OFF_CHART.some((r) => lon >= r.w && lon <= r.e && lat >= r.s && lat <= r.n);
 export const D2R = Math.PI / 180;
 // Equirectangular projection centred near the Canaries.
 export const COS0 = Math.cos(28 * D2R);
@@ -33,6 +43,15 @@ const IBERIA = [
   [-1.6, 37.3], [-2.1, 36.73], [-2.9, 36.75], [-4.4, 36.7], [-5.0, 36.45],
 ];
 
+// The shoulder of Brazil, from Ceará round Cape São Roque to Cabo Frio.
+const BRAZIL = [
+  [-43, -2.7], [-41.8, -2.85], [-40.4, -2.8], [-39.3, -3.3], [-38.5, -3.7], [-37.6, -4.6], [-36.9, -5.0],
+  [-35.9, -5.1], [-35.25, -5.4], [-35.05, -6.2], [-34.85, -7.1], [-34.85, -8.05], [-35.1, -9.0], [-35.7, -9.7],
+  [-36.4, -10.5], [-37.05, -11.05], [-37.7, -12.0], [-38.3, -12.6], [-38.5, -13.0], [-38.95, -13.8],
+  [-39.05, -15.0], [-38.95, -16.0], [-39.05, -16.45], [-39.2, -17.7], [-39.7, -18.9], [-40.15, -20.0],
+  [-40.3, -20.7], [-40.95, -21.6], [-41.0, -22.1], [-42.0, -22.95], [-43, -23.05], [-43, -36.5], [-44, -36.5], [-44, -2.7],
+];
+
 const AFRICA = [
   [-5.3, 35.84], [-5.6, 35.66], [-5.9, 35.7], [-6.2, 35.2], [-6.6, 34.6], [-7.0, 33.95], [-7.6, 33.6],
   [-8.5, 33.25], [-9.25, 32.55], [-9.75, 31.5], [-9.85, 30.6], [-9.6, 30.4], [-9.85, 29.9],
@@ -47,7 +66,24 @@ const AFRICA = [
   [-12.5, 7.45], [-11.9, 7.0], [-11.4, 6.75], [-10.8, 6.35], [-10.3, 6.0], [-9.6, 5.5], [-9.0, 5.05],
   [-8.3, 4.6], [-7.7, 4.37], [-7.0, 4.4], [-6.0, 4.65], [-5.0, 5.1], [-4.0, 5.25], [-3.2, 5.1],
   [-2.5, 4.9], [-2.0, 4.75], [-1.4, 5.05], [-0.5, 5.4], [0.5, 5.75], [1.2, 6.1], [2.3, 6.35],
-  [3.4, 6.4], [4.5, 6.2], [4.5, 36.8], [2.0, 36.5],
+  [3.4, 6.4], [4.5, 6.2],
+  // the Niger delta and the Bight of Biafra
+  [5.2, 5.75], [5.8, 4.7], [6.4, 4.3], [7.2, 4.4], [8.0, 4.5], [8.6, 4.55], [9.2, 3.95], [9.7, 3.4], [9.85, 2.6],
+  // Gabon and the Congo
+  [9.75, 1.6], [9.45, 0.95], [9.3, 0.3], [8.75, -0.65], [9.1, -1.1], [9.65, -2.25], [10.45, -3.15], [11.1, -3.95],
+  [11.8, -4.75], [12.15, -5.4], [12.3, -6.05], [12.75, -7.0], [13.15, -8.3], [13.25, -8.95],
+  // Angola
+  [13.4, -10.0], [13.75, -10.9], [13.6, -11.9], [13.4, -12.6], [12.75, -13.4], [12.4, -14.5], [12.15, -15.3],
+  [11.8, -16.4], [11.75, -17.25],
+  // the Skeleton Coast and Namibia
+  [12.2, -18.5], [13.0, -20.0], [13.7, -21.4], [14.45, -22.6], [14.5, -23.5], [14.85, -25.2], [15.1, -26.6],
+  [15.6, -27.5], [16.45, -28.6],
+  // the Cape
+  [17.05, -29.7], [17.3, -30.6], [17.9, -31.6], [18.3, -32.6], [17.95, -33.0], [18.4, -33.9], [18.47, -34.36],
+  [18.8, -34.12], [19.3, -34.45], [19.75, -34.75], [20.0, -34.83], [20.6, -34.45], [21.4, -34.38], [22.15, -34.2],
+  [22.7, -34.0], [23.4, -34.05], [24.5, -34.15],
+  // round the back of the chart to the Mediterranean, which lies off it
+  [24.5, 36.8], [2.0, 36.5],
   [0.5, 35.9], [-1.2, 35.3], [-2.2, 35.1], [-3.5, 35.2], [-4.6, 35.2],
 ];
 
@@ -83,6 +119,14 @@ export const LANDS = [
   { group: 'iberia', pts: islet(2.95, 39.6, 0.4, 0.22, 0.2, 27) },
   { group: 'iberia', pts: islet(4.1, 39.95, 0.2, 0.08, 0.2, 28) },
   { group: 'iberia', pts: islet(1.42, 38.98, 0.16, 0.12, 0.6, 29) },
+  { group: 'brazil', pts: BRAZIL },
+  { group: 'guinea', pts: islet(6.6, 0.24, 0.17, 0.25, 0.4, 30) }, // São Tomé
+  { group: 'guinea', pts: islet(7.4, 1.6, 0.08, 0.1, 0, 31) }, // Príncipe
+  { group: 'guinea', pts: islet(8.75, 3.55, 0.22, 0.32, 0.5, 32) }, // Fernando Pó
+  { group: 'guinea', pts: islet(5.62, -1.43, 0.04, 0.05, 0, 33) }, // Ano Bom
+  { group: 'ascension', pts: islet(-14.37, -7.95, 0.08, 0.07, 0, 34) },
+  { group: 'sthelena', pts: islet(-5.72, -15.95, 0.09, 0.08, 0, 35) },
+  { group: 'noronha', pts: islet(-32.42, -3.85, 0.09, 0.04, 0.3, 36) },
 ];
 
 export const LAND_GROUPS = {
@@ -92,6 +136,11 @@ export const LAND_GROUPS = {
   canaries: 'the Canary Islands',
   capeverde: 'the Cape Verde Islands',
   azores: 'the Azores',
+  brazil: 'the Land of the Holy Cross',
+  guinea: 'the islands of the Gulf of Guinea',
+  ascension: 'Ascension',
+  sthelena: 'Saint Helena',
+  noronha: 'Fernão de Noronha',
 };
 
 for (const l of LANDS) {
@@ -111,6 +160,7 @@ function inPoly(x, y, pts) {
 }
 
 export function isLand(lon, lat) {
+  if (offChart(lon, lat)) return true;
   for (const l of LANDS) {
     const b = l.bbox;
     if (lon < b.w || lon > b.e || lat < b.s || lat > b.n) continue;
@@ -120,7 +170,7 @@ export function isLand(lon, lat) {
 }
 
 export function inBounds(lon, lat) {
-  return lon > BOUNDS.west && lon < BOUNDS.east && lat > BOUNDS.south && lat < BOUNDS.north;
+  return lon > BOUNDS.west && lon < BOUNDS.east && lat > BOUNDS.south && lat < BOUNDS.north && !offChart(lon, lat);
 }
 
 export const PORTS = [
@@ -152,7 +202,22 @@ export const PORTS = [
     blurb: 'The Gold Coast. Akan traders bring gold dust down from the forests and pay richly for cloth.' },
   { id: 'cantor', name: 'Cantor', lon: -14.9, lat: 13.66, known: false, river: 'gambia',
     blurb: 'A Mandinka market town far up the Gambia, where caravans from the gold country meet the river. Only a shallow ship can come this far.' },
+  // Ports that history opens (`from`: the year a Portuguese ship can first trade there).
+  { id: 'mpinda', name: 'Mpinda', lon: 12.25, lat: -6.15, known: false, from: 1483,
+    blurb: 'The port of the Manikongo at the mouth of the great Zaire river. Copper, ivory and red tacula wood for cloth and wine.' },
+  { id: 'saotome', name: 'São Tomé', lon: 6.84, lat: 0.4, known: false, from: 1486,
+    blurb: 'A Portuguese island colony on the line. Its new sugar mills sell cheaply, and its traders deal in Benin pepper.' },
+  { id: 'saobras', name: 'São Brás', lon: 22.15, lat: -34.3, known: false, from: 1488,
+    blurb: 'A watering place in a bay beyond the Cape, where Dias found fresh water and Khoikhoi herders. Little trade, but the last good anchorage before the Indian Ocean.' },
+  { id: 'portoseguro', name: 'Porto Seguro', lon: -38.9, lat: -16.45, known: false, from: 1500,
+    blurb: 'The safe harbour where Cabral came ashore in the Land of the Holy Cross. Brazilwood, the red dye wood, for the cutting.' },
+  { id: 'calicut', name: 'Calicut', lon: 23.4, lat: -35.75, known: false, from: 1499, beyond: true,
+    blurb: 'The pepper port of the Malabar coast, ruled by the Zamorin, months of sailing beyond the Cape. Pepper, cinnamon and cloves, for gold, copper and fine cloth.' },
 ];
+// Calicut lies far beyond the edge of the chart: ships leave the chart here, south-east of the Cape.
+export const isBeyond = (id) => !!PORTS.find((p) => p.id === id)?.beyond;
+// Whether a port exists yet: some are opened only by history.
+export const portOpen = (id, year) => { const p = PORTS.find((q) => q.id === id); return !p?.from || year >= p.from; };
 
 // ---- Harbours ------------------------------------------------------------------------
 // Depth at the berth, in metres, at the mean of the year. A ship that draws more anchors
@@ -173,6 +238,11 @@ export const HARBOURS = {
   cestos: { depth: 2.2, kind: 'a river mouth with a shallow bar', seasonal: true },
   mina: { depth: 2.8, kind: 'a surf beach with the anchorage offshore' },
   cantor: { depth: 2.0, kind: 'a river town, far upstream', seasonal: true },
+  mpinda: { depth: 6, kind: 'the deep mouth of the Zaire' },
+  saotome: { depth: 5, kind: 'a sheltered roadstead under the town' },
+  saobras: { depth: 6, kind: 'an open bay with a spring of fresh water' },
+  portoseguro: { depth: 3.5, kind: 'a river mouth behind the reef' },
+  calicut: { depth: 4, kind: 'an open roadstead off the Malabar coast' },
 };
 for (const p of PORTS) Object.assign(p, HARBOURS[p.id] || { depth: 5 });
 
@@ -238,21 +308,35 @@ const smooth = (e0, e1, x) => {
   return t * t * (3 - 2 * t);
 };
 
-// Prevailing winds of the 1450s Atlantic, simplified:
-// north-east trades south of ~30°N, Portuguese northerlies along the Iberian coast,
-// westerlies out at sea north of the Azores latitude. Returns where the wind blows FROM.
+// Prevailing winds of the Atlantic, simplified. North of the line: the north-east trades south
+// of ~30°N, Portuguese northerlies along the Iberian coast, westerlies out at sea north of the
+// Azores latitude, and light south-westerlies and calms in the Gulf of Guinea. South of it: the
+// south-east trades, blowing up the African coast as southerlies; the calms of the high
+// (the horse latitudes) around 28°S; and the westerlies of the roaring forties beyond, which
+// carry a ship round the Cape. Returns where the wind blows FROM.
 export function windAt(lon, lat, day) {
   const north = 1 - smooth(33, 28, lat); // 1 north of the trades
-  const guinea = smooth(9.5, 5, lat); // 1 in the Gulf of Guinea
+  const guinea = smooth(9.5, 5, lat); // 1 from the Gulf of Guinea southward
+  const south = smooth(1, -4, lat); // 1 south of the line
   const trade = (1 - north) * (1 - guinea); // 1 in the trades
   const coastal = smooth(-16, -11, lon); // 1 near Iberia/Morocco
   const tradeFrom = 50 - 32 * smooth(-24, -15, lon); // NNE near Africa, NE offshore
+  const roaring = smooth(-29, -34, lat); // 1 in the westerlies
+  const horse = smooth(-22, -27, lat) * (1 - roaring); // the calms of the South Atlantic high
+  const seTrade = south * (1 - smooth(-22, -27, lat));
+  const benguela = smooth(6, 11, lon); // close along the coast of Angola and Namibia
+  const seFrom = 125 - 30 * smooth(-30, -36, lon); // SE near Africa, ESE off Brazil
   const zones = [
     { from: tradeFrom, w: trade, s: 1.0 },
     { from: 352, w: north * coastal, s: 0.85 },
     { from: 278, w: north * (1 - coastal) * smooth(33, 38, lat), s: 1.0 },
     { from: 15, w: north * (1 - coastal) * (1 - smooth(33, 38, lat)), s: 0.55 }, // lighter northerlies
-    { from: 220, w: guinea, s: 0.5 }, // Gulf of Guinea: light south-westerlies, calms offshore
+    { from: 220, w: guinea * (1 - south), s: 0.5 }, // Gulf of Guinea: light south-westerlies, calms offshore
+    { from: seFrom, w: seTrade * (1 - benguela), s: 1.0 },
+    { from: 165, w: seTrade * benguela, s: 0.9 }, // southerlies up the coast of Angola
+    { from: 160, w: horse * benguela, s: 0.8 },
+    { from: 200, w: horse * (1 - benguela), s: 0.35 }, // light and fickle in the high
+    { from: 285, w: roaring * south, s: 1.0 },
   ];
   let vx = 0, vy = 0;
   for (const z of zones) {
@@ -306,14 +390,45 @@ function cellCenter(i, j) {
   return [BOUNDS.west + (i + 0.5) * NAV_CELL, BOUNDS.south + (j + 0.5) * NAV_CELL];
 }
 
+// Where each land's coastline crosses the latitude `y`, sorted west to east: a point on that
+// latitude is inside a land when an odd number of its crossings lie west of it. Filling the grid a
+// latitude at a time like this is far quicker than testing every point against every coastline.
+function crossingsAt(y) {
+  const out = [];
+  for (const l of LANDS) {
+    if (y < l.bbox.s || y > l.bbox.n) continue;
+    const xs = [];
+    const pts = l.pts;
+    for (let i = 0, j = pts.length - 1; i < pts.length; j = i++) {
+      const [xi, yi] = pts[i], [xj, yj] = pts[j];
+      if ((yi > y) !== (yj > y)) xs.push(((xj - xi) * (y - yi)) / (yj - yi) + xi);
+    }
+    if (xs.length) out.push(xs.sort((p, q) => p - q));
+  }
+  return out;
+}
+function landOnRow(x, rows) {
+  for (const xs of rows) {
+    let n = 0;
+    while (n < xs.length && xs[n] < x) n++;
+    if (n & 1) return true;
+  }
+  return false;
+}
+
 function getNavGrid() {
   if (navGrid) return navGrid;
   navGrid = new Uint8Array(NW * NH);
+  const q = NAV_CELL * 0.45;
   for (let j = 0; j < NH; j++) {
+    const y = BOUNDS.south + (j + 0.5) * NAV_CELL;
+    const mid = crossingsAt(y), lo = crossingsAt(y - q), hi = crossingsAt(y + q);
     for (let i = 0; i < NW; i++) {
-      const [x, y] = cellCenter(i, j);
-      const q = NAV_CELL * 0.45;
-      navGrid[j * NW + i] = isLand(x, y) || isLand(x - q, y - q) || isLand(x + q, y - q) || isLand(x - q, y + q) || isLand(x + q, y + q) ? 1 : 0;
+      const x = BOUNDS.west + (i + 0.5) * NAV_CELL;
+      // the cell's centre and four corners, as isLand would see them
+      const land = offChart(x, y) || offChart(x - q, y - q) || offChart(x + q, y + q) || offChart(x - q, y + q) || offChart(x + q, y - q) ||
+        landOnRow(x, mid) || landOnRow(x - q, lo) || landOnRow(x + q, lo) || landOnRow(x - q, hi) || landOnRow(x + q, hi);
+      navGrid[j * NW + i] = land ? 1 : 0;
     }
   }
   return navGrid;
@@ -648,3 +763,6 @@ function computePath(aLon, aLat, bLon, bLat, skill = 1, maxOff = 0, minDepth = 0
   }
   return out;
 }
+
+// For the tests: the sea grid (1 = land) and its size.
+export const navGridForTests = () => ({ grid: getNavGrid(), NW, NH });

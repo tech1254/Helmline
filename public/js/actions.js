@@ -7,6 +7,7 @@ import * as Fleet from './fleet.js';
 import * as Cloud from './cloud.js';
 import * as Accounts from './accounts.js';
 import * as Pirates from './pirates.js';
+import * as Investments from './investments.js';
 import { WAGE_RESERVE_DAYS } from './config.js';
 import * as Ships from './ships.js';
 import * as Ports from './ports.js';
@@ -153,6 +154,28 @@ export function initActions() {
       return;
     } else if (t.hasAttribute('data-wait') && pid) {
       waitInPort(7);
+    } else if (t.hasAttribute('data-feitoria') && pid) {
+      const p = PORTS.find((x) => x.id === pid);
+      const cost = Investments.feitoriaCost(S, pid);
+      confirmDialog({
+        title: `Found a feitoria at ${p.name}?`,
+        body: `<p>A house and storerooms ashore, and a factor of your own to keep them: he watches the market for you between your visits.</p>
+          <dl class="facts"><dt>Cost</dt><dd>${cost.toLocaleString()} cz</dd><dt>Prices here</dt><dd>${Math.round(Investments.FEITORIA_EDGE * 100)}% better, buying and selling, for you and your captains</dd><dt>Contracts</dt><dd>one more on the board here</dd><dt>The factor's wages</dt><dd>${Investments.FACTOR_WAGE} cz a day, for as long as you keep him</dd></dl>`,
+        ok: `Found it for ${cost.toLocaleString()} cz`,
+        onOk: () => { if (Investments.found(S, pid)) { toast(`Your factor sets up house in <b>${p.name}</b>.`, 'discover'); log(`Founded a feitoria at ${p.name} (${cost} cz).`); renderPanel(); save(); } },
+      });
+      return;
+    } else if (t.dataset.shares && pid === 'lisbon') {
+      const n = +t.dataset.shares;
+      const f = Investments.nextFleet(S);
+      confirmDialog({
+        title: `Shares in the India fleet of ${f.year}?`,
+        body: `<p>The crown's armada for India sails from the Tagus on ${fmtDate(f.sails)} and should be home about sixteen months later. Shareholders are paid from the spices it brings back.</p>
+          <dl class="facts"><dt>Shares</dt><dd>${n} at ${Investments.SHARE} cz: ${(n * Investments.SHARE).toLocaleString()} cz</dd><dt>A rich voyage</dt><dd>nearly three times your money</dd><dt>A poor one</dt><dd>a little over your money back</dd><dt>A lost fleet</dt><dd>nothing at all: about one fleet in eight</dd></dl>`,
+        ok: `Buy for ${(n * Investments.SHARE).toLocaleString()} cz`,
+        onOk: () => { const got = Investments.buyShares(S, n); if (got) { toast(`You hold shares in the India fleet of ${f.year}.`, 'port'); log(`Bought ${got} shares in the India fleet of ${f.year}.`); renderPanel(); save(); } },
+      });
+      return;
     } else if (t.dataset.ships) {
       ui.panelMode = S.ship.docked ? 'port' : null;
       renderPanel();

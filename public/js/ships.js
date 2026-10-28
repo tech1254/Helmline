@@ -51,6 +51,18 @@ export const HULLS = {
     upkeep: 6, hiredUpkeep: 2, scale: 2, size: 1.45, fight: 0.1, shy: 0.8,
     blurb: 'A great carrack with high castles fore and aft. A huge hold and room for bombards; slow to windward. Galleys think twice before taking her on.',
   },
+  naudaindia: {
+    draft: [4.0, 5.6], // metres, light and fully laden
+    id: 'naudaindia', name: 'Nau da Índia', year: 1500, orderYear: 1497, standing: TRUSTED, price: 15600, hold: 200, knots: 5.4, up: 0.7, down: 1.15,
+    upkeep: 10, hiredUpkeep: 3, scale: 2.4, size: 1.7, fight: 0.15, shy: 0.6,
+    blurb: 'A great carrack built for the Carreira da Índia: four decks, a vast hold for pepper, and room for a hundred men. Clumsy to windward and too deep for most African ports, but nothing else carries so much round the Cape.',
+  },
+  galeao: {
+    draft: [3.4, 4.6], // metres, light and fully laden
+    id: 'galeao', name: 'Galleon', year: 1525, orderYear: 1521, standing: TRUSTED, price: 12500, hold: 150, knots: 6.0, up: 0.9, down: 1.15,
+    upkeep: 8, hiredUpkeep: 2, scale: 2.1, size: 1.55, fight: 0.25, shy: 0.5,
+    blurb: 'A long, low warship-merchantman with a beaked bow and four masts: faster and handier than a nau, with gun decks that make corsairs keep their distance.',
+  },
 };
 // How deep a ship draws with her hold this full (0 to 1): light, laden, and between.
 export function draftOf(hullId, load = 1) {
@@ -66,7 +78,7 @@ export function boatRate(hullId, nm = 7) {
   return Math.round((6 + 8 * h.size) * Math.min(1, 10 / Math.max(10, nm)));
 }
 
-export const HULL_ORDER = ['barca', 'caravel', 'barinel', 'largecaravel', 'redonda', 'nau'];
+export const HULL_ORDER = ['barca', 'caravel', 'barinel', 'largecaravel', 'redonda', 'nau', 'galeao', 'naudaindia'];
 // Hull prices above, and refits, are 30% dearer than first set (economy change C, 27 Oct 2026):
 // close to what ships cost per ton in the period, and enough to make buying one a decision.
 export const PRICE_RISE = 1.3;
@@ -117,7 +129,7 @@ export const GROUPS = [
     choices: [
       { id: 'none', name: 'None' },
       { id: 'bercos', name: 'Swivel guns (berços)', note: 'Light breech-loaders on the rails.', fight: 0.08, price: 500, days: 3, standing: KNOWN },
-      { id: 'bombards', name: 'Bombards', note: 'Heavy guns on the main deck. Only a nau can carry them.', fight: 0.15, price: 1200, days: 5, standing: TRUSTED, hulls: ['nau'] },
+      { id: 'bombards', name: 'Bombards', note: 'Heavy guns on the main deck. Only a nau, a galleon or a nau da Índia can carry them.', fight: 0.15, price: 1200, days: 5, standing: TRUSTED, hulls: ['nau', 'galeao', 'naudaindia'] },
     ],
   },
   {

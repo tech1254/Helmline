@@ -1,6 +1,6 @@
 // Time passing: sailing, wages, spoilage, events, the fleet, and time away.
 
-import { D2R, PORTS, isLand, windAt, sailFactor, bearing, distNm, angleDiff, isRiverLeg, RIVER_KNOTS, shoalDepth, SHOALS } from './world.js';
+import { D2R, PORTS, isLand, windAt, sailFactor, bearing, distNm, angleDiff, isRiverLeg, RIVER_KNOTS, shoalDepth, SHOALS, isBeyond } from './world.js';
 import * as Ports from './ports.js';
 import { GOODS, PORTUGUESE_PORTS } from './economy.js';
 import * as Contracts from './contracts.js';
@@ -8,12 +8,13 @@ import * as Events from './events.js';
 import * as Fleet from './fleet.js';
 import * as Accounts from './accounts.js';
 import * as Pirates from './pirates.js';
+import * as Investments from './investments.js';
 import * as Ships from './ships.js';
 import * as Wear from './wear.js';
 import { DAYS_PER_SEC, OFFLINE_DAYS_PER_DOUBLING, OFFLINE_FULL_DAYS, OFFLINE_MAX_DAYS, OFFLINE_MIN_SECONDS, OFFLINE_RATE, SIGHT, STANDING_FADES_AFTER_HOURS } from './config.js';
 import { S, market, ui } from './state.js';
 import { save } from './save.js';
-import { revealAt } from './fog.js';
+import { revealAt, chartFromHistory } from './fog.js';
 import { dock, observe, replan } from './voyage.js';
 import { startArrival } from './scene.js';
 import { $, cz, fmtDate } from './util.js';
@@ -95,7 +96,7 @@ export function update(dtSec) {
       if (S.trail.length > 4000) S.trail.splice(0, S.trail.length - 4000);
     }
     if (!sh.route.length) {
-      if (sh.dest?.port) { try { startArrival(sh.dest.port); } catch (e) { console.error(e); } dock(sh.dest.port); }
+      if (sh.dest?.port) { try { if (!isBeyond(sh.dest.port)) startArrival(sh.dest.port); } catch (e) { console.error(e); } dock(sh.dest.port); }
       else { sh.dest = null; toast('Arrived at the mark. Awaiting orders.'); save(); }
       break;
     }
@@ -228,7 +229,10 @@ export function advanceTime(dd, atSea, away = false) {
   }
   market.tick(dd);
   report(Events.tick(S, dd));
-  report(Ports.grow(S, dd, market));
+  const grown = Ports.grow(S, dd, market);
+  for (const m of grown) if (m.opens) chartFromHistory(m.opens);
+  report(grown);
+  report(Investments.tick(S, dd));
   syncMarket();
   if (atSea) {
     spoil(dd);
@@ -281,6 +285,7 @@ export function syncMarket() {
   market.scale = Object.fromEntries(PORTS.map((p) => [p.id, Ports.depthScale(S, p.id)]));
   const edge = Contracts.perks(S).priceEdge;
   market.edge = Object.fromEntries(PORTUGUESE_PORTS.map((p) => [p, edge]));
+  for (const [pid, e] of Object.entries(Investments.edges(S))) market.edge[pid] = (market.edge[pid] || 0) + e; // your factors
 }
 
 // Perishable cargo slowly spoils at sea, faster in the tropics.

@@ -1,6 +1,7 @@
 // The fog of war: which cells of the chart are known, and the soft image drawn over the map.
 
-import { BOUNDS, OLD_BOUNDS, D2R, LANDS, LAND_GROUPS, PORTS, isLand, distNm } from './world.js';
+import { BOUNDS, OLD_BOUNDS, D2R, LANDS, LAND_GROUPS, PORTS, isLand, distNm, portOpen } from './world.js';
+import { yearOf } from './ships.js';
 import { FH, FOG_CELL, FW } from './config.js';
 import { S } from './state.js';
 import { canvas } from './view.js';
@@ -14,7 +15,7 @@ export let fogDirty = true;
 export function initFog(saved, savedBounds) {
   fog = new Uint8Array(FW * FH).fill(1);
   if (saved) {
-    const bin = atob(saved);
+    const bin = decodeFog(saved);
     const b = savedBounds || OLD_BOUNDS; // saves from before the chart grew have no bounds
     const ow = Math.round((b.east - b.west) / FOG_CELL), oh = Math.round((b.north - b.south) / FOG_CELL);
     if (ow === FW && oh === FH && b.west === BOUNDS.west && b.south === BOUNDS.south) {
@@ -56,10 +57,47 @@ export function initFog(saved, savedBounds) {
   }
 }
 
+// The fog is saved as runs: 'r:' then the lengths (base 36) of alternating runs of unknown and
+// known cells, starting with unknown. The chart is mostly unknown in long stretches, so this is
+// a small fraction of the size of the cells themselves. Older saves hold the cells in base64.
+// Coasts the crown's pilots chart as history opens a port: the news comes with their charts.
+const HISTORY_CHARTS = {
+  mpinda: [{ group: 'africa', w: 4.4, s: -7.5, n: 6.5 }],
+  saotome: [{ group: 'guinea' }],
+  saobras: [{ group: 'africa', w: 8, s: -35, n: -6 }],
+  portoseguro: [{ group: 'brazil' }],
+  calicut: [{ group: 'africa', w: 17, s: -35, n: -30 }],
+};
+export function chartFromHistory(portId) {
+  for (const c of HISTORY_CHARTS[portId] || []) {
+    for (const l of LANDS) {
+      if (l.group !== c.group) continue;
+      for (const [x, y] of l.pts) if ((c.w == null || x >= c.w) && (c.s == null || y >= c.s) && (c.n == null || y <= c.n)) revealAt(x, y, 1.2, true);
+    }
+  }
+  const p = PORTS.find((q) => q.id === portId);
+  if (p) revealAt(p.lon, p.lat, 1.5, true);
+}
+
 export function fogToString() {
-  let s = '';
-  for (let i = 0; i < fog.length; i += 4096) s += String.fromCharCode.apply(null, fog.subarray(i, i + 4096));
-  return btoa(s);
+  const runs = [];
+  let v = 1, n = 0;
+  for (let i = 0; i < fog.length; i++) {
+    const c = fog[i] ? 1 : 0;
+    if (c === v) { n++; continue; }
+    runs.push(n.toString(36)); v = c; n = 1;
+  }
+  runs.push(n.toString(36));
+  return `r:${runs.join(',')}`;
+}
+
+// Back to a string of cell values (as atob gives for older saves).
+function decodeFog(saved) {
+  if (!saved.startsWith('r:')) return atob(saved);
+  const out = [];
+  let v = 1;
+  for (const r of saved.slice(2).split(',')) { out.push(String.fromCharCode(v).repeat(parseInt(r, 36))); v ^= 1; }
+  return out.join('');
 }
 
 export function fogIdx(lon, lat) {
@@ -87,7 +125,7 @@ export function revealAt(lon, lat, r, quiet = false) {
   if (changed) fogDirty = true;
   if (quiet || !S) return;
   for (const p of PORTS) {
-    if (!S.discovered[p.id] && distNm(lon, lat, p.lon, p.lat) <= r * 55) {
+    if (!S.discovered[p.id] && !p.beyond && portOpen(p.id, yearOf(S.day)) && distNm(lon, lat, p.lon, p.lat) <= r * 55) {
       S.discovered[p.id] = true;
       S.unpaidCharts.push(p.name);
       warmRoutes();

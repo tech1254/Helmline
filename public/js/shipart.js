@@ -30,6 +30,9 @@ const SHAPES = {
     masts: [{ at: 0.62, h: 166, rig: 'lateen', s: 1 }, { at: 0.4, h: 140, rig: 'lateen', s: 0.8 }, { at: 0.19, h: 108, rig: 'lateen', s: 0.58 }], tumble: 1 },
   redonda: { L: 235, free: 22, stern: 22, bow: 11, keel: 19, aft: [0, 0.27, 15], fore: null, masts: null, tumble: 1 },
   nau: { L: 300, free: 30, stern: 26, bow: 18, keel: 24, aft: [0, 0.3, 30], fore: [0.8, 1.0, 24], masts: null, tumble: 1.2 },
+  naudaindia: { L: 330, free: 34, stern: 30, bow: 20, keel: 26, aft: [0, 0.3, 34], fore: [0.78, 1.0, 28], masts: null, tumble: 1.3 },
+  galeao: { L: 330, free: 26, stern: 30, bow: 12, keel: 22, aft: [0, 0.28, 30], fore: [0.82, 0.96, 14],
+    masts: [{ at: 0.78, h: 128, rig: 'square', w: 86 }, { at: 0.55, h: 166, rig: 'square', w: 118, top: true }, { at: 0.3, h: 118, rig: 'lateen', s: 0.62 }, { at: 0.12, h: 96, rig: 'lateen', s: 0.5 }], tumble: 1.1 },
 };
 
 function caravelMasts(fit) {
@@ -67,7 +70,7 @@ export function shipSVG(ship, opts = {}) {
   const L = sh.L;
   const x0 = (BOX_W - L) / 2 - (sh.masts ? 0 : 6);
   const x1 = x0 + L;
-  const masts = hull === 'caravel' ? caravelMasts(fit) : hull === 'redonda' ? caravelMasts({ rig: 'square' }) : hull === 'nau' ? NAU_MASTS : sh.masts;
+  const masts = hull === 'caravel' ? caravelMasts(fit) : hull === 'redonda' ? caravelMasts({ rig: 'square' }) : hull === 'nau' || hull === 'naudaindia' ? NAU_MASTS : sh.masts;
   const pencil = style === 'pencil';
   const colour = style === 'colour';
   const ink = pencil ? '#8c7b66' : INK;
@@ -290,7 +293,7 @@ export function shipSVG(ship, opts = {}) {
 }
 
 function tightBox(hull, x0, x1) {
-  const top = { barca: 70, caravel: 22, barinel: 52, nau: 8 }[hull];
+  const top = { barca: 70, caravel: 22, barinel: 52, nau: 8, naudaindia: 0, galeao: 4 }[hull] ?? 20;
   const left = Math.max(0, x0 - 40), right = Math.min(BOX_W, x1 + 70);
   return `${f1(left)} ${top} ${f1(right - left)} ${BOX_H - top - 20}`;
 }

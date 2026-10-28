@@ -2,7 +2,8 @@
 // They sail the same winds and trade in the same markets as the player, so their
 // buying and selling moves real prices. Money comes from, and goes to, the player's purse.
 
-import { PORTS, findPath, windAt, sailFactor, angleDiff, bearing, distNm, D2R, berth, anchorage, isRiverLeg, RIVER_KNOTS, riverOf, shoalDepth, DEEP_DRAFT } from './world.js';
+import { PORTS, findPath, windAt, sailFactor, angleDiff, bearing, distNm, D2R, berth, anchorage, isRiverLeg, RIVER_KNOTS, riverOf, shoalDepth, DEEP_DRAFT, isBeyond } from './world.js';
+import * as Indies from './indies.js';
 import * as Ports from './ports.js';
 import { GOODS } from './economy.js';
 import * as Accounts from './accounts.js';
@@ -146,7 +147,12 @@ function planLeg(S, ship, fromId, toId) {
   }
   const navFactor = 1.12 - 0.04 * ship.captain.nav; // a good navigator is quicker
   const worn = 0.6 + 0.4 * (ship.hullPct ?? 100) / 100; // and a worn hull slower, as for the flagship
-  return { from: fromId, to: toId, start: S.day, days: Math.max(1, (day - S.day) * navFactor / worn), path, cum, total };
+  const onChart = Math.max(1, (day - S.day) * navFactor / worn);
+  // Calicut lies beyond the chart: the passage on from its edge is reckoned by the monsoons
+  // (indies.js), before she reappears on the chart coming home or after she leaves it going out.
+  const pre = isBeyond(fromId) ? Indies.passage(S.day, 'home').days : 0;
+  const post = isBeyond(toId) ? Indies.passage(S.day + pre + onChart, 'out').days : 0;
+  return { from: fromId, to: toId, start: S.day, days: pre + onChart + post, pre, post, path, cum, total };
 }
 
 // ---- Routes ---------------------------------------------------------------------------
@@ -501,6 +507,7 @@ export function tick(S, market, days, ownerPresent = true) {
       if (lost.length) msgs.push({ html: `<b>${ship.name}</b>: ${lost.join(', ')} on the passage.`, kind: '', level: 'routine' });
       const w = wearOnPassage(S, ship, leg, lat);
       if (w) msgs.push(w);
+      if (!ship.sunk && (leg.pre || leg.post)) { const b = beyondHazards(S, ship, leg); if (b) msgs.push(b); }
       if (ship.sunk) continue;
       msgs.push(...visit(S, market, ship));
     } else if (ship.status === 'waiting' && !market.closed(ship.at)) {
@@ -534,6 +541,23 @@ function wearOnPassage(S, ship, leg, lat) {
   return null;
 }
 
+// The months beyond the chart, to or from Calicut: scurvy, storms and the open ocean.
+function beyondHazards(S, ship, leg) {
+  const p = Indies.passage(leg.start, leg.post ? 'out' : 'home');
+  const hz = Indies.hazards({ ...p, days: (leg.pre || 0) + (leg.post || 0) });
+  ship.hullPct = Math.max(5, (ship.hullPct ?? 100) - hz.hullLoss);
+  for (const [g, lot] of Object.entries(holdOf(ship))) {
+    if (!good(g).spoil) continue;
+    lot.qty -= Math.round(lot.qty * hz.spoilShare);
+    if (lot.qty <= 0) delete holdOf(ship)[g];
+  }
+  if (hz.lost) {
+    ship.sunk = true;
+    return { html: `<b>${ship.name} is lost</b> beyond the Cape, on the passage ${leg.post ? 'to' : 'from'} Calicut. Of Captain ${ship.captain.name} and her crew there is no word.`, kind: 'alert', level: 'alert', log: `${ship.name} was lost on the India passage.` };
+  }
+  return null;
+}
+
 // A captain puts his ship in for repairs on his own: at a shipyard on his route once she is
 // worn, or on a beach anywhere if she is badly worn. Returns a message, or null.
 function repairIfNeeded(S, ship) {
@@ -554,8 +578,9 @@ function repairIfNeeded(S, ship) {
 // Where a ship is on the chart right now, and which way it is heading.
 export function position(S, ship) {
   if (ship.status === 'sailing' && ship.leg) {
-    const { path, cum, total, start, days } = ship.leg;
-    const d = Math.min(1, Math.max(0, (S.day - start) / days)) * total;
+    const { path, cum, total, start, days, pre = 0, post = 0 } = ship.leg;
+    if (S.day - start < pre || S.day - start > days - post) return { lon: path[S.day - start < pre ? 0 : path.length - 1][0], lat: path[S.day - start < pre ? 0 : path.length - 1][1], heading: 90, atSea: true, beyond: true };
+    const d = Math.min(1, Math.max(0, (S.day - start - pre) / (days - pre - post))) * total;
     let i = 1;
     while (i < cum.length - 1 && cum[i] < d) i++;
     const seg = cum[i] - cum[i - 1] || 1;
@@ -577,7 +602,8 @@ export function statusText(S, ship) {
   const r = ship.route;
   if (ship.status === 'sailing' && ship.leg) {
     const left = Math.max(0, Math.ceil(ship.leg.start + ship.leg.days - S.day));
-    return `Bound for ${port(ship.leg.to).name} with ${holdText(ship)}, about ${left} ${left === 1 ? 'day' : 'days'} out.`;
+    const gone = S.day - ship.leg.start < (ship.leg.pre || 0) || S.day - ship.leg.start > ship.leg.days - (ship.leg.post || 0);
+    return `${gone ? 'Beyond the chart, b' : 'B'}ound for ${port(ship.leg.to).name} with ${holdText(ship)}, about ${left} ${left === 1 ? 'day' : 'days'} out.`;
   }
   if (ship.status === 'waiting') return `Waiting outside ${port(ship.at).name} for the port to reopen.`;
   if (ship.status === 'boats') return `Anchored off ${port(ship.at).name}: her boats are working the cargo, about ${Math.max(1, Math.ceil((ship.boatsUntil ?? S.day) - S.day))} more days.`;

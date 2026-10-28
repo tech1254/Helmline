@@ -1,6 +1,6 @@
 // Drawing the chart: sea, coasts, winds, fog, courses, ports and ships.
 
-import { BOUNDS, D2R, LANDS, PORTS, RIVERS, SHOALS, isLand, inBounds, windAt } from './world.js';
+import { BOUNDS, CHART_OUTLINE, D2R, LANDS, PORTS, RIVERS, SHOALS, isLand, inBounds, windAt, isBeyond as isBeyondPort } from './world.js';
 import * as Contracts from './contracts.js';
 import * as Fleet from './fleet.js';
 import { FH, FW } from './config.js';
@@ -245,6 +245,7 @@ export function drawFleet() {
   ctx.textAlign = 'center';
   for (const ship of F.ships) {
     const pos = Fleet.position(S, ship);
+    if (pos.beyond || (ship.at && isBeyondPort(ship.at) && !ship.leg)) continue; // away in the Indies
     drawShipAt(pos.lon, pos.lat, pos.heading, '#dbe5ee', '#1e3246', 0.85);
     if (pos.anchored) drawBoats(pos.lon, pos.lat, pos.port.lon, pos.port.lat, ship.status === 'boats', (ship.id % 7) / 7);
     if (cam.scale > 22) {
@@ -259,6 +260,37 @@ export function drawFleet() {
   ctx.restore();
 }
 
+// The edge of the chart as a closed path (the parts off the chart left out).
+function chartOutline() {
+  ctx.beginPath();
+  CHART_OUTLINE.forEach(([x, y], i) => { const [sx, sy] = toScreen(x, y); i ? ctx.lineTo(sx, sy) : ctx.moveTo(sx, sy); });
+  ctx.closePath();
+}
+
+// A port beyond the chart (Calicut): the place where ships sail off the edge for it, marked with
+// an arrow and the name of where it leads.
+function drawBeyond(p, sx, sy) {
+  ctx.save();
+  ctx.strokeStyle = RED;
+  ctx.fillStyle = RED;
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(sx - 8, sy); ctx.lineTo(sx + 12, sy);
+  ctx.moveTo(sx + 6, sy - 5); ctx.lineTo(sx + 12, sy); ctx.lineTo(sx + 6, sy + 5);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.arc(sx - 8, sy, p.id === ui.hoverPort ? 6 : 4.5, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.textAlign = 'right';
+  ctx.lineWidth = 4;
+  ctx.strokeStyle = 'rgba(236,223,192,0.9)';
+  const label = `to ${p.name} and the Indies`;
+  ctx.strokeText(label, sx - 16, sy);
+  ctx.fillStyle = '#3a2716';
+  ctx.fillText(label, sx - 16, sy);
+  ctx.restore();
+}
+
 export function render() {
   refreshFog();
   ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
@@ -268,26 +300,26 @@ export function render() {
   ctx.fillStyle = MARGIN;
   ctx.fillRect(0, 0, W, H);
   ctx.save();
-  ctx.beginPath();
-  ctx.rect(fx, fy, fx2 - fx, fy2 - fy);
+  chartOutline();
   ctx.clip();
   ctx.fillStyle = SEA;
   ctx.fillRect(fx, fy, fx2 - fx, fy2 - fy);
 
   drawRose(-24, 27, 0);
   drawRose(-13.5, 37.5, 0);
+  drawRose(-12, -22, 0);
 
   // graticule labels at the edges
   ctx.save();
   ctx.strokeStyle = 'rgba(120,80,45,0.18)';
   ctx.fillStyle = 'rgba(74,54,34,0.6)';
   ctx.font = '11px "EB Garamond", Georgia, serif';
-  for (let lat = 10; lat <= 42; lat += 5) {
+  for (let lat = -35; lat <= 40; lat += 5) {
     const [, y] = toScreen(0, lat);
-    ctx.setLineDash([2, 6]);
+    ctx.setLineDash(lat ? [2, 6] : [8, 4]);
     ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke();
     ctx.setLineDash([]);
-    ctx.fillText(`${lat}° N`, Math.max(fx, 0) + 6, y - 3);
+    ctx.fillText(lat ? `${Math.abs(lat)}° ${lat > 0 ? 'N' : 'S'}` : 'The Line', Math.max(fx, 0) + 6, y - 3);
   }
   ctx.restore();
 
@@ -336,7 +368,8 @@ export function render() {
   ctx.save();
   ctx.strokeStyle = INK;
   ctx.lineWidth = 2;
-  ctx.strokeRect(fx, fy, fx2 - fx, fy2 - fy);
+  chartOutline();
+  ctx.stroke();
   ctx.restore();
 
   // planned course
@@ -412,6 +445,7 @@ export function render() {
     ctx.lineWidth = 1.5;
     ctx.strokeStyle = '#f7f0de';
     ctx.stroke();
+    if (p.beyond) { drawBeyond(p, sx, sy); continue; }
     const label = p.name;
     const left = p.lon > -10.5;
     const tx = left ? sx + 10 : sx - 10;
