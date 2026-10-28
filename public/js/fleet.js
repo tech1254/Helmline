@@ -447,6 +447,16 @@ function sailOn(S, ship, parts, fresh) {
     msgs.push({ html: `<b>${ship.name}</b> at ${port(here).name}: ${parts.join('. ')}.`, kind: 'port', level: 'routine', log: `${ship.name}: ${parts.join('; ')} at ${port(here).name}.` });
     return msgs;
   }
+  // The India run keeps to the monsoons: out from February to April, home from December to February.
+  if ((isBeyond(next) || isBeyond(here)) && !Indies.seasonToSail(S.day, isBeyond(next))) {
+    if (ship.status !== 'monsoon') {
+      parts.push(isBeyond(next) ? 'she waits for the India fleets\' season (February to April) before sailing for the Cape' : 'she waits for the north-east monsoon (December to February) to sail home');
+      msgs.push({ html: `<b>${ship.name}</b> at ${port(here).name}: ${parts.join('. ')}.`, kind: 'port', level: 'routine', log: `${ship.name}: waiting for the monsoon at ${port(here).name}.` });
+    }
+    ship.status = 'monsoon';
+    ship.nextCheck = S.day + 5;
+    return msgs;
+  }
   const leg = planLeg(S, ship, here, next);
   if (!leg) {
     if (riverOf(next) && !Ports.canGoUpriver(S, next, hull, loadOf(ship))) {
@@ -515,7 +525,7 @@ export function tick(S, market, days, ownerPresent = true) {
       msgs.push(...visit(S, market, ship));
     } else if (ship.status === 'loading' && ship.route && S.day >= (ship.nextCheck ?? 0)) {
       msgs.push(...buyAndSail(S, market, ship));
-    } else if ((ship.status === 'boats' && S.day >= (ship.boatsUntil ?? 0)) || (ship.status === 'river' && S.day >= (ship.nextCheck ?? 0))) {
+    } else if ((ship.status === 'boats' && S.day >= (ship.boatsUntil ?? 0)) || ((ship.status === 'river' || ship.status === 'monsoon') && S.day >= (ship.nextCheck ?? 0))) {
       msgs.push(...sailOn(S, ship, [], false));
     } else if (ship.status === 'repair' && S.day >= (ship.repairUntil ?? 0)) {
       ship.status = 'idle';
@@ -552,11 +562,6 @@ function beyondHazards(S, ship, leg) {
   const p = Indies.passage(leg.start, leg.post ? 'out' : 'home');
   const hz = Indies.hazards({ ...p, days: (leg.pre || 0) + (leg.post || 0) });
   ship.hullPct = Math.max(5, (ship.hullPct ?? 100) - hz.hullLoss);
-  for (const [g, lot] of Object.entries(holdOf(ship))) {
-    if (!good(g).spoil) continue;
-    lot.qty -= Math.round(lot.qty * hz.spoilShare);
-    if (lot.qty <= 0) delete holdOf(ship)[g];
-  }
   if (hz.lost) {
     ship.sunk = true;
     return { html: `<b>${ship.name} is lost</b> beyond the Cape, on the passage ${leg.post ? 'to' : 'from'} Calicut. Of Captain ${ship.captain.name} and her crew there is no word.`, kind: 'alert', level: 'alert', log: `${ship.name} was lost on the India passage.` };
@@ -572,7 +577,7 @@ function repairIfNeeded(S, ship) {
   if (!(yard ? h < Wear.CAPTAIN_YARD_BELOW : h < Wear.CAPTAIN_BEACH_BELOW)) return null;
   const years = Ships.serviceYears(ship, S.day);
   const q = yard ? Wear.yardQuote(ship.hull, h, years) : Wear.beachQuote(ship.hull, h, years);
-  if (!q.pts) return null;
+  if (!q.pts || S.purse < q.cost) return null; // he will not run up debts in your name
   S.purse -= q.cost;
   roundOf(ship).net -= q.cost;
   Accounts.captain(S, ship, { kind: 'repairs', amount: -q.cost, text: yard ? `Repairs in the ${port(ship.at).name} yard` : `Careened on the beach at ${port(ship.at).name}` });
@@ -657,6 +662,7 @@ export function statusText(S, ship) {
   }
   if (ship.status === 'waiting') return `Waiting outside ${port(ship.at).name} for the port to reopen.`;
   if (ship.status === 'boats') return `Anchored off ${port(ship.at).name}: her boats are working the cargo, about ${Math.max(1, Math.ceil((ship.boatsUntil ?? S.day) - S.day))} more days.`;
+  if (ship.status === 'monsoon') return `In ${port(ship.at).name}, waiting for the monsoon to sail ${isBeyond(ship.at) ? 'home' : 'for the Indies'}.`;
   if (ship.status === 'river') return `In ${port(ship.at).name}, too deep for the river as she is loaded: waiting for the water to rise.`;
   if (ship.status === 'repair') return `${Wear.YARDS.includes(ship.at) ? `In the yard at ${port(ship.at).name}` : `Careened on the beach at ${port(ship.at).name}`} for ${Math.max(1, Math.ceil((ship.repairUntil ?? S.day) - S.day))} more days.`;
   if (ship.status === 'loading') return `Waiting in ${port(ship.at).name} for prices to recover, on half pay (${Math.max(0, Math.round(S.day - (ship.waitSince ?? S.day)))} of up to ${MAX_WAIT_DAYS} days).`;

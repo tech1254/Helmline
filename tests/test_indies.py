@@ -95,7 +95,7 @@ async def main():
           return true; }""")
         ok = await J("""() => { const s = window.helmline.state; const F = window.helmline;
           const ship = s.fleet.ships.find((x) => x.id === 91);
-          s.day = F.yearDay(1501) + 10;
+          s.day = F.yearDay(1501) + 45; // mid-February: the India fleets' season
           return ship.id; }""")
         await J("""() => { const s = window.helmline.state; const ship = s.fleet.ships.find((x) => x.id === 91);
           window.helmlineFleetRoute = { stops: [{ port: 'lisbon', orders: [{ act: 'sell', good: 'all' }, { act: 'buy', good: 'copper', pct: 50 }] }, { port: 'calicut', orders: [{ act: 'sell', good: 'all' }, { act: 'buy', good: 'spices', pct: 100 }] }], next: 0 }; }""")

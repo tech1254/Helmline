@@ -45,10 +45,17 @@ export function passage(day, dir) {
   };
 }
 
-// What the passage does to a ship: storms and wear on the hull, cargo spoiled, and perhaps the
-// loss of the ship. `rand` is Math.random, or a seeded one in the simulators.
+// What the open ocean does to a ship beyond the ordinary wear of days at sea (which, with spoilage,
+// is reckoned as for any passage): storms, and perhaps her loss. `rand` is Math.random, or a seeded
+// one in the simulators.
 export function hazards(p, rand = Math.random) {
   const storms = Math.floor(p.days / 30 * rand() * 1.2); // a storm every month or so, at worst
-  const hullLoss = p.wear + storms * (6 + rand() * 8);
-  return { hullLoss, storms, lost: rand() < p.loss, spoilShare: Math.min(0.5, 0.0015 * p.days) };
+  return { hullLoss: storms * (6 + rand() * 8), storms, lost: rand() < p.loss };
+}
+
+// Whether a ship should sail now for the Indies (to round the Cape with the south-west monsoon,
+// India fleets left Lisbon from February to April) or home from them (December to February).
+export function seasonToSail(day, toIndies) {
+  const m = monthOf(day);
+  return toIndies ? [1, 2, 3].includes(m) : SEASON_HOME.includes(m);
 }

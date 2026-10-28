@@ -15,7 +15,9 @@ export const YARDS = ['lisbon', 'lagos', 'funchal'];
 export const WEAR_PER_DAY = { temperate: 0.08, tropic: 0.2 };
 export const TROPIC_LAT = 26;
 export const STORM = { perDay: 0.004, min: 5, max: 15 };
-export const YARD_COST = 0.003; // share of the hull's price for each point repaired
+// What a point of repair costs: timber and shipwrights' labour, which grow with the size of the
+// hull, not with what she cost (6 cz a point for a caravel; a nau about 10; a Nau da Índia about 13).
+export const YARD_COST_PT = 6;
 export const YARD_PTS_PER_DAY = 5;
 export const BEACH_COST = 0.4; // of the yard's price per point
 export const BEACH_PTS_PER_DAY = 3;
@@ -60,21 +62,22 @@ export function leakShare(pct) {
   return pct < LEAKS_BELOW ? (LEAKS_BELOW - pct) / 200 : 0;
 }
 
-const price = (hullId) => (Ships.HULLS[hullId] || Ships.HULLS.caravel).price;
+// (Never more than 0.3% of her price a point: a small cheap hull costs less to mend.)
+const perPoint = (hullId) => { const H = Ships.HULLS[hullId] || Ships.HULLS.caravel; return Math.min(0.003 * H.price, YARD_COST_PT * Math.pow(H.size || 1, 1.5)); };
 
 // What the shipyard asks to make her sound: money and days.
 // `years`: her years of service, for what an old hull can still be brought back to.
 export function yardQuote(hullId, pct, years = 0) {
   const to = soundCap(hullId, years);
   const pts = Math.max(0, to - pct);
-  return { pts, cost: Math.ceil(pts * YARD_COST * price(hullId)), days: Math.ceil(pts / YARD_PTS_PER_DAY), to };
+  return { pts, cost: Math.ceil(pts * perPoint(hullId)), days: Math.ceil(pts / YARD_PTS_PER_DAY), to };
 }
 
 // Careening on a beach: cheaper, slower, and only back to 80%.
 export function beachQuote(hullId, pct, years = 0) {
   const to = Math.min(BEACH_TO, soundCap(hullId, years));
   const pts = Math.max(0, to - pct);
-  return { pts, cost: Math.ceil(pts * YARD_COST * BEACH_COST * price(hullId)), days: Math.ceil(pts / BEACH_PTS_PER_DAY), to };
+  return { pts, cost: Math.ceil(pts * BEACH_COST * perPoint(hullId)), days: Math.ceil(pts / BEACH_PTS_PER_DAY), to };
 }
 
 // Word once as a ship grows old (70% of her serviceable life: the yards can no longer make her
