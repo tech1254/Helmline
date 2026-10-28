@@ -529,6 +529,7 @@ export function renderHelp(el) {
     <details class="help-more"><summary>Your fleet and time away</summary>
     <ul class="help">
       <li><b>Your fleet:</b> a hired captain runs a trade route for you, paid from your purse.</li>
+      <li><b>Captains learn:</b> most men on the quay are green (one or two stars) and cheap; a seasoned man asks more. Navigation grows with days at sea, faster in the tropics and beyond the Cape; trade with every cargo sold. A season with the pilots at Lagos or a factor in Lisbon buys a star sooner (to four; the fifth is earned). A captain who has grown asks for a raise: refuse and his loyalty falls.</li>
       <li><b>The ledger</b> accounts for every cruzado in and out. Your own dealings are entered at once. A hired captain's are entered when you are in any port on his route, so until then part of your purse is not yet accounted for.</li>
       <li><b>Time away:</b> if you have hired captains and your own ship is in port, the world moves on while you are gone: at a tenth of its usual pace at first, more slowly after a few weeks, up to ${OFFLINE_MAX_DAYS} days. Contract deadlines wait for you. A night's sleep or a working day is safe; stay away longer than ${Fleet.STRAY_AFTER_HOURS} hours and captains start to stray (skimming, then going ashore), and after ${STANDING_FADES_AFTER_HOURS} hours your standing starts to fade.</li>
     </ul></details>
@@ -559,6 +560,7 @@ export function renderHelp(el) {
 const NOTES = [
   ['contracts', () => S.contracts?.unlocked, 'Contracts are open: merchants in each port post jobs (the Contracts tab). Deliver on time and your standing rises; standing lets you hire captains and buy bigger ships.'],
   ['fleet', () => Contracts.perks(S).maxShips > 0 && !S.fleet.ships.length, 'Your standing lets you hire a captain. In Lisbon, open Fleet: buy him a ship and give him a route, and he trades on his own with your purse.'],
+  ['captains', () => S.fleet.ships.some((x) => x.captain.nav >= 2 || x.captain.trade >= 2 || x.captain.asks), 'Your captains learn: stars for navigation come with days at sea, for trade with every cargo sold. One who grows good will ask for a raise. You can also send him to train (Fleet).'],
   ['accounts', () => S.fleet.ships.length > 0, 'Your captains\' dealings enter your Ledger when you are in any port on their route. Until then part of your purse is "not yet accounted for".'],
   ['corsairs', () => ['won', 'lost', 'paid', 'fled'].some((k) => (S.pirates?.[k] || 0) > 0), 'Corsairs: running depends on your speed; crossbowmen, men-at-arms and boarding nets (the shipyard\'s Arms tab) improve your fighting odds. Beat a galley and the crown pays a bounty for her.'],
   ['hull', () => (S.hull ?? 100) < 70, 'A worn hull is slower, and below 60% she leaks and spoils cargo. The yards of Lisbon, Lagos and Funchal make her sound; anywhere else her crew can careen her on a beach.'],

@@ -19,7 +19,7 @@ export const HARD_BEYOND = 2; // days beyond the chart, on the open ocean
 export const TRADE_SALES = 12;
 
 // Wage, cz a day, by the average of his two skills (in between: in proportion).
-const WAGES = [1, 1, 2, 4, 6, 9];
+const WAGES = [1, 1, 2, 3, 4, 5]; // a master is worth only a little more than a fine captain: tuned 28 Oct 2026 (tests/sim/personas.mjs)
 export function fairWage(c) {
   const avg = Math.max(1, Math.min(MAX_STARS, (c.nav + c.trade) / 2));
   const i = Math.floor(avg), f = avg - i;

@@ -676,6 +676,7 @@ export function position(S, ship) {
   if (ship.status === 'sailing' && ship.leg) {
     const { path, cum, total, start, days, pre = 0, post = 0 } = ship.leg;
     if (S.day - start < pre || S.day - start > days - post) return { lon: path[S.day - start < pre ? 0 : path.length - 1][0], lat: path[S.day - start < pre ? 0 : path.length - 1][1], heading: 90, atSea: true, beyond: true };
+    if (path.length < 2) { const [x, y] = path[0] || [port(ship.leg.to).lon, port(ship.leg.to).lat]; return { lon: x, lat: y, heading: 90, atSea: true }; } // a one-point passage
     const d = Math.min(1, Math.max(0, (S.day - start - pre) / (days - pre - post))) * total;
     let i = 1;
     while (i < cum.length - 1 && cum[i] < d) i++;
