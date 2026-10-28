@@ -556,3 +556,8 @@ body.scene-open #panel, body.scene-open #toast, body.scene-open #tip { visibilit
 .help-more { margin: 6px 0; }
 .help-more summary { cursor: pointer; font-weight: 600; padding: 4px 0; }
 .help-more[open] summary { margin-bottom: 2px; }
+/* a captain asking for a raise */
+.contract .warn-note { border: 1px solid var(--gold); border-radius: 6px; padding: 6px 10px; margin: 6px 0; background: rgba(184, 134, 11, 0.08); }
+.contract .warn-note p { margin: 0 0 4px; }
+.contract details.train { margin: 4px 0; }
+.contract details.train summary { cursor: pointer; }

@@ -25,6 +25,7 @@
 import { readFileSync } from 'node:fs';
 import { Market, GOODS, PORTUGUESE_PORTS } from '../../public/js/economy.js';
 import * as Fleet from '../../public/js/fleet.js';
+import * as Captains from '../../public/js/captains.js';
 import * as Events from '../../public/js/events.js';
 import * as Ships from '../../public/js/ships.js';
 import * as Accounts from '../../public/js/accounts.js';
@@ -316,7 +317,7 @@ function career(persona) {
         const h = wantHull(loop, true);
         if (h && affordable(price(h))) {
           spend(price(h), `hires a captain with a ${Ships.HULLS[h].name} for the ${loop} run`);
-          add(`captain ${hireds.length + 1}`, h, loop, { nav: 4, trade: 4, wage: 4 });
+          add(`captain ${hireds.length + 1}`, h, loop, Captains.applicant()); // as the quay offers: mostly green
           if (R.firstHire == null) R.firstHire = yearOf(S.day);
         }
       }
@@ -586,6 +587,7 @@ function career(persona) {
     }
     S.fleet.ships = hired;
     Fleet.tick(S, market, STEP, true);
+    for (const x of hired) if (x.captain.asks) { Captains.grant(S, x); R.raises = (R.raises || 0) + 1; } // an owner who keeps his captains
     for (const x of hired) if (!S.fleet.ships.includes(x)) { R.lost++; note(`${x.role} (${x.loop} run) lost at sea`); }
     S.fleet.ships = f && all.includes(f) && !flagGone ? [f, ...S.fleet.ships] : S.fleet.ships;
     if (f) {
@@ -640,6 +642,8 @@ function career(persona) {
   R.arms = fl() ? Object.entries(fl().fit).filter(([g, c]) => c !== Ships.DEFAULT_FIT[g]).map(([, c]) => c).join(', ') : '';
   R.fleet = S.fleet.ships.map((x) => `${x.role === 'flagship' ? 'you' : x.loop}: ${Ships.HULLS[x.realHull].name}`).join(', ');
   R.pirates = { ...Pirates.ensurePirates(S) };
+  const caps = S.fleet.ships.filter((x) => x.role !== 'flagship').map((x) => x.captain);
+  R.caps = caps.length ? { nav: caps.reduce((t, c) => t + c.nav, 0) / caps.length, trade: caps.reduce((t, c) => t + c.trade, 0) / caps.length, wage: caps.reduce((t, c) => t + c.wage, 0) / caps.length } : null;
   return R;
 }
 
@@ -695,7 +699,8 @@ export function summarise(list) {
         renown: med(list.map((r) => at(r).renown || 0)),
         perYear: { crown: flow('crown'), house: flow('house'), trade: flow('sale') + flow('purchase'), contracts: flow('contract') + flow('contractGoods'), wages: flow('wages'), repairs: flow('repairs'), ships: flow('ships'), invest: flow('invest'), other: flow('charts') + flow('corsairs') + flow('bounty') + flow('boats') } };
     }),
-    standing: med(list.map((r) => r.standing)), fleet: list[0].fleet + (list[0].arms ? ` (fitted: ${list[0].arms})` : ''),
+    standing: med(list.map((r) => r.standing)),
+    caps: (() => { const l = list.filter((r) => r.caps); return l.length ? { nav: avg(l.map((r) => r.caps.nav)), trade: avg(l.map((r) => r.caps.trade)), wage: avg(l.map((r) => r.caps.wage)), raises: avg(list.map((r) => r.raises || 0)) } : null; })(), fleet: list[0].fleet + (list[0].arms ? ` (fitted: ${list[0].arms})` : ''),
   };
 }
 
@@ -705,6 +710,7 @@ export function printSummary(s) {
   console.log(`\n${PERSONAS[s.persona].label} (${s.runs} careers, ${1451}–${s.end})`);
   console.log(`  worth (median): ${Object.entries(s.worth).map(([y, v]) => `${y} ${cz(v)}`).join(' · ')}   [range at end ${cz(s.worstEnd)} to ${cz(s.bestEnd)}]`);
   console.log(`  milestones: explored the Gambia ${s.explored.toFixed(1)}, first captain ${s.firstHire.toFixed(1)}, sailed a nau ${Math.round(s.nau * 100)}% of careers, standing ${s.standing}`);
+  if (s.caps) console.log(`  hired captains at the end: navigation ${s.caps.nav.toFixed(1)}, trade ${s.caps.trade.toFixed(1)}, wage ${s.caps.wage.toFixed(1)} cz/day · raises granted ${s.caps.raises.toFixed(1)} a career`);
   const I = s.income;
   const gross = I.trade + I.contracts + I.crown;
   console.log(`  income: trade ${per(I.trade)} · contracts ${per(I.contracts)} (${Math.round(100 * I.contracts / gross)}%) · crown ${cz(I.crown)}`);
