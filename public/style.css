@@ -561,3 +561,29 @@ body.scene-open #panel, body.scene-open #toast, body.scene-open #tip { visibilit
 .contract .warn-note p { margin: 0 0 4px; }
 .contract details.train { margin: 4px 0; }
 .contract details.train summary { cursor: pointer; }
+/* the story: letters, chapter cards, the rutter */
+.story .story-from { display: flex; justify-content: space-between; font-family: var(--display); color: var(--gold); margin: 0 0 6px; font-size: 14px; }
+.story-letter p { font-style: normal; }
+.story .sig { text-align: right; font-style: italic; margin-top: 4px; }
+.story-card p:first-of-type { font-size: 16px; }
+.story-name { display: flex; gap: 8px; align-items: center; margin-top: 10px; font-weight: 600; }
+.story-name input { font: inherit; padding: 4px 8px; border: 1px solid var(--ink-2); border-radius: 4px; width: 12em; background: var(--paper); color: var(--ink); }
+.story-choices { flex-wrap: wrap; justify-content: flex-end; margin-top: 10px; }
+ol.rutter { list-style: none; padding: 0; margin: 0 0 8px; }
+.rutter-page { border-left: 3px solid var(--ink-2); padding: 4px 10px; margin: 6px 0; opacity: 0.75; }
+.rutter-page.found { border-color: var(--gold); opacity: 1; }
+.rutter-page h4 { margin: 0 0 2px; font-family: var(--display); }
+.rutter-page .riddle { font-style: italic; margin: 0; }
+.rutter-page .found-line { margin: 4px 0 0; font-weight: 600; }
+.story-log { padding-left: 0; list-style: none; }
+.story-log .when { color: var(--ink-2); font-size: 12px; margin-right: 6px; }
+.story-debt { border: 1px solid var(--gold); border-radius: 6px; padding: 6px 10px; margin: 8px 0; }
+.story-debt p { margin: 0 0 4px; }
+/* the Saves panel: account and its saves */
+.account-form { display: grid; gap: 8px; max-width: 360px; }
+.account-form label { display: grid; gap: 2px; font-weight: 600; }
+.account-form input { font: inherit; padding: 6px 8px; border: 1px solid var(--ink-2); border-radius: 4px; background: var(--paper); color: var(--ink); }
+ul.slots { list-style: none; padding: 0; margin: 6px 0; }
+ul.slots li.slot { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 6px 0; border-bottom: 1px solid rgba(0, 0, 0, 0.12); flex-wrap: wrap; }
+ul.slots li.slot.current b { color: var(--red); }
+ul.slots .badge { font-size: 11px; border: 1px solid currentColor; border-radius: 8px; padding: 0 6px; margin-left: 4px; }

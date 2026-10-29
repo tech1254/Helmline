@@ -24,6 +24,8 @@ import { estimateVoyage, observe, planCourse } from './voyage.js';
 import { drag } from './input.js';
 import { $, cz, fmtDate, held } from './util.js';
 import { renderLedger } from './ledgerview.js';
+import { debtBox, renderRutter, storyOn } from './storyview.js';
+import { timeScale } from './cloud.js';
 import { renderPrices } from './pricebook.js';
 import { placeToasts, renderNoticeBadge, renderNotices } from './notices.js';
 import { renderFeedback } from './feedback.js';
@@ -78,7 +80,7 @@ export function renderHud() {
       status = `${windTxt} · hove to · click the chart to set a course`;
     }
   }
-  $('status').textContent = status;
+  $('status').textContent = timeScale() > 1 ? `${status} · time ×${timeScale()} (your account)` : status;
   renderTip();
   const fleetBtn = !fleetUnlocked(), contractsBtn = !S.contracts?.unlocked;
   if ($('btn-fleet').hidden !== fleetBtn) $('btn-fleet').hidden = fleetBtn;
@@ -124,6 +126,7 @@ export function renderPanel() {
   else if (ui.panelMode === 'menu') renderMenu(el);
   else if (ui.panelMode === 'ledger') renderLedger(el);
   else if (ui.panelMode === 'notices') renderNotices(el);
+  else if (ui.panelMode === 'rutter') renderRutter(el);
   else renderPrices(el);
   if (isBook(ui.panelMode)) ui.lastBook = ui.panelMode;
   placeToasts();
@@ -197,6 +200,7 @@ export function renderPort(el) {
     <header><h2>${p.name}</h2><button class="close" data-close aria-label="Close">×</button></header>
     <p class="blurb">${p.blurb}</p>
     ${harbourLine(pid)}
+    ${pid === 'lisbon' ? debtBox() : ''}
     ${hullBanner(pid)}
     ${investLine(pid)}
     ${shut ? `<p class="banner warn"><b>Closed to trade:</b> ${Events.template(shut).title.toLowerCase()}. Expected to reopen around ${fmtDate(shut.end)}.</p>` : ''}
@@ -621,6 +625,7 @@ export function tabs(active) {
       ${docked ? `<button role="tab" data-tab="port" aria-selected="${active === 'port'}" class="${active === 'port' ? 'on' : ''}">Market</button>` : ''}
       <button role="tab" data-tab="prices" aria-selected="${active === 'prices'}" class="${active === 'prices' ? 'on' : ''}">Price book</button>
       <button role="tab" data-tab="ledger" aria-selected="${active === 'ledger'}" class="${active === 'ledger' ? 'on' : ''}">Ledger</button>
+      ${storyOn() || S.story?.letters?.length ? `<button role="tab" data-tab="rutter" aria-selected="${active === 'rutter'}" class="${active === 'rutter' ? 'on' : ''}">Rutter</button>` : ''}
       ${S.contracts?.unlocked ? `<button role="tab" data-tab="contracts" aria-selected="${active === 'contracts'}" class="${active === 'contracts' ? 'on' : ''}">Contracts</button>` : ''}
       ${fleetUnlocked() ? `<button role="tab" data-tab="fleet" aria-selected="${active === 'fleet'}" class="${active === 'fleet' ? 'on' : ''}">Fleet</button>` : ''}
       ${docked ? `<button role="tab" data-tab="sail" aria-selected="${active === 'sail'}" class="${active === 'sail' ? 'on' : ''}">Set sail</button>` : ''}

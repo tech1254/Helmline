@@ -22,6 +22,7 @@ export const KINDS = {
   crown: 'The crown\'s share',
   repairs: 'Repairs',
   boats: 'Boatmen',
+  debt: 'Debts and partners',
 };
 
 export function ensureAccounts(S) {

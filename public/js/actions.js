@@ -5,6 +5,7 @@ import { GOODS } from './economy.js';
 import * as Contracts from './contracts.js';
 import * as Fleet from './fleet.js';
 import * as Captains from './captains.js';
+import { payDebtNow } from './storyview.js';
 import * as Cloud from './cloud.js';
 import * as Accounts from './accounts.js';
 import * as Pirates from './pirates.js';
@@ -15,7 +16,7 @@ import * as Ships from './ships.js';
 import * as Ports from './ports.js';
 import { S, market, ui } from './state.js';
 import { newGame, save } from './save.js';
-import { cloudSync, loadFromCloud, renderCloudButton, startCloudSave } from './cloudsync.js';
+import { cloudSync, loadFromCloud, loadSlot, renderCloudButton, saveAsNewSlot, startCloudSave } from './cloudsync.js';
 import { cam, centerOn, clampCam } from './view.js';
 import { report } from './sim.js';
 import { boatsFor, checkMilestones, confirmVoyage, noPassage, observe, planCourse, waitInPort } from './voyage.js';
@@ -136,6 +137,35 @@ export function initActions() {
       if (q.days) waitInPort(q.days);
       toast(beach ? `Her crew careen the <b>${S.ship.name}</b> on the beach: ${q.days} days and ${q.cost} cz, and she is at ${q.to}%.` : `The shipwrights make the <b>${S.ship.name}</b> sound again: ${q.days} days in the yard, ${q.cost} cz.`, 'port');
       log(`${beach ? 'Careened' : 'Repaired'} the hull: ${q.cost} cz, ${q.days} days.`);
+    } else if (t.hasAttribute('data-account-logout')) {
+      Cloud.logout().then(() => { renderCloudButton(); renderPanel(); toast('Signed out. This voyage stays on this device.'); });
+      return;
+    } else if (t.hasAttribute('data-slot-new')) {
+      saveAsNewSlot(`${S.story?.house ? `House of ${S.story.house}, ` : ''}${fmtDate(S.day)}`);
+      return;
+    } else if (t.dataset.slotLoad) {
+      loadSlot(t.dataset.slotLoad);
+      return;
+    } else if (t.dataset.slotRename) {
+      const id = t.dataset.slotRename;
+      const cur = Cloud.account.slots.find((x) => x.id === id)?.name || '';
+      confirmDialog({
+        title: 'Rename this save',
+        body: `<label class="story-name">Name <input id="slot-name" maxlength="40" value="${cur.replace(/"/g, '&quot;')}"></label>`,
+        ok: 'Rename',
+        onOk: () => { const v = document.getElementById('slot-name')?.value.trim(); if (v) Cloud.renameSlot(id, v).then(() => renderPanel()); },
+      });
+      return;
+    } else if (t.dataset.slotDelete) {
+      const id = t.dataset.slotDelete;
+      const x = Cloud.account.slots.find((y) => y.id === id);
+      confirmDialog({
+        title: `Delete ${x?.name || 'this save'}?`,
+        body: `<p>It will be gone from your account for good${id === Cloud.cloud.slot ? '. The voyage on this device stays here, but is no longer saved to your account' : ''}.</p>`,
+        ok: 'Delete it',
+        onOk: () => Cloud.deleteSlot(id).then(() => { renderCloudButton(); renderPanel(); }),
+      });
+      return;
     } else if (t.hasAttribute('data-cloud-create')) {
       startCloudSave();
       return;
@@ -253,6 +283,8 @@ export function initActions() {
       report(Fleet.setRoute(S, market, ship, d));
       delete routeDrafts[ship.id];
       toast(`<b>${ship.name}</b> will run ${routeSummary(ship.route)}`, 'port');
+    } else if (t.dataset.payDebt !== undefined) {
+      payDebtNow(toast);
     } else if (t.dataset.raise) { // a captain's raise: grant or refuse
       const ship = S.fleet.ships.find((x) => x.id === +t.dataset.cap);
       const r = t.dataset.raise === 'grant' ? Captains.grant(S, ship) : Captains.refuse(S, ship);
@@ -316,6 +348,18 @@ export function initActions() {
   $('panel').addEventListener('input', (e) => { feedbackInput(e); });
   $('panel').addEventListener('submit', (e) => {
     if (e.target.closest('[data-feedback-form]')) { e.preventDefault(); submitFeedback(); return; }
+    const af = e.target.closest('[data-account-form]');
+    if (af) {
+      e.preventDefault();
+      const act = e.submitter?.dataset.accountAct || 'login';
+      const name = af.elements.name.value.trim(), password = af.elements.password.value;
+      (act === 'register' ? Cloud.register(name, password) : Cloud.login(name, password)).then((r) => {
+        if (!r.ok) { hint(r.error); return; }
+        toast(act === 'register' ? `Account created. Welcome, <b>${Cloud.account.name}</b>.` : `Signed in as <b>${Cloud.account.name}</b>.`, 'port');
+        renderCloudButton(); renderPanel();
+      });
+      return;
+    }
     const form = e.target.closest('[data-cloud-form]');
     if (!form) return;
     e.preventDefault();
@@ -327,6 +371,7 @@ export function initActions() {
     if (feedbackInput(e)) return;
     if (e.target.matches('select[data-ledger-who]')) { ui.ledgerWho = e.target.value; renderPanel(); return; }
     if (e.target.matches('[data-notices-all]')) { ui.noticesAll = e.target.checked; renderPanel(); return; }
+    if (e.target.matches('[data-story-off]')) { S.story.off = e.target.checked; renderPanel(); save(); return; }
     const sel = e.target.closest('select[data-f]');
     if (!sel) return;
     const card = sel.closest('[data-ship]');

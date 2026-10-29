@@ -27,6 +27,18 @@ const env = {
   } },
 };
 http.createServer(async (req, res) => {
+  if (req.url.startsWith('/__test/slot?id=')) { // tests read a save row
+    res.writeHead(200, { 'content-type': 'application/json' });
+    res.end(JSON.stringify(db.prepare('SELECT id, game_day, version, name FROM saves WHERE id = ?').get(decodeURIComponent(req.url.split('=')[1])) || null));
+    return;
+  }
+  if (req.url === '/__test/flags' && req.method === 'POST') { // as an admin would switch a setting on
+    const chunks = []; for await (const c of req) chunks.push(c);
+    const b = JSON.parse(Buffer.concat(chunks).toString());
+    db.prepare('UPDATE accounts SET flags = ? WHERE name = ?').run(JSON.stringify(b.flags), b.name);
+    res.writeHead(200); res.end('{}');
+    return;
+  }
   if (req.url === '/__test/feedback') { // tests read what was stored
     res.writeHead(200, { 'content-type': 'application/json' });
     res.end(JSON.stringify(db.prepare('SELECT * FROM feedback ORDER BY id').all()));

@@ -16,6 +16,7 @@ import * as Ships from './ships.js';
 import * as Wear from './wear.js';
 import { DAYS_PER_SEC, OFFLINE_DAYS_PER_DOUBLING, OFFLINE_FULL_DAYS, OFFLINE_MAX_DAYS, OFFLINE_MIN_SECONDS, OFFLINE_RATE, SIGHT, STANDING_FADES_AFTER_HOURS } from './config.js';
 import { S, market, ui } from './state.js';
+import { timeScale } from './cloud.js';
 import { save } from './save.js';
 import { revealAt, chartFromHistory } from './fog.js';
 import { dock, observe, replan } from './voyage.js';
@@ -45,7 +46,7 @@ export function loadOf() {
 function workBoats(dtSec) {
   const b = S.ship.boats;
   if (!b || b.moved >= b.total) return;
-  let days = Math.min(dtSec * DAYS_PER_SEC * ui.speed, (b.total - b.moved) / b.rate);
+  let days = Math.min(dtSec * DAYS_PER_SEC * ui.speed * timeScale(), (b.total - b.moved) / b.rate);
   while (days > 1e-6) {
     const dd = Math.min(0.25, days);
     days -= dd;
@@ -64,7 +65,7 @@ export function update(dtSec) {
   if (ui.speed === 0 || ui.modal || ui.screen || ui.arrival) return;
   if (sh.docked) { workBoats(dtSec); return; }
   if (!sh.route.length) return;
-  let days = dtSec * DAYS_PER_SEC * ui.speed;
+  let days = dtSec * DAYS_PER_SEC * ui.speed * timeScale(); // timeScale: an account setting (cloud.js)
   while (days > 0 && sh.route.length) {
     const dd = Math.min(0.05, days);
     days -= dd;

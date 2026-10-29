@@ -7,8 +7,9 @@ import * as Cloud from './cloud.js';
 import * as Accounts from './accounts.js';
 import { S, market, ui } from './state.js';
 import { DAYS_PER_SEC } from './config.js';
+import { storyTick } from './storyview.js';
 import { load, newGame, save } from './save.js';
-import { checkCloudOnStart, cloudSync, loadFromCloud, remoteAhead, renderCloudButton } from './cloudsync.js';
+import { checkCloudOnStart, cloudSync, loadFromCloud, loadSlot, newVoyageSlot, remoteAhead, renderCloudButton } from './cloudsync.js';
 import { centerOn, clampCam, resize, toScreen } from './view.js';
 import { revealAt } from './fog.js';
 import { render } from './render.js';
@@ -35,13 +36,14 @@ $('intro-continue').addEventListener('click', () => beginPlay());
 $('intro-cloud').addEventListener('click', () => {
   const r = remoteAhead;
   beginPlay();
-  if (r) loadFromCloud(Cloud.cloud.code, true);
+  if (r) { if (Cloud.cloud.slot) loadSlot(Cloud.cloud.slot, true); else loadFromCloud(Cloud.cloud.code, true); }
 });
 $('intro-code').addEventListener('click', () => { beginPlay(); ui.panelMode = 'cloud'; renderPanel(); });
 $('intro-new').addEventListener('click', () => {
   if ($('intro-continue').hidden === false && !confirm('Start over? Your saved voyage will be lost.')) return;
   newGame();
   beginPlay();
+  newVoyageSlot(); // signed in: the new voyage gets its own save in the account
 });
 
 function beginPlay() {
@@ -62,6 +64,7 @@ function frame(t) {
   const free = !ui.modal && !ui.screen && !ui.arrival;
   if (ui.pendingSummary && free && ui.introDone) { const sm = ui.pendingSummary; ui.pendingSummary = null; showSummary(sm); }
   if (ui.pendingEncounter && free && ui.introDone) { const e = ui.pendingEncounter; ui.pendingEncounter = null; openEncounter(e); }
+  if (free && ui.introDone && !ui.pendingSummary && !ui.pendingEncounter) storyTick(dt); // letters and chapter cards (storyview.js)
   saveClock += dt;
   if (saveClock > 5 && ui.introDone) { saveClock = 0; save(); }
   ui.cloudClock += dt;
@@ -135,6 +138,10 @@ window.helmline = {
   sail: (id) => { const p = PORTS.find((x) => x.id === id); const plan = planCourse(p.lon, p.lat, id, false); if (plan) confirmVoyage(plan); return !!plan; },
   fleetRoute: (id, route) => Fleet.setRoute(S, market, S.fleet.ships.find((x) => x.id === id), route),
   fleetCandidates: () => Fleet.candidates(S),
+  cloud: () => ({ cloud: { ...Cloud.cloud }, account: { ...Cloud.account } }),
+  refreshAccount: () => Cloud.refreshAccount().then(() => renderPanel()),
+  sync: () => cloudSync(true),
+  save: () => save(),
   fleetStatus: (id) => Fleet.statusText(S, S.fleet.ships.find((x) => x.id === id)),
   // sail on for some days of game time, as the frame loop would (stops for dialogs and arrivals)
   sailFor: (days) => { const sp = ui.speed; ui.speed = 1; for (let d = 0; d < days && !ui.modal && !ui.arrival; d += 0.25) update(0.25 / DAYS_PER_SEC); ui.speed = sp; renderPanel(); return S.ship.docked; },

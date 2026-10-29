@@ -34,7 +34,7 @@ Not yet included: ship-to-ship combat beyond auto-resolve, navigation drift, dyn
 
 ## Layout
 
-- `src/worker.js` is the Worker: it serves `public/` and answers `/api/saves` for cloud saves and `/api/feedback` for players' reports, stored in the D1 database `helmline-saves` (schema in `migrations/`). Only a hash of each save code is stored.
+- `src/worker.js` is the Worker: it serves `public/` and answers `/api/saves` for cloud saves (by save code), `/api/account` for accounts (a name and password, up to ten named saves each, and per-account settings in `accounts.flags`, such as `{"timeScale": 4}`) and `/api/feedback` for players' reports, stored in the D1 database `helmline-saves` (schema in `migrations/`). Only a hash of each save code is stored.
 - `public/` holds the game's static files (no build step). The game is plain ES modules in `public/js/`:
   - Game rules: `world.js` (coastlines, ports, winds, sea routes), `ships.js` (hulls, shipyard options and what they do), `economy.js` (goods and the market), `contracts.js` (contracts and standing), `events.js` (market events and news), `fleet.js` (hired ships and captains), `accounts.js` (the ledger), `ports.js` (port growth, depth, seasons and ships' boats), `pirates.js` (corsairs), `cloud.js` (the cloud-save API).
   - The game itself: `state.js` (the shared game state), `config.js` (tunable numbers), `save.js`, `cloudsync.js`, `fog.js`, `sim.js` (time passing, time away), `voyage.js` (courses, docking, corsairs).

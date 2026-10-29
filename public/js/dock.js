@@ -10,7 +10,7 @@ import { centerOn } from './view.js';
 import { openFeedback } from './feedback.js';
 import { openShips } from './shipyard.js';
 
-export const BOOKS = ['port', 'prices', 'ledger', 'contracts', 'fleet'];
+export const BOOKS = ['port', 'prices', 'ledger', 'rutter', 'contracts', 'fleet'];
 const NEXT_SPEED = { 1: 2, 2: 4, 4: 1 };
 
 export function isBook(mode) {
