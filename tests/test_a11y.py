@@ -141,6 +141,33 @@ async def main():
             await pg.click('[data-yard-tab="new"]'); await pg.wait_for_timeout(400)
             total += await check(pg, f'{tag} new ship', '#yard')
             await pg.screenshot(path=f'{OUT}/a11y_{tag}.png')
+            # every panel, at its top and scrolled to its end, and the dialogs
+            await pg.keyboard.press('Escape'); await pg.wait_for_timeout(300)
+            await pg.evaluate("""() => { const h = window.helmline, s = h.state; s.tips.off = true; s.cargo.wine = 10; s.paid.wine = 100;
+                for (const k of Object.keys(s.discovered)) s.discovered[k] = true; const m = h.market(); for (const k of ['porto', 'lagos', 'safi', 'arguin']) s.seen[k] = { day: s.day, prices: m.observe(k) };
+                h.fleetCandidates(); }""")
+            await pg.evaluate("() => window.helmline.panel('fleet')"); await pg.wait_for_timeout(200)
+            if await pg.locator('[data-hire]').count():
+                await pg.locator('[data-hire]').first.click(); await pg.click('#modal-ok'); await pg.wait_for_timeout(300)
+                await pg.evaluate("() => { const x = window.helmline.state.fleet.ships[0]; x.captain.asks = { wage: 3, day: window.helmline.state.day }; }")
+            for mode in ('menu', 'sail', 'prices', 'ledger', 'rutter', 'contracts', 'fleet', 'notices', 'help', 'cloud', 'port'):
+                await pg.evaluate(f"() => window.helmline.panel('{mode}')"); await pg.wait_for_timeout(250)
+                await pg.evaluate("() => document.querySelectorAll('#panel details').forEach((d) => d.open = true)"); await pg.wait_for_timeout(100)
+                total += await check(pg, f'{tag} {mode}', '#panel')
+                await pg.evaluate("() => { const p = document.getElementById('panel'); p.scrollTop = p.scrollHeight; }"); await pg.wait_for_timeout(150)
+                total += await check(pg, f'{tag} {mode} (end)', '#panel')
+            await pg.evaluate("() => window.helmline.panel(null)")
+            await pg.evaluate("() => window.helmline.sail('porto')"); await pg.wait_for_timeout(300)
+            total += await check(pg, f'{tag} voyage dialog', '#modal')
+            await pg.evaluate("() => document.getElementById('modal-cancel').click()")
+            # a story letter
+            await pg.evaluate("() => { window.helmlineStory = true; const s = window.helmline.state; s.story.fired.first_profit = undefined; delete s.story.fired.first_profit; s.voyages = 1; s.purse = Math.max(s.purse, 400); }")
+            await pg.wait_for_timeout(1200)
+            if await pg.evaluate("() => !document.getElementById('modal').hidden"):
+                total += await check(pg, f'{tag} story letter', '#modal')
+                await pg.click('#modal-ok')
+            else:
+                print(f'FAIL {tag}: no story letter to check'); total += 1
             await pg.close()
         print('ERRORS', errs)
         print('total problems', total)

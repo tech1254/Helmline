@@ -9,6 +9,11 @@ import { renderPanel, setSpeed, toggleWind } from './panels.js';
 import { centerOn } from './view.js';
 import { openFeedback } from './feedback.js';
 import { openShips } from './shipyard.js';
+import { newGame } from './save.js';
+import * as Cloud from './cloud.js';
+import { newVoyageSlot } from './cloudsync.js';
+import { confirmDialog } from './dialog.js';
+import { fmtDate } from './util.js';
 
 export const BOOKS = ['port', 'prices', 'ledger', 'rutter', 'contracts', 'fleet'];
 const NEXT_SPEED = { 1: 2, 2: 4, 4: 1 };
@@ -57,6 +62,7 @@ export function renderMenu(el) {
       ${item('ship', 'Find my ship', 'Centre the chart on her')}
       ${item('register', 'Ship register', 'Your ship and the ships ahead')}
       ${item('cloud', 'Cloud save', 'Play on another device')}
+      ${item('new', 'New voyage', 'Start again in Lisbon, 1451')}
       ${item('help', 'How to play')}
       ${item('bug', 'Report a bug')}
       ${item('idea', 'Suggest an idea')}
@@ -70,7 +76,33 @@ export function menuAction(act) {
   if (act === 'register') { ui.panelMode = null; renderPanel(); openShips('register'); return true; }
   if (act === 'cloud' || act === 'help') { ui.panelMode = act; renderPanel(); return true; }
   if (act === 'bug' || act === 'idea') { openFeedback(act); return true; }
+  if (act === 'new') { askNewVoyage(); return true; }
   return false;
+}
+
+// Start again. Signed in, the voyage in play stays in the account and the new one gets a save of
+// its own; otherwise it is kept only if it is in the cloud under a save code.
+export function askNewVoyage() {
+  const inAccount = !!(Cloud.account.token && Cloud.cloud.slot);
+  const kept = inAccount
+    ? `<p>This voyage stays in your account as <b>${Cloud.cloud.slotName || 'a save'}</b>, and you can load it again from Saves. The new voyage gets a save of its own.</p>`
+    : Cloud.cloud.code
+      ? `<p>This voyage stays in the cloud under your save code <b>${Cloud.cloud.code}</b>, but this device will play the new one.</p>`
+      : `<p><b>This voyage (${fmtDate(S.day)}, ${Math.round(S.purse).toLocaleString()} cz) will be lost</b>: it is saved only on this device.${Cloud.account.token ? ' To keep it, first save it to your account in Saves.' : ' To keep it, sign in and save it to an account first (Saves).'}</p>`;
+  confirmDialog({
+    title: 'Start a new voyage?',
+    body: `${kept}<p>The new voyage begins in Lisbon in March 1451, with a barca and 300 cruzados.</p>`,
+    ok: 'Start a new voyage',
+    onOk: () => {
+      if (Cloud.cloud.code) Cloud.unlink(); // don't overwrite the code's save with the new voyage
+      newGame();
+      ui.panelMode = 'port';
+      setSpeed(1);
+      renderPanel();
+      centerOn(S.ship.lon, S.ship.lat);
+      newVoyageSlot(); // signed in: a new save in the account
+    },
+  });
 }
 
 export function initDock() {

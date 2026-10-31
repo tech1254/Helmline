@@ -209,7 +209,9 @@ export function renderCloud(el) {
     <h3>Your account</h3>
     ${acct}
     <h3>Save codes</h3>
-    ${body}`;
+    ${body}
+    <h3>Start again</h3>
+    <div class="row" style="justify-content:flex-start"><button data-menu="new">New voyage…</button></div>`;
 }
 
 // Bring a saved game (from this device or the cloud) into play.

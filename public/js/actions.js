@@ -20,7 +20,7 @@ import { cloudSync, loadFromCloud, loadSlot, renderCloudButton, saveAsNewSlot, s
 import { cam, centerOn, clampCam } from './view.js';
 import { report } from './sim.js';
 import { boatsFor, checkMilestones, confirmVoyage, noPassage, observe, planCourse, waitInPort } from './voyage.js';
-import { menuAction } from './dock.js';
+import { askNewVoyage, menuAction } from './dock.js';
 import { openShips } from './shipyard.js';
 import { closeFeedback, feedbackInput, openFeedback, submitFeedback } from './feedback.js';
 import { $, cz, fmtDate, held } from './util.js';
@@ -348,7 +348,8 @@ export function initActions() {
       ui.panelMode = null;
       if (S.ship.docked) hint('Click anywhere on the chart, or a port, to set your course.');
     } else if (t.hasAttribute('data-reset')) {
-      if (confirm('Abandon this voyage and start again from Lisbon in 1451?')) { newGame(); ui.panelMode = 'port'; setSpeed(1); }
+      askNewVoyage();
+      return;
     }
     renderPanel();
     save();
