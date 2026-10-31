@@ -26,6 +26,7 @@ import { $, cz, fmtDate, held } from './util.js';
 import { renderLedger } from './ledgerview.js';
 import { debtBox, renderRutter, storyOn } from './storyview.js';
 import { timeScale } from './cloud.js';
+import { renderPlanner } from './voyageplan.js';
 import { renderPrices } from './pricebook.js';
 import { placeToasts, renderNoticeBadge, renderNotices } from './notices.js';
 import { renderFeedback } from './feedback.js';
@@ -327,7 +328,26 @@ function hullBanner(pid) {
   return `<p class="banner ${h < Wear.LEAKS_BELOW ? 'warn' : ''}"><b>Hull ${Math.round(h)}%</b> · ${state}sailing at ${Math.round(Pirates.hullFactor(S) * 100)}% speed. ${act}${ageLine}</p>`;
 }
 
+// Set sail: the voyage planner (voyageplan.js), or the plain list of ports as before. A switch at
+// the top chooses; S.sailView remembers it ('planner' or 'list').
+const sailSwitch = (view) => `<div class="seg sail-view" role="radiogroup" aria-label="Set sail view">
+    <button role="radio" aria-checked="${view === 'planner'}" class="${view === 'planner' ? 'on' : ''}" data-sail-view="planner">Planner</button>
+    <button role="radio" aria-checked="${view !== 'planner'}" class="${view !== 'planner' ? 'on' : ''}" data-sail-view="list">Plain list</button>
+  </div>`;
 export function renderSail(el) {
+  const view = S.sailView || 'planner';
+  if (view === 'planner') {
+    el.innerHTML = `
+      ${tabs('sail')}
+      <header><h2>Plan a voyage</h2><button class="close" data-close aria-label="Close">×</button></header>
+      ${sailSwitch(view)}
+      ${renderPlanner(ui.planSort)}`;
+    return;
+  }
+  renderSailList(el, sailSwitch(view));
+}
+
+function renderSailList(el, head) {
   const rows = PORTS.filter((p) => S.discovered[p.id] && p.id !== S.ship.docked).map((p) => {
     const plan = planCourse(p.lon, p.lat, p.id, false);
     if (!plan) return null;
@@ -342,6 +362,7 @@ export function renderSail(el) {
   el.innerHTML = `
     ${tabs('sail')}
     <header><h2>Set a course</h2><button class="close" data-close aria-label="Close">×</button></header>
+    ${head}
     <p class="blurb">Pick a charted port, or tap anywhere on the open sea to sail there. Uncharted waters only appear once you sail into them.</p>
     <ul class="dests">${list || '<li class="muted">No other ports charted yet.</li>'}</ul>
     <p class="foot">Times are estimated from today's winds.</p>`;

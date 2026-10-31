@@ -287,6 +287,10 @@ export function initActions() {
       report(Fleet.setRoute(S, market, ship, { stops: d.stops }));
       delete routeDrafts[ship.id];
       toast(`<b>${ship.name}</b> will run ${routeSummary(ship.route)}`, 'port');
+    } else if (t.dataset.sailView) {
+      S.sailView = t.dataset.sailView;
+    } else if (t.dataset.planSort) {
+      ui.planSort = t.dataset.planSort;
     } else if (t.dataset.payDebt !== undefined) {
       payDebtNow(toast);
     } else if (t.dataset.raise) { // a captain's raise: grant or refuse
