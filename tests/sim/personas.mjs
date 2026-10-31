@@ -52,6 +52,9 @@ const STEP = 0.5;
 // --no-tax, --no-rivals: turn off the crown's share or rival merchants, to measure each
 const NO_TAX = process.argv.includes('--no-tax');
 const NO_RIVALS = process.argv.includes('--no-rivals');
+// --routes simple: hired captains get Simple routes (the ports only: sell everything, buy what pays
+// best at the next port), as a player in Simple mode would give them, instead of the tuned orders.
+const SIMPLE_ROUTES = arg('routes', 'advanced') === 'simple';
 // Seeded luck: career n of a persona always gets seed (--seed) + n, so two settings can be
 // compared on the same winds of fortune.
 const SEED = Number(arg('seed', 1));
@@ -188,7 +191,9 @@ function career(persona) {
       at: 'lisbon', status: 'idle', route: null, leg: null, hold: {}, profit: 0, trips: 0, last: null, hullPct: 100 };
     S.fleet.ships.push(ship);
     if (role === 'flagship') setFlagHull(ship);
-    Fleet.setRoute(S, market, ship, route(loop));
+    const r = route(loop);
+    if (role !== 'flagship' && SIMPLE_ROUTES) r.stops = Fleet.simplify(r.stops); // --routes simple: ports only, the captain chooses
+    Fleet.setRoute(S, market, ship, r);
     return ship;
   };
   const fl = () => S.fleet.ships.find((x) => x.role === 'flagship');

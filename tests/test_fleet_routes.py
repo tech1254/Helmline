@@ -16,6 +16,7 @@ async def main():
         sel = lambda i, j, f: f'[data-stop-i="{i}"] [data-order-j="{j}"] [data-f="{f}"]'
         async def choose(css, val): await pg.select_option(css, val); await pg.wait_for_timeout(60)
         async def click(css): await pg.click(css); await pg.wait_for_timeout(60)
+        await click('[data-draft="mode-advanced"]')  # set the orders at each stop
         # Stop 1 Lisbon: sell all, buy 50% wool
         await choose(sel(0,1,'good'), 'cloth'); await choose(sel(0,1,'pct'), '50')
         # Stop 2 Lagos: just buy 50% wine

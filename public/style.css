@@ -587,3 +587,5 @@ ul.slots { list-style: none; padding: 0; margin: 6px 0; }
 ul.slots li.slot { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 6px 0; border-bottom: 1px solid rgba(0, 0, 0, 0.12); flex-wrap: wrap; }
 ul.slots li.slot.current b { color: var(--red); }
 ul.slots .badge { font-size: 11px; border: 1px solid currentColor; border-radius: 8px; padding: 0 6px; margin-left: 4px; }
+.route-mode { margin: 2px 0 6px; }
+.route-mode button.on { background: var(--gold); color: #1a1208; text-shadow: none; font-weight: 600; }

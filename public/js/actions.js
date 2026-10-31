@@ -267,11 +267,15 @@ export function initActions() {
       if (act === 'add-stop') {
         const lastPort = d.stops[d.stops.length - 1].port;
         const nextPort = PORTS.find((p) => S.discovered[p.id] && p.id !== lastPort && p.id !== d.stops[0].port)?.id || PORTS.find((p) => S.discovered[p.id] && p.id !== lastPort).id;
-        d.stops.push({ port: nextPort, orders: [{ act: 'sell', good: 'all' }] });
+        d.stops.push({ port: nextPort, orders: d.mode === 'simple' ? Fleet.simpleOrders() : [{ act: 'sell', good: 'all' }] });
       } else if (act === 'del-stop' && d.stops.length > 2) d.stops.splice(i, 1);
       else if (act === 'add-order') d.stops[i].orders.push({ act: 'buy', good: 'best', pct: 50 });
       else if (act === 'del-order') d.stops[i].orders.splice(j, 1);
-      else if (act === 'simple') { delete routeDrafts[ship.id]; routeDrafts[ship.id] = Fleet.simpleRoute(d.stops[0].port, d.stops[1].port); }
+      else if (act === 'simple') { delete routeDrafts[ship.id]; routeDrafts[ship.id] = { ...Fleet.simpleRoute(d.stops[0].port, d.stops[1].port), mode: 'advanced' }; }
+      else if (act === 'mode-simple' && d.mode !== 'simple') {
+        if (!Fleet.isSimpleRoute(d.stops)) hint('Simple: the captain sells everything at each port and chooses the cargo himself. Your orders for each stop are set aside.');
+        d.stops = Fleet.simplify(d.stops); d.mode = 'simple'; S.routeMode = 'simple';
+      } else if (act === 'mode-advanced') { d.mode = 'advanced'; S.routeMode = 'advanced'; }
       renderPanel();
       keepDetailsOpen(ship.id);
       return;
@@ -280,7 +284,7 @@ export function initActions() {
       const d = draftFor(ship);
       const problem = routeProblem(d, ship);
       if (problem) { hint(problem); keepDetailsOpen(ship.id); return; }
-      report(Fleet.setRoute(S, market, ship, d));
+      report(Fleet.setRoute(S, market, ship, { stops: d.stops }));
       delete routeDrafts[ship.id];
       toast(`<b>${ship.name}</b> will run ${routeSummary(ship.route)}`, 'port');
     } else if (t.dataset.payDebt !== undefined) {
