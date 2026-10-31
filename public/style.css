@@ -587,3 +587,20 @@ ul.slots { list-style: none; padding: 0; margin: 6px 0; }
 ul.slots li.slot { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 6px 0; border-bottom: 1px solid rgba(0, 0, 0, 0.12); flex-wrap: wrap; }
 ul.slots li.slot.current b { color: var(--red); }
 ul.slots .badge { font-size: 11px; border: 1px solid currentColor; border-radius: 8px; padding: 0 6px; margin-left: 4px; }
+.route-mode { margin: 2px 0 6px; }
+
+/* the voyage planner */
+.sail-view, .plan-sort { margin: 2px 0 8px; }
+
+.plan-sort .fine { margin-right: 6px; }
+ul.plans { list-style: none; padding: 0; margin: 0; }
+li.plan { border: 1px solid rgba(0, 0, 0, 0.18); border-radius: 6px; padding: 8px 10px; margin: 8px 0; }
+li.plan p { margin: 3px 0; }
+li.plan .plan-head { display: flex; justify-content: space-between; align-items: baseline; font-size: 17px; }
+li.plan .net.up { color: #2f6b2f; font-weight: 600; }
+li.plan .net.down { color: var(--red); font-weight: 600; }
+li.plan .meta { color: var(--ink-2); font-size: 13px; }
+li.plan .row { justify-content: flex-end; margin-top: 6px; }
+
+/* the selected choice in a two-way switch: the gold of the top bar's buttons */
+#panel .route-mode button.on, #panel .sail-view button.on, #panel .plan-sort button.on { background: linear-gradient(#d8b25a, #a8823a); color: #1d1209; text-shadow: none; font-weight: 600; }

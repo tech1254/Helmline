@@ -26,6 +26,7 @@ import { $, cz, fmtDate, held } from './util.js';
 import { renderLedger } from './ledgerview.js';
 import { debtBox, renderRutter, storyOn } from './storyview.js';
 import { timeScale } from './cloud.js';
+import { renderPlanner } from './voyageplan.js';
 import { renderPrices } from './pricebook.js';
 import { placeToasts, renderNoticeBadge, renderNotices } from './notices.js';
 import { renderFeedback } from './feedback.js';
@@ -327,7 +328,26 @@ function hullBanner(pid) {
   return `<p class="banner ${h < Wear.LEAKS_BELOW ? 'warn' : ''}"><b>Hull ${Math.round(h)}%</b> · ${state}sailing at ${Math.round(Pirates.hullFactor(S) * 100)}% speed. ${act}${ageLine}</p>`;
 }
 
+// Set sail: the voyage planner (voyageplan.js), or the plain list of ports as before. A switch at
+// the top chooses; S.sailView remembers it ('planner' or 'list').
+const sailSwitch = (view) => `<div class="seg sail-view" role="radiogroup" aria-label="Set sail view">
+    <button role="radio" aria-checked="${view === 'planner'}" class="${view === 'planner' ? 'on' : ''}" data-sail-view="planner">Planner</button>
+    <button role="radio" aria-checked="${view !== 'planner'}" class="${view !== 'planner' ? 'on' : ''}" data-sail-view="list">Plain list</button>
+  </div>`;
 export function renderSail(el) {
+  const view = S.sailView || 'planner';
+  if (view === 'planner') {
+    el.innerHTML = `
+      ${tabs('sail')}
+      <header><h2>Plan a voyage</h2><button class="close" data-close aria-label="Close">×</button></header>
+      ${sailSwitch(view)}
+      ${renderPlanner(ui.planSort)}`;
+    return;
+  }
+  renderSailList(el, sailSwitch(view));
+}
+
+function renderSailList(el, head) {
   const rows = PORTS.filter((p) => S.discovered[p.id] && p.id !== S.ship.docked).map((p) => {
     const plan = planCourse(p.lon, p.lat, p.id, false);
     if (!plan) return null;
@@ -342,6 +362,7 @@ export function renderSail(el) {
   el.innerHTML = `
     ${tabs('sail')}
     <header><h2>Set a course</h2><button class="close" data-close aria-label="Close">×</button></header>
+    ${head}
     <p class="blurb">Pick a charted port, or tap anywhere on the open sea to sail there. Uncharted waters only appear once you sail into them.</p>
     <ul class="dests">${list || '<li class="muted">No other ports charted yet.</li>'}</ul>
     <p class="foot">Times are estimated from today's winds.</p>`;
@@ -363,7 +384,10 @@ export const routeDrafts = {};
 export function draftFor(ship) {
   if (!routeDrafts[ship.id]) {
     const other = PORTS.find((p) => S.discovered[p.id] && p.id !== ship.at)?.id || ship.at;
-    routeDrafts[ship.id] = JSON.parse(JSON.stringify(ship.route?.stops ? { stops: ship.route.stops } : Fleet.simpleRoute(ship.at, other)));
+    const d = JSON.parse(JSON.stringify(ship.route?.stops ? { stops: ship.route.stops } : Fleet.simpleRoute(ship.at, other)));
+    // Simple unless the route has orders of its own, or the owner prefers to set them
+    d.mode = !Fleet.isSimpleRoute(d.stops) || S.routeMode === 'advanced' ? 'advanced' : 'simple';
+    routeDrafts[ship.id] = d;
   }
   return routeDrafts[ship.id];
 }
@@ -394,6 +418,28 @@ function stopWaterNote(ship, pid) {
 
 export function routeEditor(ship) {
   const d = draftFor(ship);
+  const modes = `<div class="seg route-mode" role="radiogroup" aria-label="Route orders">
+      <button role="radio" aria-checked="${d.mode === 'simple'}" class="${d.mode === 'simple' ? 'on' : ''}" data-draft="mode-simple">Simple</button>
+      <button role="radio" aria-checked="${d.mode !== 'simple'}" class="${d.mode !== 'simple' ? 'on' : ''}" data-draft="mode-advanced">Advanced</button>
+    </div>`;
+  if (d.mode === 'simple') {
+    const stops = d.stops.map((st, i) => `
+      <div class="stop" data-stop-i="${i}">
+        <div class="stop-head">
+          <span class="stop-n">${i + 1}</span>
+          <select data-f="port" aria-label="Stop ${i + 1} port">${portOptions(st.port)}</select>
+          ${d.stops.length > 2 ? `<button class="mini" data-draft="del-stop" aria-label="Remove stop ${i + 1}">Remove</button>` : ''}
+        </div>
+        ${stopWaterNote(ship, st.port)}
+      </div>`).join('<div class="stop-arrow" aria-hidden="true">↓</div>');
+    return `<div class="route-editor simple">
+      ${modes}
+      <p class="fine">Name the ports. At each one Captain ${ship.captain.name} sells everything aboard and loads whatever pays best at the next.</p>
+      ${stops}
+      <div class="stop-arrow" aria-hidden="true">↺ back to stop 1</div>
+      <div class="row" style="justify-content:flex-start">${d.stops.length < Fleet.MAX_STOPS ? '<button class="mini" data-draft="add-stop">+ Add a port</button>' : ''}</div>
+    </div>`;
+  }
   const stops = d.stops.map((st, i) => `
       <div class="stop" data-stop-i="${i}">
         <div class="stop-head">
@@ -412,6 +458,8 @@ export function routeEditor(ship) {
         ${st.orders.length < Fleet.MAX_ORDERS ? '<button class="mini" data-draft="add-order">+ Order</button>' : ''}
       </div>`).join('<div class="stop-arrow" aria-hidden="true">↓</div>');
   return `<div class="route-editor">
+      ${modes}
+      <p class="fine">Set what to sell and buy at each stop, in order.</p>
       ${stops}
       <div class="stop-arrow" aria-hidden="true">↺ back to stop 1</div>
       <div class="row" style="justify-content:flex-start">${d.stops.length < Fleet.MAX_STOPS ? '<button class="mini" data-draft="add-stop">+ Add stop</button>' : ''}<button class="mini" data-draft="simple">Reset to two ports</button></div>
@@ -420,7 +468,7 @@ export function routeEditor(ship) {
 
 export function routeSummary(route) {
   if (!route?.stops) return '';
-  return route.stops.map((st) => PORTS.find((p) => p.id === st.port).name).join(' → ') + ' → …';
+  return route.stops.map((st) => PORTS.find((p) => p.id === st.port).name).join(' → ') + ' → …' + (Fleet.isSimpleRoute(route.stops) ? ' (the captain chooses the cargo)' : '');
 }
 
 // A captain's raise request, and his training: what's asked, what's ordered, what can be.
@@ -454,7 +502,7 @@ export function renderFleet(el) {
         <p class="muted">${last}</p>
         <details class="route-edit" ${ship.route ? '' : 'open'}><summary>${ship.route ? 'Edit route' : 'Set a route'}</summary>
           ${routeEditor(ship)}
-          <p class="foot">Stops are visited in order, then back to the first. Orders run top to bottom, so sell before you buy to make room. "Best available" picks what pays most where it will next be sold; a named good is bought as long as it should sell without loss where it is next sold.</p>
+          ${draftFor(ship).mode === 'simple' ? '' : `<p class="foot">Stops are visited in order, then back to the first. Orders run top to bottom, so sell before you buy to make room. "Best available" picks what pays most where it will next be sold; a named good is bought as long as it should sell without loss where it is next sold.</p>`}
         </details>
         <p class="muted">${Ships.ageText(ship.hull || 'caravel', Fleet.yearsOf(S, ship))}${Wear.soundCap(ship.hull || 'caravel', Fleet.yearsOf(S, ship)) < 100 ? `; the yards can make her no better than ${Wear.soundCap(ship.hull || 'caravel', Fleet.yearsOf(S, ship))}%` : ''}.</p>
         <div class="row">${ship.route ? `<button data-halt="${ship.id}">Stop at next port</button>` : ''}${S.ship.docked === 'lisbon' && Ships.lifeShare(ship.hull || 'caravel', Fleet.yearsOf(S, ship)) >= 0.5 ? `<button data-ship-yard="${ship.id}" ${ship.at !== 'lisbon' || ship.status === 'sailing' ? 'disabled title="When she is next in Lisbon"' : ''}>Rebuild or replace her…</button>` : ''}<button class="primary" data-route="${ship.id}">${ship.route ? 'Change route' : 'Start route'}</button></div>

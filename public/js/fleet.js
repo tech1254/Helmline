@@ -162,10 +162,18 @@ export const MAX_STOPS = 6;
 export const MAX_ORDERS = 4;
 export const holdSize = (ship) => hullStats(ship).hold;
 
+export const simpleOrders = () => [{ act: 'sell', good: 'all' }, { act: 'buy', good: 'best', pct: 100 }];
 export function simpleRoute(a, b) {
-  const orders = () => [{ act: 'sell', good: 'all' }, { act: 'buy', good: 'best', pct: 100 }];
-  return { stops: [{ port: a, orders: orders() }, { port: b, orders: orders() }], next: 0 };
+  return { stops: [{ port: a, orders: simpleOrders() }, { port: b, orders: simpleOrders() }], next: 0 };
 }
+
+// A simple route names only the ports: at each, the captain sells everything and loads what pays
+// best where he goes next. Any other orders make it an advanced one.
+export function isSimpleRoute(stops) {
+  return (stops || []).every((st) => st.orders.length === 2 && st.orders[0].act === 'sell' && st.orders[0].good === 'all'
+    && st.orders[1].act === 'buy' && st.orders[1].good === 'best' && st.orders[1].pct === 100);
+}
+export const simplify = (stops) => stops.map((st) => ({ port: st.port, orders: simpleOrders() }));
 
 // Routes saved before multi-stop routes existed: two ports and one cargo choice each.
 function normalizeRoute(r) {
