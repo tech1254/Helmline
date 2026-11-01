@@ -6,6 +6,7 @@
 // keep a hull only, in the default fit.
 
 import { START_DATE } from './config.js';
+import { NATIONS } from './nations.js';
 
 // Standing needed, by tier (see contracts.js TIERS).
 export const KNOWN = 5, RESPECTED = 20, TRUSTED = 40;
@@ -69,6 +70,25 @@ export const HULLS = {
     life: 15, upkeep: 5, hiredUpkeep: 2, scale: 1.3, size: 1.1, fight: 0.2, shy: 0.6,
     blurb: 'A four-masted caravel built for the crown\'s coast guard: a square sail on the foremast, three lateens, guns low in the hull. Little hold, but fast and dangerous: an escort, and a hunter of corsairs.',
   },
+  // Castile's own hulls (nations.js ladders)
+  naovizcaina: {
+    draft: [2.0, 2.9], // metres, light and fully laden
+    id: 'naovizcaina', name: 'Nao vizcaína', year: 1451, standing: KNOWN, price: 3000, hold: 85, knots: 4.6, up: 0.7, down: 1.05,
+    life: 15, upkeep: 4, hiredUpkeep: 1, scale: 1.35, size: 1.25, lure: 1.1,
+    blurb: 'A Basque cargo ship from the yards of Biscay, bought for the Andalusian trade: a deep round hull, a big square mainsail. Cheap for her hold, slow, and poor into the wind.',
+  },
+  naocarrera: {
+    draft: [3.0, 4.2], // metres, light and fully laden
+    id: 'naocarrera', name: 'Nao de la Carrera', year: 1503, orderYear: 1500, standing: TRUSTED, price: 8800, hold: 140, knots: 5.2, up: 0.75, down: 1.15,
+    life: 16, upkeep: 7, hiredUpkeep: 2, scale: 2, size: 1.5, fight: 0.1, shy: 0.8,
+    blurb: 'A nao built for the Indies run from Seville: a big hold for wine, oil and cloth out and sugar and hides home. Too deep for the river laden: she loads at Sanlúcar or Cádiz.',
+  },
+  galeon: {
+    draft: [3.4, 4.6], // metres, light and fully laden
+    id: 'galeon', name: 'Galeón', year: 1540, orderYear: 1536, standing: TRUSTED, price: 13000, hold: 160, knots: 6.0, up: 0.9, down: 1.15,
+    life: 22, upkeep: 8, hiredUpkeep: 2, scale: 2.1, size: 1.55, fight: 0.25, shy: 0.5,
+    blurb: 'The guard and treasure ship of the Indies fleets: long, low and gunned, and fast for her size.',
+  },
   galeao: {
     draft: [3.4, 4.6], // metres, light and fully laden
     id: 'galeao', name: 'Galleon', year: 1525, orderYear: 1521, standing: TRUSTED, price: 12500, hold: 150, knots: 6.0, up: 0.9, down: 1.15,
@@ -91,6 +111,8 @@ export function boatRate(hullId, nm = 7) {
 }
 
 export const HULL_ORDER = ['barca', 'caravel', 'barinel', 'largecaravel', 'redonda', 'urca', 'nau', 'armedcaravel', 'galeao', 'naudaindia'];
+// The hulls a house's own yards build, in order (nations.js).
+export const hullOrder = (S) => (NATIONS[S?.nation] || NATIONS.portugal).ladder;
 // Hull prices above, and refits, are 30% dearer than first set (economy change C, 27 Oct 2026):
 // close to what ships cost per ton in the period, and enough to make buying one a decision.
 export const PRICE_RISE = 1.3;
@@ -112,7 +134,7 @@ export const GROUPS = [
     id: 'area', name: 'Sail area', tab: 'rig',
     choices: [
       { id: 'regular', name: 'Regular' },
-      { id: 'topsails', name: 'Topsails and topgallants', note: 'Sails set above the main and fore courses, as the Flemings and English now rig them: more canvas aloft with the wind behind her.', offWind: 1.12, wage: 1, price: 500, days: 4, year: 1545, hulls: ['redonda', 'nau', 'urca', 'galeao', 'naudaindia'] },
+      { id: 'topsails', name: 'Topsails and topgallants', note: 'Sails set above the main and fore courses, as the Flemings and English now rig them: more canvas aloft with the wind behind her.', offWind: 1.12, wage: 1, price: 500, days: 4, year: 1545, hulls: ['redonda', 'nau', 'urca', 'galeao', 'naudaindia', 'naovizcaina', 'naocarrera', 'galeon'] },
       { id: 'bonnets', name: 'Bonnets laced on', note: 'Extra strips of canvas laced to the foot of the sails in fair weather. More hands to work them.', offWind: 1.08, wage: 1, price: 250, days: 2 },
     ],
   },
@@ -142,10 +164,10 @@ export const GROUPS = [
     choices: [
       { id: 'none', name: 'None' },
       { id: 'bercos', name: 'Swivel guns (berços)', note: 'Light breech-loaders on the rails.', fight: 0.08, price: 500, days: 3, standing: KNOWN },
-      { id: 'falcons', name: 'Falconets', note: 'Small iron guns on carriages, firing a ball the size of a fist: a galley thinks twice before closing.', fight: 0.11, price: 650, days: 3, standing: KNOWN, year: 1478, hulls: ['caravel', 'barinel', 'largecaravel', 'redonda', 'urca', 'nau', 'armedcaravel', 'galeao', 'naudaindia'] },
-      { id: 'bombards', name: 'Bombards', note: 'Heavy guns on the main deck. Only a nau, a galleon or a nau da Índia can carry them.', fight: 0.15, price: 1200, days: 5, standing: TRUSTED, hulls: ['nau', 'galeao', 'naudaindia'] },
-      { id: 'culverins', name: 'Bronze culverins', note: 'Long bronze guns cast at the Lisbon foundry, reaching twice as far as a bombard: she can hurt a galley before it closes. Only a nau, galleon or nau da Índia can carry them.', fight: 0.26, price: 2400, days: 8, standing: TRUSTED, year: 1538, hulls: ['nau', 'galeao', 'naudaindia'] },
-      { id: 'gunports', name: 'Gunports and heavy guns', note: 'Ports cut low in the hull, with lids, so heavy guns can ride below the deck without making her top-heavy. The new way of arming a ship.', fight: 0.2, price: 1500, days: 8, standing: RESPECTED, year: 1501, hulls: ['largecaravel', 'redonda', 'nau', 'armedcaravel', 'galeao', 'naudaindia'] },
+      { id: 'falcons', name: 'Falconets', note: 'Small iron guns on carriages, firing a ball the size of a fist: a galley thinks twice before closing.', fight: 0.11, price: 650, days: 3, standing: KNOWN, year: 1478, hulls: ['caravel', 'barinel', 'largecaravel', 'redonda', 'urca', 'nau', 'armedcaravel', 'galeao', 'naudaindia', 'naovizcaina', 'naocarrera', 'galeon'] },
+      { id: 'bombards', name: 'Bombards', note: 'Heavy guns on the main deck. Only a nau, a galleon or a nau da Índia can carry them.', fight: 0.15, price: 1200, days: 5, standing: TRUSTED, hulls: ['nau', 'galeao', 'naudaindia', 'naocarrera', 'galeon'] },
+      { id: 'culverins', name: 'Bronze culverins', note: 'Long bronze guns cast in the royal foundries, reaching twice as far as a bombard: she can hurt a galley before it closes. Only a nau, galleon or nau da Índia can carry them.', fight: 0.26, price: 2400, days: 8, standing: TRUSTED, year: 1538, hulls: ['nau', 'galeao', 'naudaindia', 'naocarrera', 'galeon'] },
+      { id: 'gunports', name: 'Gunports and heavy guns', note: 'Ports cut low in the hull, with lids, so heavy guns can ride below the deck without making her top-heavy. The new way of arming a ship.', fight: 0.2, price: 1500, days: 8, standing: RESPECTED, year: 1501, hulls: ['largecaravel', 'redonda', 'nau', 'armedcaravel', 'galeao', 'naudaindia', 'naocarrera', 'galeon'] },
     ],
   },
   {
@@ -322,6 +344,12 @@ export function priceFor(hullId, c) {
 // or 'no', with the reason.
 export function availability(S, thing) {
   const year = yearOf(S.day);
+  if (thing?.draft && HULLS[thing.id] === thing) { // a hull: as this house's yards build it
+    const N = NATIONS[S?.nation] || NATIONS.portugal;
+    if (!N.ladder.includes(thing.id)) return { ok: 'no', why: `not built in ${N.name}'s yards` };
+    thing = { ...thing, ...(N.years[thing.id] || {}) };
+    if (N.years[thing.id] && !N.years[thing.id].orderYear) delete thing.orderYear;
+  }
   const need = thing.standing || 0;
   if (need && standingOf(S) < need) return { ok: 'no', why: `needs standing: ${TIER_NAMES[need]}` };
   if (thing.year && year < thing.year) {
@@ -400,10 +428,11 @@ export function quoteRefit(S, hullId, cur, fit) {
 }
 
 // Gear that is new this year (for the yearly word from the yards).
-export function newThisYear(year) {
+export function newThisYear(year, S = null) {
   const out = [];
   for (const g of GROUPS) for (const c of g.choices) if (c.year === year) out.push({ g, c });
-  for (const h of Object.values(HULLS)) if (h.year === year && year > 1451) out.push({ hull: h });
+  const N = NATIONS[S?.nation] || NATIONS.portugal;
+  for (const id of N.ladder) { const h = HULLS[id]; if ((N.years[id]?.year ?? h.year) === year && year > 1451) out.push({ hull: h }); }
   return out;
 }
 

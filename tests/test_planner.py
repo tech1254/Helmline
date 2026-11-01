@@ -44,6 +44,11 @@ async def run(b, label, vp, mobile, errs):
         print(label, f'loaded {good}: {before} -> {after} (suggested {n})')
         if after - before != n: errs.append(f'{label}: Load did not buy the suggested cargo')
         if await J("() => document.querySelector('#panel h2')?.textContent") != 'Plan a voyage': errs.append(f'{label}: the planner closed after loading')
+        # the port loaded for stays in view, and is not offered the same cargo again as if the hold were empty
+        focus = await J("() => { const li = document.querySelector('li.plan.focus'); if (!li) return null; const r = li.getBoundingClientRect(), p = document.getElementById('panel').getBoundingClientRect(); return { port: li.dataset.port, visible: r.bottom > p.top && r.top < p.bottom, again: li.querySelector('[data-buy]')?.dataset.buy || null, n: +(li.querySelector('[data-buy]')?.dataset.n || 0) }; }")
+        print(label, 'after loading, in view:', focus)
+        if not focus or not focus['visible']: errs.append(f'{label}: the port loaded for is not kept in view')
+        elif focus['again'] == good and focus['n'] >= n: errs.append(f'{label}: the same cargo is suggested again as if the hold were empty')
     else:
         errs.append(f'{label}: no cargo suggested anywhere')
     # contracts: the offers on this board under the port they go to; take one, then load its goods

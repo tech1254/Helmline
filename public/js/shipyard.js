@@ -25,9 +25,11 @@ import { log } from './pricebook.js';
 import { shipSVG } from './shipart.js';
 import { shipFigure, stocksFigure, yardPhoto } from './photos.js';
 import { SCENE_MODES, sceneMode, setSceneMode } from './scene.js';
+import { home, homeName } from './nations.js';
 
-export const FULL_YARD = 'lisbon';
-export const YARDS = ['lisbon', 'lagos', 'funchal'];
+// The house's home yard builds ships; the others refit (nations.js).
+export const fullYard = () => home(S);
+export const YARDS = ['lisbon', 'lagos', 'funchal', 'seville', 'palos'];
 const portName = (id) => PORTS.find((p) => p.id === id)?.name || id;
 const fmt = (n) => Math.round(n).toLocaleString();
 const pct = (x) => `${Math.round(x * 100)}%`;
@@ -39,7 +41,7 @@ export function yardHere() {
 
 export function openShips(view = 'register', opts = {}) {
   Ships.ensureFlagship(S);
-  if (view === 'yard' && !yardHere()) { hint('Shipyards: Lisbon (ships and refits), Lagos and Funchal (refits).'); view = 'register'; }
+  if (view === 'yard' && !yardHere()) { hint(`Shipyards: ${homeName(S)} (ships and refits); ${YARDS.filter((y) => y !== home(S)).map(portName).join(', ')} (refits).`); view = 'register'; }
   ui.screen = { view, tab: opts.tab || 'hull', draft: { ...S.ship.fit }, name: S.ship.name, pick: opts.pick || null };
   $('yard').hidden = false;
   document.body.classList.add('screen-open');
@@ -120,18 +122,18 @@ function registerHtml() {
   const orders = (S.yard.orders || []).map((o) => {
     const p = Ships.progress(S, o);
     const art = o.kind === 'hull'
-      ? (p >= 1 ? shipFigure({ hull: o.hull, fit: Ships.normalFit(o.hull, sh.fit), name: o.name }) : stocksFigure(p, `Your ${Ships.HULLS[o.hull].name.toLowerCase()} on the stocks at Lisbon: ${Ships.stageText(p)}`))
+      ? (p >= 1 ? shipFigure({ hull: o.hull, fit: Ships.normalFit(o.hull, sh.fit), name: o.name }) : stocksFigure(p, `Your ${Ships.HULLS[o.hull].name.toLowerCase()} on the stocks at ${homeName(S)}: ${Ships.stageText(p)}`))
       : shipSVG({ hull: sh.hull, fit: { ...sh.fit, [o.group]: o.choice }, name: sh.name }, { style: p >= 1 ? 'colour' : 'ink', sea: true });
     const what = o.kind === 'hull' ? `${Ships.HULLS[o.hull].name}${o.name ? `: <i>${esc(o.name)}</i>` : ''}` : Ships.choice(o.group, o.choice).name;
     return `<li class="order-card">
         <div class="art">${art}</div>
         <div><h4>${what}</h4>
-          <p>${o.kind === 'hull' ? `${cap(Ships.stageText(p))}.` : p >= 1 ? 'Ready to fit.' : 'Being made ready.'} ${p >= 1 ? 'Waiting for you at the Lisbon yard.' : `Ready ${fmtDate(o.due)}.`}</p>
+          <p>${o.kind === 'hull' ? `${cap(Ships.stageText(p))}.` : p >= 1 ? 'Ready to fit.' : 'Being made ready.'} ${p >= 1 ? `Waiting for you at the ${homeName(S)} yard.` : `Ready ${fmtDate(o.due)}.`}</p>
           <p class="muted">Paid ${fmt(o.paid)} cz of ${fmt(o.price)}; ${fmt(o.price - o.paid)} cz due on delivery.${o.kind === 'fit' && !Ships.groupsFor(sh.hull).includes(Ships.group(o.group)) ? ` It does not fit a ${Ships.HULLS[sh.hull].name.toLowerCase()}: the yard will refund your ${fmt(o.paid)} cz when you call.` : ''}</p>
           <div class="bar"><span style="width:${Math.round(p * 100)}%"></span></div>
         </div></li>`;
   }).join('');
-  const hulls = Ships.HULL_ORDER.map((id) => {
+  const hulls = Ships.hullOrder(S).map((id) => {
     const H = Ships.HULLS[id];
     const av = Ships.availability(S, H);
     const mine = id === sh.hull;
@@ -162,7 +164,7 @@ function registerHtml() {
           <p class="muted">${Ships.ageText(sh.hull, Ships.serviceYears(sh, S.day))}${Wear.soundCap(sh.hull, Ships.serviceYears(sh, S.day)) < 100 ? `: the yards can make her no better than ${Wear.soundCap(sh.hull, Ships.serviceYears(sh, S.day))}%` : ''}.</p>
           ${statRows(st)}
           <div class="row start">
-            ${yard ? '<button class="primary" data-yard="open-yard">Go to the shipyard</button>' : '<p class="fine">Shipyards: Lisbon builds ships and refits them; Lagos and Funchal refit.</p>'}
+            ${yard ? '<button class="primary" data-yard="open-yard">Go to the shipyard</button>' : `<p class="fine">Shipyards: ${homeName(S)} builds ships and refits them; ${YARDS.filter((y) => y !== home(S)).map(portName).join(', ')} refit.</p>`}
           </div>
         </div>
       </section>
@@ -182,7 +184,7 @@ function yardHtml() {
   const y = ui.screen;
   const sh = S.ship;
   const pid = yardHere();
-  const full = pid === FULL_YARD;
+  const full = pid === fullYard();
   const draft = Ships.normalFit(sh.hull, y.draft);
   y.draft = draft;
   const now = Ships.flagStats(S);
@@ -203,7 +205,7 @@ function yardHtml() {
         const chosen = draft[g.id] === c.id;
         const ordered = Ships.hasOrder(S, 'fit', c.id);
         const disabled = (av.ok === 'no' && !current) || (lock && !current) || (ordered && !current);
-        const note = current ? 'fitted now' : ordered ? 'on order' : av.ok === 'no' ? av.why : lock ? 'only at the Lisbon yard' : av.ok === 'order' ? `order now, a third down; ${av.why.replace('can be ordered now for ', '')}` : price ? `${fmt(price)} cz · ${c.days} days` : (c.days ? `free · ${c.days} ${c.days === 1 ? 'day' : 'days'}` : 'free');
+        const note = current ? 'fitted now' : ordered ? 'on order' : av.ok === 'no' ? av.why : lock ? `only at the ${homeName(S)} yard` : av.ok === 'order' ? `order now, a third down; ${av.why.replace('can be ordered now for ', '')}` : price ? `${fmt(price)} cz · ${c.days} days` : (c.days ? `free · ${c.days} ${c.days === 1 ? 'day' : 'days'}` : 'free');
         return `<button class="opt ${chosen ? 'on' : ''} ${current ? 'current' : ''}" data-opt="${g.id}:${c.id}" ${disabled ? 'disabled' : ''} aria-pressed="${chosen}">
             <b>${c.name}</b>${c.note ? `<span class="note">${c.note}</span>` : ''}<span class="price">${note}</span></button>`;
       }).join('');
@@ -216,11 +218,11 @@ function yardHtml() {
   const canPay = !q.error && q.lines.length && S.purse >= q.cost + q.down;
   const renamed = (y.name || '').trim() && y.name.trim() !== sh.name;
   return `<div class="yard-card shipyard">
-    ${header(full ? 'The Lisbon shipyard' : `The shipwrights of ${portName(pid)}`, full ? 'Refits, new ships and orders for ships not yet built' : 'Refits. New ships and re-rigging only in Lisbon.')}
+    ${header(full ? `The ${homeName(S)} shipyard` : `The shipwrights of ${portName(pid)}`, full ? 'Refits, new ships and orders for ships not yet built' : `Refits. New ships only in ${homeName(S)}.`)}
     ${ready.length && full ? `<div class="banner ready">${ready.map((o) => `<span>${o.kind === 'hull' ? `Your new ${Ships.HULLS[o.hull].name.toLowerCase()}${o.name ? ` <i>${esc(o.name)}</i>` : ''}` : Ships.choice(o.group, o.choice).name} is ready. ${fmt(o.price - o.paid)} cz due.</span><button class="primary" data-deliver-order="${S.yard.orders.indexOf(o)}">Take delivery</button>`).join('')}</div>` : ''}
     <div class="yard-body split">
       <section class="stage">
-        <figure class="yard-photo"><img src="${yardPhoto(pid)}" alt="${full ? 'The royal shipyard on the Tagus at Lisbon' : `The shipwrights' beach at ${portName(pid)}`}" decoding="async"></figure>
+        ${yardPhoto(pid) ? `<figure class="yard-photo"><img src="${yardPhoto(pid)}" alt="${pid === 'lisbon' ? 'The royal shipyard on the Tagus at Lisbon' : `The shipwrights' beach at ${portName(pid)}`}" decoding="async"></figure>` : ''}
         <div class="art big plan"><p class="plan-title">The shipwright's plan</p>${shipSVG({ hull: sh.hull, fit: y.tab === 'new' ? sh.fit : draft, name: (y.name || sh.name).trim() || sh.name }, { sea: false, crop: 'tight' })}</div>
         <label class="name">Her name <input data-yard-name maxlength="28" value="${esc(y.name ?? sh.name)}" autocomplete="off"></label>
         ${renamed ? '<button class="mini" data-yard="rename">Paint the new name on (free)</button>' : ''}
@@ -246,7 +248,7 @@ function newShipHtml() {
   const years = Ships.serviceYears(sh, S.day);
   const old = Ships.lifeShare(sh.hull, years) >= 0.5;
   return `<p class="blurb">Trade up your flagship: the yard takes the <i>${esc(sh.name)}</i> in part exchange for ${fmt(value)} cz (half her hull price new, less for her ${Math.floor(years)} years${repair ? ' and her repairs' : ''}). Her fittings stay with her; her name and colours go with you. Ships for your captains are bought in the Fleet tab.</p>
-    <ol class="hulls compact">${Ships.HULL_ORDER.map((id) => {
+    <ol class="hulls compact">${Ships.hullOrder(S).map((id) => {
       const H = Ships.HULLS[id];
       const av = Ships.availability(S, H);
       const st = Ships.stats({ hull: id });
@@ -397,7 +399,7 @@ function orderHull(hullId) {
   const keep = name && name !== S.ship.name ? name : null;
   confirmDialog({
     title: `Order a ${H.name.toLowerCase()}?`,
-    body: `<p>The Lisbon yard will lay her keel now. You can watch her take shape in the ship register.</p>
+    body: `<p>The ${homeName(S)} yard will lay her keel now. You can watch her take shape in the ship register.</p>
       <dl class="facts"><dt>Paid now</dt><dd>${fmt(down)} cz</dd><dt>Due on delivery</dt><dd>${fmt(H.price - down)} cz, less your flagship in part exchange</dd><dt>Ready</dt><dd>${fmtDate(Ships.dayOfYear(H.year))}</dd>${keep ? `<dt>Her name</dt><dd>${esc(keep)}</dd>` : ''}</dl>
       <p class="fine">The building goes on while you are away from the game, too.</p>`,
     ok: `Order for ${fmt(down)} cz`,
@@ -405,8 +407,8 @@ function orderHull(hullId) {
     onOk: () => {
       const paid = Ships.orderHull(S, hullId, keep);
       S.purse -= paid;
-      Accounts.record(S, { kind: 'ships', amount: -paid, text: `Ordered a ${H.name.toLowerCase()} at the Lisbon yard (a third down)` });
-      toast(`The keel of your ${H.name.toLowerCase()} is laid in Lisbon. She will be ready in ${H.year}.`, 'discover');
+      Accounts.record(S, { kind: 'ships', amount: -paid, text: `Ordered a ${H.name.toLowerCase()} at the ${homeName(S)} yard (a third down)` });
+      toast(`The keel of your ${H.name.toLowerCase()} is laid in ${homeName(S)}. She will be ready in ${H.year}.`, 'discover');
       log(`Ordered a ${H.name.toLowerCase()}, delivery ${H.year}.`);
       save();
       renderShips();
@@ -416,7 +418,7 @@ function orderHull(hullId) {
 
 function deliver(i) {
   const o = S.yard.orders[i];
-  if (!o || S.day < o.due || S.ship.docked !== FULL_YARD) return;
+  if (!o || S.day < o.due || S.ship.docked !== fullYard()) return;
   const sh = S.ship;
   const due = o.price - o.paid;
   if (o.kind === 'fit') {
@@ -460,7 +462,7 @@ function deliver(i) {
   const name = o.name || sh.name;
   confirmDialog({
     title: `Take delivery of the ${name}?`,
-    body: `<div class="art">${shipFigure({ hull: o.hull, fit: Ships.normalFit(o.hull, sh.fit), name }, { harbour: FULL_YARD, size: 'hero' })}</div>
+    body: `<div class="art">${shipFigure({ hull: o.hull, fit: Ships.normalFit(o.hull, sh.fit), name }, { harbour: fullYard(), size: 'hero' })}</div>
       <dl class="facts"><dt>Balance due</dt><dd>${fmt(due)} cz</dd><dt>The ${esc(sh.name)} in part exchange</dt><dd>−${fmt(value)} cz</dd><dt>To pay</dt><dd>${net >= 0 ? fmt(net) : `you receive ${fmt(-net)}`} cz</dd></dl>`,
     ok: net >= 0 ? `Pay ${fmt(net)} cz` : 'Take her',
     kind: 'yard',

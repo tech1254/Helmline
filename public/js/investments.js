@@ -12,6 +12,7 @@ import * as Accounts from './accounts.js';
 import { PORTS } from './world.js';
 import { yearOf } from './ships.js';
 import { START_DATE } from './config.js';
+import { home, homeName } from './nations.js';
 
 export const FEITORIA_STANDING = 20; // Respected: the crown licenses factors to captains it knows
 export const FEITORIA_EDGE = 0.08; // prices 8% in your favour, buying and selling
@@ -49,7 +50,7 @@ export function hasFeitoria(S, pid) {
 
 // Whether he may found one here, and if not, why not.
 export function canFound(S, pid) {
-  if (pid === 'lisbon') return { ok: false, why: 'Lisbon is home: your own house does the work of a factor here.' };
+  if (pid === home(S)) return { ok: false, why: `${homeName(S)} is home: your own house does the work of a factor here.` };
   if (hasFeitoria(S, pid)) return { ok: false, why: 'Your factor is already here.' };
   if ((S.contracts?.standing ?? 0) < FEITORIA_STANDING) return { ok: false, why: 'The crown licenses factors only to captains it respects (standing: Respected).' };
   const cost = feitoriaCost(S, pid);

@@ -32,11 +32,11 @@ export function moneyBox() {
   else if (o?.no) bits.push(`<p class="muted">${o.no}</p>`);
   else if (o) bits.push(`<p><b>A sea loan</b> from ${o.lender.name}: up to <b>${cz(o.max)}</b> against your ship and cargo, for a premium fixed now (from ${Math.round(o.terms[0].premium * 100)}%). If corsairs or the sea take your goods, the lender bears the loss.</p><div class="row"><button data-loan-ask>Borrow…</button></div>`);
   const dirs = Pilots.directionsFor(S, pid);
-  if (dirs.length) bits.push(`<p><b>The pilots of Lagos</b> sell their courses for the coast already found: the place is marked on your chart, and you chart it yourself when you get there.</p><div class="row">${dirs.map((d) => `<button data-directions="${d.port}" ${S.purse < d.price ? 'disabled' : ''}>${d.name}, ${d.price} cz</button>`).join('')}</div>`);
+  if (dirs.length) bits.push(`<p><b>The pilots of ${PORTS.find((p) => p.id === pid).name}</b> sell their courses for the coast already found: the place is marked on your chart, and you chart it yourself when you get there.</p><div class="row">${dirs.map((d) => `<button data-directions="${d.port}" ${S.purse < d.price ? 'disabled' : ''}>${d.name}, ${d.price} cz</button>`).join('')}</div>`);
   const c = Pilots.commissionOffer(S);
   if (c) bits.push(`<p><b>${c.name}:</b> ${cz(c.advance)} now toward the wages of a voyage of discovery, and ${cz(c.reward)} more when you come home having charted a new port south of Cape Bojador, within ${c.days} days. Nothing is owed if you find nothing.</p><div class="row"><button data-commission>Take the commission (+${cz(c.advance)})</button></div>`);
   const a = S.commission?.active;
-  if (a) bits.push(`<p class="fine">Your commission for discovery: ${a.found ? `fulfilled by ${PORTS.find((p) => p.id === a.found).name}; ${cz(a.reward)} to collect at Lagos or Lisbon` : `chart a new port south of Cape Bojador by ${fmtDate(a.due)}`}.</p>`);
+  if (a) bits.push(`<p class="fine">Your commission for discovery: ${a.found ? `fulfilled by ${PORTS.find((p) => p.id === a.found).name}; ${cz(a.reward)} to collect ${S.nation === 'castile' ? 'at Sanlúcar, Seville or Palos' : 'at Lagos or Lisbon'}` : `chart a new port south of Cape Bojador by ${fmtDate(a.due)}`}.</p>`);
   if (!bits.length) return '';
   return `<details class="money-box" ${S.lending?.loan?.late || ui0() ? 'open' : ''}><summary>Money and patrons</summary>${bits.join('')}</details>`;
 }

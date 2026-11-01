@@ -84,9 +84,11 @@ export function plans() {
           if (!market.sells(here, g.id)) continue;
           const kb = market.k(here, g.id), ks = market.k(p.id, g.id), keep = kept(g, st, run);
           const b0 = market.buyPrice(here, g.id), s0 = seen.prices[g.id].sell;
+          // what is already aboard sells there first: more of it fetches less
+          const aboard = Math.max(0, (S.cargo[g.id] || 0) - (reserved[g.id] || 0));
           let n = 0, cost = 0, sale2 = 0;
           while (n < freeHold) {
-            const pb = b0 * Math.exp(0.5 * kb * n), ps = s0 * Math.exp(-ks * n) * keep;
+            const pb = b0 * Math.exp(0.5 * kb * n), ps = s0 * Math.exp(-ks * (aboard + n)) * keep;
             if (ps < pb * KEEP_MARGIN || cost + pb > budget) break;
             n++; cost += pb; sale2 += ps;
           }
@@ -129,7 +131,7 @@ export function renderPlanner(sortBy = 'value') {
     const toLoad = docked && free > 0 ? C.active.filter((c) => c.kind === 'deliver' && c.source === S.ship.docked && c.to === x.p.id && (S.cargo[c.good] || 0) < c.qty + (c.spare || 0)) : [];
     const loadC = toLoad.map((c) => { const n = c.qty + (c.spare || 0) - (S.cargo[c.good] || 0); const g = GOODS.find((y) => y.id === c.good); return `<button data-buy="${c.good}" data-n="${n}">Load ${n} ${g.unit} for the contract</button>`; }).join('');
     const stale = x.seen != null && S.day - x.seen > 60 ? ` · <span class="warn">prices seen ${ageText(x.seen)}</span>` : x.seen != null ? ` · prices seen ${ageText(x.seen)}` : '';
-    return `<li class="plan">
+    return `<li class="plan" data-port="${x.p.id}">
         <div class="plan-head"><b>${x.p.name}</b><span class="net ${x.net >= 0 ? 'up' : 'down'}">${x.net >= 0 ? '+' : ''}${x.net.toLocaleString()} cz</span></div>
         <p class="meta">about ${d} ${d === 1 ? 'day' : 'days'} · ${x.wages} cz wages${stale}</p>
         ${bits.join('')}

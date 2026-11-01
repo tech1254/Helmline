@@ -18,7 +18,11 @@ export const PHOTOS = {
     "saotome",
     "saobras",
     "portoseguro",
-    "calicut"
+    "calicut",
+    "seville",
+    "palos",
+    "sanlucar",
+    "gomera"
   ],
   "ships": {
     "caravel": {
@@ -32,8 +36,8 @@ export const PHOTOS = {
       ],
       "hi": [
         231.4,
-        236.0,
-        219.8
+        235.8,
+        219.1
       ]
     },
     "caravel-cross": {
@@ -46,9 +50,9 @@ export const PHOTOS = {
         2.1
       ],
       "hi": [
-        230.8,
+        230.9,
         232.0,
-        224.1
+        224.0
       ]
     },
     "caravel-square": {
@@ -63,7 +67,7 @@ export const PHOTOS = {
       "hi": [
         249.0,
         247.2,
-        242.4
+        242.2
       ]
     },
     "caravel-square-cross": {
@@ -77,7 +81,7 @@ export const PHOTOS = {
       ],
       "hi": [
         238.0,
-        239.4,
+        239.5,
         232.5
       ]
     },
@@ -93,7 +97,7 @@ export const PHOTOS = {
       "hi": [
         240.3,
         232.8,
-        201.7
+        201.6
       ]
     },
     "barinel": {
@@ -107,7 +111,7 @@ export const PHOTOS = {
       ],
       "hi": [
         232.7,
-        229.8,
+        229.9,
         222.0
       ]
     },
@@ -122,7 +126,7 @@ export const PHOTOS = {
       ],
       "hi": [
         224.1,
-        192.7,
+        193.0,
         138.8
       ]
     },
@@ -152,7 +156,7 @@ export const PHOTOS = {
       ],
       "hi": [
         232.6,
-        219.7,
+        219.8,
         190.7
       ]
     },
@@ -166,9 +170,9 @@ export const PHOTOS = {
         1.1
       ],
       "hi": [
-        233.5,
-        240.4,
-        231.7
+        233.6,
+        241.0,
+        231.4
       ]
     },
     "naudaindia": {
@@ -181,9 +185,9 @@ export const PHOTOS = {
         0.8
       ],
       "hi": [
-        215.3,
+        214.9,
         202.7,
-        132.6
+        133.6
       ]
     },
     "galeao": {
@@ -191,14 +195,14 @@ export const PHOTOS = {
       "h": 554,
       "length": 38,
       "lo": [
-        7.1,
+        7.2,
         1.0,
-        1.0
+        1.1
       ],
       "hi": [
-        220.9,
-        195.3,
-        136.8
+        220.5,
+        195.1,
+        137.0
       ]
     }
   },

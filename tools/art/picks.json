@@ -21,7 +21,11 @@
     "saotome": "production-10/saotome-b.png",
     "saobras": "production-10/saobras-a.png",
     "portoseguro": "production-10/portoseguro-b.png",
-    "calicut": "production-10/calicut-a.png"
+    "calicut": "production-10/calicut-a.png",
+    "seville": "production-12/seville-b.png",
+    "palos": "production-12/palos-a.png",
+    "sanlucar": "production-12/sanlucar-a.png",
+    "gomera": "production-12/gomera-a.png"
   },
   "ships": {
     "caravel": {

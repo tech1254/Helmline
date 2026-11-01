@@ -119,6 +119,9 @@ Object.assign(PERSONAS, {
   homebody: { ...steady, label: 'Home waters only (else Steady)', explore: Infinity, homebody: true },
   // as a new player really trades: no haggling bonus (the game gives the owner none), a plain
   // navigator, and only the odd contract
+  // a house of Castile: home at Seville, up the Guadalquivir; Castile's yards (nations.js)
+  castile: { ...steady, label: 'Castile (else Steady)', nation: 'castile', ladder: ['barca', 'caravel', 'naovizcaina', 'largecaravel', 'redonda', 'naocarrera'] },
+  castnovice: { ...steady, label: 'Castile, novice in home waters', nation: 'castile', explore: Infinity, homebody: true, flagTrade: 0, flagNav: 2, contracts: 1, ladder: ['barca', 'caravel', 'naovizcaina'] },
   novice: { ...steady, label: 'Novice in home waters (no haggling, one contract)', explore: Infinity, homebody: true, flagTrade: 0, flagNav: 2, contracts: 1 },
   // After 1480: a rich owner who sends ships to India and puts money into feitorias and the
   // crown's India fleets.
@@ -126,7 +129,7 @@ Object.assign(PERSONAS, {
   indies: { ...steady, prestige: true, label: 'The Indies: India runs, investments and honours (else Steady)', hires: 3, indies: true, invest: true, feitorias: 3,
     ladder: [...steady.ladder, 'galeao', 'naudaindia'] },
 });
-export const GROUPS = { home: ['novice', 'homebody', 'steady'], late: ['steady', 'grandee', 'indies'], styles: ['cautious', 'steady', 'bold', 'reckless'], corsairs: ['runner', 'fighter', 'armed', 'payer'], contracts: ['merchant', 'courier'], fleet: ['bigships'] };
+export const GROUPS = { castilians: ['castile', 'castnovice', 'steady'], home: ['novice', 'homebody', 'steady'], late: ['steady', 'grandee', 'indies'], styles: ['cautious', 'steady', 'bold', 'reckless'], corsairs: ['runner', 'fighter', 'armed', 'payer'], contracts: ['merchant', 'courier'], fleet: ['bigships'] };
 
 // ---- Routes --------------------------------------------------------------------------------
 const stop = (port, ...orders) => ({ port, orders });
@@ -164,9 +167,11 @@ function setFlagHull(fl) {
 // ---- One career ---------------------------------------------------------------------------
 function career(persona) {
   const P = PERSONAS[persona];
+  const HOME = P.nation === 'castile' ? 'seville' : 'lisbon';
   const S = {
     day: 0, purse: 300, discovered: Object.fromEntries(PORTS.map((p) => [p.id, !!p.known])),
-    ship: { docked: 'lisbon', hull: 'barca', fit: { ...Ships.DEFAULT_FIT } }, cargo: {}, paid: {}, hull: 100, fleet: null,
+    nation: P.nation || 'portugal',
+    ship: { docked: HOME, hull: 'barca', fit: { ...Ships.DEFAULT_FIT } }, cargo: {}, paid: {}, hull: 100, fleet: null,
   };
   Fleet.ensureFleet(S);
   Events.ensureEvents(S);
@@ -191,11 +196,11 @@ function career(persona) {
   };
   // the owner's own wage bill: the hull's upkeep, plus fighting men he has signed on
   const flagWage = (h, fit) => Ships.stats({ hull: h, fit }).upkeep - Ships.HULLS[h].hiredUpkeep;
-  const route = (loop) => ({ stops: LOOPS[loop].map((s) => ({ port: s.port, orders: s.orders.map((o) => ({ ...o })) })), next: 0 });
+  const route = (loop) => ({ stops: LOOPS[loop].map((s) => ({ port: s.port === 'lisbon' ? HOME : s.port, orders: s.orders.map((o) => ({ ...o })) })), next: 0 });
 
   const add = (role, hull, loop, captain) => {
     const ship = { id: nextId++, name: role, role, loop, hull, realHull: hull, cHold: {}, fit: { ...Ships.DEFAULT_FIT }, built: S.day, tropic: 0, captain: { id: nextId, name: role, ...captain, loyalty: 100 },
-      at: 'lisbon', status: 'idle', route: null, leg: null, hold: {}, profit: 0, trips: 0, last: null, hullPct: 100 };
+      at: HOME, status: 'idle', route: null, leg: null, hold: {}, profit: 0, trips: 0, last: null, hullPct: 100 };
     S.fleet.ships.push(ship);
     if (role === 'flagship') setFlagHull(ship);
     const r = route(loop);
@@ -257,7 +262,7 @@ function career(persona) {
       note('sails for Serra Leoa');
     }
     // fit her out for fighting, one thing at a time, as the purse allows (in a shipyard port)
-    if (P.arms && !f.leg && ['lisbon', 'lagos', 'funchal'].includes(f.at)) {
+    if (P.arms && !f.leg && ['lisbon', 'lagos', 'funchal', 'seville', 'palos'].includes(f.at)) {
       for (const [g, c] of P.arms) {
         if (f.fit[g] === c || Ships.choicesFor(Ships.group(g), f.realHull).every((x) => x.id !== c)) continue;
         if (g === 'crew' && c === 'crossbows' && f.fit.crew === 'menatarms') continue;
@@ -275,7 +280,7 @@ function career(persona) {
     // same kind (the old taken in part exchange), once she is as old as he will put up with
     for (const x of S.fleet.ships) {
       // in Lisbon, or just out of it (a hired ship sails the moment her trading is done)
-      if (x.at !== 'lisbon' || x.status === 'repair' || (x.leg && S.day - x.leg.start > 20)) continue;
+      if (x.at !== HOME || x.status === 'repair' || (x.leg && S.day - x.leg.start > 20)) continue;
       const yrs = Ships.serviceYears(x, S.day), share = Ships.lifeShare(x.realHull || x.hull, yrs);
       if (share < (P.replaceAt ?? 0.9)) continue;
       const hull = x.realHull || x.hull;
@@ -639,7 +644,7 @@ function career(persona) {
       for (const m of lapsed) note(m.log);
     }
     if (Math.abs(S.day % 30) < STEP) owner();
-    if (++reveal % 120 === 0) Accounts.reveal(S, 'lisbon', S.fleet.ships); // keep the books from piling up
+    if (++reveal % 120 === 0) Accounts.reveal(S, HOME, S.fleet.ships); // keep the books from piling up
     if (R.explored == null && S.discovered.gambia) R.explored = yearOf(S.day);
     if (R.broke == null && S.purse < -500) R.broke = yearOf(S.day);
     const y = yearOf(S.day);
@@ -651,7 +656,7 @@ function career(persona) {
     if (R.attention[dec] == null && y >= dec + 5) R.attention[dec] = Pirates.attention(S); // mid-decade
   }
   R.at[1451 + YEARS] = worth(S);
-  Accounts.reveal(S, 'lisbon', S.fleet.ships);
+  Accounts.reveal(S, HOME, S.fleet.ships);
   const A = Accounts.ensureAccounts(S);
   R.totals = { ...A.totals };
   for (const e of A.pending) R.totals[e.kind] = (R.totals[e.kind] || 0) + e.amount;

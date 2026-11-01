@@ -12,6 +12,7 @@ import * as Story from './story.js';
 import { playlogBegin } from './playlog.js';
 import * as Ships from './ships.js';
 import * as Ports from './ports.js';
+import { NATIONS } from './nations.js';
 import { SAVE_KEY, START_PURSE } from './config.js';
 import { S, market, setGame } from './state.js';
 import { fogToString, initFog, markFogDirty } from './fog.js';
@@ -20,15 +21,17 @@ import { syncMarket } from './sim.js';
 import { observe } from './voyage.js';
 import { addNotice } from './notices.js';
 
-export function freshState() {
-  const lis = PORTS[0];
+export function freshState(nation = 'portugal') {
+  const N = NATIONS[nation] || NATIONS.portugal;
+  const lis = PORTS.find((p) => p.id === N.start);
   return {
+    nation: N.id,
     day: 0,
     purse: START_PURSE,
     cargo: Object.fromEntries(GOODS.map((g) => [g.id, 0])),
     paid: Object.fromEntries(GOODS.map((g) => [g.id, 0])), // total paid for current stock, for average cost
-    ship: { lon: lis.lon, lat: lis.lat, heading: 210, route: [], dest: null, docked: 'lisbon', hull: 'barca', name: Ships.FLAGSHIP_NAME, fit: { ...Ships.DEFAULT_FIT } },
-    discovered: Object.fromEntries(PORTS.map((p) => [p.id, p.known])),
+    ship: { lon: lis.lon, lat: lis.lat, heading: 210, route: [], dest: null, docked: N.start, hull: 'barca', name: N.flagship, fit: { ...Ships.DEFAULT_FIT } },
+    discovered: Object.fromEntries(PORTS.map((p) => [p.id, p.known || N.known.includes(p.id)])),
     sighted: { iberia: true, africa: true, madeira: true, canaries: true },
     unpaidCharts: [],
     seen: {},
@@ -97,11 +100,12 @@ export function applySaveData(d) {
   }
 }
 
-export function newGame() {
-  setGame(freshState(), new Market());
+export function newGame(nation = 'portugal') {
+  setGame(freshState(nation), new Market());
+  const N = NATIONS[S.nation];
   initFog(null);
   // Hearsay from other captains: prices at the known ports, a while ago.
-  for (const [pid, ago] of [['lagos', 20], ['safi', 75], ['lanzarote', 110]]) {
+  for (const [pid, ago] of N.hearsay) {
     S.seen[pid] = { day: -ago, prices: market.observe(pid) };
   }
   Contracts.ensureContracts(S);
@@ -115,7 +119,7 @@ export function newGame() {
   Ships.ensureFlagship(S);
   Ports.ensurePorts(S);
   syncMarket();
-  observe('lisbon');
-  centerOn(-13, 29, 0.85);
+  observe(N.start);
+  centerOn(...N.view);
   save();
 }

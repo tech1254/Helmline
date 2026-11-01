@@ -645,3 +645,11 @@ li.plan .plan-offer .row { justify-content: flex-end; margin-top: 2px; }
 .route-est p { margin: 4px 0; }
 .refit-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 0 12px; }
 .refit-grid select { max-width: 100%; }
+.nation-pick { display: grid; gap: 10px; margin-top: 12px; }
+.nation-pick .sub { margin: 0; }
+.nation-pick button.nation { display: flex; flex-direction: column; align-items: flex-start; gap: 3px; text-align: left; padding: 10px 14px; white-space: normal; line-height: 1.35; }
+.nation-pick button.nation b { font-size: 17px; }
+.nation-pick button.nation span { font-size: 14px; opacity: 0.9; }
+li.plan.focus { outline: 2px solid var(--gold, #b8892b); outline-offset: 2px; }
+#intro.choosing .card > p:not(.fine), #intro.choosing .card > ul, #intro.choosing .card > .row { display: none; }
+#intro.choosing .nation-pick p.sub { display: block; }

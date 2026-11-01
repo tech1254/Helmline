@@ -1,5 +1,6 @@
 // The HUD and the side panels: market, contracts, sail, fleet, help, tips and tabs.
 
+import { home, homeName } from './nations.js';
 import { PORTS, pointOfSail, compassPoint, distNm, findPath, shoalDepth, DEEP_DRAFT } from './world.js';
 import { GOODS, Market } from './economy.js';
 import * as Wear from './wear.js';
@@ -186,12 +187,12 @@ function investLine(pid) {
   const parts = [];
   if (Investments.hasFeitoria(S, pid)) {
     parts.push(`<p class="harbour">Your <b>feitoria</b> here: your factor gets you prices ${Math.round(Investments.FEITORIA_EDGE * 100)}% better and finds you an extra contract. He and his clerks draw ${Investments.FACTOR_WAGE} cz a day.</p>`);
-  } else if (pid !== 'lisbon') {
+  } else if (pid !== home(S)) {
     const c = Investments.canFound(S, pid);
     const cost = Investments.feitoriaCost(S, pid);
     if (c.ok) parts.push(`<div class="row invest"><span class="fine">A factor of your own here: prices ${Math.round(Investments.FEITORIA_EDGE * 100)}% better and an extra contract, for ${Investments.FACTOR_WAGE} cz a day.</span><button data-feitoria>Found a feitoria: ${cost.toLocaleString()} cz</button></div>`);
   }
-  if (pid === 'lisbon' && S.purse >= 5000) {
+  if (pid === home(S) && S.purse >= 5000) {
     const t = House.title(S);
     parts.push(`<div class="row invest"><button data-house>Your house${House.renown(S) ? `: ${t.name}, renown ${House.renown(S)}` : ''}…</button></div>`);
   }
@@ -202,6 +203,8 @@ function investLine(pid) {
   }
   return parts.join('');
 }
+
+const yardNames = () => YARDS.map((y) => PORTS.find((p) => p.id === y).name).join(', ').replace(/, ([^,]*)$/, ' and $1');
 
 export function renderPort(el) {
   const pid = S.ship.docked;
@@ -234,7 +237,7 @@ export function renderPort(el) {
     ${portKnown(pid)
       ? `<details class="port-about"><summary>About ${p.name}</summary><p class="blurb">${p.blurb}</p>${S.ship.offshore ? '' : harbourLine(pid)}</details>${S.ship.offshore ? harbourLine(pid) : ''}`
       : `<p class="blurb">${p.blurb}</p>${harbourLine(pid)}`}
-    ${pid === 'lisbon' ? debtBox() : ''}
+    ${debtBox()}
     ${moneyBox()}
     ${hullBanner(pid)}
     ${shut ? `<p class="banner warn"><b>Closed to trade:</b> ${Events.template(shut).title.toLowerCase()}. Expected to reopen around ${fmtDate(shut.end)}.</p>` : ''}
@@ -245,7 +248,7 @@ export function renderPort(el) {
     ${investLine(pid)}
     <p class="foot">Hold ${held()} / ${st.hold} · purse ${Math.floor(S.purse).toLocaleString()} cz · upkeep ${st.upkeep} cz a day at sea.<br>
     Buying pushes the price up; selling pushes it down. Prices recover over a few weeks. <i>Max</i> keeps two weeks of wages in the purse.</p>
-    <div class="row"><button data-ships="register" title="Your ship and the ships ahead (S)">Your ship</button>${YARDS.includes(pid) ? `<button data-ships="yard" title="Refit your ship${pid === 'lisbon' ? ', or buy and order new ones' : ''}">Shipyard</button>` : ''}<button data-wait title="Let a week pass: prices recover, news arrives, your fleet sails on. Your crew draws no wages in port; hired captains are still paid.">Wait a week</button><button class="primary" data-tab="sail">Set sail…</button></div>`;
+    <div class="row"><button data-ships="register" title="Your ship and the ships ahead (S)">Your ship</button>${YARDS.includes(pid) ? `<button data-ships="yard" title="Refit your ship${pid === home(S) ? ', or buy and order new ones' : ''}">Shipyard</button>` : ''}<button data-wait title="Let a week pass: prices recover, news arrives, your fleet sails on. Your crew draws no wages in port; hired captains are still paid.">Wait a week</button><button class="primary" data-tab="sail">Set sail…</button></div>`;
 }
 
 export function contractCard(c, actions) {
@@ -253,7 +256,7 @@ export function contractCard(c, actions) {
   const lines = [];
   if (c.kind === 'discover') {
     lines.push(c.text);
-    lines.push(c.stage === 'find' ? '<b>Next:</b> find and anchor at an uncharted port.' : `<b>Next:</b> report to Lisbon. You opened trade with ${PORTS.find((p) => p.id === c.found).name}.`);
+    lines.push(c.stage === 'find' ? '<b>Next:</b> find and anchor at an uncharted port.' : `<b>Next:</b> report to ${homeName(S)}. You opened trade with ${PORTS.find((p) => p.id === c.found).name}.`);
   } else {
     const src = PORTS.find((p) => p.id === c.source);
     lines.push(`${g.name} can be bought at ${src.name}.${c.spare ? ` Carry ${c.spare} extra: some will spoil on the way.` : ''}`);
@@ -297,7 +300,7 @@ export function sailButton(c) {
   let to, what;
   if (c.kind === 'discover') {
     if (c.stage === 'find') return '';
-    to = 'lisbon'; what = 'report';
+    to = home(S); what = 'report';
   } else if ((S.cargo[c.good] || 0) < c.qty) {
     to = c.source; what = 'buy';
   } else {
@@ -344,7 +347,7 @@ function hullBanner(pid) {
   const h = S.hull ?? 100;
   const years = Ships.serviceYears(S.ship, S.day);
   const cap = Wear.soundCap(S.ship.hull, years);
-  const rb = pid === 'lisbon' ? Ships.rebuildQuote(S.ship, S.ship.hull, S.day) : null;
+  const rb = pid === home(S) ? Ships.rebuildQuote(S.ship, S.ship.hull, S.day) : null;
   const ageLine = cap < 100 || rb
     ? `<br><span class="fine">She has ${Ships.ageText(S.ship.hull, years)}${cap < 100 ? `; the yards can make her no better than ${cap}%` : ''}.</span>${rb ? ` <button data-rebuild ${S.purse < rb.cost ? 'disabled' : ''}>A great rebuild: ${rb.cost.toLocaleString()} cz, ${rb.days} days, gives back about ${Math.round(rb.years)} years${rb.n ? ' (her last)' : ''}</button>` : ''}`
     : '';
@@ -358,8 +361,8 @@ function hullBanner(pid) {
   const act = yard
     ? `<button data-repair ${S.purse < q.cost ? 'disabled' : ''}>Repair in the yard: ${q.cost.toLocaleString()} cz, ${days(q.days)}</button>${bq.pts > 0 ? ` <button data-careen ${S.purse < bq.cost ? 'disabled' : ''}>Or careen her on the beach: ${bq.cost.toLocaleString()} cz, ${days(bq.days)}, to ${Wear.BEACH_TO}%</button>` : ''}`
     : q.pts > 0
-      ? `<button data-careen ${S.purse < q.cost ? 'disabled' : ''}>Careen her on the beach: ${q.cost.toLocaleString()} cz, ${days(q.days)}, to ${Wear.BEACH_TO}%</button> <span class="fine">The yards of Lisbon, Lagos and Funchal make her fully sound.</span>`
-      : '<span class="fine">The yards of Lisbon, Lagos and Funchal can make her fully sound.</span>';
+      ? `<button data-careen ${S.purse < q.cost ? 'disabled' : ''}>Careen her on the beach: ${q.cost.toLocaleString()} cz, ${days(q.days)}, to ${Wear.BEACH_TO}%</button> <span class="fine">The yards of ${yardNames()} make her fully sound.</span>`
+      : `<span class="fine">The yards of ${yardNames()} can make her fully sound.</span>`;
   return `<p class="banner ${h < Wear.LEAKS_BELOW ? 'warn' : ''}"><b>Hull ${Math.round(h)}%</b> · ${state}sailing at ${Math.round(Pirates.hullFactor(S) * 100)}% speed. ${act}${ageLine}</p>`;
 }
 
@@ -377,6 +380,11 @@ export function renderSail(el) {
       <header><h2>Plan a voyage</h2><button class="close" data-close aria-label="Close">×</button></header>
       ${sailSwitch(view)}
       ${renderPlanner(ui.planSort)}`;
+    // after loading for a port, keep that port in view (the list re-sorts as the hold changes)
+    if (ui.planFocus) {
+      const li = el.querySelector(`li.plan[data-port="${ui.planFocus}"]`);
+      if (li) { li.classList.add('focus'); li.scrollIntoView({ block: 'nearest' }); }
+    }
     return;
   }
   renderSailList(el, sailSwitch(view));
@@ -532,7 +540,7 @@ function ordersLine(ship) {
   if (!o?.fit && !o?.hull) return '';
   const bits = [];
   if (o.fit) bits.push(`a refit (${Object.entries(o.fit).map(([g, c]) => Ships.choice(g, c)?.name).filter(Boolean).map(Ships.lc).join(', ')}) at her next yard`);
-  if (o.hull) bits.push(`a new ${Ships.HULLS[o.hull].name.toLowerCase()} at Lisbon`);
+  if (o.hull) bits.push(`a new ${Ships.HULLS[o.hull].name.toLowerCase()} at ${homeName(S)}`);
   return `<p class="note">Ordered: ${bits.join('; ')}. <button class="mini" data-cancel-orders="${ship.id}">Cancel</button></p>`;
 }
 
@@ -561,12 +569,12 @@ export function renderFleet(el) {
   const nextShips = Contracts.TIERS.filter((t) => t.maxShips > maxShips && Number.isFinite(t.min)).pop();
   const allowance = `<p class="foot">Your standing lets you command ${maxShips} hired ${maxShips === 1 ? 'ship' : 'ships'}; you have ${F.ships.length}.${nextShips ? ` Become <i>${nextShips.title}</i> (standing ${nextShips.min}) to command ${nextShips.maxShips}.` : ''}</p>`;
   if (Fleet.canBuy(S, maxShips)) {
-    if (S.ship.docked === 'lisbon') {
-      const hulls = Ships.HULL_ORDER.filter((id) => Ships.availability(S, Ships.HULLS[id]).ok === 'yes');
+    if (S.ship.docked === home(S)) {
+      const hulls = Ships.hullOrder(S).filter((id) => Ships.availability(S, Ships.HULLS[id]).ok === 'yes');
       if (!hulls.includes(ui.hireHull)) ui.hireHull = hulls.includes('caravel') ? 'caravel' : hulls[0];
       const H = Ships.HULLS[ui.hireHull];
       const hst = Ships.stats({ hull: H.id });
-      yard = `<h3>The Lisbon shipyard</h3>
+      yard = `<h3>The ${homeName(S)} shipyard</h3>
         <div class="hire-hulls" role="radiogroup" aria-label="Ship for your captain">${hulls.map((id) => `<button role="radio" aria-checked="${id === H.id}" class="${id === H.id ? 'on' : ''}" data-hire-hull="${id}">${shipFigure({ hull: id }, { size: 'mini', decorative: true })}<b>${Ships.HULLS[id].name}</b><small>${Ships.HULLS[id].price.toLocaleString()} cz</small></button>`).join('')}</div>
         <p class="blurb">A ${H.name.toLowerCase()}: hold ${hst.hold}, ${hst.knots} knots, ${Ships.HULLS[H.id].hiredUpkeep} cz a day upkeep on top of her captain's wage. ${H.blurb} Choose the captain who will sail her.</p>
         <ul class="contracts">${Fleet.candidates(S).map((c) => `<li class="contract">
@@ -576,7 +584,7 @@ export function renderFleet(el) {
         </li>`).join('')}</ul>
         ${S.purse < H.price ? `<p class="foot">You need ${H.price.toLocaleString()} cz in your purse.</p>` : ''}`;
     } else {
-      yard = `<p class="foot">The Lisbon shipyard will build a ship for a captain: a caravel costs ${Fleet.SHIP_COST.toLocaleString()} cz.</p>`;
+      yard = `<p class="foot">The ${homeName(S)} shipyard will build a ship for a captain: a caravel costs ${Fleet.SHIP_COST.toLocaleString()} cz.</p>`;
     }
   }
   yard += allowance;
@@ -607,7 +615,7 @@ export function renderHelp(el) {
       <li><b>The price book</b> remembers only the prices you have seen, and they go stale. News of events reaches you in port, late for distant places.</li>
       <li><b>Perishables</b> such as wine, dye and pepper slowly spoil at sea, faster in the tropics. Gold and ivory keep.</li>
       <li><b>Corsairs</b> prowl off Morocco, the Algarve and the Canaries. When challenged, run, fight or pay. Beat a galley and you can plunder her, and the crown pays a bounty for her in any Portuguese port; but plundering makes your name feared and draws more of them, while avoiding fights calms the seas. Fighting men and boarding nets from the shipyard improve your odds. Battle damage slows you until a shipwright in Lisbon, Lagos or Funchal repairs it.</li>
-      <li><b>Charts:</b> the crown pays ${CHART_REWARD} cz for each new port or island group, on your return to Lisbon.</li>
+      <li><b>Charts:</b> the crown pays ${CHART_REWARD} cz for each new port or island group, on your return to ${homeName(S)}.</li>
     </ul>
     <p class="fine">Captain's notes explain each of these as it first matters. The rest, in full:</p>
     <details class="help-more"><summary>Contracts and standing</summary>
@@ -659,16 +667,16 @@ export function renderHelp(el) {
 // Each later note: [key, when it applies, text].
 const NOTES = [
   ['contracts', () => S.contracts?.unlocked, 'Contracts are open: merchants in each port post jobs (the Contracts tab). Deliver on time and your standing rises; standing lets you hire captains and buy bigger ships.'],
-  ['fleet', () => Contracts.perks(S).maxShips > 0 && !S.fleet.ships.length, 'Your standing lets you hire a captain. In Lisbon, open Fleet: buy him a ship and give him a route, and he trades on his own with your purse.'],
+  ['fleet', () => Contracts.perks(S).maxShips > 0 && !S.fleet.ships.length, `Your standing lets you hire a captain. In ${homeName(S)}, open Fleet: buy him a ship and give him a route, and he trades on his own with your purse.`],
   ['captains', () => S.fleet.ships.some((x) => x.captain.nav >= 2 || x.captain.trade >= 2 || x.captain.asks), 'Your captains learn: stars for navigation come with days at sea, for trade with every cargo sold. One who grows good will ask for a raise. You can also send him to train (Fleet).'],
   ['accounts', () => S.fleet.ships.length > 0, 'Your captains\' dealings enter your Ledger when you are in any port on their route. Until then part of your purse is "not yet accounted for".'],
   ['corsairs', () => ['won', 'lost', 'paid', 'fled'].some((k) => (S.pirates?.[k] || 0) > 0), 'Corsairs: running depends on your speed; crossbowmen, men-at-arms and boarding nets (the shipyard\'s Arms tab) improve your fighting odds. Beat a galley and the crown pays a bounty for her.'],
-  ['hull', () => (S.hull ?? 100) < 70, 'A worn hull is slower, and below 60% she leaks and spoils cargo. The yards of Lisbon, Lagos and Funchal make her sound; anywhere else her crew can careen her on a beach.'],
+  ['hull', () => (S.hull ?? 100) < 70, `A worn hull is slower, and below 60% she leaks and spoils cargo. The yards of ${yardNames()} make her sound; anywhere else her crew can careen her on a beach.`],
   ['boats', () => S.ship.offshore, 'She draws too much for this harbour, so she lies at the anchorage and her boats ferry the cargo: some days, and a small fee. Shallow hulls lie alongside.'],
   ['rivals', () => S.ship.docked && Competition.level(S, S.ship.docked) >= 0.15, 'Rival merchants trade here now. On busy, old routes they narrow the gap between where goods are cheap and where they are dear: new frontiers pay best.'],
   ['crown', () => (S.taxes?.last?.tax || 0) > 0, 'The crown has taken its share of last year\'s gains (the Ledger shows this year\'s so far). Renown, from your house in Lisbon, lowers it.'],
-  ['age', () => Ships.lifeShare(S.ship.hull, Ships.serviceYears(S.ship, S.day)) >= 0.7, 'Your ship is growing old: the yards can no longer make her fully sound. A great rebuild in Lisbon gives back years, twice at most; in the end she must be replaced.'],
-  ['house', () => S.ship.docked === 'lisbon' && S.purse >= 5000, 'Rich enough for honours: Your house, in the Lisbon market panel. A house, a knighthood, a chapel: renown, and a smaller share for the crown.'],
+  ['age', () => Ships.lifeShare(S.ship.hull, Ships.serviceYears(S.ship, S.day)) >= 0.7, `Your ship is growing old: the yards can no longer make her fully sound. A great rebuild in ${homeName(S)} gives back years, twice at most; in the end she must be replaced.`],
+  ['house', () => S.ship.docked === home(S) && S.purse >= 5000, `Rich enough for honours: Your house, in the ${homeName(S)} market panel. A house, a knighthood, a chapel: renown, and a smaller share for the crown.`],
   ['history', () => S.discovered.mpinda || S.discovered.saotome, 'History moves on: as the explorers come home, new ports open and appear on your chart. Watch the notices.'],
   ['indies', () => S.discovered.calicut, 'The way to the Indies is open. Sail to the edge of the chart beyond the Cape, and on to Calicut. Go with the monsoon: round the Cape June to August, leave India December to February.'],
 ];

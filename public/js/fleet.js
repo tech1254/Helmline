@@ -12,6 +12,7 @@ import * as Wear from './wear.js';
 import * as Captains from './captains.js';
 import { closure } from './events.js';
 import { START_DATE } from './config.js';
+import { home, homeName } from './nations.js';
 
 export const SHIP_COST = Ships.HULLS.caravel.price;
 // Upkeep is the hull's hiredUpkeep (a caravel 1 cz a day, tuned 26 Oct 2026 with tests/sim), on top of the captain's wage.
@@ -69,7 +70,7 @@ export function buyShip(S, captainId, maxShips, hullId = 'caravel') {
   F.candidates.list = F.candidates.list.filter((c) => c !== cap);
   const used = new Set(F.ships.map((s) => s.name));
   const name = SHIP_NAMES.find((n) => !used.has(n) && n !== S.ship.name) || `${h.name} ${F.nextId}`;
-  const ship = { id: F.nextId++, name, hull: hullId, captain: cap, at: 'lisbon', status: 'idle', route: null, leg: null, hold: {}, profit: 0, trips: 0, last: null, built: S.day, tropic: 0 };
+  const ship = { id: F.nextId++, name, hull: hullId, captain: cap, at: home(S), status: 'idle', route: null, leg: null, hold: {}, profit: 0, trips: 0, last: null, built: S.day, tropic: 0 };
   F.ships.push(ship);
   S.purse -= h.price;
   Accounts.record(S, { kind: 'ships', amount: -h.price, text: `Bought the ${h.name.toLowerCase()} ${name} and hired Captain ${cap.name}` });
@@ -727,15 +728,15 @@ function yardWork(S, market, ship) {
   const o = ship.orders;
   const out = [];
   if (!o || !Wear.YARDS.includes(ship.at)) return out;
-  if (o.hull && ship.at === 'lisbon') {
+  if (o.hull && ship.at === home(S)) {
     const q = replaceQuote(S, ship, o.hull);
     if (S.purse - q.net >= RESERVE) {
       doReplace(S, market, ship, o.hull, q);
       o.hull = null;
-      out.push({ html: `<b>${ship.name}</b> is a new ${Ships.HULLS[ship.hull].name.toLowerCase()}, built at the Lisbon yard as you ordered: ${q.net.toLocaleString()} cz with the old hull taken in part exchange.`, kind: 'discover', log: `New hull for the ${ship.name}: ${q.net} cz.` });
+      out.push({ html: `<b>${ship.name}</b> is a new ${Ships.HULLS[ship.hull].name.toLowerCase()}, built at the ${homeName(S)} yard as you ordered: ${q.net.toLocaleString()} cz with the old hull taken in part exchange.`, kind: 'discover', log: `New hull for the ${ship.name}: ${q.net} cz.` });
     } else if (!o.hullWarned) {
       o.hullWarned = true;
-      out.push({ html: `<b>${ship.name}</b> is in Lisbon, but the new ${Ships.HULLS[o.hull].name.toLowerCase()} you ordered for her costs ${q.net.toLocaleString()} cz and the purse will not run to it. She sails on; the order stands for her next call.`, kind: 'alert', level: 'alert' });
+      out.push({ html: `<b>${ship.name}</b> is in ${homeName(S)}, but the new ${Ships.HULLS[o.hull].name.toLowerCase()} you ordered for her costs ${q.net.toLocaleString()} cz and the purse will not run to it. She sails on; the order stands for her next call.`, kind: 'alert', level: 'alert' });
     }
   }
   if (o.fit) {
@@ -765,12 +766,12 @@ function askForBigger(S, ship) {
   if ((ship.fullRuns || 0) < 4 || (ship.askedBigger != null && S.day - ship.askedBigger < ASK_EVERY) || ship.orders?.hull) return null;
   const now = Ships.HULLS[ship.hull || 'caravel'];
   const ports = ship.route ? ship.route.stops.map((st) => st.port) : [];
-  const bigger = Ships.HULL_ORDER.map((h) => Ships.HULLS[h]).filter((H) => H.hold > now.hold * 1.3 && Ships.availability(S, H).ok === 'yes' &&
+  const bigger = Ships.hullOrder(S).map((h) => Ships.HULLS[h]).filter((H) => H.hold > now.hold * 1.3 && Ships.availability(S, H).ok === 'yes' &&
     !(H.draft[1] > 3 && ports.some((pid) => Ports.depthOf(S, pid) < H.draft[1]))).sort((a, b) => a.price - b.price)[0];
   if (!bigger) return null;
   ship.askedBigger = S.day;
   ship.fullRuns = 0;
-  return { html: `Captain ${ship.captain.name} of the <b>${ship.name}</b> writes: her hold is full every run, and the markets would take more. A ${bigger.name.toLowerCase()} would carry ${bigger.hold} to her ${now.hold}. You can order one for her in Fleet; the Lisbon yard builds it when she next calls there.`, kind: 'port', log: `Captain ${ship.captain.name} asks for a bigger ship.` };
+  return { html: `Captain ${ship.captain.name} of the <b>${ship.name}</b> writes: her hold is full every run, and the markets would take more. A ${bigger.name.toLowerCase()} would carry ${bigger.hold} to her ${now.hold}. You can order one for her in Fleet; the ${homeName(S)} yard builds it when she next calls there.`, kind: 'port', log: `Captain ${ship.captain.name} asks for a bigger ship.` };
 }
 
 // ---- Age ------------------------------------------------------------------------------------
@@ -789,7 +790,7 @@ export function replaceQuote(S, ship, hullId) {
 // Replace a hired ship's hull. She must be in Lisbon (not at sea). Her cargo goes across as far
 // as it fits; the rest is sold where she lies. Returns the cost, or null.
 export function replaceHull(S, market, ship, hullId) {
-  if (ship.at !== 'lisbon' || ship.status === 'sailing' || ship.status === 'repair') return null;
+  if (ship.at !== home(S) || ship.status === 'sailing' || ship.status === 'repair') return null;
   const q = replaceQuote(S, ship, hullId);
   if (S.purse < q.net) return null;
   return doReplace(S, market, ship, hullId, q);
@@ -810,7 +811,7 @@ function doReplace(S, market, ship, hullId, q) {
   for (const [g, lot] of Object.entries(holdOf(ship))) {
     if (over <= 0) break;
     const n = Math.min(lot.qty, over);
-    const res = market.sell('lisbon', g, n);
+    const res = market.sell(ship.at, g, n);
     S.purse += res.income;
     lot.paid *= (lot.qty - n) / lot.qty;
     lot.qty -= n;

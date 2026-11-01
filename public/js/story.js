@@ -8,6 +8,7 @@
 
 import { yearOf, dayOfYear } from './ships.js';
 import * as Accounts from './accounts.js';
+import * as Castile from './story_castile.js';
 
 export const DEBT = 250; // Joao Vaz owed Salvago's house
 export const DEBT_FORCED = 300; // what Salvago takes if you let it run past New Year
@@ -30,7 +31,7 @@ export const PAGES = [
 export function ensureStory(S, fresh = false) {
   if (!S.story) {
     // A game from before the story: it joins where the player is, without the prologue or the debt.
-    S.story = { house: 'Vaz', fired: {}, choices: {}, pages: {}, letters: [], debt: null, relation: 0 };
+    S.story = { house: S.nation === 'castile' ? 'Alcaraz' : 'Vaz', fired: {}, choices: {}, pages: {}, letters: [], debt: null, relation: 0 };
     if (!fresh) {
       for (const id of ['prologue', 'debt_due', 'debt_taken', 'first_profit']) S.story.fired[id] = true;
       if (S.contracts?.unlocked) S.story.fired.henry = true;
@@ -203,11 +204,17 @@ function actOneSummary(S) {
   return bits.filter(Boolean).join(', ').replace(/^./, (c) => c.toUpperCase()) + '.';
 }
 
+// The story for this house's nation, and its debt (nations.js).
+export const beatsFor = (S) => (S.nation === 'castile' ? Castile.BEATS : BEATS);
+export const debtOf = (S) => (S.nation === 'castile'
+  ? { amount: Castile.DEBT, due: Castile.DEBT_DUE, early: Castile.EARLY_BY, port: 'seville', who: 'Bernardo Salvago', father: 'Alonso' }
+  : { amount: DEBT, due: DEBT_DUE, early: EARLY_BY, port: 'lisbon', who: 'Salvago', father: 'João Vaz' });
+
 // The beat due now, if any (the first unfired one whose moment has come).
 export function due(S) {
   const st = ensureStory(S);
   if (st.off) return null;
-  for (const b of BEATS) {
+  for (const b of beatsFor(S)) {
     if (st.fired[b.id] != null) continue; // fired[id] is the day it fired (0 for the prologue)
     let ok = false;
     try { ok = !!b.when(S); } catch { /* not readable yet */ }
@@ -230,17 +237,18 @@ export function resolve(S, beat, choiceId = null, input = null) {
 // Paying the debt in Lisbon, from the market panel.
 export function canPayDebt(S) {
   const d = ensureStory(S).debt;
-  return !!d && !d.paid && S.ship?.docked === 'lisbon';
+  return !!d && !d.paid && S.ship?.docked === debtOf(S).port;
 }
 export function payDebt(S) {
   const st = ensureStory(S);
-  if (!canPayDebt(S) || S.purse < DEBT) return null;
-  S.purse -= DEBT;
-  Accounts.record(S, { kind: 'debt', amount: -DEBT, port: 'lisbon', text: 'Paid João Vaz\'s debt to Salvago' });
-  st.debt.paid = S.day < EARLY_BY ? 'early' : 'paid';
+  const D = debtOf(S);
+  if (!canPayDebt(S) || S.purse < D.amount) return null;
+  S.purse -= D.amount;
+  Accounts.record(S, { kind: 'debt', amount: -D.amount, port: D.port, text: `Paid ${D.father}'s debt to ${D.who}` });
+  st.debt.paid = S.day < D.early ? 'early' : 'paid';
   st.relation = st.debt.paid === 'early' ? 1 : 0;
   st.fired.debt_due = st.fired.debt_due ?? S.day;
-  st.letters.push({ day: S.day, id: 'debt_paid', from: null, title: 'The debt paid', line: `Paid Salvago the ${DEBT} cz your father owed${st.debt.paid === 'early' ? ', early' : ''}.` });
+  st.letters.push({ day: S.day, id: 'debt_paid', from: null, title: 'The debt paid', line: `Paid ${D.who} the ${D.amount} cz your father owed${st.debt.paid === 'early' ? ', early' : ''}.` });
   return st.debt.paid;
 }
 

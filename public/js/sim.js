@@ -28,6 +28,7 @@ import { log } from './pricebook.js';
 import { confirmDialog } from './dialog.js';
 import { addNotice, toast } from './notices.js';
 import { plog } from './playlog.js';
+import { home, homeName } from './nations.js';
 
 // ---- Simulation -------------------------------------------------------------
 
@@ -217,7 +218,7 @@ export function showSummary(sum) {
       <p class="fine">${sum.capped ? `That is the most that passes in one absence (${OFFLINE_MAX_DAYS} days).` : sum.slowed ? 'After the first few weeks, longer absences add time more slowly.' : 'The world moves at a tenth of its usual pace while you are gone.'}</p>
       ${sum.contractsHeld ? `<p class="fine">Your ${sum.contractsHeld === 1 ? 'contract waited' : `${sum.contractsHeld} contracts waited`} for you: deadlines moved back by ${Math.round(sum.days)} days.</p>` : ''}
       ${sum.strayed.length ? `<p class="warn">Your captains missed you: ${sum.strayed.map((x) => `Captain ${x.captain} is now ${Fleet.loyaltyText(x.after)}`).join('; ')}.</p>` : ''}
-      ${sum.standingLost ? `<p class="warn">The merchants of Lisbon are starting to forget you: standing −${sum.standingLost}.</p>` : ''}
+      ${sum.standingLost ? `<p class="warn">The merchants of ${homeName(S)} are starting to forget you: standing −${sum.standingLost}.</p>` : ''}
       <ul class="help">${sum.ships.map((x) => `<li><b>${x.name}:</b> ${x.trips} ${x.trips === 1 ? 'cargo' : 'cargoes'} sold, ${x.profit >= 0 ? '+' : ''}${x.profit.toLocaleString()} cz. ${x.status}</li>`).join('')}
         ${pick.map((m) => `<li>${strip(m.html)}</li>`).join('')}</ul>`,
     ok: 'Carry on',
@@ -306,8 +307,8 @@ export function advanceTime(dd, atSea, away = false) {
   const yr = Ships.yearOf(S.day);
   if ((S.yardNews ?? 1451) < yr) {
     S.yardNews = yr;
-    const fresh = Ships.newThisYear(yr);
-    if (fresh.length) report([{ html: `New at the shipyards this year: ${fresh.map((x) => x.hull ? `the <b>${x.hull.name.toLowerCase()}</b>` : `<b>${Ships.lc(x.c.name)}</b> (${x.g.name.toLowerCase()})`).join(', ')}. ${fresh.some((x) => x.hull) ? 'See the Lisbon yard.' : 'Any yard can fit it, to your ship or a captain\'s (Fleet).'}`, kind: 'discover', log: `New at the yards: ${fresh.map((x) => x.hull ? x.hull.name : x.c.name).join(', ')}.` }]);
+    const fresh = Ships.newThisYear(yr, S);
+    if (fresh.length) report([{ html: `New at the shipyards this year: ${fresh.map((x) => x.hull ? `the <b>${x.hull.name.toLowerCase()}</b>` : `<b>${Ships.lc(x.c.name)}</b> (${x.g.name.toLowerCase()})`).join(', ')}. ${fresh.some((x) => x.hull) ? `See the ${homeName(S)} yard.` : 'Any yard can fit it, to your ship or a captain\'s (Fleet).'}`, kind: 'discover', log: `New at the yards: ${fresh.map((x) => x.hull ? x.hull.name : x.c.name).join(', ')}.` }]);
   }
   report(Pilots.tick(S));
   // Ships and refits on order at the Lisbon yard: word when they are ready.
@@ -315,7 +316,7 @@ export function advanceTime(dd, atSea, away = false) {
     if (o.told) continue;
     o.told = true;
     const what = o.kind === 'hull' ? `Your ${Ships.HULLS[o.hull].name.toLowerCase()}${o.name ? ` <b>${String(o.name).replace(/[<>&"]/g, '')}</b>` : ''} is` : `The ${Ships.choice(o.group, o.choice).name.toLowerCase()} you ordered is`;
-    report([{ html: `${what} ready at the Lisbon shipyard. Call there to take delivery.`, kind: 'discover', log: `${what.replace(/<[^>]+>/g, '')} ready in Lisbon.` }]);
+    report([{ html: `${what} ready at the ${homeName(S)} shipyard. Call there to take delivery.`, kind: 'discover', log: `${what.replace(/<[^>]+>/g, '')} ready in ${homeName(S)}.` }]);
   }
 }
 

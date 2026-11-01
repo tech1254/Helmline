@@ -11,7 +11,7 @@
 
 import * as Ships from './ships.js';
 
-export const YARDS = ['lisbon', 'lagos', 'funchal'];
+export const YARDS = ['lisbon', 'lagos', 'funchal', 'seville', 'palos'];
 export const WEAR_PER_DAY = { temperate: 0.08, tropic: 0.2 };
 export const TROPIC_LAT = 26;
 export const STORM = { perDay: 0.004, min: 5, max: 15 };

@@ -14,6 +14,10 @@ export const START = {
   porto: { size: 12000, grow: 0.01 },
   lagos: { size: 6000, grow: 0.008 },
   cadiz: { size: 15000, grow: 0.01 },
+  sanlucar: { size: 5000, grow: 0.01 },
+  palos: { size: 3000, grow: 0.006 },
+  seville: { size: 45000, grow: 0.012 },
+  gomera: { size: 600, grow: 0.01 },
   ceuta: { size: 4000, grow: -0.004 }, // a garrison town, cut off from its hinterland
   safi: { size: 5000, grow: 0.006 },
   funchal: { size: 3000, grow: 0.04 }, // Madeira's sugar boom

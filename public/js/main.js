@@ -44,10 +44,17 @@ $('intro-cloud').addEventListener('click', () => {
 $('intro-code').addEventListener('click', () => { beginPlay(); ui.panelMode = 'cloud'; renderPanel(); });
 $('intro-new').addEventListener('click', () => {
   if ($('intro-continue').hidden === false && !confirm('Start over? Your saved voyage will be lost.')) return;
-  newGame();
+  // choose a crown, then sail (the browser tests sail for Portugal unless they ask)
+  if (navigator.webdriver && !window.helmlineNations) { newGame('portugal'); beginPlay(); newVoyageSlot(); return; }
+  $('intro-nation').hidden = false;
+  $('intro').classList.add('choosing'); // the picker in place of the Portuguese welcome
+  $('intro-nation').querySelector('button').focus();
+});
+document.querySelectorAll('#intro-nation [data-nation]').forEach((b) => b.addEventListener('click', () => {
+  newGame(b.dataset.nation);
   beginPlay();
   newVoyageSlot(); // signed in: the new voyage gets its own save in the account
-});
+}));
 
 function beginPlay() {
   $('intro').hidden = true;

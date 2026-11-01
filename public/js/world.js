@@ -182,6 +182,13 @@ export const PORTS = [
     blurb: "Prince Henry's harbour on the Algarve. Wine and cloth are cheap here." },
   { id: 'cadiz', name: 'Cádiz', lon: -6.3, lat: 36.53, known: true,
     blurb: 'Castile\'s island port, with the Seville trade behind it. Salt from the pans is cheap; gold and spices fetch the best prices on the coast.' },
+  // Castile's Andalusian ports (the home of a Castilian house; open to every ship)
+  { id: 'sanlucar', name: 'Sanlúcar', lon: -6.4, lat: 36.79, known: true,
+    blurb: 'Sanlúcar de Barrameda, the Duke of Medina Sidonia\'s town at the mouth of the Guadalquivir. Every ship for Seville crosses its bar. Wine and salt are cheap.' },
+  { id: 'palos', name: 'Palos', lon: -6.93, lat: 37.13, known: true,
+    blurb: 'Palos de la Frontera on the Río Tinto, a town of pilots and caravels that trades and raids down the African coast. Fish and wine are cheap.' },
+  { id: 'seville', name: 'Seville', lon: -5.99, lat: 37.38, known: true, river: 'guadalquivir',
+    blurb: 'The greatest city of Andalusia, eighty kilometres up the Guadalquivir. Genoese bankers, Moorish cloth, oil and wine; it pays well for gold, sugar and dyes.' },
   { id: 'ceuta', name: 'Ceuta', lon: -5.32, lat: 35.86, known: true,
     blurb: 'Portugal\'s fortress across the Strait since 1415. The garrison pays dearly for wheat, wine and cloth.' },
   { id: 'safi', name: 'Safi', lon: -9.38, lat: 32.3, known: true,
@@ -190,6 +197,8 @@ export const PORTS = [
     blurb: 'Madeira. The new cane fields make sugar cheap.' },
   { id: 'lanzarote', name: 'Lanzarote', lon: -13.38, lat: 28.92, known: true,
     blurb: 'A Canary outpost. Islanders gather orchil lichen for red dye.' },
+  { id: 'gomera', name: 'La Gomera', lon: -17.08, lat: 28.08, known: false,
+    blurb: 'A Castilian island ruled by the Peraza lords from their stone tower. Dragon\'s blood, orchil and goats; the last water before the open sea.' },
   { id: 'arguin', name: 'Arguin', lon: -16.95, lat: 20.5, known: false,
     blurb: 'An island trading post in a shallow bay. Saharan gold reaches the coast here.' },
   { id: 'gambia', name: 'Gambia River', lon: -16.85, lat: 13.45, known: false,
@@ -228,6 +237,10 @@ export const HARBOURS = {
   porto: { depth: 3.2, kind: 'a harbour behind the Douro bar' },
   lagos: { depth: 5, kind: 'a sheltered bay' },
   cadiz: { depth: 7, kind: 'a deep bay' },
+  sanlucar: { depth: 3.4, kind: 'a river mouth behind the bar of the Guadalquivir' },
+  palos: { depth: 3, kind: 'an estuary harbour on the Río Tinto' },
+  seville: { depth: 3.2, kind: 'a river port, eighty kilometres upstream' },
+  gomera: { depth: 6, kind: 'a deep volcanic bay' },
   ceuta: { depth: 6, kind: 'a deep harbour under the fortress' },
   safi: { depth: 3.5, kind: 'an open roadstead off the beach' },
   funchal: { depth: 4.5, kind: 'an open roadstead under the town' },
@@ -267,6 +280,8 @@ export function shoalDepth(lon, lat) {
 // ship that draws less than the channel (the upstream port's depth) can go.
 export const RIVER_KNOTS = 2.4;
 export const RIVERS = {
+  guadalquivir: { name: 'the Guadalquivir', mouth: 'sanlucar', port: 'seville',
+    pts: [[-6.4, 36.79], [-6.33, 36.86], [-6.26, 36.93], [-6.18, 37.0], [-6.11, 37.08], [-6.06, 37.17], [-6.02, 37.27], [-5.99, 37.38]] },
   gambia: { name: 'the Gambia', mouth: 'gambia', port: 'cantor',
     pts: [[-16.85, 13.45], [-16.62, 13.43], [-16.38, 13.36], [-16.08, 13.34], [-15.82, 13.43], [-15.55, 13.56], [-15.32, 13.68], [-15.1, 13.65], [-14.9, 13.66]] },
 };

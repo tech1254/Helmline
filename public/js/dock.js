@@ -115,19 +115,22 @@ export function askNewVoyage() {
     : Cloud.cloud.code
       ? `<p>This voyage stays in the cloud under your save code <b>${Cloud.cloud.code}</b>, but this device will play the new one.</p>`
       : `<p><b>This voyage (${fmtDate(S.day)}, ${Math.round(S.purse).toLocaleString()} cz) will be lost</b>: it is saved only on this device.${Cloud.account.token ? ' To keep it, first save it to your account in Saves.' : ' To keep it, sign in and save it to an account first (Saves).'}</p>`;
-  confirmDialog({
-    title: 'Start a new voyage?',
-    body: `${kept}<p>The new voyage begins in Lisbon in March 1451, with a barca and 300 cruzados.</p>`,
-    ok: 'Start a new voyage',
-    onOk: () => {
+  const start = (nation) => () => {
       if (Cloud.cloud.code) Cloud.unlink(); // don't overwrite the code's save with the new voyage
-      newGame();
+      newGame(nation);
       ui.panelMode = 'port';
       setSpeed(1);
       renderPanel();
       centerOn(S.ship.lon, S.ship.lat);
       newVoyageSlot(); // signed in: a new save in the account
-    },
+  };
+  confirmDialog({
+    title: 'Start a new voyage?',
+    body: `${kept}<p>The new voyage begins in March 1451, with a barca and 300 cruzados, for Portugal (from Lisbon) or for Castile (from Palos).</p>
+      <div class="row"><button data-modal-action="castile">Sail for Castile</button></div>`,
+    ok: 'Sail for Portugal',
+    onOk: start('portugal'),
+    actions: { castile: start('castile') },
   });
 }
 

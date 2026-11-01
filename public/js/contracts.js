@@ -7,6 +7,7 @@ import * as Ships from './ships.js';
 
 import { GOODS } from './economy.js';
 import { PORTS, distNm, findPath } from './world.js';
+import { home, homeName } from './nations.js';
 
 // Standing tiers and what each one earns the captain.
 export const TIERS = [
@@ -41,6 +42,10 @@ export const PATRONS = {
   lisbon: 'The merchants of Lisbon',
   porto: 'The merchants of Porto',
   cadiz: 'The Genoese of Cádiz',
+  seville: 'The Genoese of Seville',
+  sanlucar: 'The Duke of Medina Sidonia\'s factor',
+  palos: 'The pilots of Palos',
+  gomera: 'The lord of La Gomera',
   ceuta: 'The captain of Ceuta',
   safi: 'The Portuguese factor at Safi',
   lagos: 'The Casa de Lagos',
@@ -91,8 +96,8 @@ export function discoveryContract(S) {
     id: C.nextId++,
     kind: 'discover',
     title: 'Find a new trading partner',
-    patron: 'Prince Henry',
-    text: 'Sail beyond the known coast and drop anchor at a port no Portuguese merchant trades with yet. Then report back to Lisbon.',
+    patron: S.nation === 'castile' ? 'The Duke of Medina Sidonia' : 'Prince Henry',
+    text: `Sail beyond the known coast and drop anchor at a port no ${S.nation === 'castile' ? 'Castilian' : 'Portuguese'} merchant trades with yet. Then report back to ${homeName(S)}.`,
     known: PORTS.filter((p) => S.discovered[p.id]).map((p) => p.id),
     stage: 'find',
     reward: 400,
@@ -267,8 +272,8 @@ export function onDock(S, portId) {
       if (c.stage === 'find' && !c.known.includes(portId)) {
         c.stage = 'report';
         c.found = portId;
-        msgs.push({ html: `<b>${portName(portId)}</b> is a new trading partner! Report back to Lisbon for Prince Henry's reward.`, kind: 'discover' });
-      } else if (c.stage === 'report' && portId === 'lisbon') {
+        msgs.push({ html: `<b>${portName(portId)}</b> is a new trading partner! Report back to ${homeName(S)} for your reward.`, kind: 'discover' });
+      } else if (c.stage === 'report' && portId === home(S)) {
         msgs.push(complete(S, c, `Prince Henry rewards you for opening trade with ${portName(c.found)}`));
       }
     } else if (c.kind === 'deliver' && portId === c.to) {
@@ -322,7 +327,7 @@ export function targets(S) {
   const t = new Set();
   for (const c of C.active) {
     if (c.kind === 'deliver') t.add(c.to);
-    if (c.kind === 'discover' && c.stage === 'report') t.add('lisbon');
+    if (c.kind === 'discover' && c.stage === 'report') t.add(home(S));
   }
   return t;
 }

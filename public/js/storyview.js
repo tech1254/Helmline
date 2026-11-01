@@ -79,11 +79,13 @@ export function renderRutter(el) {
 // For the Lisbon market panel: the debt, while it is owed.
 export function debtBox() {
   if (!Story.canPayDebt(S) || !storyOn()) return '';
-  return `<div class="note story-debt"><p>João Vaz owed the house of Salvago <b>${Story.DEBT} cz</b>, due ${fmtDate(Story.DEBT_DUE)}.</p><div class="row"><button data-pay-debt ${S.purse < Story.DEBT ? 'disabled' : ''}>Pay Salvago ${Story.DEBT} cz</button></div></div>`;
+  const D = Story.debtOf(S);
+  return `<div class="note story-debt"><p>${D.father} owed ${D.who} <b>${D.amount} cz</b>, due ${fmtDate(D.due)}.</p><div class="row"><button data-pay-debt ${S.purse < D.amount ? 'disabled' : ''}>Pay ${D.who} ${D.amount} cz</button></div></div>`;
 }
 
 export function payDebtNow(toast) {
   const r = Story.payDebt(S);
-  if (r) { toast(`Paid Salvago the ${Story.DEBT} cz your father owed${r === 'early' ? '. His clerk looks surprised.' : '.'}`, 'port'); log(`Paid João Vaz's debt to Salvago.`); }
+  const D = Story.debtOf(S);
+  if (r) { toast(`Paid ${D.who} the ${D.amount} cz your father owed${r === 'early' ? '. His clerk looks surprised.' : '.'}`, 'port'); log(`Paid ${D.father}'s debt to ${D.who}.`); }
   renderPanel(); save();
 }

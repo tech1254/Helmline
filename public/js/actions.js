@@ -1,5 +1,6 @@
 // What the panel buttons and top-bar controls do.
 
+import { home, homeName } from './nations.js';
 import { PORTS, findPath } from './world.js';
 import { GOODS } from './economy.js';
 import * as Contracts from './contracts.js';
@@ -14,6 +15,7 @@ import * as Investments from './investments.js';
 import { openHouse } from './houseview.js';
 import { WAGE_RESERVE_DAYS } from './config.js';
 import * as Ships from './ships.js';
+import * as Wear from './wear.js';
 import * as Ports from './ports.js';
 import { S, market, ui } from './state.js';
 import { newGame, save } from './save.js';
@@ -79,6 +81,8 @@ export function initActions() {
     }
     if (t.dataset.buy && pid) {
       const g = t.dataset.buy;
+      const planRow = t.closest('li.plan');
+      if (planRow) ui.planFocus = planRow.dataset.port; // the planner keeps this port in view after loading
       const st = Ships.flagStats(S);
       const free = st.hold - held();
       const max = t.dataset.n === 'max';
@@ -187,7 +191,7 @@ export function initActions() {
       return;
     } else if (t.hasAttribute('data-wait') && pid) {
       waitInPort(7);
-    } else if (t.hasAttribute('data-rebuild') && pid === 'lisbon') {
+    } else if (t.hasAttribute('data-rebuild') && pid === home(S)) {
       const q = Ships.rebuildQuote(S.ship, S.ship.hull, S.day);
       if (!q) return;
       confirmDialog({
@@ -214,7 +218,7 @@ export function initActions() {
       const ship = S.fleet.ships.find((x) => x.id === +t.dataset.cancelOrders);
       if (ship) Fleet.cancelOrders(ship);
       return;
-    } else if (t.hasAttribute('data-house') && pid === 'lisbon') {
+    } else if (t.hasAttribute('data-house') && pid === home(S)) {
       openHouse();
       return;
     } else if (t.hasAttribute('data-feitoria') && pid) {
@@ -450,7 +454,7 @@ function shipYardDialog(id) {
   if (!ship) return;
   const hull = ship.hull || 'caravel';
   const fit = Ships.normalFit(hull, ship.fit);
-  const now = S.ship.docked === 'lisbon' && ship.at === 'lisbon' && ship.status !== 'sailing' && ship.status !== 'repair';
+  const now = S.ship.docked === home(S) && ship.at === home(S) && ship.status !== 'sailing' && ship.status !== 'repair';
   const rb = now && Ships.lifeShare(hull, Fleet.yearsOf(S, ship)) >= 0.5 ? Ships.rebuildQuote(ship, hull, S.day) : null;
   const groups = Ships.groupsFor(hull).filter((g) => HIRED_GROUPS.includes(g.id));
   const want = { ...fit, ...(ship.orders?.fit || {}) };
@@ -462,7 +466,7 @@ function shipYardDialog(id) {
     }).join('');
     return `<label class="field">${g.name}<select data-refit="${g.id}">${opts}</select></label>`;
   }).join('');
-  const hulls = Ships.HULL_ORDER.filter((h) => h !== hull && Ships.availability(S, Ships.HULLS[h]).ok === 'yes');
+  const hulls = Ships.hullOrder(S).filter((h) => h !== hull && Ships.availability(S, Ships.HULLS[h]).ok === 'yes');
   const rows = hulls.map((h) => {
     const q = Fleet.replaceQuote(S, ship, h);
     const ordered = ship.orders?.hull === h;
@@ -474,7 +478,7 @@ function shipYardDialog(id) {
       if (cost != null) { toast(`The <b>${ship.name}</b> is a new ${Ships.HULLS[h].name.toLowerCase()}. Captain ${ship.captain.name} takes her out on his route.`, 'discover'); log(`New hull for the ${ship.name}: ${cost} cz.`); }
     } else {
       Fleet.orderHull(S, ship, h);
-      toast(`Ordered a new ${Ships.HULLS[h].name.toLowerCase()} for the <b>${ship.name}</b>: the Lisbon yard builds her when she next calls there, if the purse runs to it then.`, 'port');
+      toast(`Ordered a new ${Ships.HULLS[h].name.toLowerCase()} for the <b>${ship.name}</b>: the ${homeName(S)} yard builds her when she next calls there, if the purse runs to it then.`, 'port');
     }
     renderPanel(); save();
   }]));
@@ -482,7 +486,7 @@ function shipYardDialog(id) {
     const pick = { ...fit };
     document.querySelectorAll('[data-refit]').forEach((s) => { pick[s.dataset.refit] = s.value; });
     const q = Fleet.orderRefit(S, ship, pick);
-    toast(q.lines.length ? `Ordered a refit for the <b>${ship.name}</b> (${q.lines.map((l) => Ships.lc(l.c.name)).join(', ')}, about ${q.cost.toLocaleString()} cz): done when she next calls at Lisbon, Lagos or Funchal.` : `No refit ordered for the <b>${ship.name}</b>.`, 'port');
+    toast(q.lines.length ? `Ordered a refit for the <b>${ship.name}</b> (${q.lines.map((l) => Ships.lc(l.c.name)).join(', ')}, about ${q.cost.toLocaleString()} cz): done when she next calls at a shipyard.` : `No refit ordered for the <b>${ship.name}</b>.`, 'port');
     renderPanel(); save();
   };
   if (rb) actions.rebuild = () => {
@@ -500,11 +504,11 @@ function shipYardDialog(id) {
     title: `Refit or replace the ${ship.name}`,
     body: `<p>The ${Ships.HULLS[hull].name.toLowerCase()} <b>${ship.name}</b> has ${Ships.ageText(hull, Fleet.yearsOf(S, ship))}.</p>
       <h3>Refit</h3>
-      <p class="fine">Done when she next calls at a yard (Lisbon, Lagos or Funchal), and paid for then. New gear comes to the yards as the years pass.</p>
+      <p class="fine">Done when she next calls at a shipyard (${Wear.YARDS.map((y) => PORTS.find((p) => p.id === y).name).join(', ')}), and paid for then. New gear comes to the yards as the years pass.</p>
       <div class="refit-grid">${selects}</div>
       <div class="row"><button data-modal-action="refit">Order this refit</button></div>
       <h3>A new hull</h3>
-      <p class="fine">${now ? 'She is here in Lisbon: the yard can do it now. ' : 'Built at the Lisbon yard when she next calls there, the old hull taken in part exchange. '}Her captain, route and cargo stay with her.</p>
+      <p class="fine">${now ? `She is here in ${homeName(S)}: the yard can do it now. ` : `Built at the ${homeName(S)} yard when she next calls there, the old hull taken in part exchange. `}Her captain, route and cargo stay with her.</p>
       <ul class="house-list">${rows}</ul>
       ${rb ? `<div class="row"><button data-modal-action="rebuild" ${S.purse < rb.cost ? 'disabled' : ''}>A great rebuild: ${rb.cost.toLocaleString()} cz, ${rb.days} days, about ${Math.round(rb.years)} years back${rb.n ? ' (her last)' : ''}</button></div>` : ''}`,
     ok: 'Close',

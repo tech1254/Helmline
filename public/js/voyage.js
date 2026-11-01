@@ -25,6 +25,7 @@ import { renderPanel, setSpeed } from './panels.js';
 import { log, passage } from './pricebook.js';
 import { confirmDialog } from './dialog.js';
 import { addNotice, hint, toast } from './notices.js';
+import { home, homeName } from './nations.js';
 
 // ---- Corsairs ----------------------------------------------------------------------
 
@@ -475,6 +476,7 @@ export function dock(portId) {
   const sh = S.ship;
   const p = PORTS.find((x) => x.id === portId);
   sh.docked = portId;
+  ui.planFocus = null;
   plog('dock', { port: portId, hull: Math.round(S.hull ?? 100), purse: Math.round(S.purse), cargo: Object.fromEntries(Object.entries(S.cargo).filter(([, n]) => n > 0)) });
   sh.route = [];
   sh.dest = null;
@@ -495,7 +497,7 @@ export function dock(portId) {
   let msg = sh.offshore
     ? `Anchored off <b>${p.name}</b>: the <b>${sh.name}</b> draws ${Ships.draftOf(sh.hull, loadOf())} m and ${p.kind} has ${Ports.depthOf(S, portId)} m. Her boats will work the cargo.`
     : `Dropped anchor at <b>${p.name}</b>.`;
-  if (portId === 'lisbon' && S.unpaidCharts.length) {
+  if (portId === home(S) && S.unpaidCharts.length) {
     const reward = S.unpaidCharts.length * CHART_REWARD;
     S.purse += reward;
     Accounts.record(S, { kind: 'charts', amount: reward, text: `Charts of ${S.unpaidCharts.join(', ')}` });
@@ -564,7 +566,7 @@ export function checkMilestones() {
   for (const m of MILESTONES) {
     if (S.purse >= m && !S.milestones.includes(m)) {
       S.milestones.push(m);
-      toast(`Your purse passes <b>${m.toLocaleString()} cruzados</b>. The Lisbon merchants take notice.`, 'discover');
+      toast(`Your purse passes <b>${m.toLocaleString()} cruzados</b>. The merchants of ${homeName(S)} take notice.`, 'discover');
       log(`Purse passed ${m.toLocaleString()} cz.`);
     }
   }

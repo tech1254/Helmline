@@ -41,6 +41,8 @@ export function shipLook(ship) {
   if (ship.hull === 'largecaravel') return `largecaravel${cross}`;
   if (ship.hull === 'nau') return `nau${cross}`;
   if (ship.hull === 'naudaindia' || ship.hull === 'galeao') return ship.hull; // plain sails only, so far
+  if (ship.hull === 'naocarrera') return `nau${cross}`; // Castile's Indies nao: a nau's lines
+  if (ship.hull === 'galeon') return 'galeao';
   return ship.hull || 'caravel';
 }
 

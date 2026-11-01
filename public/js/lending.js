@@ -5,7 +5,7 @@
 // The lender carries the risk of the sea: what corsairs take and what sea water ruins in those
 // waters comes off the debt, premium and all. Out of those waters he carries nothing.
 // Miss the date and the debt grows by a tenth, your name suffers, and his agents take what is in
-// your purse whenever you put in at Lisbon or Lagos, until it is paid. One loan at a time.
+// your purse whenever you put in at Lisbon, Lagos or Seville, until it is paid. One loan at a time.
 // Pure rules: no browser here.
 
 import * as Ships from './ships.js';
@@ -14,6 +14,7 @@ import * as Accounts from './accounts.js';
 export const LENDERS = {
   lisbon: { name: 'the house of Salvago', who: 'Lorenzo Salvago', of: 'Genoese' },
   lagos: { name: 'the Lomellini factor', who: 'Battista Lomellini', of: 'Genoese' },
+  seville: { name: 'the Seville house of Salvago', who: 'Bernardo Salvago', of: 'Genoese' },
 };
 // The waters a loan covers, the premium, and how long you have to repay.
 // `lat`: the cover ends south of this latitude (the Canaries are home waters).
@@ -51,9 +52,9 @@ export function offer(S, pid) {
   const lender = lenderAt(pid);
   if (!lender) return null;
   if (L.loan) return { lender, no: `You already owe ${LENDERS[L.loan.port]?.name || 'a lender'}: one sea loan at a time.` };
-  if (L.barredUntil != null && S.day < L.barredUntil) return { lender, no: 'Since your last loan went unpaid past its day, no house in Lisbon or Lagos will lend to you yet.' };
+  if (L.barredUntil != null && S.day < L.barredUntil) return { lender, no: 'Since your last loan went unpaid past its day, no Genoese house will lend to you yet.' };
   if (!S.ship.docked) return null;
-  const cold = pid === 'lisbon' && (S.story?.relation || 0) < 0 ? 0.05 : 0; // Salvago remembers
+  const cold = (pid === 'lisbon' || pid === 'seville') && (S.story?.relation || 0) < 0 ? 0.05 : 0; // Salvago remembers
   const late = (L.history || []).some((h) => h.late) ? 0.05 : 0;
   return { lender, max: limit(S), terms: WATERS.map((w) => ({ ...w, premium: Math.round((w.premium + cold + late) * 100) / 100 })) };
 }
@@ -122,7 +123,7 @@ export function tick(S) {
   if (!loan.late && S.day > loan.due) {
     loan.late = true;
     if (S.contracts?.unlocked) S.contracts.standing = Math.max(0, (S.contracts.standing || 0) - LATE_STANDING);
-    out.push({ html: `<b>Your sea loan is past its day.</b> ${LENDERS[loan.port].who} adds a tenth to it (${owedOf(loan).toLocaleString()} cz now), and the quays hear of it. His agents will take what is in your purse whenever you put in at Lisbon or Lagos until it is paid.`, kind: 'alert', level: 'alert', log: 'A sea loan went unpaid past its day.' });
+    out.push({ html: `<b>Your sea loan is past its day.</b> ${LENDERS[loan.port].who} adds a tenth to it (${owedOf(loan).toLocaleString()} cz now), and the quays hear of it. His agents will take what is in your purse whenever you put in at Lisbon, Lagos or Seville until it is paid.`, kind: 'alert', level: 'alert', log: 'A sea loan went unpaid past its day.' });
   }
   if (loan.late && S.ship.docked && LENDERS[S.ship.docked] && S.purse > 0) {
     const took = repay(S);
