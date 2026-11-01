@@ -1,0 +1,124 @@
+{
+  "batch": "production-12",
+  "note": "Castile, slice 1: the harbours of Seville, Palos, Sanlúcar and La Gomera, and the nao vizcaína.",
+  "commit": "9169b9e39db8bdaec5b047e4237bbf47cb687fa0",
+  "generated": "2026-11-01T15:34:33.734Z",
+  "items": [
+    {
+      "id": "seville-a",
+      "model": "black-forest-labs/flux-2-pro-preview",
+      "width": 1600,
+      "height": 896,
+      "seed": 7201,
+      "refs": [],
+      "prompt": "A photorealistic still from a big-budget historical film set in 1451, natural light, shot on a 35mm lens, meticulous period detail. Seville in Castile, seen from the broad brown Guadalquivir river: the long Almohad city walls of tawny brick along the riverbank, the twelve-sided Torre del Oro, a squat tower of golden stone on the water's edge, behind the walls a sea of flat-roofed whitewashed houses, the tall square brick minaret of the old mosque (the Giralda, without any Renaissance belfry: a plain square tower with a small lantern) rising above them, and the great unfinished Gothic cathedral beside it with wooden scaffolding on its walls. On the right, the Arenal: a sandy riverbank where a few caravels and small merchant ships lie moored, with bales and casks on the sand. Warm, hazy Andalusian afternoon light. Camera on the water about 250 to 300 metres from the shore, at water level, horizon exactly at mid-height. The lower half of the frame is calm open water with soft ripples and long reflections, completely empty in the near water and across the left two-thirds: no boats, no quay, no posts, no rocks, nothing close to the camera. The shore and everything on it sit in the middle distance, small with distance. Nothing later than 1451 anywhere: no cars, street lamps, power lines, tyres, concrete, plastic, glass windows, motorboats, ferries, three-masted ships, modern clothing, tall townhouse facades, Baroque spires, bridges across the river. No text, no border, no watermark.",
+      "file": "seville-a.png",
+      "seconds": 13.7
+    },
+    {
+      "id": "seville-b",
+      "model": "black-forest-labs/flux-2-pro-preview",
+      "width": 1600,
+      "height": 896,
+      "seed": 7202,
+      "refs": [],
+      "prompt": "A photorealistic still from a big-budget historical film set in 1451, natural light, shot on a 35mm lens, meticulous period detail. Seville in Castile, seen from the broad brown Guadalquivir river: the long Almohad city walls of tawny brick along the riverbank, the twelve-sided Torre del Oro, a squat tower of golden stone on the water's edge, behind the walls a sea of flat-roofed whitewashed houses, the tall square brick minaret of the old mosque (the Giralda, without any Renaissance belfry: a plain square tower with a small lantern) rising above them, and the great unfinished Gothic cathedral beside it with wooden scaffolding on its walls. On the right, the Arenal: a sandy riverbank where a few caravels and small merchant ships lie moored, with bales and casks on the sand. Warm, hazy Andalusian afternoon light. Camera on the water about 250 to 300 metres from the shore, at water level, horizon exactly at mid-height. The lower half of the frame is calm open water with soft ripples and long reflections, completely empty in the near water and across the left two-thirds: no boats, no quay, no posts, no rocks, nothing close to the camera. The shore and everything on it sit in the middle distance, small with distance. Nothing later than 1451 anywhere: no cars, street lamps, power lines, tyres, concrete, plastic, glass windows, motorboats, ferries, three-masted ships, modern clothing, tall townhouse facades, Baroque spires, bridges across the river. No text, no border, no watermark.",
+      "file": "seville-b.png",
+      "seconds": 21.5
+    },
+    {
+      "id": "palos-a",
+      "model": "black-forest-labs/flux-2-pro-preview",
+      "width": 1600,
+      "height": 896,
+      "seed": 7211,
+      "refs": [],
+      "prompt": "A photorealistic still from a big-budget historical film set in 1451, natural light, shot on a 35mm lens, meticulous period detail. Palos de la Frontera in Castile, on the estuary of the Río Tinto: a small whitewashed town on a low hill above marshes and mudflats, the Gothic-Mudéjar church of San Jorge with a plain square tower, a small castle ruin on the hilltop, a well (La Fontanilla) by the water, and on the right a muddy shore where two small lateen-rigged caravels and fishing boats are drawn up, with nets drying and a half-built caravel hull on stocks. Salt marsh and pine woods in the background. Soft morning light, still water. Camera on the water about 250 to 300 metres from the shore, at water level, horizon exactly at mid-height. The lower half of the frame is calm open water with soft ripples and long reflections, completely empty in the near water and across the left two-thirds: no boats, no quay, no posts, no rocks, nothing close to the camera. The shore and everything on it sit in the middle distance, small with distance. Nothing later than 1451 anywhere: no cars, street lamps, power lines, tyres, concrete, plastic, glass windows, motorboats, ferries, three-masted ships, modern clothing, tall townhouse facades, Baroque spires, bridges across the river. No text, no border, no watermark.",
+      "file": "palos-a.png",
+      "seconds": 10.9
+    },
+    {
+      "id": "palos-b",
+      "model": "black-forest-labs/flux-2-pro-preview",
+      "width": 1600,
+      "height": 896,
+      "seed": 7212,
+      "refs": [],
+      "prompt": "A photorealistic still from a big-budget historical film set in 1451, natural light, shot on a 35mm lens, meticulous period detail. Palos de la Frontera in Castile, on the estuary of the Río Tinto: a small whitewashed town on a low hill above marshes and mudflats, the Gothic-Mudéjar church of San Jorge with a plain square tower, a small castle ruin on the hilltop, a well (La Fontanilla) by the water, and on the right a muddy shore where two small lateen-rigged caravels and fishing boats are drawn up, with nets drying and a half-built caravel hull on stocks. Salt marsh and pine woods in the background. Soft morning light, still water. Camera on the water about 250 to 300 metres from the shore, at water level, horizon exactly at mid-height. The lower half of the frame is calm open water with soft ripples and long reflections, completely empty in the near water and across the left two-thirds: no boats, no quay, no posts, no rocks, nothing close to the camera. The shore and everything on it sit in the middle distance, small with distance. Nothing later than 1451 anywhere: no cars, street lamps, power lines, tyres, concrete, plastic, glass windows, motorboats, ferries, three-masted ships, modern clothing, tall townhouse facades, Baroque spires, bridges across the river. No text, no border, no watermark.",
+      "file": "palos-b.png",
+      "seconds": 22.6
+    },
+    {
+      "id": "sanlucar-a",
+      "model": "black-forest-labs/flux-2-pro-preview",
+      "width": 1600,
+      "height": 896,
+      "seed": 7221,
+      "refs": [],
+      "prompt": "A photorealistic still from a big-budget historical film set in 1451, natural light, shot on a 35mm lens, meticulous period detail. Sanlúcar de Barrameda in Castile, at the mouth of the Guadalquivir river: a low town of whitewashed houses below a hill crowned by the square castle of Santiago with its tall keep, the ducal palace of the Medina Sidonia, a long sandy beach where fishing boats and a small caravel lie, and on the far left the flat green marshes and dunes of the Doñana shore across the river mouth. Breakers on a sandbar near the river mouth. Bright Atlantic afternoon light. Camera on the water about 250 to 300 metres from the shore, at water level, horizon exactly at mid-height. The lower half of the frame is calm open water with soft ripples and long reflections, completely empty in the near water and across the left two-thirds: no boats, no quay, no posts, no rocks, nothing close to the camera. The shore and everything on it sit in the middle distance, small with distance. Nothing later than 1451 anywhere: no cars, street lamps, power lines, tyres, concrete, plastic, glass windows, motorboats, ferries, three-masted ships, modern clothing, tall townhouse facades, Baroque spires, bridges across the river. No text, no border, no watermark.",
+      "file": "sanlucar-a.png",
+      "seconds": 11.6
+    },
+    {
+      "id": "sanlucar-b",
+      "model": "black-forest-labs/flux-2-pro-preview",
+      "width": 1600,
+      "height": 896,
+      "seed": 7222,
+      "refs": [],
+      "prompt": "A photorealistic still from a big-budget historical film set in 1451, natural light, shot on a 35mm lens, meticulous period detail. Sanlúcar de Barrameda in Castile, at the mouth of the Guadalquivir river: a low town of whitewashed houses below a hill crowned by the square castle of Santiago with its tall keep, the ducal palace of the Medina Sidonia, a long sandy beach where fishing boats and a small caravel lie, and on the far left the flat green marshes and dunes of the Doñana shore across the river mouth. Breakers on a sandbar near the river mouth. Bright Atlantic afternoon light. Camera on the water about 250 to 300 metres from the shore, at water level, horizon exactly at mid-height. The lower half of the frame is calm open water with soft ripples and long reflections, completely empty in the near water and across the left two-thirds: no boats, no quay, no posts, no rocks, nothing close to the camera. The shore and everything on it sit in the middle distance, small with distance. Nothing later than 1451 anywhere: no cars, street lamps, power lines, tyres, concrete, plastic, glass windows, motorboats, ferries, three-masted ships, modern clothing, tall townhouse facades, Baroque spires, bridges across the river. No text, no border, no watermark.",
+      "file": "sanlucar-b.png",
+      "seconds": 20.8
+    },
+    {
+      "id": "gomera-a",
+      "model": "black-forest-labs/flux-2-pro-preview",
+      "width": 1600,
+      "height": 896,
+      "seed": 7231,
+      "refs": [],
+      "prompt": "A photorealistic still from a big-budget historical film set in 1451, natural light, shot on a 35mm lens, meticulous period detail. San Sebastián de La Gomera in the Canary Islands, about 1451: a tiny Castilian settlement in a dark volcanic bay, a few low whitewashed stone houses and a small church at the mouth of a steep green ravine, the square stone Torre del Conde (a plain fortified tower of the lords of the island) standing alone near the beach, a black sand beach with two small boats, steep brown and green volcanic cliffs and terraced hills behind, and the cone of Mount Teide on Tenerife faint on the far horizon. Clear subtropical afternoon light. Camera on the water about 250 to 300 metres from the shore, at water level, horizon exactly at mid-height. The lower half of the frame is calm open water with soft ripples and long reflections, completely empty in the near water and across the left two-thirds: no boats, no quay, no posts, no rocks, nothing close to the camera. The shore and everything on it sit in the middle distance, small with distance. Nothing later than 1451 anywhere: no cars, street lamps, power lines, tyres, concrete, plastic, glass windows, motorboats, ferries, three-masted ships, modern clothing, tall townhouse facades, Baroque spires, bridges across the river. No text, no border, no watermark.",
+      "file": "gomera-a.png",
+      "seconds": 10.8
+    },
+    {
+      "id": "gomera-b",
+      "model": "black-forest-labs/flux-2-pro-preview",
+      "width": 1600,
+      "height": 896,
+      "seed": 7232,
+      "refs": [],
+      "prompt": "A photorealistic still from a big-budget historical film set in 1451, natural light, shot on a 35mm lens, meticulous period detail. San Sebastián de La Gomera in the Canary Islands, about 1451: a tiny Castilian settlement in a dark volcanic bay, a few low whitewashed stone houses and a small church at the mouth of a steep green ravine, the square stone Torre del Conde (a plain fortified tower of the lords of the island) standing alone near the beach, a black sand beach with two small boats, steep brown and green volcanic cliffs and terraced hills behind, and the cone of Mount Teide on Tenerife faint on the far horizon. Clear subtropical afternoon light. Camera on the water about 250 to 300 metres from the shore, at water level, horizon exactly at mid-height. The lower half of the frame is calm open water with soft ripples and long reflections, completely empty in the near water and across the left two-thirds: no boats, no quay, no posts, no rocks, nothing close to the camera. The shore and everything on it sit in the middle distance, small with distance. Nothing later than 1451 anywhere: no cars, street lamps, power lines, tyres, concrete, plastic, glass windows, motorboats, ferries, three-masted ships, modern clothing, tall townhouse facades, Baroque spires, bridges across the river. No text, no border, no watermark.",
+      "file": "gomera-b.png",
+      "seconds": 10.8
+    },
+    {
+      "id": "ship-naovizcaina-a",
+      "model": "black-forest-labs/flux-2-pro-preview",
+      "width": 1280,
+      "height": 896,
+      "seed": 7301,
+      "refs": [
+        "art:production-1/ship-nau-a.png"
+      ],
+      "cutout": true,
+      "prompt": "A photorealistic photograph of a real full-size Basque merchant ship of about 1460, a nao vizcaína: the same kind of ship as the carrack in the reference photo but smaller and plainer, about 24 metres long, a deep round-bellied cargo hull, a modest square sterncastle and a small forecastle, three masts: a large square mainsail, a small square foresail and a lateen mizzen, no topsails. Seen exactly side-on, bow pointing right, warm late afternoon light from the right, the same light and style as the reference photo. A plain working ship: weathered undyed linen sails, hemp rigging, dark tarred planking, bare wood. No carving, no gilding, no balconies, no galleries, no windows in the castles, no towers, no turrets, no flags, no pennants, no figurehead, no steering wheel, no lanterns, no gunports. Not a fantasy ship, not a pirate ship, not a 17th-century ship. Not a model: a real ship, photographed. She is isolated on a solid, flat, evenly lit chroma-key green background (#00b140) filling everything around her, including below the hull: no sea, no sky, no shadow, no floor, no stand, no cradle. The whole ship from the mastheads to the keel in frame, with a margin all round.",
+      "file": "ship-naovizcaina-a.png",
+      "seconds": 11.6
+    },
+    {
+      "id": "ship-naovizcaina-b",
+      "model": "black-forest-labs/flux-2-pro-preview",
+      "width": 1280,
+      "height": 896,
+      "seed": 7302,
+      "refs": [
+        "art:production-1/ship-nau-a.png"
+      ],
+      "cutout": true,
+      "prompt": "A photorealistic photograph of a real full-size Basque merchant ship of about 1460, a nao vizcaína: the same kind of ship as the carrack in the reference photo but smaller and plainer, about 24 metres long, a deep round-bellied cargo hull, a modest square sterncastle and a small forecastle, three masts: a large square mainsail, a small square foresail and a lateen mizzen, no topsails. Seen exactly side-on, bow pointing right, warm late afternoon light from the right, the same light and style as the reference photo. A plain working ship: weathered undyed linen sails, hemp rigging, dark tarred planking, bare wood. No carving, no gilding, no balconies, no galleries, no windows in the castles, no towers, no turrets, no flags, no pennants, no figurehead, no steering wheel, no lanterns, no gunports. Not a fantasy ship, not a pirate ship, not a 17th-century ship. Not a model: a real ship, photographed. She is isolated on a solid, flat, evenly lit chroma-key green background (#00b140) filling everything around her, including below the hull: no sea, no sky, no shadow, no floor, no stand, no cradle. The whole ship from the mastheads to the keel in frame, with a margin all round.",
+      "file": "ship-naovizcaina-b.png",
+      "seconds": 11.1
+    }
+  ]
+}
