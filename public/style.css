@@ -618,3 +618,10 @@ li.plan .row { justify-content: flex-end; margin-top: 6px; }
 .tabs.more-left { -webkit-mask-image: linear-gradient(to left, #000 82%, transparent); mask-image: linear-gradient(to left, #000 82%, transparent); }
 .tabs.more-left.more-right { -webkit-mask-image: linear-gradient(to right, transparent, #000 14%, #000 86%, transparent); mask-image: linear-gradient(to right, transparent, #000 14%, #000 86%, transparent); }
 .row.invest { flex-wrap: wrap; align-items: center; gap: 6px 10px; }
+/* contracts in the planner */
+.plan-held { border: 1px solid var(--gold); border-radius: 6px; padding: 6px 10px; margin: 4px 0 10px; }
+.plan-held h3 { margin: 0 0 4px; font-size: 15px; }
+.plan-held ul { margin: 0; padding-left: 18px; }
+.plan-held li { margin: 2px 0; }
+li.plan .plan-offer { border-top: 1px dashed rgba(0, 0, 0, 0.2); margin-top: 6px; padding-top: 4px; }
+li.plan .plan-offer .row { justify-content: flex-end; margin-top: 2px; }

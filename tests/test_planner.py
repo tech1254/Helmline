@@ -44,6 +44,36 @@ async def run(b, label, vp, mobile, errs):
         if await J("() => document.querySelector('#panel h2')?.textContent") != 'Plan a voyage': errs.append(f'{label}: the planner closed after loading')
     else:
         errs.append(f'{label}: no cargo suggested anywhere')
+    # contracts: the offers on this board under the port they go to; take one, then load its goods
+    await J("() => { const s = window.helmline.state; s.contracts.standing = 10; s.purse = 3000; s.contracts.active = s.contracts.active.filter((c) => c.id !== 999); window.helmline.panel('sail'); }"); await pg.wait_for_timeout(200)
+    offers = await J("() => [...document.querySelectorAll('li.plan .plan-offer')].map((o) => o.closest('li.plan').querySelector('.plan-head b').textContent + ': ' + o.querySelector('p').innerText)")
+    board = await J("() => window.helmline.offers('lisbon').map((o) => o.title)")
+    print(label, 'offers on the board:', board)
+    print(label, 'offers in the planner:', [o[:90] for o in offers])
+    if len(offers) < 1: errs.append(f'{label}: no offers in the planner')
+    take = pg.locator('li.plan [data-accept]').first
+    if await take.count():
+        oid = int(await take.get_attribute('data-accept'))
+        await take.click(); await pg.wait_for_timeout(250)
+        active = await J(f"() => window.helmline.state.contracts.active.some((c) => c.id === {oid})")
+        h = await J("() => document.querySelector('#panel h2')?.textContent")
+        held = await J("() => document.querySelector('.plan-held')?.innerText || ''")
+        print(label, 'took it:', active, '| still in', h, '| your contracts:', held.replace('\n', ' ')[:120])
+        if not active: errs.append(f'{label}: Take it did not accept the offer')
+        if h != 'Plan a voyage': errs.append(f'{label}: taking an offer left the planner')
+        c = await J(f"() => window.helmline.state.contracts.active.find((c) => c.id === {oid})")
+        if c['source'] == 'lisbon':
+            btn = pg.locator(f'li.plan button[data-buy="{c["good"]}"]', has_text='for the contract')
+            if not await btn.count(): errs.append(f'{label}: no button to load the contract goods')
+            else:
+                before = await J(f"() => window.helmline.state.cargo['{c['good']}']")
+                free = await J("() => { const s = window.helmline.state; return 25 - Object.values(s.cargo).reduce((a, b) => a + b, 0); }")  # a barca's hold
+                await btn.first.click(); await pg.wait_for_timeout(150); await pg.click('#modal-ok'); await pg.wait_for_timeout(200)
+                have = await J(f"() => window.helmline.state.cargo['{c['good']}']")
+                want = c['qty'] + c.get('spare', 0) - before
+                print(label, f'loaded for the contract: {before} -> {have} (wanted {want} more, {free} free in the hold)')
+                if have - before < min(want, free): errs.append(f'{label}: the contract goods were not loaded')
+        await pg.screenshot(path=f'{SP}/planner-{label}-3-contracts.png')
     # the plain list, remembered
     await pg.click('[data-sail-view="list"]'); await pg.wait_for_timeout(150)
     h = await J("() => document.querySelector('#panel h2')?.textContent")
