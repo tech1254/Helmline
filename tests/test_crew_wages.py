@@ -22,8 +22,8 @@ async def main():
         if st['purse'] < 0: errs.append('the purse went below nothing from wages')
         if not st['owed']: errs.append('nothing owed to the crew')
         if 'crew owed' not in st['hud']: errs.append('the purse in the top bar does not show what is owed')
-        # in port with money: the crew is paid
-        await J("() => { const h = window.helmline, s = h.state; h.dockAt('safi'); s.purse = 100; h.advance(1); }")
+        # in port with money: the crew is paid at once, with no time passing (a sale or a contract pays them)
+        await J("() => { const h = window.helmline, s = h.state; h.dockAt('safi'); s.purse = 100; }"); await pg.wait_for_timeout(300)
         st = await J("() => ({ purse: window.helmline.state.purse, owed: window.helmline.state.crewOwed })")
         print('in port with 100 cz:', st)
         if st['owed']: errs.append('the crew was not paid from the purse in port')

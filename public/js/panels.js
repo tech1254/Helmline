@@ -59,7 +59,7 @@ export function renderHud() {
   $('hud-date').textContent = window.matchMedia('(max-width: 700px)').matches ? fmtDateShort(S.day) : fmtDate(S.day);
   const purse = Math.floor(S.purse);
   const owed = Math.ceil(S.crewOwed || 0);
-  $('hud-purse').textContent = owed ? `${purse.toLocaleString()} cz · crew owed ${owed}` : `${purse.toLocaleString()} cz`;
+  $('hud-purse').innerHTML = owed ? `${purse.toLocaleString()} cz<em class="owed">crew owed ${owed}</em>` : `${purse.toLocaleString()} cz`;
   $('hud-purse').classList.toggle('debt', purse < 0 || owed > 0);
   const ten = document.querySelector('[data-speed="10"]'); if (ten) ten.hidden = Cloud.fastest() !== 10;
   $('hud-hold').textContent = `${held()} / ${Ships.flagStats(S).hold}`;

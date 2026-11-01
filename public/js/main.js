@@ -16,7 +16,7 @@ import { checkCloudOnStart, cloudSync, loadFromCloud, loadSlot, newVoyageSlot, r
 import { centerOn, clampCam, resize, toScreen } from './view.js';
 import { revealAt } from './fog.js';
 import { render } from './render.js';
-import { advanceTime, catchUp, showSummary, update } from './sim.js';
+import { advanceTime, catchUp, payCrew, showSummary, update } from './sim.js';
 import { confirmVoyage, dock, noPassage, openEncounter, planCourse, setCourse, undock, unlockContracts } from './voyage.js';
 import { $ } from './util.js';
 import { renderHud, renderPanel, setSpeed, warmRoutes } from './panels.js';
@@ -71,6 +71,8 @@ function frame(t) {
   const dt = Math.min(0.1, (t - last) / 1000);
   last = t;
   if (ui.introDone) update(dt);
+  // back wages are paid the moment there is money in the purse in port (a sale, a contract)
+  if (ui.introDone && S?.ship?.docked && S.crewOwed > 0 && S.purse >= 1) { payCrew(); renderHud(); }
   const free = !ui.modal && !ui.screen && !ui.arrival;
   if (ui.pendingSummary && free && ui.introDone) { const sm = ui.pendingSummary; ui.pendingSummary = null; showSummary(sm); }
   if (ui.pendingEncounter && free && ui.introDone) { const e = ui.pendingEncounter; ui.pendingEncounter = null; openEncounter(e); }
