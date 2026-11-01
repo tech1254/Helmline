@@ -25,6 +25,7 @@ import { drag } from './input.js';
 import { $, cz, fmtDate, fmtDateShort, held } from './util.js';
 import { renderLedger } from './ledgerview.js';
 import { debtBox, renderRutter, storyOn } from './storyview.js';
+import * as Cloud from './cloud.js';
 import { timeScale } from './cloud.js';
 import { renderPlanner, renderRouteEstimate } from './voyageplan.js';
 import { renderPrices } from './pricebook.js';
@@ -59,6 +60,7 @@ export function renderHud() {
   const owed = Math.ceil(S.crewOwed || 0);
   $('hud-purse').textContent = owed ? `${purse.toLocaleString()} cz · crew owed ${owed}` : `${purse.toLocaleString()} cz`;
   $('hud-purse').classList.toggle('debt', purse < 0 || owed > 0);
+  const ten = document.querySelector('[data-speed="10"]'); if (ten) ten.hidden = Cloud.fastest() !== 10;
   $('hud-hold').textContent = `${held()} / ${Ships.flagStats(S).hold}`;
   const hull = Math.round(S.hull ?? 100);
   $('hud-hull').textContent = `${hull}%`;

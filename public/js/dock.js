@@ -20,7 +20,8 @@ import { SCENE_MODES, sceneMode, setSceneMode } from './scene.js';
 import { playlogOn, setPlaylog } from './playlog.js';
 
 export const BOOKS = ['port', 'prices', 'ledger', 'rutter', 'contracts', 'fleet'];
-const NEXT_TIME = { 0: 1, 1: 2, 2: 4, 4: 0 }; // round the speeds, then pause
+const NEXT_TIME = { 0: 1, 1: 2, 2: 4, 4: 0, 10: 0 }; // round the speeds, then pause (10x after 4x, for an account that has it)
+const nextTime = (v) => (v === 4 && Cloud.fastest() === 10 ? 10 : NEXT_TIME[v] ?? 1);
 
 // Where the flagship can be seen to: a shipyard (refits, repairs, new ships), or any port when she
 // needs careening.
@@ -53,7 +54,7 @@ function toggle(mode) {
 export function renderDock() {
   const paused = ui.speed === 0;
   const time = $('dock-time');
-  const next = NEXT_TIME[ui.speed] ?? 1;
+  const next = nextTime(ui.speed);
   time.innerHTML = `<span class="ico">${paused ? '❚❚' : `${ui.speed}×`}</span><span>${paused ? 'Paused' : 'Speed'}</span>`;
   time.setAttribute('aria-label', `${paused ? 'Paused' : `Speed ${ui.speed}×`}: tap for ${next ? `${next}×` : 'pause'}`);
   time.classList.toggle('on', paused);
@@ -136,7 +137,7 @@ export function initDock() {
   $('dock-time').addEventListener('pointerdown', () => { longPress = false; held = setTimeout(() => { longPress = true; setSpeed(0); navigator.vibrate?.(15); }, 450); });
   for (const ev of ['pointerup', 'pointerleave', 'pointercancel']) $('dock-time').addEventListener(ev, () => clearTimeout(held));
   $('dock-time').addEventListener('contextmenu', (e) => e.preventDefault());
-  $('dock-time').addEventListener('click', () => { if (longPress) { longPress = false; return; } setSpeed(NEXT_TIME[ui.speed] ?? 1); });
+  $('dock-time').addEventListener('click', () => { if (longPress) { longPress = false; return; } setSpeed(nextTime(ui.speed)); });
   $('dock-ship').addEventListener('click', () => {
     if (S.ship.docked && (S.hull ?? 100) < 90 && serviceHere()) { ui.panelMode = 'port'; renderPanel(); $('panel').scrollTop = 0; return; } // repairs: the hull box in the market
     ui.panelMode = null; renderPanel(); openShips(serviceHere() === 'yard' ? 'yard' : 'register');

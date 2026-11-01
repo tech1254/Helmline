@@ -105,6 +105,8 @@ export function unlink() {
 
 // ---- Accounts ----------------------------------------------------------------------
 // Settings switched on for one account (by us, in the database), e.g. faster time for a playtester.
+// `speed10`: the time button goes on to 10x after 4x (a playtester's setting).
+export const fastest = () => (account.flags?.speed10 ? 10 : 4);
 export function timeScale() {
   const k = Number(account.flags?.timeScale);
   return Number.isFinite(k) && k > 0 ? Math.min(20, k) : 1;

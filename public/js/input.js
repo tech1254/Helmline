@@ -10,6 +10,7 @@ import { renderPanel, setSpeed, togglePanel, toggleWind } from './panels.js';
 import { passage } from './pricebook.js';
 import { closeModal } from './dialog.js';
 import { hint } from './notices.js';
+import * as Cloud from './cloud.js';
 
 // ---- Input --------------------------------------------------------------------
 export const pointers = new Map();
@@ -123,6 +124,7 @@ export function initInput() {
     if (e.key === '1') setSpeed(1);
     if (e.key === '2') setSpeed(2);
     if (e.key === '3') setSpeed(4);
+    if (e.key === '4' && Cloud.fastest() === 10) setSpeed(10);
     if (e.key === 'p' || e.key === 'P') togglePanel('prices');
     if (e.key === 'l' || e.key === 'L') togglePanel('ledger');
     if (e.key === 'n' || e.key === 'N') togglePanel('notices');
