@@ -28,8 +28,10 @@ export function addNotice(html, kind = '', day = S.day, level = 'normal') {
   renderNoticeBadge();
 }
 
+// The bell counts only alerts (losses, closed ports, a captain in trouble or asking for something):
+// everything else was shown as a pop-up when it happened, and waits in the feed.
 export function unreadNotices() {
-  return (S?.notices || []).filter((n) => n.id > (S.noticesRead || 0) && !n.routine).length;
+  return (S?.notices || []).filter((n) => n.id > (S.noticesRead || 0) && n.kind === 'alert').length;
 }
 
 export function renderNoticeBadge() {
@@ -37,7 +39,7 @@ export function renderNoticeBadge() {
   const b = $('notices-count');
   b.hidden = !n;
   b.textContent = n > 99 ? '99+' : n;
-  $('btn-notices').title = n ? `Notices: ${n} unread` : 'Notices';
+  $('btn-notices').title = n ? `Notices: ${n} ${n === 1 ? 'alert' : 'alerts'} unread` : 'Notices';
 }
 
 export function toast(html, kind = '', feed = true, level = 'normal') {

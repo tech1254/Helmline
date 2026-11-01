@@ -613,3 +613,8 @@ li.plan .row { justify-content: flex-end; margin-top: 6px; }
 /* the Ship button in the bottom bar, lit in a port that can see to her */
 #dock button.lit:not(.on) { color: #f0c46a; box-shadow: inset 0 -3px 0 #d8b25a; }
 #dock button.lit:not(.on) .ico { color: #f0c46a; }
+/* tabs that run off the panel: a fade where there are more */
+.tabs.more-right { -webkit-mask-image: linear-gradient(to right, #000 82%, transparent); mask-image: linear-gradient(to right, #000 82%, transparent); }
+.tabs.more-left { -webkit-mask-image: linear-gradient(to left, #000 82%, transparent); mask-image: linear-gradient(to left, #000 82%, transparent); }
+.tabs.more-left.more-right { -webkit-mask-image: linear-gradient(to right, transparent, #000 14%, #000 86%, transparent); mask-image: linear-gradient(to right, transparent, #000 14%, #000 86%, transparent); }
+.row.invest { flex-wrap: wrap; align-items: center; gap: 6px 10px; }

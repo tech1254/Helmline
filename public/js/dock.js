@@ -122,7 +122,12 @@ export function askNewVoyage() {
 }
 
 export function initDock() {
-  $('dock-time').addEventListener('click', () => setSpeed(NEXT_TIME[ui.speed] ?? 1));
+  // tap: the next speed (or pause, after 4x); press and hold: pause at once
+  let held = null, longPress = false;
+  $('dock-time').addEventListener('pointerdown', () => { longPress = false; held = setTimeout(() => { longPress = true; setSpeed(0); navigator.vibrate?.(15); }, 450); });
+  for (const ev of ['pointerup', 'pointerleave', 'pointercancel']) $('dock-time').addEventListener(ev, () => clearTimeout(held));
+  $('dock-time').addEventListener('contextmenu', (e) => e.preventDefault());
+  $('dock-time').addEventListener('click', () => { if (longPress) { longPress = false; return; } setSpeed(NEXT_TIME[ui.speed] ?? 1); });
   $('dock-ship').addEventListener('click', () => {
     if (S.ship.docked && (S.hull ?? 100) < 90 && serviceHere()) { ui.panelMode = 'port'; renderPanel(); $('panel').scrollTop = 0; return; } // repairs: the hull box in the market
     ui.panelMode = null; renderPanel(); openShips(serviceHere() === 'yard' ? 'yard' : 'register');

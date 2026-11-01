@@ -135,8 +135,24 @@ export function renderPanel() {
   else if (ui.panelMode === 'rutter') renderRutter(el);
   else renderPrices(el);
   if (isBook(ui.panelMode)) ui.lastBook = ui.panelMode;
+  fitTabs(el);
   placeToasts();
   renderDock();
+}
+
+// A row of tabs wider than the panel scrolls: the open tab is brought into view, and a fade at
+// either edge shows there are more tabs that way.
+function fitTabs(el) {
+  const t = el.querySelector('.tabs');
+  if (!t) return;
+  const on = t.querySelector('.on');
+  if (on && (on.offsetLeft < t.scrollLeft || on.offsetLeft + on.offsetWidth > t.scrollLeft + t.clientWidth)) t.scrollLeft = on.offsetLeft - 24;
+  const mark = () => {
+    t.classList.toggle('more-right', t.scrollLeft + t.clientWidth < t.scrollWidth - 4);
+    t.classList.toggle('more-left', t.scrollLeft > 4);
+  };
+  mark();
+  t.addEventListener('scroll', mark, { passive: true });
 }
 
 // A port is described in full on your first stay; after that, folded under "About" (unless she lies
@@ -169,7 +185,7 @@ function investLine(pid) {
   } else if (pid !== 'lisbon') {
     const c = Investments.canFound(S, pid);
     const cost = Investments.feitoriaCost(S, pid);
-    if (S.contracts?.standing >= 5) parts.push(`<div class="row invest"><button data-feitoria ${c.ok ? '' : 'disabled'} title="${c.ok ? '' : c.why}">Found a feitoria here: ${cost.toLocaleString()} cz</button></div>`);
+    if (c.ok) parts.push(`<div class="row invest"><span class="fine">A factor of your own here: prices ${Math.round(Investments.FEITORIA_EDGE * 100)}% better and an extra contract, for ${Investments.FACTOR_WAGE} cz a day.</span><button data-feitoria>Found a feitoria: ${cost.toLocaleString()} cz</button></div>`);
   }
   if (pid === 'lisbon' && S.purse >= 5000) {
     const t = House.title(S);
@@ -216,12 +232,12 @@ export function renderPort(el) {
       : `<p class="blurb">${p.blurb}</p>${harbourLine(pid)}`}
     ${pid === 'lisbon' ? debtBox() : ''}
     ${hullBanner(pid)}
-    ${investLine(pid)}
     ${shut ? `<p class="banner warn"><b>Closed to trade:</b> ${Events.template(shut).title.toLowerCase()}. Expected to reopen around ${fmtDate(shut.end)}.</p>` : ''}
     <table class="market">
       <thead><tr><th>Good</th><th class="num">Buy</th><th class="num">Sell</th><th class="num">Hold</th><th></th></tr></thead>
       <tbody>${rows}</tbody>
     </table>
+    ${investLine(pid)}
     <p class="foot">Hold ${held()} / ${st.hold} · purse ${Math.floor(S.purse).toLocaleString()} cz · upkeep ${st.upkeep} cz a day at sea.<br>
     Buying pushes the price up; selling pushes it down. Prices recover over a few weeks. <i>Max</i> keeps two weeks of wages in the purse.</p>
     <div class="row"><button data-ships="register" title="Your ship and the ships ahead (S)">Your ship</button>${YARDS.includes(pid) ? `<button data-ships="yard" title="Refit your ship${pid === 'lisbon' ? ', or buy and order new ones' : ''}">Shipyard</button>` : ''}<button data-wait title="Let a week pass: prices recover, news arrives, your fleet sails on. Your crew draws no wages in port; hired captains are still paid.">Wait a week</button><button class="primary" data-tab="sail">Set sail…</button></div>`;
