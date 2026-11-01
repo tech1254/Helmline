@@ -37,7 +37,9 @@ async def run(b, label, vp, mobile, errs):
     if await btn.count():
         good = await btn.get_attribute('data-buy'); n = int(await btn.get_attribute('data-n'))
         before = await J(f"() => window.helmline.state.cargo['{good}']")
-        await btn.click(); await pg.wait_for_timeout(150); await pg.click('#modal-ok'); await pg.wait_for_timeout(200)
+        await btn.click(); await pg.wait_for_timeout(150)
+        if await J("() => !document.getElementById('modal').hidden"): await pg.click('#modal-ok')  # one unit is bought without asking
+        await pg.wait_for_timeout(200)
         after = await J(f"() => window.helmline.state.cargo['{good}']")
         print(label, f'loaded {good}: {before} -> {after} (suggested {n})')
         if after - before != n: errs.append(f'{label}: Load did not buy the suggested cargo')
@@ -64,11 +66,15 @@ async def run(b, label, vp, mobile, errs):
         c = await J(f"() => window.helmline.state.contracts.active.find((c) => c.id === {oid})")
         if c['source'] == 'lisbon':
             btn = pg.locator(f'li.plan button[data-buy="{c["good"]}"]', has_text='for the contract')
-            if not await btn.count(): errs.append(f'{label}: no button to load the contract goods')
+            full = await J("() => { const s = window.helmline.state; return 25 - Object.values(s.cargo).reduce((a, b) => a + b, 0) <= 0; }")
+            if full: print(label, 'hold full: no load button expected', await btn.count())
+            elif not await btn.count(): errs.append(f'{label}: no button to load the contract goods')
             else:
                 before = await J(f"() => window.helmline.state.cargo['{c['good']}']")
                 free = await J("() => { const s = window.helmline.state; return 25 - Object.values(s.cargo).reduce((a, b) => a + b, 0); }")  # a barca's hold
-                await btn.first.click(); await pg.wait_for_timeout(150); await pg.click('#modal-ok'); await pg.wait_for_timeout(200)
+                await btn.first.click(); await pg.wait_for_timeout(150)
+                if await J("() => !document.getElementById('modal').hidden"): await pg.click('#modal-ok')  # one unit is bought without asking
+                await pg.wait_for_timeout(200)
                 have = await J(f"() => window.helmline.state.cargo['{c['good']}']")
                 want = c['qty'] + c.get('spare', 0) - before
                 print(label, f'loaded for the contract: {before} -> {have} (wanted {want} more, {free} free in the hold)')

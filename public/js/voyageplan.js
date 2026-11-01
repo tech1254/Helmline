@@ -124,7 +124,8 @@ export function renderPlanner(sortBy = 'value') {
     if (x.load) bits.push(`<p>Load here: <b>${x.load.units} ${x.load.g.unit} of ${x.load.g.name.toLowerCase()}</b> for about ${x.load.cost.toLocaleString()} cz, worth about <b>+${x.load.profit.toLocaleString()}</b> there.</p>`);
     else if (docked && x.seen != null) bits.push('<p class="muted">Nothing here pays to carry there.</p>');
     // a contract's goods to buy here, for this port: a button to load them
-    const toLoad = docked ? C.active.filter((c) => c.kind === 'deliver' && c.source === S.ship.docked && c.to === x.p.id && (S.cargo[c.good] || 0) < c.qty + (c.spare || 0)) : [];
+    const free = Ships.flagStats(S).hold - GOODS.reduce((n, g) => n + (S.cargo[g.id] || 0), 0);
+    const toLoad = docked && free > 0 ? C.active.filter((c) => c.kind === 'deliver' && c.source === S.ship.docked && c.to === x.p.id && (S.cargo[c.good] || 0) < c.qty + (c.spare || 0)) : [];
     const loadC = toLoad.map((c) => { const n = c.qty + (c.spare || 0) - (S.cargo[c.good] || 0); const g = GOODS.find((y) => y.id === c.good); return `<button data-buy="${c.good}" data-n="${n}">Load ${n} ${g.unit} for the contract</button>`; }).join('');
     const stale = x.seen != null && S.day - x.seen > 60 ? ` · <span class="warn">prices seen ${ageText(x.seen)}</span>` : x.seen != null ? ` · prices seen ${ageText(x.seen)}` : '';
     return `<li class="plan">
