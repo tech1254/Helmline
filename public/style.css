@@ -625,3 +625,7 @@ li.plan .row { justify-content: flex-end; margin-top: 6px; }
 .plan-held li { margin: 2px 0; }
 li.plan .plan-offer { border-top: 1px dashed rgba(0, 0, 0, 0.2); margin-top: 6px; padding-top: 4px; }
 li.plan .plan-offer .row { justify-content: flex-end; margin-top: 2px; }
+/* the arrival scene's buttons */
+.scene-buttons { position: absolute; right: 16px; bottom: calc(16px + env(safe-area-inset-bottom)); display: flex; gap: 8px; }
+.scene-buttons button { position: static; }
+.scene-less { background: var(--leather); color: var(--on-dark); border: 1px solid #120b06; font-size: 13px; }

@@ -15,7 +15,8 @@ import { $, fmtDate } from './util.js';
 import { shipImage, ART_BOX } from './shipart.js';
 import { portPhoto, shipPhoto, photoImage, gradedShip, PX_PER_M } from './photos.js';
 import { CHART_REWARD } from './config.js';
-import { releaseToasts } from './notices.js';
+import { releaseToasts, toast } from './notices.js';
+import { save } from './save.js';
 
 const SETTING = { lisbon: 'lisbon', porto: 'iberia', cadiz: 'iberia', ceuta: 'iberia', safi: 'iberia', lagos: 'iberia', funchal: 'madeira', lanzarote: 'volcanic', arguin: 'desert', gambia: 'river', serraleoa: 'river', cestos: 'river', mina: 'surf', cantor: 'river', mpinda: 'river', saotome: 'volcanic', saobras: 'desert', portoseguro: 'surf', calicut: 'surf' };
 const T_ZOOM = 0.9, T_FADE = 0.5, T_SAIL = 3.6, T_HOLD = 0.9, T_OUT = 0.45;
@@ -69,7 +70,7 @@ function run() {
   el.innerHTML = `<canvas></canvas>
     <div class="scene-cap"><p class="kicker">${A.newlyCharted ? 'Newly charted' : A.first ? 'First call' : fmtDate(S.day)}</p><h2>${A.port.name}</h2>
       <p class="line">${A.newlyCharted ? `The <i>${esc(A.ship.name)}</i> drops anchor where no Portuguese chart has been. The crown pays ${CHART_REWARD} cz for it in Lisbon.` : `The <i>${esc(A.ship.name)}</i> comes in to ${A.port.name}.`}</p></div>
-    <button class="scene-skip">Tap to skip</button>`;
+    <div class="scene-buttons">${sceneMode() === 'all' ? '<button class="scene-less">First visits only</button>' : ''}<button class="scene-skip">Tap to skip</button></div>`;
   document.body.classList.add('scene-open');
   A.canvas = el.querySelector('canvas');
   A.img = shipImage(A.ship, { sea: false });
@@ -79,6 +80,9 @@ function run() {
   A.photoImg = photoImage(A.photo?.src);
   const skip = () => finish(true);
   el.onclick = skip;
+  // from now on, only ports you have not called at before (changed back in More: Arrival scenes)
+  const less = el.querySelector('.scene-less');
+  if (less) less.onclick = (e) => { e.stopPropagation(); setSceneMode('first'); save(); skip(); toast('Arrival scenes now play on your first visit to a port only. Change it in More, Arrival scenes.', 'port'); };
   A.onKey = (e) => { if (!ui.modal) { e.preventDefault(); e.stopImmediatePropagation(); skip(); } };
   window.addEventListener('keydown', A.onKey, { capture: true });
   sizeCanvas();

@@ -10,12 +10,13 @@ import { renderPanel, setSpeed, toggleWind } from './panels.js';
 import { centerOn } from './view.js';
 import { openFeedback } from './feedback.js';
 import { openShips } from './shipyard.js';
-import { newGame } from './save.js';
+import { newGame, save } from './save.js';
 import * as Cloud from './cloud.js';
 import { newVoyageSlot } from './cloudsync.js';
 import { confirmDialog } from './dialog.js';
 import { fmtDate } from './util.js';
 import { YARDS, BEACH_TO } from './wear.js';
+import { SCENE_MODES, sceneMode, setSceneMode } from './scene.js';
 
 export const BOOKS = ['port', 'prices', 'ledger', 'rutter', 'contracts', 'fleet'];
 const NEXT_TIME = { 0: 1, 1: 2, 2: 4, 4: 0 }; // round the speeds, then pause
@@ -78,6 +79,7 @@ export function renderMenu(el) {
       ${item('wind', ui.showWind ? 'Hide the winds' : 'Show the winds', 'The arrows on the chart')}
       ${item('ship', 'Find my ship', 'Centre the chart on her')}
       ${item('cloud', 'Cloud save', 'Play on another device')}
+      ${item('scenes', 'Arrival scenes', `${SCENE_MODES.find(([v]) => v === sceneMode())[1]} · tap to change`)}
       ${item('new', 'New voyage', 'Start again in Lisbon, 1451')}
       ${item('help', 'How to play')}
       ${item('bug', 'Report a bug')}
@@ -93,6 +95,10 @@ export function menuAction(act) {
   if (act === 'cloud' || act === 'help') { ui.panelMode = act; renderPanel(); return true; }
   if (act === 'bug' || act === 'idea') { openFeedback(act); return true; }
   if (act === 'new') { askNewVoyage(); return true; }
+  if (act === 'scenes') { // every port, then first visits only, then off, and round again
+    const i = SCENE_MODES.findIndex(([v]) => v === sceneMode());
+    setSceneMode(SCENE_MODES[(i + 1) % SCENE_MODES.length][0]); save(); renderPanel(); return true;
+  }
   return false;
 }
 
