@@ -19,6 +19,7 @@
 //   PUT    /api/account/slots/:id { data, day, baseVersion, force?, name? } -> { version, updatedAt }  (409 as above)
 //   PATCH  /api/account/slots/:id { name }                     -> {}
 //   DELETE /api/account/slots/:id                              -> {}
+//   POST /api/playlog        { device, account?, run, events: [...] } -> {}   (the play log, for testing)
 //   POST /api/feedback       { kind: 'bug'|'idea', message, contact?, context? } -> { id }
 //                            429 if one sender has sent too many in the last hour
 
@@ -42,6 +43,14 @@ export default {
         return await account(request, env, url);
       } catch (err) {
         console.error('account API error', err);
+        return json({ error: 'Something went wrong on the server.' }, 500);
+      }
+    }
+    if (url.pathname === '/api/playlog') {
+      try {
+        return await playlog(request, env);
+      } catch (err) {
+        console.error('playlog API error', err);
         return json({ error: 'Something went wrong on the server.' }, 500);
       }
     }
@@ -261,6 +270,30 @@ function timingSafeEqual(a, b) {
   let d = 0;
   for (let i = 0; i < a.length; i++) d |= a.charCodeAt(i) ^ b.charCodeAt(i);
   return d === 0;
+}
+
+// ---- The play log ---------------------------------------------------------------------
+const PLAYLOG_MAX_BYTES = 96 * 1024;
+const PLAYLOG_MAX_EVENTS = 400;
+const PLAYLOG_PER_HOUR = 240; // batches from one device
+
+async function playlog(request, env) {
+  if (request.method !== 'POST') return json({ error: 'Method not allowed' }, 405);
+  const text = await request.text();
+  if (text.length > PLAYLOG_MAX_BYTES) return json({ error: 'Too large.' }, 413);
+  let b;
+  try { b = JSON.parse(text); } catch { return json({ error: 'Request is not valid JSON.' }, 400); }
+  const id = (x, n) => (typeof x === 'string' && /^[A-Za-z0-9_.\- ]{1,64}$/.test(x) ? x.slice(0, n) : null);
+  const device = id(b.device, 40), run = id(b.run, 40), account = id(b.account, 24);
+  if (!device || !run || !Array.isArray(b.events) || !b.events.length) return json({ error: 'Nothing to log.' }, 400);
+  const events = b.events.slice(0, PLAYLOG_MAX_EVENTS);
+  const now = Date.now();
+  const recent = await env.DB.prepare('SELECT COUNT(*) AS n FROM playlog WHERE device = ? AND created_at > ?').bind(device, now - 3600000).first();
+  if (recent && recent.n >= PLAYLOG_PER_HOUR) return json({ error: 'Slow down.' }, 429);
+  const days = events.map((e) => e && Number.isFinite(e.day) ? e.day : null).filter((d) => d != null);
+  await env.DB.prepare('INSERT INTO playlog (device, account, run, first_day, last_day, n, events, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)')
+    .bind(device, account, run, days.length ? Math.min(...days) : null, days.length ? Math.max(...days) : null, events.length, JSON.stringify(events), now).run();
+  return json({}, 201);
 }
 
 // ---- Feedback ---------------------------------------------------------------------

@@ -8,6 +8,7 @@ import * as Contracts from './contracts.js';
 import * as Events from './events.js';
 import * as Accounts from './accounts.js';
 import * as Pirates from './pirates.js';
+import { plog } from './playlog.js';
 import * as Fleet from './fleet.js';
 import { CHART_REWARD, MILESTONES } from './config.js';
 import * as Ships from './ships.js';
@@ -81,6 +82,7 @@ export function openEncounter(enc) {
 }
 
 export function settleEncounter(enc, choice, knots) {
+  plog('corsairs', { choice, hunted: !!enc.hunted, big: !!enc.big, where: enc.where });
   const r = Pirates.resolve(S, enc, choice, knots);
   if (enc.hunted) Pirates.endHunt(S, enc, 'fought'); // beaten or not, she goes home
   log(r.lines[r.lines.length - 1]);
@@ -306,6 +308,7 @@ export function applyCourse(plan) {
     return;
   }
   if (S.ship.docked) finishBoats();
+  plog('sail', { from: S.ship.docked || null, to: plan.dest?.port || null, lon: Math.round(plan.dest?.lon * 100) / 100 || undefined, lat: Math.round(plan.dest?.lat * 100) / 100 || undefined });
   S.ship.route = plan.route;
   S.ship.dest = plan.dest;
   try { preloadArrival(plan.dest?.port); } catch (e) { console.error(e); }
@@ -466,6 +469,7 @@ export function dock(portId) {
   const sh = S.ship;
   const p = PORTS.find((x) => x.id === portId);
   sh.docked = portId;
+  plog('dock', { port: portId, hull: Math.round(S.hull ?? 100), purse: Math.round(S.purse), cargo: Object.fromEntries(Object.entries(S.cargo).filter(([, n]) => n > 0)) });
   sh.route = [];
   sh.dest = null;
   sh.lon = p.lon; sh.lat = p.lat;

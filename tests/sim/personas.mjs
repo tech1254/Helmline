@@ -227,6 +227,12 @@ function career(persona) {
 
   // ---- The owner's monthly decisions ----
   const owner = () => {
+    // a captain who stopped because his route lost money gets his orders again (and the owner notes it)
+    for (const x of S.fleet.ships) if (x.role !== 'flagship' && !x.route && x.halted?.why === 'losing' && x.loop) {
+      R.halts = (R.halts || 0) + 1;
+      const r = route(x.loop); if (SIMPLE_ROUTES) r.stops = Fleet.simplify(r.stops);
+      Fleet.setRoute(S, market, x, r);
+    }
     const f = fl();
     if (!f) return;
     Contracts.maybeUnlock(S);

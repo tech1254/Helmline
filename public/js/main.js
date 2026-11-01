@@ -9,6 +9,8 @@ import * as Accounts from './accounts.js';
 import { S, market, ui } from './state.js';
 import { DAYS_PER_SEC } from './config.js';
 import { storyTick } from './storyview.js';
+import { initPlaylog, playlogTick, plog, flushPlaylog } from './playlog.js';
+import { setRecordHook } from './accounts.js';
 import { load, newGame, save } from './save.js';
 import { checkCloudOnStart, cloudSync, loadFromCloud, loadSlot, newVoyageSlot, remoteAhead, renderCloudButton } from './cloudsync.js';
 import { centerOn, clampCam, resize, toScreen } from './view.js';
@@ -66,6 +68,7 @@ function frame(t) {
   if (ui.pendingSummary && free && ui.introDone) { const sm = ui.pendingSummary; ui.pendingSummary = null; showSummary(sm); }
   if (ui.pendingEncounter && free && ui.introDone) { const e = ui.pendingEncounter; ui.pendingEncounter = null; openEncounter(e); }
   if (free && ui.introDone && !ui.pendingSummary && !ui.pendingEncounter) storyTick(dt); // letters and chapter cards (storyview.js)
+  if (ui.introDone) playlogTick();
   saveClock += dt;
   if (saveClock > 5 && ui.introDone) { saveClock = 0; save(); }
   ui.cloudClock += dt;
@@ -94,6 +97,8 @@ document.addEventListener('visibilitychange', () => {
 });
 
 resize();
+setRecordHook(plog); // every ledger entry goes into the play log
+initPlaylog();
 Cloud.loadMeta();
 const hasSave = load();
 if (!hasSave) newGame();
@@ -143,6 +148,7 @@ window.helmline = {
   refreshAccount: () => Cloud.refreshAccount().then(() => renderPanel()),
   sync: () => cloudSync(true),
   save: () => save(),
+  flushLog: () => flushPlaylog(),
   panel: (mode) => { ui.panelMode = mode; renderPanel(); },
   tickGalleys: (days) => Pirates.tickGalleys(S, days),
   huntCheck: () => { const e = Pirates.contact(S, S.ship.lon, S.ship.lat); if (e) ui.pendingEncounter = e; return !!e; },

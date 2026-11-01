@@ -4,6 +4,7 @@ import { S, ui } from './state.js';
 import { resize } from './view.js';
 import { $, fmtDate } from './util.js';
 import { renderPanel } from './panels.js';
+import { plog } from './playlog.js';
 
 export let toastTimer;
 // Notices: everything that happens is kept in a feed (the bell), and most of it shown briefly
@@ -19,6 +20,7 @@ export function addNotice(html, kind = '', day = S.day, level = 'normal') {
   S.notices = S.notices || [];
   S.noticeSeq = (S.noticeSeq || 0) + 1;
   S.notices.push({ id: S.noticeSeq, day, html, kind, ...(level === 'routine' ? { routine: true } : {}) });
+  plog('notice', { style: kind || undefined, level: level !== 'normal' ? level : undefined, text: String(html).replace(/<[^>]+>/g, '').slice(0, 400) });
   // keep the last 150 that matter; routine reports make room first
   while (S.notices.length > NOTICES_MAX) {
     const i = S.notices.findIndex((n) => n.routine);

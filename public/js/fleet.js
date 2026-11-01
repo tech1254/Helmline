@@ -10,6 +10,8 @@ import * as Accounts from './accounts.js';
 import * as Ships from './ships.js';
 import * as Wear from './wear.js';
 import * as Captains from './captains.js';
+import { closure } from './events.js';
+import { START_DATE } from './config.js';
 
 export const SHIP_COST = Ships.HULLS.caravel.price;
 // Upkeep is the hull's hiredUpkeep (a caravel 1 cz a day, tuned 26 Oct 2026 with tests/sim), on top of the captain's wage.
@@ -224,6 +226,7 @@ export function setRoute(S, market, ship, route) {
   const here = route.stops.findIndex((st) => st.port === ship.at);
   route.next = here >= 0 ? here : 0;
   ship.route = route;
+  ship.halted = null;
   // Orders given in person, in the same port, steady a wavering captain.
   if (S.ship.docked && S.ship.docked === ship.at) ship.captain.loyalty = Math.max(ship.captain.loyalty ?? 100, 60);
   if (ship.status === 'ashore' && S.ship.docked === ship.at) ship.status = 'idle';
@@ -283,10 +286,22 @@ function visit(S, market, ship, fresh = false) {
   ship.seen = ship.seen || {};
   ship.seen[here] = { day: S.day, prices: market.observe(here) };
   if (market.closed(here)) {
-    if (ship.status !== 'waiting') msgs.push({ html: `<b>${ship.name}</b> is held outside ${port(here).name}: the port is closed.`, kind: 'alert', level: 'alert' });
+    // Closed: the captain notes when it should reopen and sails on to the next open stop,
+    // running the route without it until then. With nowhere open to go, he waits.
+    const parts = [];
+    if (r && r.stops.length > 1) {
+      if (r.stops[r.next].port === here) r.next = (r.next + 1) % r.stops.length;
+      noteClosed(S, ship, here, parts);
+      if (skipClosed(S, market, ship, parts)) {
+        ship.status = 'idle';
+        return sailOn(S, ship, parts, true);
+      }
+    }
+    if (ship.status !== 'waiting') msgs.push({ html: `<b>${ship.name}</b> is held outside ${port(here).name}: the port is closed${reopenText(S, here)}${r ? ', and so is every other port on her route' : ''}.`, kind: 'alert', level: 'alert' });
     ship.status = 'waiting';
     return msgs;
   }
+  if (ship.skips) delete ship.skips[here];
   const parts = [];
   const stop = r ? r.stops[r.next] : null;
   // Units worked here, and how laden she came in: for her boats if she lies offshore.
@@ -342,8 +357,17 @@ function visit(S, market, ship, fresh = false) {
         if (net >= 0) {
           ship.lossWarned = false;
           msgs.push({ html: `<b>${ship.name}</b>: ${what}, <b>+${net.toLocaleString()} cz</b>.`, kind: 'port', log: `${ship.name}: ${what}, +${net} cz.` });
+        } else if (ship.lossWarned) {
+          // A second losing report in a row: the captain will not go on spending your money on it.
+          ship.round = { since: S.day, net: 0, visits: 0, rounds: 0 };
+          ship.lossWarned = false;
+          ship.route = null;
+          ship.status = 'idle';
+          ship.halted = { day: S.day, at: here, why: 'losing' };
+          msgs.push({ html: `<b>${ship.name}</b>: ${what}, another <b>loss of ${(-net).toLocaleString()} cz</b>. Captain ${ship.captain.name} will not run a route that loses money: he has stopped at ${port(here).name} and waits for new orders, on half pay.`, kind: 'alert', level: 'alert', log: `${ship.name} stopped at ${port(here).name}: her route lost money two reports running.` });
+          return msgs;
         } else {
-          msgs.push({ html: `<b>${ship.name}</b>: ${what}, a <b>loss of ${(-net).toLocaleString()} cz</b>. Check her route and orders.`, kind: ship.lossWarned ? 'port' : 'alert', level: ship.lossWarned ? 'normal' : 'alert', log: `${ship.name}: ${what}, ${net} cz.` });
+          msgs.push({ html: `<b>${ship.name}</b>: ${what}, a <b>loss of ${(-net).toLocaleString()} cz</b>. Check her route and orders: if the next report is a loss too, her captain will stop and wait for new ones.`, kind: 'alert', level: 'alert', log: `${ship.name}: ${what}, ${net} cz.` });
           ship.lossWarned = true;
         }
         ship.round = { since: S.day, net: 0, visits: 0, rounds: 0 };
@@ -429,8 +453,43 @@ function buyAndSail(S, market, ship, parts = [], fresh = false) {
   }
   ship.waitSince = null;
   r.next = (r.next + 1) % r.stops.length;
+  if (!skipClosed(S, market, ship, parts)) {
+    // every other stop is closed: she waits here, loaded, for the first to reopen
+    if (ship.status !== 'waiting') msgs.push({ html: `<b>${ship.name}</b> at ${port(here).name}: ${parts.length ? parts.join('. ') + '. ' : ''}Every other port on her route is closed; she waits here for the first to reopen.`, kind: 'alert', level: 'alert' });
+    ship.status = 'waiting';
+    return msgs;
+  }
   msgs.push(...sailOn(S, ship, parts, fresh));
   return msgs;
+}
+
+// A closed port: when it should reopen, in words.
+function dateText(day) {
+  return new Date(START_DATE.getTime() + Math.floor(day) * 86400000).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', timeZone: 'UTC' });
+}
+function reopenText(S, pid) {
+  const shut = closure(S, pid);
+  return shut ? ` until about ${dateText(shut.end)}` : '';
+}
+// The captain notes a closed port and the day it should reopen (once).
+function noteClosed(S, ship, pid, parts) {
+  ship.skips = ship.skips || {};
+  if (pid in ship.skips) return;
+  const shut = closure(S, pid);
+  ship.skips[pid] = shut ? shut.end : null;
+  parts.push(`${port(pid).name} is closed${reopenText(S, pid)}, so she passes it by and keeps to the rest of her route until it reopens`);
+}
+// Move the route on past closed stops. False if every stop but this port is closed.
+function skipClosed(S, market, ship, parts) {
+  const r = ship.route;
+  for (const pid of Object.keys(ship.skips || {})) if (!market.closed(pid)) delete ship.skips[pid]; // reopened: back on the route
+  for (let i = 0; i < r.stops.length; i++) {
+    const pid = r.stops[r.next].port;
+    if (pid !== ship.at && !market.closed(pid)) return true;
+    if (pid !== ship.at) noteClosed(S, ship, pid, parts);
+    r.next = (r.next + 1) % r.stops.length;
+  }
+  return false;
 }
 
 function sailOn(S, ship, parts, fresh) {
@@ -532,7 +591,7 @@ export function tick(S, market, days, ownerPresent = true) {
       const better = Captains.learnAtSea(ship.captain, leg.days, lat < Wear.TROPIC_LAT ? leg.days - (leg.pre || 0) - (leg.post || 0) : 0, (leg.pre || 0) + (leg.post || 0), ship.name);
       if (better) msgs.push(better);
       msgs.push(...visit(S, market, ship));
-    } else if (ship.status === 'waiting' && !market.closed(ship.at)) {
+    } else if (ship.status === 'waiting' && (!market.closed(ship.at) || (ship.route && ship.route.stops.some((st) => st.port !== ship.at && !market.closed(st.port))))) {
       msgs.push(...visit(S, market, ship));
     } else if (ship.status === 'loading' && ship.route && S.day >= (ship.nextCheck ?? 0)) {
       msgs.push(...buyAndSail(S, market, ship));
@@ -703,14 +762,19 @@ export function position(S, ship) {
   return { lon: p.lon - 0.18, lat: p.lat - 0.12, heading: 200, atSea: false };
 }
 
+function skipsText(S, ship) {
+  const k = Object.entries(ship.skips || {}).filter(([, end]) => end == null || end > S.day);
+  return k.length ? ` Passing by ${k.map(([pid, end]) => `${port(pid).name}${end != null ? ` (closed until about ${dateText(end)})` : ' (closed)'}`).join(' and ')}.` : '';
+}
+
 export function statusText(S, ship) {
   const r = ship.route;
   if (ship.status === 'sailing' && ship.leg) {
     const left = Math.max(0, Math.ceil(ship.leg.start + ship.leg.days - S.day));
     const gone = S.day - ship.leg.start < (ship.leg.pre || 0) || S.day - ship.leg.start > ship.leg.days - (ship.leg.post || 0);
-    return `${gone ? 'Beyond the chart, b' : 'B'}ound for ${port(ship.leg.to).name} with ${holdText(ship)}, about ${left} ${left === 1 ? 'day' : 'days'} out.`;
+    return `${gone ? 'Beyond the chart, b' : 'B'}ound for ${port(ship.leg.to).name} with ${holdText(ship)}, about ${left} ${left === 1 ? 'day' : 'days'} out.${skipsText(S, ship)}`;
   }
-  if (ship.status === 'waiting') return `Waiting outside ${port(ship.at).name} for the port to reopen.`;
+  if (ship.status === 'waiting') return closure(S, ship.at) ? `Waiting outside ${port(ship.at).name} for the port to reopen${reopenText(S, ship.at)}.` : `Waiting in ${port(ship.at).name}: every other port on her route is closed.`;
   if (ship.status === 'boats') return `Anchored off ${port(ship.at).name}: her boats are working the cargo, about ${Math.max(1, Math.ceil((ship.boatsUntil ?? S.day) - S.day))} more days.`;
   if (ship.status === 'monsoon') return `In ${port(ship.at).name}, waiting for the monsoon to sail ${isBeyond(ship.at) ? 'home' : 'for the Indies'}.`;
   if (ship.status === 'river') return `In ${port(ship.at).name}, too deep for the river as she is loaded: waiting for the water to rise.`;
@@ -718,7 +782,8 @@ export function statusText(S, ship) {
   if (ship.status === 'repair') return `${Wear.YARDS.includes(ship.at) ? `In the yard at ${port(ship.at).name}` : `Careened on the beach at ${port(ship.at).name}`} for ${Math.max(1, Math.ceil((ship.repairUntil ?? S.day) - S.day))} more days.`;
   if (ship.status === 'loading') return `Waiting in ${port(ship.at).name} for prices to recover, on half pay (${Math.max(0, Math.round(S.day - (ship.waitSince ?? S.day)))} of up to ${MAX_WAIT_DAYS} days).`;
   if (ship.status === 'ashore') return `Ashore in ${port(ship.at).name}: Captain ${ship.captain.name} will not sail until you give him orders there in person.`;
-  return r ? `In ${port(ship.at).name}.` : `Idle in ${port(ship.at).name}, awaiting a route.`;
+  if (!r && ship.halted?.why === 'losing') return `Stopped in ${port(ship.at).name}: her route lost money. Give her a new one.`;
+  return r ? `In ${port(ship.at).name}.${skipsText(S, ship)}` : `Idle in ${port(ship.at).name}, awaiting a route.`;
 }
 
 // The owner is in a port on a captain's route: the captain's notes of prices go into the

@@ -9,6 +9,7 @@ import { renderDock } from './dock.js';
 import { $, fmtDate, timeAgo } from './util.js';
 import { renderPanel } from './panels.js';
 import { confirmDialog } from './dialog.js';
+import { playlogOn } from './playlog.js';
 import { hint, toast } from './notices.js';
 
 // ---- Cloud saves ---------------------------------------------------------------
@@ -210,6 +211,9 @@ export function renderCloud(el) {
     ${acct}
     <h3>Save codes</h3>
     ${body}
+    <h3>Play log</h3>
+    <p class="fine">${playlogOn() ? 'On: what you do in this game is sent to the developer for testing and tuning (no personal details).' : 'Off: nothing is sent.'}</p>
+    <div class="row" style="justify-content:flex-start"><button data-menu="playlog">${playlogOn() ? 'Stop sending my play' : 'Share my play for testing'}</button></div>
     <h3>Start again</h3>
     <div class="row" style="justify-content:flex-start"><button data-menu="new">New voyage…</button></div>`;
 }

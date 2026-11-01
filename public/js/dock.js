@@ -17,6 +17,7 @@ import { confirmDialog } from './dialog.js';
 import { fmtDate } from './util.js';
 import { YARDS, BEACH_TO } from './wear.js';
 import { SCENE_MODES, sceneMode, setSceneMode } from './scene.js';
+import { playlogOn, setPlaylog } from './playlog.js';
 
 export const BOOKS = ['port', 'prices', 'ledger', 'rutter', 'contracts', 'fleet'];
 const NEXT_TIME = { 0: 1, 1: 2, 2: 4, 4: 0 }; // round the speeds, then pause
@@ -80,6 +81,7 @@ export function renderMenu(el) {
       ${item('ship', 'Find my ship', 'Centre the chart on her')}
       ${item('cloud', 'Cloud save', 'Play on another device')}
       ${item('scenes', 'Arrival scenes', `${SCENE_MODES.find(([v]) => v === sceneMode())[1]} · tap to change`)}
+      ${item('playlog', `Play log: ${playlogOn() ? 'on' : 'off'}`, playlogOn() ? 'Your play is sent for testing · tap to stop' : 'Nothing is sent · tap to share your play')}
       ${item('new', 'New voyage', 'Start again in Lisbon, 1451')}
       ${item('help', 'How to play')}
       ${item('bug', 'Report a bug')}
@@ -95,6 +97,7 @@ export function menuAction(act) {
   if (act === 'cloud' || act === 'help') { ui.panelMode = act; renderPanel(); return true; }
   if (act === 'bug' || act === 'idea') { openFeedback(act); return true; }
   if (act === 'new') { askNewVoyage(); return true; }
+  if (act === 'playlog') { setPlaylog(!playlogOn()); renderPanel(); return true; }
   if (act === 'scenes') { // every port, then first visits only, then off, and round again
     const i = SCENE_MODES.findIndex(([v]) => v === sceneMode());
     setSceneMode(SCENE_MODES[(i + 1) % SCENE_MODES.length][0]); save(); renderPanel(); return true;

@@ -50,8 +50,13 @@ function post(A, e) {
 
 // The owner's own dealings: known the moment they happen.
 // e: { kind, amount, port?, good?, qty?, text? }
+// Set by the play log (playlog.js) in the game; the simulations leave it empty.
+let hook = null;
+export function setRecordHook(fn) { hook = fn; }
+
 export function record(S, e) {
   if (!e.amount) return;
+  hook?.('money', { entry: e.kind, amount: Math.round(e.amount), good: e.good, qty: e.qty, port: e.port ?? S.ship?.docked ?? null, text: e.text });
   const A = ensureAccounts(S);
   post(A, { who: 'you', port: S.ship.docked || null, ...e, day: S.day, heard: S.day });
 }
@@ -59,6 +64,7 @@ export function record(S, e) {
 // A hired captain's dealing, written up in the port where it happened.
 export function captain(S, ship, e) {
   if (!e.amount) return;
+  hook?.('captain', { ship: ship.name, entry: e.kind, amount: Math.round(e.amount), good: e.good, qty: e.qty, port: ship.at });
   const A = ensureAccounts(S);
   const entry = { who: ship.id, ship: ship.name, port: ship.at, ...e, day: S.day };
   // If the owner is lying in the same port, he sees it done.

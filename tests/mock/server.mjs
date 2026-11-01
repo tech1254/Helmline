@@ -39,6 +39,11 @@ http.createServer(async (req, res) => {
     res.writeHead(200); res.end('{}');
     return;
   }
+  if (req.url === '/__test/playlog') { // tests read the play log
+    res.writeHead(200, { 'content-type': 'application/json' });
+    res.end(JSON.stringify(db.prepare('SELECT * FROM playlog ORDER BY id').all()));
+    return;
+  }
   if (req.url === '/__test/feedback') { // tests read what was stored
     res.writeHead(200, { 'content-type': 'application/json' });
     res.end(JSON.stringify(db.prepare('SELECT * FROM feedback ORDER BY id').all()));

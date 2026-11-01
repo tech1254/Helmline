@@ -9,6 +9,7 @@ import * as Accounts from './accounts.js';
 import * as Pirates from './pirates.js';
 import * as Taxes from './taxes.js';
 import * as Story from './story.js';
+import { playlogBegin } from './playlog.js';
 import * as Ships from './ships.js';
 import * as Ports from './ports.js';
 import { SAVE_KEY, START_PURSE } from './config.js';
@@ -89,6 +90,7 @@ export function applySaveData(d) {
       S.yard.refunds = [];
     }
     syncMarket();
+    playlogBegin('load'); // the play log: this game, as it stands when loaded
     return true;
   } catch (e) {
     return false;
@@ -109,6 +111,7 @@ export function newGame() {
   Accounts.ensureAccounts(S);
   Taxes.ensureTaxes(S);
   Story.ensureStory(S, true);
+  S.runId = null; playlogBegin('new'); // a new game: a new run in the play log
   Ships.ensureFlagship(S);
   Ports.ensurePorts(S);
   syncMarket();

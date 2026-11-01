@@ -10,6 +10,7 @@ import { log } from './pricebook.js';
 import { fmtDate } from './util.js';
 import { tabs, renderPanel } from './panels.js';
 import { save } from './save.js';
+import { plog } from './playlog.js';
 
 // Tests run without the story unless they ask for it (as with the arrival scenes).
 export const storyOn = () => !(navigator.webdriver && !window.helmlineStory) && !S.story?.off;
@@ -30,6 +31,7 @@ function showBeat(beat) {
   const done = (choice) => {
     const input = document.getElementById('story-house')?.value;
     const line = Story.resolve(S, beat, choice, input);
+    plog('story', { beat: beat.id, choice: choice || undefined });
     if (S.story.reveal) {
       const p = PORTS.find((x) => x.id === S.story.reveal);
       if (p) revealAt(p.lon, p.lat, 0.5); // charted, as if found: the crown pays for it in Lisbon

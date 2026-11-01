@@ -25,6 +25,7 @@ import { $, cz, fmtDate } from './util.js';
 import { log } from './pricebook.js';
 import { confirmDialog } from './dialog.js';
 import { addNotice, toast } from './notices.js';
+import { plog } from './playlog.js';
 
 // ---- Simulation -------------------------------------------------------------
 
@@ -198,6 +199,7 @@ export function awayText(sec) {
 }
 
 export function showSummary(sum) {
+  plog('away', { days: Math.round(sum.days * 10) / 10, purse: Math.round(sum.purse), capped: !!sum.capped });
   const strip = (h) => h.replace(/<[^>]+>/g, '');
   const pick = sum.msgs.filter((m) => !/^<b>[^<]+<\/b> at /.test(m.html)).slice(-6); // fleet trades are summed up above
   confirmDialog({
