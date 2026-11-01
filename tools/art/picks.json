@@ -24,8 +24,8 @@
     "calicut": "production-10/calicut-a.png",
     "seville": "production-12/seville-b.png",
     "palos": "production-12/palos-a.png",
-    "sanlucar": "production-12/sanlucar-a.png",
-    "gomera": "production-12/gomera-a.png"
+    "sanlucar": "production-12/sanlucar-b.png",
+    "gomera": "production-12/gomera-b.png"
   },
   "ships": {
     "caravel": {
@@ -87,6 +87,11 @@
       "src": "production-11/ship-galeao-c-cut.png",
       "waterline": 0.09,
       "length": 38
+    },
+    "naovizcaina": {
+      "src": "production-12/ship-naovizcaina-a-cut.png",
+      "waterline": 0.08,
+      "length": 24
     }
   },
   "stocks": {
