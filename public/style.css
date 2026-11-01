@@ -314,7 +314,7 @@ button.mini { font-size: 13px; padding: 3px 8px; justify-self: start; }
   #btn-notices { width: 46px; height: 46px; }
   /* bottom bar */
   #dock {
-    display: grid; grid-template-columns: 0.9fr 0.9fr 1fr 1fr 1fr; position: fixed; left: 0; right: 0; bottom: 0; z-index: 7;
+    display: grid; grid-template-columns: repeat(5, 1fr); position: fixed; left: 0; right: 0; bottom: 0; z-index: 7;
     height: var(--dock); padding: 0 4px env(safe-area-inset-bottom); box-sizing: border-box;
     background: rgba(244, 234, 210, 0.97); border-top: 1px solid var(--ink-2); box-shadow: 0 -2px 10px rgba(46, 36, 27, 0.18);
   }
@@ -604,3 +604,12 @@ li.plan .row { justify-content: flex-end; margin-top: 6px; }
 
 /* the selected choice in a two-way switch: the gold of the top bar's buttons */
 #panel .route-mode button.on, #panel .sail-view button.on, #panel .plan-sort button.on { background: linear-gradient(#d8b25a, #a8823a); color: #1d1209; text-shadow: none; font-weight: 600; }
+/* a port you know: its description folded away */
+.port-about { margin: 2px 0 8px; }
+.port-about summary { cursor: pointer; color: var(--ink-2); font-style: italic; }
+/* the hull figure in the top bar */
+#hud-hull.warn { color: #f0c46a; }
+#hud-hull.danger { color: #ff8a73; }
+/* the Ship button in the bottom bar, lit in a port that can see to her */
+#dock button.lit:not(.on) { color: #f0c46a; box-shadow: inset 0 -3px 0 #d8b25a; }
+#dock button.lit:not(.on) .ico { color: #f0c46a; }

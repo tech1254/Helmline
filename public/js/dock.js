@@ -1,6 +1,7 @@
 // The phone layout's controls, grouped by what you do with them:
-//   bottom bar: time (play or pause, speed), Sail, Books (the trading panels as tabs), More
-//   More: winds, centre on the ship, cloud save, how to play, feedback
+//   bottom bar: time (one button: 1x, 2x, 4x, paused, round again), Sail, Ship (refit and repair; lit
+//   in a port that can do it), Books (the trading panels as tabs), More
+//   More: winds, centre on the ship, saves, a new voyage, how to play, feedback
 // On a wide screen the full top bar is shown instead and this bar is hidden.
 
 import { S, ui } from './state.js';
@@ -14,9 +15,20 @@ import * as Cloud from './cloud.js';
 import { newVoyageSlot } from './cloudsync.js';
 import { confirmDialog } from './dialog.js';
 import { fmtDate } from './util.js';
+import { YARDS, BEACH_TO } from './wear.js';
 
 export const BOOKS = ['port', 'prices', 'ledger', 'rutter', 'contracts', 'fleet'];
-const NEXT_SPEED = { 1: 2, 2: 4, 4: 1 };
+const NEXT_TIME = { 0: 1, 1: 2, 2: 4, 4: 0 }; // round the speeds, then pause
+
+// Where the flagship can be seen to: a shipyard (refits, repairs, new ships), or any port when she
+// needs careening.
+export function serviceHere() {
+  const pid = S.ship.docked;
+  if (!pid) return null;
+  if (YARDS.includes(pid)) return 'yard';
+  if ((S.hull ?? 100) < BEACH_TO) return 'beach';
+  return null;
+}
 
 export function isBook(mode) {
   return BOOKS.includes(mode);
@@ -38,11 +50,16 @@ function toggle(mode) {
 
 export function renderDock() {
   const paused = ui.speed === 0;
-  const play = $('dock-play');
-  play.innerHTML = `<span class="ico">${paused ? '▶' : '❚❚'}</span><span>${paused ? 'Play' : 'Pause'}</span>`;
-  play.setAttribute('aria-label', paused ? 'Play' : 'Pause');
-  play.classList.toggle('on', paused);
-  $('dock-speed').innerHTML = `<span class="ico">${ui.lastSpeed || 1}×</span><span>Speed</span>`;
+  const time = $('dock-time');
+  const next = NEXT_TIME[ui.speed] ?? 1;
+  time.innerHTML = `<span class="ico">${paused ? '❚❚' : `${ui.speed}×`}</span><span>${paused ? 'Paused' : 'Speed'}</span>`;
+  time.setAttribute('aria-label', `${paused ? 'Paused' : `Speed ${ui.speed}×`}: tap for ${next ? `${next}×` : 'pause'}`);
+  time.classList.toggle('on', paused);
+  const svc = serviceHere();
+  const ship = $('dock-ship');
+  ship.classList.toggle('lit', !!svc);
+  ship.classList.toggle('on', !!ui.screen);
+  ship.setAttribute('aria-label', svc === 'yard' ? 'Your ship: the shipyard is here' : svc === 'beach' ? 'Your ship: she can be careened here' : 'Your ship');
   $('dock-sail').classList.toggle('on', ui.panelMode === 'sail');
   $('dock-books').classList.toggle('on', isBook(ui.panelMode));
   $('dock-more').classList.toggle('on', ui.panelMode === 'menu');
@@ -60,7 +77,6 @@ export function renderMenu(el) {
     <div class="menu-grid">
       ${item('wind', ui.showWind ? 'Hide the winds' : 'Show the winds', 'The arrows on the chart')}
       ${item('ship', 'Find my ship', 'Centre the chart on her')}
-      ${item('register', 'Ship register', 'Your ship and the ships ahead')}
       ${item('cloud', 'Cloud save', 'Play on another device')}
       ${item('new', 'New voyage', 'Start again in Lisbon, 1451')}
       ${item('help', 'How to play')}
@@ -106,8 +122,11 @@ export function askNewVoyage() {
 }
 
 export function initDock() {
-  $('dock-play').addEventListener('click', () => setSpeed(ui.speed === 0 ? (ui.lastSpeed || 1) : 0));
-  $('dock-speed').addEventListener('click', () => setSpeed(NEXT_SPEED[ui.lastSpeed || 1] || 1));
+  $('dock-time').addEventListener('click', () => setSpeed(NEXT_TIME[ui.speed] ?? 1));
+  $('dock-ship').addEventListener('click', () => {
+    if (S.ship.docked && (S.hull ?? 100) < 90 && serviceHere()) { ui.panelMode = 'port'; renderPanel(); $('panel').scrollTop = 0; return; } // repairs: the hull box in the market
+    ui.panelMode = null; renderPanel(); openShips(serviceHere() === 'yard' ? 'yard' : 'register');
+  });
   $('dock-sail').addEventListener('click', () => toggle('sail'));
   $('dock-books').addEventListener('click', openBooks);
   $('dock-more').addEventListener('click', () => toggle('menu'));

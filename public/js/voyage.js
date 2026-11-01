@@ -499,6 +499,7 @@ export function dock(portId) {
 }
 
 export function undock() {
+  if (S.ship.docked) { S.portsKnown = S.portsKnown || {}; S.portsKnown[S.ship.docked] = true; } // described in full only the first time
   S.ship.lastPort = S.ship.docked;
   S.ship.docked = null;
   S.ship.offshore = false;

@@ -22,7 +22,7 @@ import { report, shipWind, spoil, syncMarket, loadOf } from './sim.js';
 import * as Ports from './ports.js';
 import { estimateVoyage, observe, planCourse } from './voyage.js';
 import { drag } from './input.js';
-import { $, cz, fmtDate, held } from './util.js';
+import { $, cz, fmtDate, fmtDateShort, held } from './util.js';
 import { renderLedger } from './ledgerview.js';
 import { debtBox, renderRutter, storyOn } from './storyview.js';
 import { timeScale } from './cloud.js';
@@ -30,7 +30,7 @@ import { renderPlanner } from './voyageplan.js';
 import { renderPrices } from './pricebook.js';
 import { placeToasts, renderNoticeBadge, renderNotices } from './notices.js';
 import { renderFeedback } from './feedback.js';
-import { isBook, renderDock, renderMenu } from './dock.js';
+import { isBook, renderDock, renderMenu, serviceHere } from './dock.js';
 import { YARDS } from './shipyard.js';
 
 // ---- HUD & panels -----------------------------------------------------------
@@ -53,11 +53,16 @@ export function togglePanel(mode) {
 }
 
 export function renderHud() {
-  $('hud-date').textContent = fmtDate(S.day);
+  $('hud-date').textContent = window.matchMedia('(max-width: 700px)').matches ? fmtDateShort(S.day) : fmtDate(S.day);
   const purse = Math.floor(S.purse);
   $('hud-purse').textContent = `${purse.toLocaleString()} cz`;
   $('hud-purse').classList.toggle('debt', purse < 0);
   $('hud-hold').textContent = `${held()} / ${Ships.flagStats(S).hold}`;
+  const hull = Math.round(S.hull ?? 100);
+  $('hud-hull').textContent = `${hull}%`;
+  $('hud-hull').classList.toggle('warn', hull < Wear.LEAKS_BELOW + 10);
+  $('hud-hull').classList.toggle('danger', hull < Wear.LEAKS_BELOW);
+  $('dock-ship').classList.toggle('lit', !!serviceHere()); // the bottom bar's Ship button, lit where she can be seen to
   const sh = S.ship;
   let status;
   if (sh.docked) {
@@ -134,6 +139,13 @@ export function renderPanel() {
   renderDock();
 }
 
+// A port is described in full on your first stay; after that, folded under "About" (unless she lies
+// offshore, which you need to know). Marked when you leave (voyage.js undock).
+export function portKnown(pid) {
+  if (!S.portsKnown) S.portsKnown = { ...(S.called || {}) }; // a save from before: ports you have arrived at
+  return !!S.portsKnown[pid];
+}
+
 // The port's size and the water at its berth, against what the flagship draws.
 function harbourLine(pid) {
   const p = PORTS.find((x) => x.id === pid);
@@ -199,8 +211,9 @@ export function renderPort(el) {
   el.innerHTML = `
     ${tabs('port')}
     <header><h2>${p.name}</h2><button class="close" data-close aria-label="Close">×</button></header>
-    <p class="blurb">${p.blurb}</p>
-    ${harbourLine(pid)}
+    ${portKnown(pid)
+      ? `<details class="port-about"><summary>About ${p.name}</summary><p class="blurb">${p.blurb}</p>${S.ship.offshore ? '' : harbourLine(pid)}</details>${S.ship.offshore ? harbourLine(pid) : ''}`
+      : `<p class="blurb">${p.blurb}</p>${harbourLine(pid)}`}
     ${pid === 'lisbon' ? debtBox() : ''}
     ${hullBanner(pid)}
     ${investLine(pid)}

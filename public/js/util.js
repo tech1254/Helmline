@@ -6,6 +6,11 @@ import { START_DATE } from './config.js';
 import { S } from './state.js';
 
 export const $ = (id) => document.getElementById(id);
+export function fmtDateShort(day) {
+  const d = new Date(START_DATE.getTime() + Math.floor(day) * 86400000);
+  return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' });
+}
+
 export function fmtDate(day) {
   const d = new Date(START_DATE.getTime() + Math.floor(day) * 86400000);
   return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' });

@@ -21,6 +21,7 @@
       <div><small>Date</small><span id="hud-date"></span></div>
       <div class="big"><small>Purse</small><span id="hud-purse"></span></div>
       <div class="big"><small>Hold</small><span id="hud-hold"></span></div>
+      <div class="big"><small>Hull</small><span id="hud-hull"></span></div>
     </div>
     <div class="controls">
       <div class="seg" role="group" aria-label="Time">
@@ -70,10 +71,12 @@
 
   <div id="status" aria-live="polite"></div>
   <nav id="dock" aria-label="Game controls">
-    <button id="dock-play" aria-label="Pause"><span class="ico">❚❚</span><span>Pause</span></button>
-    <button id="dock-speed" aria-label="Speed"><span class="ico">1×</span><span>Speed</span></button>
+    <button id="dock-time" aria-label="Time: tap to change"><span class="ico">1×</span><span>Speed</span></button>
     <button id="dock-sail" aria-label="Sail to a port">
       <svg class="ico" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"><path d="M12 3v14M12 4c3 3 5 7 5 12h-5M11 6c-2.5 3-4 6-4 10h4"></path><path d="M4 19h16l-2 2.5H6z"></path></svg><span>Sail</span>
+    </button>
+    <button id="dock-ship" aria-label="Your ship: refit and repair">
+      <svg class="ico" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"><path d="M3 14h18l-2.5 5h-13z"></path><path d="M12 14V4M12 5l6 7h-6"></path><path d="M14.5 2.5l3 3M16 4l-4.5 4.5"></path></svg><span>Ship</span>
     </button>
     <button id="dock-books" aria-label="Market, price book, ledger, contracts and fleet">
       <svg class="ico" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M4 5.5C6.5 4.5 9.5 4.5 12 6c2.5-1.5 5.5-1.5 8-.5V19c-2.5-1-5.5-1-8 .5-2.5-1.5-5.5-1.5-8-.5z"></path><path d="M12 6v13.5"></path></svg><span>Books</span>
