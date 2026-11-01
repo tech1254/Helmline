@@ -30,6 +30,12 @@ const SHAPES = {
     masts: [{ at: 0.62, h: 166, rig: 'lateen', s: 1 }, { at: 0.4, h: 140, rig: 'lateen', s: 0.8 }, { at: 0.19, h: 108, rig: 'lateen', s: 0.58 }], tumble: 1 },
   redonda: { L: 235, free: 22, stern: 22, bow: 11, keel: 19, aft: [0, 0.27, 15], fore: null, masts: null, tumble: 1 },
   nau: { L: 300, free: 30, stern: 26, bow: 18, keel: 24, aft: [0, 0.3, 30], fore: [0.8, 1.0, 24], masts: null, tumble: 1.2 },
+  // a Flemish hulk: round-bowed and broad, a high square stern, two square sails and a mizzen
+  urca: { L: 250, free: 28, stern: 26, bow: 20, keel: 26, aft: [0, 0.26, 22], fore: [0.86, 1.0, 12],
+    masts: [{ at: 0.74, h: 112, rig: 'square', w: 84 }, { at: 0.5, h: 148, rig: 'square', w: 112 }, { at: 0.2, h: 98, rig: 'lateen', s: 0.55 }], tumble: 1.35 },
+  // the caravela de armada: a square foresail and three lateens on a long, low hull
+  armedcaravel: { L: 255, free: 20, stern: 20, bow: 10, keel: 18, aft: [0, 0.25, 14], fore: null,
+    masts: [{ at: 0.76, h: 124, rig: 'square', w: 78 }, { at: 0.55, h: 160, rig: 'lateen', s: 1 }, { at: 0.35, h: 128, rig: 'lateen', s: 0.75 }, { at: 0.15, h: 100, rig: 'lateen', s: 0.55 }], tumble: 1 },
   naudaindia: { L: 330, free: 34, stern: 30, bow: 20, keel: 26, aft: [0, 0.3, 34], fore: [0.78, 1.0, 28], masts: null, tumble: 1.3 },
   galeao: { L: 330, free: 26, stern: 30, bow: 12, keel: 22, aft: [0, 0.28, 30], fore: [0.82, 0.96, 14],
     masts: [{ at: 0.78, h: 128, rig: 'square', w: 86 }, { at: 0.55, h: 166, rig: 'square', w: 118, top: true }, { at: 0.3, h: 118, rig: 'lateen', s: 0.62 }, { at: 0.12, h: 96, rig: 'lateen', s: 0.5 }], tumble: 1.1 },
@@ -157,13 +163,13 @@ export function shipSVG(ship, opts = {}) {
     // rail
     g.push(`<path d="M ${f1(X(sh.aft ? sh.aft[1] : 0))} ${f1(deckY(sh.aft ? sh.aft[1] : 0) - 5)} C ${f1(X(0.45))} ${f1(deckY(0.45) - 5)}, ${f1(X(0.7))} ${f1(deckY(0.7) - 5)}, ${f1(X(sh.fore ? sh.fore[0] : 1))} ${f1(deckY(sh.fore ? sh.fore[0] : 1) - 5)}" fill="none" stroke="${ink}" stroke-width="${sw * 0.7}"/>`);
     // guns
-    if (fit.guns === 'bombards') {
+    if (fit.guns === 'bombards' || fit.guns === 'gunports' || fit.guns === 'culverins') {
       for (let i = 0; i < 6; i++) {
         const t = 0.3 + i * 0.08;
         g.push(`<rect x="${f1(X(t) - 4)}" y="${f1(deckY(t) + 9)}" width="8" height="7" fill="#1d140c" stroke="${ink}" stroke-width="0.6" data-part="gun"/><rect x="${f1(X(t) - 1.5)}" y="${f1(deckY(t) + 11)}" width="5" height="3" fill="#555"/>`);
       }
     }
-    if (fit.guns === 'bercos' || fit.guns === 'bombards') {
+    if (['bercos', 'falcons', 'bombards', 'culverins'].includes(fit.guns)) {
       for (let i = 0; i < 4; i++) {
         const t = 0.32 + i * 0.12;
         const x = X(t), y = deckY(t) - 6;
@@ -293,7 +299,7 @@ export function shipSVG(ship, opts = {}) {
 }
 
 function tightBox(hull, x0, x1) {
-  const top = { barca: 70, caravel: 22, barinel: 52, nau: 8, naudaindia: 0, galeao: 4 }[hull] ?? 20;
+  const top = { barca: 70, caravel: 22, barinel: 52, nau: 8, naudaindia: 0, galeao: 4, urca: 14, armedcaravel: 14 }[hull] ?? 20;
   const left = Math.max(0, x0 - 40), right = Math.min(BOX_W, x1 + 70);
   return `${f1(left)} ${top} ${f1(right - left)} ${BOX_H - top - 20}`;
 }

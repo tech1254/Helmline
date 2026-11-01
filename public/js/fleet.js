@@ -16,7 +16,7 @@ import { START_DATE } from './config.js';
 export const SHIP_COST = Ships.HULLS.caravel.price;
 // Upkeep is the hull's hiredUpkeep (a caravel 1 cz a day, tuned 26 Oct 2026 with tests/sim), on top of the captain's wage.
 export const SHIP_UPKEEP = Ships.HULLS.caravel.hiredUpkeep;
-const hullStats = (ship) => Ships.stats({ hull: ship.hull || 'caravel' });
+const hullStats = (ship) => Ships.stats({ hull: ship.hull || 'caravel', fit: ship.fit });
 const RESERVE = 150; // a captain never spends the last of the purse
 const MARGIN = 0.8; // he pays at most 80% of what he expects to sell for
 // Loyalty: a captain left alone too long starts to stray.
@@ -101,7 +101,8 @@ export function loyaltyText(l) {
 }
 
 export function dailyCost(ship) {
-  return hullStats(ship).hiredUpkeep + ship.captain.wage;
+  const st = hullStats(ship);
+  return st.hiredUpkeep + st.fitWage + ship.captain.wage;
 }
 
 // How full a hired ship's hold is, 0 to 1 (her draft follows it).
@@ -248,6 +249,10 @@ function saleStop(route, from, g) {
   return null;
 }
 
+// A better trader reckons closer to the bone: a green man pays at most four fifths of what he
+// expects to sell for; a master, nearly nine tenths, so he fills more of the hold at a profit.
+export const traderMargin = (ship) => MARGIN + 0.025 * Math.max(0, Captains.stars(ship.captain?.trade || 0) - 2);
+
 // Price a cargo without buying it: units bought one at a time while each should still sell
 // at a profit where it is next sold. Every unit sold there lowers the price for the next by
 // that market's depth, so the captain reckons each unit against the price it will really
@@ -377,6 +382,8 @@ function visit(S, market, ship, fresh = false) {
   if (r) roundOf(ship).visits++;
   const fix = repairIfNeeded(S, ship);
   if (fix) { msgs.push(fix); return msgs; }
+  const work = yardWork(S, market, ship);
+  if (work.length) { msgs.push(...work); if (ship.status === 'repair') return msgs; }
   const school = startTraining(S, ship);
   if (school) { msgs.push(school); return msgs; }
   if (r && (ship.captain.loyalty ?? 100) < LOYALTY_DESERT) {
@@ -413,7 +420,7 @@ function buyAndSail(S, market, ship, parts = [], fresh = false) {
       for (const cand of GOODS.filter((x) => market.sells(here, x.id)).map((x) => x.id)) {
         const salePort = saleStop(r, r.next, cand);
         if (!salePort || salePort === here) continue;
-        const q = quoteLoad(S, market, here, salePort, cand, units);
+        const q = quoteLoad(S, market, here, salePort, cand, units, traderMargin(ship));
         if (q.qty && (!best || q.profit > best.profit)) best = { good: cand, ...q };
       }
       if (!best) { bestFailed = true; continue; }
@@ -437,6 +444,10 @@ function buyAndSail(S, market, ship, parts = [], fresh = false) {
       parts.push(`loaded ${qty} ${good(g).unit} of ${good(g).name.toLowerCase()} for ${cost.toLocaleString()} cz`);
     }
   }
+  // a hold filled to the hatches, run after run: he will ask for a bigger ship
+  if (buys.length) ship.fullRuns = holdUsed(ship) >= holdSize(ship) ? (ship.fullRuns || 0) + 1 : 0;
+  const ask = askForBigger(S, ship);
+  if (ask) msgs.push(ask);
   if (bestFailed && !boughtAny && holdUsed(ship) === 0) {
     if (ship.waitSince == null) ship.waitSince = S.day;
     if (S.day - ship.waitSince < MAX_WAIT_DAYS) {
@@ -554,7 +565,7 @@ function spoilOnArrival(ship, days, lat) {
   for (const [g, lot] of Object.entries(holdOf(ship))) {
     const gd = good(g);
     if (!gd.spoil || lot.qty <= 0) continue;
-    const lost = Math.min(lot.qty, Math.floor(lot.qty * (1 - Math.exp(-gd.spoil * heat * days)) + Math.random()));
+    const lost = Math.min(lot.qty, Math.floor(lot.qty * (1 - Math.exp(-gd.spoil * heat * days * hullStats(ship).spoil)) + Math.random()));
     if (lost <= 0) continue;
     lot.qty -= lost; // what was paid stays paid
     if (!lot.qty) delete holdOf(ship)[g];
@@ -648,12 +659,13 @@ function endTraining(S, ship) {
 // leaking hull spoils cargo; a hull in danger can founder with all she carries.
 function wearOnPassage(S, ship, leg, lat) {
   const before = ship.hullPct ?? 100;
-  if (lat < Wear.TROPIC_LAT) ship.tropic = (ship.tropic || 0) + leg.days; // shipworm waters
+  const fx = hullStats(ship);
+  if (lat < Wear.TROPIC_LAT) ship.tropic = (ship.tropic || 0) + leg.days * fx.tropicWear; // shipworm waters (less under lead)
   if (before < Wear.LEAKS_BELOW) ship.strain = (ship.strain || 0) + leg.days; // sailed leaking
   const years = Ships.serviceYears(ship, S.day);
-  const storm = Wear.storms(leg.days);
-  ship.hullPct = Math.max(5, before - Wear.wearPerDay(lat, ship.hull, years) * leg.days - storm);
-  const share = Wear.leakShare(ship.hullPct);
+  const storm = Wear.storms(leg.days) * fx.peril;
+  ship.hullPct = Math.max(5, before - Wear.wearPerDay(lat, ship.hull, years, fx.tropicWear) * leg.days - storm);
+  const share = Wear.leakShare(ship.hullPct, fx.leak);
   if (share) for (const [g, lot] of Object.entries(holdOf(ship))) { lot.qty -= Math.round(lot.qty * share); if (lot.qty <= 0) delete holdOf(ship)[g]; }
   if (ship.hullPct < Wear.DANGER_BELOW && Math.random() < 0.1) {
     ship.sunk = true;
@@ -695,6 +707,72 @@ function repairIfNeeded(S, ship) {
   return { html: `<b>${ship.name}</b> ${yard ? `goes into the yard at ${port(ship.at).name}` : `is careened on the beach at ${port(ship.at).name}`} for ${q.days} days: ${q.cost.toLocaleString()} cz.`, kind: 'port', level: 'routine', log: `${ship.name}: repairs at ${port(ship.at).name}, ${q.days} days, ${q.cost} cz.` };
 }
 
+// ---- Work ordered for her at a yard ------------------------------------------------------------
+// The owner orders a refit (any yard: Lisbon, Lagos, Funchal) or a new hull (Lisbon), from
+// wherever he is; it is done when she next calls there, if the purse runs to it then.
+export function orderRefit(S, ship, fit) {
+  const q = Ships.quoteRefit(S, ship.hull || 'caravel', ship.fit, fit);
+  ship.orders = ship.orders || {};
+  ship.orders.fit = q.lines.length ? Object.fromEntries(q.lines.map((l) => [l.g.id, l.c.id])) : null;
+  return q;
+}
+export function orderHull(S, ship, hullId) {
+  ship.orders = ship.orders || {};
+  ship.orders.hull = hullId || null;
+}
+export function cancelOrders(ship) { ship.orders = null; }
+export const hasOrders = (ship) => !!(ship.orders?.fit || ship.orders?.hull);
+
+function yardWork(S, market, ship) {
+  const o = ship.orders;
+  const out = [];
+  if (!o || !Wear.YARDS.includes(ship.at)) return out;
+  if (o.hull && ship.at === 'lisbon') {
+    const q = replaceQuote(S, ship, o.hull);
+    if (S.purse - q.net >= RESERVE) {
+      doReplace(S, market, ship, o.hull, q);
+      o.hull = null;
+      out.push({ html: `<b>${ship.name}</b> is a new ${Ships.HULLS[ship.hull].name.toLowerCase()}, built at the Lisbon yard as you ordered: ${q.net.toLocaleString()} cz with the old hull taken in part exchange.`, kind: 'discover', log: `New hull for the ${ship.name}: ${q.net} cz.` });
+    } else if (!o.hullWarned) {
+      o.hullWarned = true;
+      out.push({ html: `<b>${ship.name}</b> is in Lisbon, but the new ${Ships.HULLS[o.hull].name.toLowerCase()} you ordered for her costs ${q.net.toLocaleString()} cz and the purse will not run to it. She sails on; the order stands for her next call.`, kind: 'alert', level: 'alert' });
+    }
+  }
+  if (o.fit) {
+    const want = { ...ship.fit, ...o.fit };
+    const q = Ships.quoteRefit(S, ship.hull || 'caravel', ship.fit, want);
+    if (!q.lines.length) o.fit = null;
+    else if (S.purse - q.cost >= RESERVE) {
+      S.purse -= q.cost;
+      Accounts.record(S, { kind: 'ships', amount: -q.cost, port: ship.at, text: `Refit of the ${ship.name}: ${q.lines.map((l) => Ships.lc(l.c.name)).join(', ')}` });
+      ship.fit = Ships.normalFit(ship.hull || 'caravel', want);
+      o.fit = null;
+      ship.status = 'repair';
+      ship.repairUntil = S.day + Math.max(1, q.days);
+      out.push({ html: `<b>${ship.name}</b> goes into the yard at ${port(ship.at).name} for the refit you ordered (${q.lines.map((l) => Ships.lc(l.c.name)).join(', ')}): ${q.cost.toLocaleString()} cz, ${Math.max(1, q.days)} days.`, kind: 'port', log: `${ship.name}: refit at ${port(ship.at).name}, ${q.cost} cz.` });
+    } else if (!o.fitWarned) {
+      o.fitWarned = true;
+      out.push({ html: `<b>${ship.name}</b> is at the ${port(ship.at).name} yard, but the refit you ordered costs ${q.cost.toLocaleString()} cz and the purse will not run to it. The order stands for her next call at a yard.`, kind: 'alert', level: 'alert' });
+    }
+  }
+  if (!o.fit && !o.hull) ship.orders = null;
+  return out;
+}
+
+// A captain whose hold is full every time asks for a bigger ship, once in a while.
+const ASK_EVERY = 730;
+function askForBigger(S, ship) {
+  if ((ship.fullRuns || 0) < 4 || (ship.askedBigger != null && S.day - ship.askedBigger < ASK_EVERY) || ship.orders?.hull) return null;
+  const now = Ships.HULLS[ship.hull || 'caravel'];
+  const ports = ship.route ? ship.route.stops.map((st) => st.port) : [];
+  const bigger = Ships.HULL_ORDER.map((h) => Ships.HULLS[h]).filter((H) => H.hold > now.hold * 1.3 && Ships.availability(S, H).ok === 'yes' &&
+    !(H.draft[1] > 3 && ports.some((pid) => Ports.depthOf(S, pid) < H.draft[1]))).sort((a, b) => a.price - b.price)[0];
+  if (!bigger) return null;
+  ship.askedBigger = S.day;
+  ship.fullRuns = 0;
+  return { html: `Captain ${ship.captain.name} of the <b>${ship.name}</b> writes: her hold is full every run, and the markets would take more. A ${bigger.name.toLowerCase()} would carry ${bigger.hold} to her ${now.hold}. You can order one for her in Fleet; the Lisbon yard builds it when she next calls there.`, kind: 'port', log: `Captain ${ship.captain.name} asks for a bigger ship.` };
+}
+
 // ---- Age ------------------------------------------------------------------------------------
 
 export const yearsOf = (S, ship) => Ships.serviceYears(ship, S.day);
@@ -714,9 +792,13 @@ export function replaceHull(S, market, ship, hullId) {
   if (ship.at !== 'lisbon' || ship.status === 'sailing' || ship.status === 'repair') return null;
   const q = replaceQuote(S, ship, hullId);
   if (S.purse < q.net) return null;
+  return doReplace(S, market, ship, hullId, q);
+}
+function doReplace(S, market, ship, hullId, q) {
   S.purse -= q.net;
   Accounts.record(S, { kind: 'ships', amount: -q.net, text: `A new ${Ships.HULLS[hullId].name.toLowerCase()} for the ${ship.name}, the old hull taken in part exchange` });
   ship.hull = hullId;
+  ship.fit = Ships.normalFit(hullId, Object.fromEntries(Ships.GROUPS.filter((g) => g.cosmetic).map((g) => [g.id, ship.fit?.[g.id]]))); // a new hull, in the yard's standard fit
   ship.built = S.day;
   ship.tropic = 0;
   ship.strain = 0;

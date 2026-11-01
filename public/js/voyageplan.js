@@ -14,6 +14,7 @@ import { S, market } from './state.js';
 import { passage } from './pricebook.js';
 import { ageText, fmtDate } from './util.js';
 import * as Contracts from './contracts.js';
+import * as Fleet from './fleet.js';
 
 const KEEP_MARGIN = 1.03; // load a unit only if it should fetch at least this much more than it costs
 
@@ -147,4 +148,86 @@ export function renderPlanner(sortBy = 'value') {
       <div class="seg" role="radiogroup" aria-label="Order by"><button role="radio" aria-checked="${sortBy !== 'near'}" class="${sortBy !== 'near' ? 'on' : ''}" data-plan-sort="value">Best value</button><button role="radio" aria-checked="${sortBy === 'near'}" class="${sortBy === 'near' ? 'on' : ''}" data-plan-sort="near">Nearest</button></div></div>
     <ul class="plans">${rows || '<li class="muted">No other ports charted yet.</li>'}</ul>
     <p class="foot">Estimates from the prices you have seen and today's winds, after wages and spoilage. Prices fall as you sell and rise as you buy; old prices may have moved.</p>`;
+}
+
+// ---- A hired captain's route, reckoned before he sails it -----------------------------------
+// From the prices you have seen: what each leg should carry and fetch, the wages, and the round.
+// As the captain trades: he buys a unit only while it should sell for a fifth more than it costs
+// where it is next sold, prices moving with each unit; perishable goods rot on the way.
+const CAPTAIN_MARGIN = 0.8;
+const portName = (id) => PORTS.find((p) => p.id === id)?.name || id;
+
+function carry(g, from, to, units, run, st, margin = CAPTAIN_MARGIN) {
+  const a = S.seen[from]?.prices[g.id], b = S.seen[to]?.prices[g.id];
+  if (!a?.buy || !b) return null;
+  const kb = market.k(from, g.id), ks = market.k(to, g.id), keep = kept(g, st, run);
+  let n = 0, cost = 0, sale = 0;
+  while (n < units) {
+    const pb = a.buy * Math.exp(0.5 * kb * n), ps = b.sell * Math.exp(-ks * n) * keep;
+    if (pb > ps * margin) break;
+    n++; cost += pb; sale += ps;
+  }
+  return n ? { g, n, cost: Math.round(cost), sale: Math.round(sale), profit: Math.round(sale - cost) } : null;
+}
+
+export function routeEstimate(ship, stops) {
+  if (!stops || stops.length < 2) return null;
+  const st = Ships.stats({ hull: ship.hull || 'caravel', fit: ship.fit });
+  const perDay = Fleet.dailyCost(ship);
+  const simple = Fleet.isSimpleRoute(stops);
+  const legs = [], notes = [];
+  let days = 0, profit = 0, wages = 0;
+  const unseen = stops.filter((x) => !S.seen[x.port]).map((x) => portName(x.port));
+  for (let i = 0; i < stops.length; i++) {
+    const from = stops[i].port, to = stops[(i + 1) % stops.length].port;
+    const A = PORTS.find((p) => p.id === from), B = PORTS.find((p) => p.id === to);
+    const run = passage(A, B, S.day) || { days: 10, hot: 0 };
+    const w = Math.round(run.days * perDay);
+    days += run.days; wages += w;
+    let best = null;
+    if (S.seen[from] && S.seen[to]) {
+      const buys = simple ? [{ good: 'best', pct: 100 }] : stops[i].orders.filter((o) => o.act === 'buy');
+      // where each good bought here is next sold
+      const loads = [];
+      let room = st.hold;
+      for (const o of buys) {
+        const units = Math.floor(st.hold * (o.pct || 100) / 100);
+        const cands = o.good === 'best' ? GOODS : GOODS.filter((g) => g.id === o.good);
+        let pick = null;
+        for (const g of cands) {
+          let sellAt = to;
+          if (!simple) {
+            for (let k = 1; k <= stops.length; k++) {
+              const x = stops[(i + k) % stops.length];
+              if (x.orders.some((q) => q.act === 'sell' && (q.good === 'all' || q.good === g.id))) { sellAt = x.port; break; }
+            }
+          }
+          const c = carry(g, from, sellAt, Math.min(units, room), run, st, Fleet.traderMargin(ship));
+          if (c && (!pick || c.profit > pick.profit)) pick = c;
+        }
+        if (pick) { loads.push(pick); room -= pick.n; }
+      }
+      best = loads.length ? loads : null;
+    }
+    const gain = best ? best.reduce((t, x) => t + x.profit, 0) : 0;
+    profit += gain;
+    legs.push({ from, to, days: run.days, wages: w, loads: best, gain });
+    if (S.seen[from] && S.seen[to] && !best) notes.push(`Nothing bought at ${portName(from)} pays at ${portName(to)}: she sails that leg empty.`);
+  }
+  return { legs, days, wages, profit, net: profit - wages, perYear: days > 0 ? Math.round((profit - wages) * 365 / days) : 0, unseen, notes, perDay };
+}
+
+export function renderRouteEstimate(ship, stops) {
+  const e = routeEstimate(ship, stops);
+  if (!e) return '';
+  const rows = e.legs.map((l) => `<li>${portName(l.from)} → ${portName(l.to)}, about ${Math.max(1, Math.round(l.days))} days: ${l.loads ? l.loads.map((x) => `${x.n} ${x.g.unit} of ${x.g.name.toLowerCase()}, about ${x.profit >= 0 ? '+' : ''}${x.profit.toLocaleString()}`).join('; ') : '<span class="muted">empty</span>'}</li>`).join('');
+  const verdict = e.unseen.length ? '' : e.net >= 0
+    ? `<p>About <b class="up">+${e.net.toLocaleString()} cz a round</b> after ${e.wages.toLocaleString()} cz in wages, a round of about ${Math.round(e.days)} days: roughly ${e.perYear >= 0 ? '+' : ''}${e.perYear.toLocaleString()} cz a year.</p>`
+    : `<p class="warn"><b>This route should lose about ${(-e.net).toLocaleString()} cz a round</b> (${e.wages.toLocaleString()} cz in wages against ${e.profit.toLocaleString()} from cargo). Captains stop a route that loses two rounds running.</p>`;
+  return `<div class="route-est"><h4>What this route should make</h4>
+    ${verdict}
+    <ul class="fine">${rows}</ul>
+    ${e.notes.map((n) => `<p class="warn fine">${n}</p>`).join('')}
+    ${e.unseen.length ? `<p class="fine muted">No prices seen at ${e.unseen.join(', ')} yet: so this route cannot be reckoned yet. Visit, or let a captain report from there.</p>` : ''}
+    <p class="fine muted">From the prices you have seen, before the captain's cut; prices fall as he sells and rise as he buys.</p></div>`;
 }

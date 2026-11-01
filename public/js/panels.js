@@ -26,12 +26,13 @@ import { $, cz, fmtDate, fmtDateShort, held } from './util.js';
 import { renderLedger } from './ledgerview.js';
 import { debtBox, renderRutter, storyOn } from './storyview.js';
 import { timeScale } from './cloud.js';
-import { renderPlanner } from './voyageplan.js';
+import { renderPlanner, renderRouteEstimate } from './voyageplan.js';
 import { renderPrices } from './pricebook.js';
 import { placeToasts, renderNoticeBadge, renderNotices } from './notices.js';
 import { renderFeedback } from './feedback.js';
 import { isBook, renderDock, renderMenu, serviceHere } from './dock.js';
 import { YARDS } from './shipyard.js';
+import { moneyBox } from './lendingview.js';
 
 // ---- HUD & panels -----------------------------------------------------------
 
@@ -55,8 +56,9 @@ export function togglePanel(mode) {
 export function renderHud() {
   $('hud-date').textContent = window.matchMedia('(max-width: 700px)').matches ? fmtDateShort(S.day) : fmtDate(S.day);
   const purse = Math.floor(S.purse);
-  $('hud-purse').textContent = `${purse.toLocaleString()} cz`;
-  $('hud-purse').classList.toggle('debt', purse < 0);
+  const owed = Math.ceil(S.crewOwed || 0);
+  $('hud-purse').textContent = owed ? `${purse.toLocaleString()} cz · crew owed ${owed}` : `${purse.toLocaleString()} cz`;
+  $('hud-purse').classList.toggle('debt', purse < 0 || owed > 0);
   $('hud-hold').textContent = `${held()} / ${Ships.flagStats(S).hold}`;
   const hull = Math.round(S.hull ?? 100);
   $('hud-hull').textContent = `${hull}%`;
@@ -231,6 +233,7 @@ export function renderPort(el) {
       ? `<details class="port-about"><summary>About ${p.name}</summary><p class="blurb">${p.blurb}</p>${S.ship.offshore ? '' : harbourLine(pid)}</details>${S.ship.offshore ? harbourLine(pid) : ''}`
       : `<p class="blurb">${p.blurb}</p>${harbourLine(pid)}`}
     ${pid === 'lisbon' ? debtBox() : ''}
+    ${moneyBox()}
     ${hullBanner(pid)}
     ${shut ? `<p class="banner warn"><b>Closed to trade:</b> ${Events.template(shut).title.toLowerCase()}. Expected to reopen around ${fmtDate(shut.end)}.</p>` : ''}
     <table class="market">
@@ -468,6 +471,7 @@ export function routeEditor(ship) {
       ${stops}
       <div class="stop-arrow" aria-hidden="true">↺ back to stop 1</div>
       <div class="row" style="justify-content:flex-start">${d.stops.length < Fleet.MAX_STOPS ? '<button class="mini" data-draft="add-stop">+ Add a port</button>' : ''}</div>
+      ${renderRouteEstimate(ship, d.stops)}
     </div>`;
   }
   const stops = d.stops.map((st, i) => `
@@ -493,6 +497,7 @@ export function routeEditor(ship) {
       ${stops}
       <div class="stop-arrow" aria-hidden="true">↺ back to stop 1</div>
       <div class="row" style="justify-content:flex-start">${d.stops.length < Fleet.MAX_STOPS ? '<button class="mini" data-draft="add-stop">+ Add stop</button>' : ''}<button class="mini" data-draft="simple">Reset to two ports</button></div>
+      ${renderRouteEstimate(ship, d.stops)}
     </div>`;
 }
 
@@ -519,6 +524,16 @@ function captainBox(ship) {
   return out.join('');
 }
 
+// Work ordered for a hired ship at the yards, until it is done.
+function ordersLine(ship) {
+  const o = ship.orders;
+  if (!o?.fit && !o?.hull) return '';
+  const bits = [];
+  if (o.fit) bits.push(`a refit (${Object.entries(o.fit).map(([g, c]) => Ships.choice(g, c)?.name).filter(Boolean).map(Ships.lc).join(', ')}) at her next yard`);
+  if (o.hull) bits.push(`a new ${Ships.HULLS[o.hull].name.toLowerCase()} at Lisbon`);
+  return `<p class="note">Ordered: ${bits.join('; ')}. <button class="mini" data-cancel-orders="${ship.id}">Cancel</button></p>`;
+}
+
 export function renderFleet(el) {
   const F = Fleet.ensureFleet(S);
   const ships = F.ships.map((ship) => {
@@ -534,8 +549,9 @@ export function renderFleet(el) {
           ${routeEditor(ship)}
           ${draftFor(ship).mode === 'simple' ? '' : `<p class="foot">Stops are visited in order, then back to the first. Orders run top to bottom, so sell before you buy to make room. "Best available" picks what pays most where it will next be sold; a named good is bought as long as it should sell without loss where it is next sold.</p>`}
         </details>
+        ${ordersLine(ship)}
         <p class="muted">${Ships.ageText(ship.hull || 'caravel', Fleet.yearsOf(S, ship))}${Wear.soundCap(ship.hull || 'caravel', Fleet.yearsOf(S, ship)) < 100 ? `; the yards can make her no better than ${Wear.soundCap(ship.hull || 'caravel', Fleet.yearsOf(S, ship))}%` : ''}.</p>
-        <div class="row">${ship.route ? `<button data-halt="${ship.id}">Stop at next port</button>` : ''}${S.ship.docked === 'lisbon' && Ships.lifeShare(ship.hull || 'caravel', Fleet.yearsOf(S, ship)) >= 0.5 ? `<button data-ship-yard="${ship.id}" ${ship.at !== 'lisbon' || ship.status === 'sailing' ? 'disabled title="When she is next in Lisbon"' : ''}>Rebuild or replace her…</button>` : ''}<button class="primary" data-route="${ship.id}">${ship.route ? 'Change route' : 'Start route'}</button></div>
+        <div class="row">${ship.route ? `<button data-halt="${ship.id}">Stop at next port</button>` : ''}<button data-ship-yard="${ship.id}">Refit or replace…</button><button class="primary" data-route="${ship.id}">${ship.route ? 'Change route' : 'Start route'}</button></div>
       </li>`;
   }).join('');
   let yard = '';

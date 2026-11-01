@@ -57,6 +57,18 @@ export const HULLS = {
     life: 12, upkeep: 10, hiredUpkeep: 3, scale: 2.4, size: 1.7, fight: 0.15, shy: 0.6,
     blurb: 'A great carrack built for the Carreira da Índia: four decks, a vast hold for pepper, and room for a hundred men. Clumsy to windward and too deep for most African ports, but nothing else carries so much round the Cape.',
   },
+  urca: {
+    draft: [2.2, 3.0], // metres, light and fully laden
+    id: 'urca', name: 'Urca', year: 1480, standing: KNOWN, price: 3300, hold: 95, knots: 4.3, up: 0.65, down: 1.05,
+    life: 14, upkeep: 4, hiredUpkeep: 1, scale: 1.4, size: 1.3, lure: 1.2,
+    blurb: 'A Flemish hulk, broad and round, built to carry grain and salt cheaply. The most hold for the money, but slow, poor to windward, and a fat prize: corsairs like the look of her.',
+  },
+  armedcaravel: {
+    draft: [1.9, 2.5], // metres, light and fully laden
+    id: 'armedcaravel', name: 'Caravela de armada', year: 1510, standing: RESPECTED, price: 4200, hold: 35, knots: 5.7, up: 1.05, down: 1.05,
+    life: 15, upkeep: 5, hiredUpkeep: 2, scale: 1.3, size: 1.1, fight: 0.2, shy: 0.6,
+    blurb: 'A four-masted caravel built for the crown\'s coast guard: a square sail on the foremast, three lateens, guns low in the hull. Little hold, but fast and dangerous: an escort, and a hunter of corsairs.',
+  },
   galeao: {
     draft: [3.4, 4.6], // metres, light and fully laden
     id: 'galeao', name: 'Galleon', year: 1525, orderYear: 1521, standing: TRUSTED, price: 12500, hold: 150, knots: 6.0, up: 0.9, down: 1.15,
@@ -78,7 +90,7 @@ export function boatRate(hullId, nm = 7) {
   return Math.round((6 + 8 * h.size) * Math.min(1, 10 / Math.max(10, nm)));
 }
 
-export const HULL_ORDER = ['barca', 'caravel', 'barinel', 'largecaravel', 'redonda', 'nau', 'galeao', 'naudaindia'];
+export const HULL_ORDER = ['barca', 'caravel', 'barinel', 'largecaravel', 'redonda', 'urca', 'nau', 'armedcaravel', 'galeao', 'naudaindia'];
 // Hull prices above, and refits, are 30% dearer than first set (economy change C, 27 Oct 2026):
 // close to what ships cost per ton in the period, and enough to make buying one a decision.
 export const PRICE_RISE = 1.3;
@@ -100,6 +112,7 @@ export const GROUPS = [
     id: 'area', name: 'Sail area', tab: 'rig',
     choices: [
       { id: 'regular', name: 'Regular' },
+      { id: 'topsails', name: 'Topsails and topgallants', note: 'Sails set above the main and fore courses, as the Flemings and English now rig them: more canvas aloft with the wind behind her.', offWind: 1.12, wage: 1, price: 500, days: 4, year: 1545, hulls: ['redonda', 'nau', 'urca', 'galeao', 'naudaindia'] },
       { id: 'bonnets', name: 'Bonnets laced on', note: 'Extra strips of canvas laced to the foot of the sails in fair weather. More hands to work them.', offWind: 1.08, wage: 1, price: 250, days: 2 },
     ],
   },
@@ -129,7 +142,10 @@ export const GROUPS = [
     choices: [
       { id: 'none', name: 'None' },
       { id: 'bercos', name: 'Swivel guns (berços)', note: 'Light breech-loaders on the rails.', fight: 0.08, price: 500, days: 3, standing: KNOWN },
+      { id: 'falcons', name: 'Falconets', note: 'Small iron guns on carriages, firing a ball the size of a fist: a galley thinks twice before closing.', fight: 0.11, price: 650, days: 3, standing: KNOWN, year: 1478, hulls: ['caravel', 'barinel', 'largecaravel', 'redonda', 'urca', 'nau', 'armedcaravel', 'galeao', 'naudaindia'] },
       { id: 'bombards', name: 'Bombards', note: 'Heavy guns on the main deck. Only a nau, a galleon or a nau da Índia can carry them.', fight: 0.15, price: 1200, days: 5, standing: TRUSTED, hulls: ['nau', 'galeao', 'naudaindia'] },
+      { id: 'culverins', name: 'Bronze culverins', note: 'Long bronze guns cast at the Lisbon foundry, reaching twice as far as a bombard: she can hurt a galley before it closes. Only a nau, galleon or nau da Índia can carry them.', fight: 0.26, price: 2400, days: 8, standing: TRUSTED, year: 1538, hulls: ['nau', 'galeao', 'naudaindia'] },
+      { id: 'gunports', name: 'Gunports and heavy guns', note: 'Ports cut low in the hull, with lids, so heavy guns can ride below the deck without making her top-heavy. The new way of arming a ship.', fight: 0.2, price: 1500, days: 8, standing: RESPECTED, year: 1501, hulls: ['largecaravel', 'redonda', 'nau', 'armedcaravel', 'galeao', 'naudaindia'] },
     ],
   },
   {
@@ -137,6 +153,7 @@ export const GROUPS = [
     choices: [
       { id: 'sailors', name: 'Sailors only' },
       { id: 'crossbows', name: 'Crossbowmen', note: 'A dozen crossbowmen, paid by the day, to sweep a galley\'s deck as she closes.', fight: 0.08, wage: 1, price: 300, days: 1, standing: KNOWN },
+      { id: 'arquebus', name: 'Espingardeiros', note: 'A dozen men with matchlock handguns (espingardas): slower to load than a crossbow, but they pierce mail.', fight: 0.12, wage: 1, price: 450, days: 1, standing: KNOWN, year: 1490 },
       { id: 'menatarms', name: 'Men-at-arms', note: 'Soldiers in mail with pikes and crossbows, enough to board a galley and take her.', fight: 0.15, wage: 2, price: 600, days: 1, standing: RESPECTED },
     ],
   },
@@ -152,6 +169,29 @@ export const GROUPS = [
     choices: [
       { id: 'ordinary', name: 'Ordinary casks' },
       { id: 'casks', name: 'Better casks and dunnage', note: 'Tight cooperage, and cargo kept off the wet bilge.', spoil: 0.6, price: 350, days: 2 },
+    ],
+  },
+  {
+    id: 'nav', name: 'Navigation', tab: 'rig',
+    choices: [
+      { id: 'dead', name: 'Compass and dead reckoning' },
+      { id: 'quadrant', name: 'A quadrant', note: 'Her pilot takes the height of the Pole Star and knows how far south she is: she keeps a truer course and runs from bad weather sooner. Storms do her less harm.', peril: 0.75, knots: 1.01, price: 200, days: 1, year: 1460 },
+      { id: 'astrolabe', name: 'Astrolabe and the Regiment of the Sun', note: 'A brass mariner\'s astrolabe and the king\'s tables of the sun\'s declination: latitude by day, south of the line where the Pole Star is gone.', peril: 0.6, knots: 1.02, price: 400, days: 1, year: 1485, standing: KNOWN },
+      { id: 'almanac', name: 'Zacuto\'s almanac', note: 'Abraão Zacuto\'s tables, printed at Leiria, with a good astrolabe and a pilot trained to use them: the best a pilot can have.', peril: 0.5, knots: 1.03, price: 650, days: 1, year: 1496, standing: RESPECTED },
+    ],
+  },
+  {
+    id: 'sheath', name: 'Sheathing', tab: 'hull',
+    choices: [
+      { id: 'bare', name: 'Bare planking' },
+      { id: 'lead', name: 'Lead sheathing', note: 'Thin sheets of lead nailed over the hull below the waterline, against the shipworm of the tropics. She wears and ages more slowly in hot waters.', tropicWear: 0.6, price: 900, days: 10, year: 1515, standing: RESPECTED },
+    ],
+  },
+  {
+    id: 'pumps', name: 'Pumps', tab: 'hull',
+    choices: [
+      { id: 'plain', name: 'Plain pumps' },
+      { id: 'better', name: 'Bigger pumps and a well', note: 'Larger pumps and a proper pump well: a leaking hull spoils half as much cargo.', leak: 0.5, price: 350, days: 2, year: 1530 },
     ],
   },
   {
@@ -189,6 +229,8 @@ export const TABS = [['hull', 'Hull'], ['rig', 'Rig and sails'], ['arms', 'Arms 
 
 export const DEFAULT_FIT = Object.fromEntries(GROUPS.map((g) => [g.id, g.choices[g.id === 'cloth' ? 1 : 0].id]));
 
+// A choice's name inside a sentence: lower case, except names of people and things.
+export const lc = (name) => (/^(Zacuto|Breton|Bronze)/.test(name) ? name : name[0].toLowerCase() + name.slice(1));
 export const group = (id) => GROUPS.find((g) => g.id === id);
 export const choice = (gid, cid) => group(gid)?.choices.find((c) => c.id === cid);
 export const hullOf = (ship) => HULLS[ship?.hull] || HULLS.caravel;
@@ -216,7 +258,7 @@ export function stats(ship) {
   const h = hullOf(ship);
   const fit = normalFit(h.id, ship?.fit);
   const st = { hull: h.id, name: h.name, knots: h.knots, up: h.up, down: h.down, offWind: 1, hold: h.hold, upkeep: h.upkeep,
-    hiredUpkeep: h.hiredUpkeep, oars: h.oars || 0, fight: h.fight || 0, spoil: 1, shy: h.shy || 1, lure: h.lure || 1 };
+    hiredUpkeep: h.hiredUpkeep, oars: h.oars || 0, fight: h.fight || 0, spoil: 1, shy: h.shy || 1, lure: h.lure || 1, peril: 1, tropicWear: 1, leak: 1, fitWage: 0 };
   let holdFactor = 1, holdAdd = 0, upAdd = 0;
   for (const g of groupsFor(h.id)) {
     const c = choice(g.id, fit[g.id]);
@@ -228,7 +270,10 @@ export function stats(ship) {
     if (c.offWind) st.offWind *= c.offWind;
     if (c.hold) holdFactor *= c.hold;
     if (c.holdAdd) holdAdd += c.holdAdd;
-    if (c.wage) st.upkeep += c.wage;
+    if (c.wage) { st.upkeep += c.wage; st.fitWage += c.wage; }
+    if (c.peril) st.peril *= c.peril;
+    if (c.tropicWear) st.tropicWear *= c.tropicWear;
+    if (c.leak) st.leak *= c.leak;
     if (c.fight) st.fight += c.fight;
     if (c.guard) st.guard = (st.guard || 0) + c.guard;
     if (c.spoil) st.spoil *= c.spoil;
@@ -333,6 +378,33 @@ export function quoteFit(S, fit) {
   if (lines.filter((l) => !l.order).length > 1) days += lines.filter((l) => !l.order).length - 1;
   const down = ordered.reduce((n, o) => n + Math.round(o.price / 3), 0);
   return { lines, cost, days, ordered, down };
+}
+
+// A refit for a hired ship (or any ship of `hullId` in `cur` fit): what may be fitted now, what
+// it costs and the days in the yard. Things not yet to be had are left out.
+export function quoteRefit(S, hullId, cur, fit) {
+  cur = normalFit(hullId, cur);
+  const lines = [];
+  let cost = 0, days = 0;
+  for (const g of groupsFor(hullId)) {
+    if (!fit[g.id] || fit[g.id] === cur[g.id]) continue;
+    const c = choice(g.id, fit[g.id]);
+    if (!c || !choicesFor(g, hullId).includes(c) || availability(S, c).ok !== 'yes') continue;
+    const price = priceFor(hullId, c);
+    cost += price;
+    days = Math.max(days, c.days || 0);
+    lines.push({ g, c, price });
+  }
+  if (lines.length > 1) days += lines.length - 1;
+  return { lines, cost, days };
+}
+
+// Gear that is new this year (for the yearly word from the yards).
+export function newThisYear(year) {
+  const out = [];
+  for (const g of GROUPS) for (const c of g.choices) if (c.year === year) out.push({ g, c });
+  for (const h of Object.values(HULLS)) if (h.year === year && year > 1451) out.push({ hull: h });
+  return out;
 }
 
 // Apply a refit that has been paid for. Ordered items are kept for later.

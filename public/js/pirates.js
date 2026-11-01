@@ -1,4 +1,5 @@
 import * as Accounts from './accounts.js';
+import * as Lending from './lending.js';
 // Barbary corsairs: the first danger at sea.
 // Corsair galleys from the Moroccan coast raided shipping and the Algarve in the 1450s.
 // In their waters the captain may be challenged: run, fight or pay tribute.
@@ -253,9 +254,11 @@ function fight(S, enc, p, forced = false) {
     const guard = S.ship?.hull ? Ships.flagStats(S).guard || 0 : 0; // boarding nets keep some of it
     const share = (0.3 + Math.random() * 0.3) * (1 - guard);
     const lostGoods = [];
+    let lostValue = 0;
     for (const [g, n] of Object.entries(S.cargo)) {
       const take = Math.round(n * share);
       if (take > 0) {
+        lostValue += (S.paid[g] || 0) * take / n;
         S.paid[g] = n - take ? S.paid[g] * (n - take) / n : 0;
         S.cargo[g] = n - take;
         const good = GOODS.find((x) => x.id === g);
@@ -270,6 +273,8 @@ function fight(S, enc, p, forced = false) {
     P.notoriety += forced ? 0 : 2;
     P.lost++;
     lines.push(`The corsairs board you and strip the ship: ${lostGoods.length ? lostGoods.join(', ') : 'no cargo'}${cash ? ` and ${cash} cz` : ''}. The hull is badly damaged (${Math.round(S.hull)}%).`);
+    const off = Lending.seaLoss(S, lostValue + cash, S.ship?.lat ?? 90);
+    if (off) lines.push(`Your sea loan bears the loss: ${off.toLocaleString()} cz comes off what you owe.`);
     kind = '';
   }
   return { kind, lines };

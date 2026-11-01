@@ -12,12 +12,13 @@ import { plog } from './playlog.js';
 import * as Fleet from './fleet.js';
 import { CHART_REWARD, MILESTONES } from './config.js';
 import * as Ships from './ships.js';
+import * as Lending from './lending.js';
 import * as Wear from './wear.js';
 import { S, market, ui } from './state.js';
 import { save } from './save.js';
 import { cloudSync } from './cloudsync.js';
 import { H, W, cam, clampCam } from './view.js';
-import { advanceTime, flushRot, report, shipWind, loadOf } from './sim.js';
+import { advanceTime, crewAtPort, flushRot, report, shipWind, loadOf } from './sim.js';
 import { preloadArrival } from './scene.js';
 import { $, cz, fmtDate } from './util.js';
 import { renderPanel, setSpeed } from './panels.js';
@@ -186,18 +187,21 @@ export function waitInPort(days) {
 
 // A leaking hull spoils cargo on the passage: counted up as she makes port.
 function leak(p) {
-  const share = Wear.leakShare(S.hull ?? 100);
+  const share = Wear.leakShare(S.hull ?? 100, Ships.flagStats(S).leak);
   if (!share) return;
   const lost = [];
+  let value = 0;
   for (const g of GOODS) {
     const have = S.cargo[g.id] || 0;
     const n = Math.min(have, Math.round(have * share));
     if (!n) continue;
+    value += (S.paid[g.id] || 0) * n / have;
     S.cargo[g.id] -= n; // what was paid stays paid, as with spoilage
     if (!S.cargo[g.id]) S.paid[g.id] = 0;
     lost.push(`${n} ${n === 1 ? g.one : g.unit} of ${g.name.toLowerCase()}`);
   }
-  if (lost.length) toast(`Sea water in the hold: ${lost.join(', ')} ruined on the way to ${p.name}. Her hull is at ${Math.round(S.hull)}%.`, 'alert', true, 'alert');
+  const off = lost.length ? Lending.seaLoss(S, value, p.lat) : 0;
+  if (lost.length) toast(`Sea water in the hold: ${lost.join(', ')} ruined on the way to ${p.name}. Her hull is at ${Math.round(S.hull)}%.${off ? ` Your sea loan bears it: ${off.toLocaleString()} cz off what you owe.` : ''}`, 'alert', true, 'alert');
 }
 
 export function replan(dest) {
@@ -307,6 +311,7 @@ export function applyCourse(plan) {
     crossBeyond(from, 'home', () => { S.ship.inIndies = false; applyCourse(plan); });
     return;
   }
+  if (S.ship.docked && S.ship.recruitUntil > S.day) { hint(`A new crew is signing on: about ${Math.ceil(S.ship.recruitUntil - S.day)} more days before she can sail. Wait in port.`); return; }
   if (S.ship.docked) finishBoats();
   plog('sail', { from: S.ship.docked || null, to: plan.dest?.port || null, lon: Math.round(plan.dest?.lon * 100) / 100 || undefined, lat: Math.round(plan.dest?.lat * 100) / 100 || undefined });
   S.ship.route = plan.route;
@@ -355,6 +360,7 @@ export function frameView(points) {
 }
 
 export function confirmVoyage(plan) {
+  if (S.ship.docked && S.ship.recruitUntil > S.day) { hint(`A new crew is signing on: about ${Math.ceil(S.ship.recruitUntil - S.day)} more days before she can sail. Wait in port.`); return; }
   frameView([[S.ship.lon, S.ship.lat], ...plan.route]);
   const est = estimateVoyage(plan.route);
   const wait = S.ship.docked ? boatDaysLeft() : 0;
@@ -483,6 +489,7 @@ export function dock(portId) {
     sh.lon = a.lon; sh.lat = a.lat;
   }
   S.voyages++;
+  crewAtPort();
   observe(portId);
   Accounts.closeVoyage(S, portId);
   let msg = sh.offshore

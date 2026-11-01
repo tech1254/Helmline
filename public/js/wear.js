@@ -29,8 +29,9 @@ export const DANGER_BELOW = 25;
 export const CAPTAIN_YARD_BELOW = 70;
 export const CAPTAIN_BEACH_BELOW = 45;
 
-export function wearPerDay(lat, hullId = null, years = 0) {
-  return (lat < TROPIC_LAT ? WEAR_PER_DAY.tropic : WEAR_PER_DAY.temperate) * (hullId ? ageWear(hullId, years) : 1);
+// `tropicWear`: lead sheathing slows the tropics' share of it (ships.js).
+export function wearPerDay(lat, hullId = null, years = 0, tropicWear = 1) {
+  return (lat < TROPIC_LAT ? WEAR_PER_DAY.temperate + (WEAR_PER_DAY.tropic - WEAR_PER_DAY.temperate) * tropicWear : WEAR_PER_DAY.temperate) * (hullId ? ageWear(hullId, years) : 1);
 }
 
 // ---- Age ------------------------------------------------------------------------------------
@@ -58,8 +59,8 @@ export function storms(days, rand = Math.random) {
 }
 
 // The share of each cargo lost to a leaking hull over a passage (0 when she is tight).
-export function leakShare(pct) {
-  return pct < LEAKS_BELOW ? (LEAKS_BELOW - pct) / 200 : 0;
+export function leakShare(pct, leak = 1) {
+  return pct < LEAKS_BELOW ? leak * (LEAKS_BELOW - pct) / 200 : 0;
 }
 
 // (Never more than 0.3% of her price a point: a small cheap hull costs less to mend.)

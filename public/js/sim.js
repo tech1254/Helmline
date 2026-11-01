@@ -14,6 +14,8 @@ import * as Taxes from './taxes.js';
 import * as Competition from './competition.js';
 import * as Ships from './ships.js';
 import * as Wear from './wear.js';
+import * as Lending from './lending.js';
+import * as Pilots from './pilots.js';
 import { DAYS_PER_SEC, OFFLINE_DAYS_PER_DOUBLING, OFFLINE_FULL_DAYS, OFFLINE_MAX_DAYS, OFFLINE_MIN_SECONDS, OFFLINE_RATE, SIGHT, STANDING_FADES_AFTER_HOURS } from './config.js';
 import { S, market, ui } from './state.js';
 import { timeScale } from './cloud.js';
@@ -225,14 +227,45 @@ export function showSummary(sum) {
   });
 }
 
+// Wages owed to your crew: paid from the purse as soon as there is money in it, in port.
+export function payCrew() {
+  const pay = Math.min(Math.floor(S.purse), Math.ceil(S.crewOwed || 0));
+  if (pay <= 0) return 0;
+  S.purse -= pay;
+  S.crewOwed = Math.max(0, S.crewOwed - pay);
+  if (S.crewOwed < 0.5) { S.crewOwed = 0; toast(`Your crew's back wages are paid (${pay} cz).`, 'port'); }
+  return pay;
+}
+// Making port owing a month's wages or more, the crew walks off: they will not sail on promises.
+// The debt goes with them, but the quays hear of it, and a new crew takes days to sign on.
+export const DESERT_DAYS = 30, RECRUIT_DAYS = 5;
+export function crewAtPort() {
+  if (!(S.crewOwed > 0)) return;
+  payCrew();
+  const upkeep = Ships.flagStats(S).upkeep;
+  if (S.crewOwed >= DESERT_DAYS * upkeep) {
+    const owed = Math.ceil(S.crewOwed);
+    S.crewOwed = 0;
+    S.ship.recruitUntil = S.day + RECRUIT_DAYS;
+    if (S.contracts?.unlocked) S.contracts.standing = Math.max(0, (S.contracts.standing || 0) - 2);
+    toast(`<b>Your crew has walked off</b>, owed ${owed} cz in wages. They will not sail on promises. A new crew will take ${RECRUIT_DAYS} days to sign on here, and the quays will talk.`, 'alert', true, 'alert');
+  } else if (S.crewOwed > 0) {
+    toast(`You owe your crew <b>${Math.ceil(S.crewOwed)} cz</b> in wages: it is paid from your first sales here. Owe them a month's wages and they will walk off.`, 'alert', true, 'alert');
+  }
+}
+
 // Everything that happens as days pass, at sea or waiting in port.
 export function advanceTime(dd, atSea, away = false) {
   S.day += dd;
   if (atSea) { // the crew is paid for the voyage; in port they are paid off
     const upkeep = Ships.flagStats(S).upkeep;
-    S.purse -= upkeep * dd;
+    // what the purse cannot pay is owed to the crew, to be paid when you next make port
+    const pay = Math.min(Math.max(0, S.purse), upkeep * dd);
+    S.purse -= pay;
+    if (pay < upkeep * dd) S.crewOwed = (S.crewOwed || 0) + upkeep * dd - pay;
     Accounts.accrueWages(S, upkeep * dd, S.ship.lastPort);
   }
+  if (S.ship.docked && S.crewOwed > 0 && S.purse > 0) payCrew();
   market.tick(dd);
   report(Events.tick(S, dd));
   const grown = Ports.grow(S, dd, market);
@@ -268,6 +301,15 @@ export function advanceTime(dd, atSea, away = false) {
     }
   }
   report(Contracts.checkDeadlines(S));
+  report(Lending.tick(S));
+  // New gear and new hulls at the yards: word at the turn of each year that brings some.
+  const yr = Ships.yearOf(S.day);
+  if ((S.yardNews ?? 1451) < yr) {
+    S.yardNews = yr;
+    const fresh = Ships.newThisYear(yr);
+    if (fresh.length) report([{ html: `New at the shipyards this year: ${fresh.map((x) => x.hull ? `the <b>${x.hull.name.toLowerCase()}</b>` : `<b>${Ships.lc(x.c.name)}</b> (${x.g.name.toLowerCase()})`).join(', ')}. ${fresh.some((x) => x.hull) ? 'See the Lisbon yard.' : 'Any yard can fit it, to your ship or a captain\'s (Fleet).'}`, kind: 'discover', log: `New at the yards: ${fresh.map((x) => x.hull ? x.hull.name : x.c.name).join(', ')}.` }]);
+  }
+  report(Pilots.tick(S));
   // Ships and refits on order at the Lisbon yard: word when they are ready.
   for (const o of Ships.ready(S)) {
     if (o.told) continue;
@@ -281,11 +323,12 @@ export function advanceTime(dd, atSea, away = false) {
 // she starts to leak and again when she is in danger; the factor in port tells you the rest.
 function wearHull(dd) {
   if (S.hull == null) S.hull = 100;
-  if (S.ship.lat < Wear.TROPIC_LAT) S.ship.tropic = (S.ship.tropic || 0) + dd; // shipworm waters: she ages faster
+  const fx = Ships.flagStats(S);
+  if (S.ship.lat < Wear.TROPIC_LAT) S.ship.tropic = (S.ship.tropic || 0) + dd * fx.tropicWear; // shipworm waters: she ages faster (less under lead)
   if (S.hull < Wear.LEAKS_BELOW) S.ship.strain = (S.ship.strain || 0) + dd; // sailing her leaking wears her out
   const years = Ships.serviceYears(S.ship, S.day);
-  const storm = Wear.storms(dd);
-  S.hull = Math.max(5, S.hull - Wear.wearPerDay(S.ship.lat, S.ship.hull, years) * dd - storm);
+  const storm = Wear.storms(dd) * fx.peril;
+  S.hull = Math.max(5, S.hull - Wear.wearPerDay(S.ship.lat, S.ship.hull, years, fx.tropicWear) * dd - storm);
   const aged = Wear.ageNotice(S.ship, S.ship.hull, years, `the <b>${S.ship.name}</b>`, true);
   if (aged) toast(aged, 'alert', true, 'alert');
   if (storm) toast(`A storm batters the <b>${S.ship.name}</b>: her hull is at ${Math.round(S.hull)}%.`, '');

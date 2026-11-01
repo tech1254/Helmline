@@ -629,3 +629,19 @@ li.plan .plan-offer .row { justify-content: flex-end; margin-top: 2px; }
 .scene-buttons { position: absolute; right: 16px; bottom: calc(16px + env(safe-area-inset-bottom)); display: flex; gap: 8px; }
 .scene-buttons button { position: static; }
 .scene-less { background: var(--leather); color: var(--on-dark); border: 1px solid #120b06; font-size: 13px; }
+
+/* Money and patrons (lendingview.js) */
+.money-box { margin: 8px 0 10px; border: 1px solid var(--rule, #c9b48a); border-radius: 6px; padding: 6px 10px; }
+.money-box summary { cursor: pointer; font-weight: 600; color: var(--ink); }
+.money-box p { margin: 6px 0; font-size: 14px; }
+.money-box .row { flex-wrap: wrap; justify-content: flex-start; gap: 6px; }
+#modal .field { display: flex; flex-direction: column; gap: 4px; font-size: 14px; margin: 8px 0; color: var(--ink-2); }
+.loan-waters { border: 0; padding: 0; margin: 8px 0; }
+.loan-waters legend { font-size: 14px; color: var(--ink-2); padding: 0; margin-bottom: 4px; }
+.loan-waters label { display: block; padding: 6px 4px; font-size: 14px; line-height: 1.35; cursor: pointer; }
+.route-est { margin: 10px 0 4px; padding: 8px 10px; border-left: 3px solid var(--rule, #c9b48a); background: rgba(255,255,255,0.25); }
+.route-est h4 { margin: 0 0 4px; font-size: 14px; }
+.route-est ul { margin: 4px 0; padding-left: 18px; }
+.route-est p { margin: 4px 0; }
+.refit-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 0 12px; }
+.refit-grid select { max-width: 100%; }

@@ -3,6 +3,7 @@
 import { BOUNDS, CHART_OUTLINE, D2R, LANDS, PORTS, RIVERS, SHOALS, isLand, inBounds, windAt, isBeyond as isBeyondPort } from './world.js';
 import * as Contracts from './contracts.js';
 import * as Fleet from './fleet.js';
+import { reported } from './pilots.js';
 import { FH, FW } from './config.js';
 import { S, ui } from './state.js';
 import { FOG_PAD, fogSoft, isRevealed, refreshFog } from './fog.js';
@@ -239,6 +240,33 @@ export function drawShipAt(lon, lat, heading, sail, flag, size) {
 
 // Corsair galleys: in sight, drawn where they are; seen earlier or heard of in port, a faded mark
 // where they were last seen, with how long ago. Old sightings fade out after a fortnight.
+// Places the pilots of Lagos gave you courses for, not yet charted: a dashed ring and a name.
+export function drawReported() {
+  const list = reported(S);
+  if (!list.length) return;
+  ctx.save();
+  ctx.font = 'italic 12px "IM Fell English", Georgia, serif';
+  ctx.textAlign = 'center';
+  for (const p of list) {
+    const [sx, sy] = toScreen(p.lon, p.lat);
+    ctx.setLineDash([4, 3]);
+    ctx.lineWidth = 2;
+    ctx.strokeStyle = '#f2e3bf';
+    ctx.beginPath(); ctx.arc(sx, sy, 10, 0, Math.PI * 2); ctx.stroke();
+    ctx.fillStyle = '#f2e3bf';
+    ctx.beginPath(); ctx.arc(sx, sy, 2.5, 0, Math.PI * 2); ctx.fill();
+    ctx.setLineDash([]);
+    const label = `${p.name}? (pilots' course)`;
+    ctx.font = 'italic 14px "IM Fell English", Georgia, serif';
+    ctx.lineWidth = 3;
+    ctx.strokeStyle = 'rgba(30,20,10,0.85)';
+    ctx.strokeText(label, sx, sy - 16);
+    ctx.fillStyle = '#f2e3bf';
+    ctx.fillText(label, sx, sy - 16);
+  }
+  ctx.restore();
+}
+
 export function drawGalleys() {
   const G = S.pirates?.galleys;
   if (!G?.length) return;
@@ -486,6 +514,7 @@ export function render() {
   }
   ctx.restore();
 
+  drawReported();
   drawFleet();
   drawGalleys();
   drawShip();

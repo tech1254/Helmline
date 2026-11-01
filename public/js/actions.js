@@ -6,6 +6,7 @@ import * as Contracts from './contracts.js';
 import * as Fleet from './fleet.js';
 import * as Captains from './captains.js';
 import { payDebtNow } from './storyview.js';
+import { askLoan, buyDirections, repayLoan, takeCommission } from './lendingview.js';
 import * as Cloud from './cloud.js';
 import * as Accounts from './accounts.js';
 import * as Pirates from './pirates.js';
@@ -207,8 +208,11 @@ export function initActions() {
         },
       });
       return;
-    } else if (t.dataset.shipYard && pid === 'lisbon') {
-      shipYardDialog(+t.dataset.shipYard);
+    } else if (t.dataset.shipYard) {
+      shipYardDialog(+t.dataset.shipYard); return;
+    } else if (t.dataset.cancelOrders) {
+      const ship = S.fleet.ships.find((x) => x.id === +t.dataset.cancelOrders);
+      if (ship) Fleet.cancelOrders(ship);
       return;
     } else if (t.hasAttribute('data-house') && pid === 'lisbon') {
       openHouse();
@@ -293,6 +297,14 @@ export function initActions() {
       ui.planSort = t.dataset.planSort;
     } else if (t.dataset.payDebt !== undefined) {
       payDebtNow(toast);
+    } else if (t.dataset.loanAsk !== undefined) {
+      askLoan(); return;
+    } else if (t.dataset.loanRepay !== undefined) {
+      repayLoan();
+    } else if (t.dataset.directions) {
+      buyDirections(t.dataset.directions);
+    } else if (t.dataset.commission !== undefined) {
+      takeCommission();
     } else if (t.dataset.raise) { // a captain's raise: grant or refuse
       const ship = S.fleet.ships.find((x) => x.id === +t.dataset.cap);
       const r = t.dataset.raise === 'grant' ? Captains.grant(S, ship) : Captains.refuse(S, ship);
@@ -427,21 +439,52 @@ export function initActions() {
 
 // A hired ship in Lisbon, old: a great rebuild, or a new hull of any kind the yard sells (the
 // old one taken in part exchange). Her captain, route and cargo stay.
+// The groups a hired ship's refit can change (her captain is never set on by corsairs, so arms are
+// for your own ship; colours are left as they are).
+const HIRED_GROUPS = ['cloth', 'area', 'tack', 'stow', 'stores', 'nav', 'sheath', 'pumps'];
+
+// A hired ship: refits and a new hull, ordered from anywhere and done when she next calls at a
+// yard (a new hull at Lisbon); in Lisbon with you, a new hull or a great rebuild at once.
 function shipYardDialog(id) {
   const ship = S.fleet.ships.find((x) => x.id === id);
   if (!ship) return;
   const hull = ship.hull || 'caravel';
-  const rb = Ships.rebuildQuote(ship, hull, S.day);
-  const hulls = Ships.HULL_ORDER.filter((h) => Ships.availability(S, Ships.HULLS[h]).ok === 'yes');
+  const fit = Ships.normalFit(hull, ship.fit);
+  const now = S.ship.docked === 'lisbon' && ship.at === 'lisbon' && ship.status !== 'sailing' && ship.status !== 'repair';
+  const rb = now && Ships.lifeShare(hull, Fleet.yearsOf(S, ship)) >= 0.5 ? Ships.rebuildQuote(ship, hull, S.day) : null;
+  const groups = Ships.groupsFor(hull).filter((g) => HIRED_GROUPS.includes(g.id));
+  const want = { ...fit, ...(ship.orders?.fit || {}) };
+  const selects = groups.map((g) => {
+    const opts = Ships.choicesFor(g, hull).map((c) => {
+      const av = Ships.availability(S, c);
+      const cur = c.id === fit[g.id];
+      return `<option value="${c.id}" ${c.id === want[g.id] ? 'selected' : ''} ${av.ok !== 'yes' && !cur ? 'disabled' : ''}>${c.name}${cur ? ' (fitted)' : av.ok !== 'yes' ? ` (${av.why})` : ` · ${Ships.priceFor(hull, c).toLocaleString()} cz`}</option>`;
+    }).join('');
+    return `<label class="field">${g.name}<select data-refit="${g.id}">${opts}</select></label>`;
+  }).join('');
+  const hulls = Ships.HULL_ORDER.filter((h) => h !== hull && Ships.availability(S, Ships.HULLS[h]).ok === 'yes');
   const rows = hulls.map((h) => {
     const q = Fleet.replaceQuote(S, ship, h);
-    return `<li class="house-item"><div><b>A new ${Ships.HULLS[h].name.toLowerCase()}</b><small>${Ships.HULLS[h].price.toLocaleString()} cz, less ${q.value.toLocaleString()} for the old hull · hold ${Ships.stats({ hull: h }).hold}</small></div><div class="house-act"><button data-modal-action="new-${h}" ${S.purse < q.net ? 'disabled' : ''}>${q.net.toLocaleString()} cz</button></div></li>`;
+    const ordered = ship.orders?.hull === h;
+    return `<li class="house-item"><div><b>A new ${Ships.HULLS[h].name.toLowerCase()}</b><small>${Ships.HULLS[h].price.toLocaleString()} cz, less ${q.value.toLocaleString()} for the old hull · hold ${Ships.stats({ hull: h }).hold}, draws ${Ships.HULLS[h].draft[1]} m laden</small></div><div class="house-act">${ordered ? '<span class="fine">ordered</span>' : `<button data-modal-action="new-${h}" ${now && S.purse < q.net ? 'disabled' : ''}>${now ? `${q.net.toLocaleString()} cz now` : `Order (${q.net.toLocaleString()} cz)`}</button>`}</div></li>`;
   }).join('');
   const actions = Object.fromEntries(hulls.map((h) => [`new-${h}`, () => {
-    const cost = Fleet.replaceHull(S, market, ship, h);
-    if (cost != null) { toast(`The <b>${ship.name}</b> is a new ${Ships.HULLS[h].name.toLowerCase()}. Captain ${ship.captain.name} takes her out on his route.`, 'discover'); log(`New hull for the ${ship.name}: ${cost} cz.`); }
+    if (now) {
+      const cost = Fleet.replaceHull(S, market, ship, h);
+      if (cost != null) { toast(`The <b>${ship.name}</b> is a new ${Ships.HULLS[h].name.toLowerCase()}. Captain ${ship.captain.name} takes her out on his route.`, 'discover'); log(`New hull for the ${ship.name}: ${cost} cz.`); }
+    } else {
+      Fleet.orderHull(S, ship, h);
+      toast(`Ordered a new ${Ships.HULLS[h].name.toLowerCase()} for the <b>${ship.name}</b>: the Lisbon yard builds her when she next calls there, if the purse runs to it then.`, 'port');
+    }
     renderPanel(); save();
   }]));
+  actions.refit = () => {
+    const pick = { ...fit };
+    document.querySelectorAll('[data-refit]').forEach((s) => { pick[s.dataset.refit] = s.value; });
+    const q = Fleet.orderRefit(S, ship, pick);
+    toast(q.lines.length ? `Ordered a refit for the <b>${ship.name}</b> (${q.lines.map((l) => Ships.lc(l.c.name)).join(', ')}, about ${q.cost.toLocaleString()} cz): done when she next calls at Lisbon, Lagos or Funchal.` : `No refit ordered for the <b>${ship.name}</b>.`, 'port');
+    renderPanel(); save();
+  };
   if (rb) actions.rebuild = () => {
     if (S.purse < rb.cost) return;
     S.purse -= rb.cost;
@@ -454,10 +497,16 @@ function shipYardDialog(id) {
     renderPanel(); save();
   };
   confirmDialog({
-    title: `The ${ship.name} at the Lisbon yard`,
-    body: `<p>She has ${Ships.ageText(hull, Fleet.yearsOf(S, ship))}.</p>
-      ${rb ? `<div class="row"><button data-modal-action="rebuild" ${S.purse < rb.cost ? 'disabled' : ''}>A great rebuild: ${rb.cost.toLocaleString()} cz, ${rb.days} days, about ${Math.round(rb.years)} years back${rb.n ? ' (her last)' : ''}</button></div>` : '<p class="fine">Her hull will not take another rebuild.</p>'}
-      <ul class="house-list">${rows}</ul>`,
+    title: `Refit or replace the ${ship.name}`,
+    body: `<p>The ${Ships.HULLS[hull].name.toLowerCase()} <b>${ship.name}</b> has ${Ships.ageText(hull, Fleet.yearsOf(S, ship))}.</p>
+      <h3>Refit</h3>
+      <p class="fine">Done when she next calls at a yard (Lisbon, Lagos or Funchal), and paid for then. New gear comes to the yards as the years pass.</p>
+      <div class="refit-grid">${selects}</div>
+      <div class="row"><button data-modal-action="refit">Order this refit</button></div>
+      <h3>A new hull</h3>
+      <p class="fine">${now ? 'She is here in Lisbon: the yard can do it now. ' : 'Built at the Lisbon yard when she next calls there, the old hull taken in part exchange. '}Her captain, route and cargo stay with her.</p>
+      <ul class="house-list">${rows}</ul>
+      ${rb ? `<div class="row"><button data-modal-action="rebuild" ${S.purse < rb.cost ? 'disabled' : ''}>A great rebuild: ${rb.cost.toLocaleString()} cz, ${rb.days} days, about ${Math.round(rb.years)} years back${rb.n ? ' (her last)' : ''}</button></div>` : ''}`,
     ok: 'Close',
     cancel: false,
     kind: 'summary',

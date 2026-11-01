@@ -115,13 +115,18 @@ Object.assign(PERSONAS, {
   merchant: { ...steady, label: 'No contracts (else Steady)', contracts: 0 },
   courier: { ...steady, label: 'Every contract he can (else Steady)', contracts: 9, minGain: 0, detour: 30 },
   bigships: { ...steady, label: 'Biggest ships (else Steady)', mixed: false },
+  // Never goes south: the known coast only, his captains too. How well can home waters keep a house?
+  homebody: { ...steady, label: 'Home waters only (else Steady)', explore: Infinity, homebody: true },
+  // as a new player really trades: no haggling bonus (the game gives the owner none), a plain
+  // navigator, and only the odd contract
+  novice: { ...steady, label: 'Novice in home waters (no haggling, one contract)', explore: Infinity, homebody: true, flagTrade: 0, flagNav: 2, contracts: 1 },
   // After 1480: a rich owner who sends ships to India and puts money into feitorias and the
   // crown's India fleets.
   grandee: { ...steady, label: 'Grandee: buys honours (else Steady)', prestige: true },
   indies: { ...steady, prestige: true, label: 'The Indies: India runs, investments and honours (else Steady)', hires: 3, indies: true, invest: true, feitorias: 3,
     ladder: [...steady.ladder, 'galeao', 'naudaindia'] },
 });
-export const GROUPS = { late: ['steady', 'grandee', 'indies'], styles: ['cautious', 'steady', 'bold', 'reckless'], corsairs: ['runner', 'fighter', 'armed', 'payer'], contracts: ['merchant', 'courier'], fleet: ['bigships'] };
+export const GROUPS = { home: ['novice', 'homebody', 'steady'], late: ['steady', 'grandee', 'indies'], styles: ['cautious', 'steady', 'bold', 'reckless'], corsairs: ['runner', 'fighter', 'armed', 'payer'], contracts: ['merchant', 'courier'], fleet: ['bigships'] };
 
 // ---- Routes --------------------------------------------------------------------------------
 const stop = (port, ...orders) => ({ port, orders });
@@ -130,6 +135,8 @@ const buy = (good, pct = 100) => ({ act: 'buy', good, pct });
 const best = (port) => stop(port, sell, buy('best'));
 const LOOPS = {
   home: [best('lisbon'), best('safi'), best('lanzarote')], // the known coast, in reach of a barca
+  home2: [best('lagos'), best('ceuta'), best('cadiz')], // the Strait
+  home3: [best('porto'), best('lisbon'), best('safi')],
   africa: [best('lisbon'), stop('lanzarote', sell, buy('best', 50)), stop('arguin', sell, buy('best', 50)), best('gambia')],
   deep: [best('lisbon'), stop('funchal', sell, buy('best', 50)), best('serraleoa')], // deep harbours, for a nau
   gambia: [stop('lisbon', sell, buy('cloth')), stop('gambia', sell, buy('pepper'))],
@@ -197,7 +204,7 @@ function career(persona) {
     return ship;
   };
   const fl = () => S.fleet.ships.find((x) => x.role === 'flagship');
-  add('flagship', 'barca', 'home', { nav: 5, trade: 5, wage: flagWage('barca') });
+  add('flagship', 'barca', 'home', { nav: P.flagNav ?? 5, trade: P.flagTrade ?? 5, wage: flagWage('barca') });
 
   const spend = (cost, what) => {
     S.purse -= cost; R.spentOnShips += cost; R.shipsBought++;
@@ -220,7 +227,7 @@ function career(persona) {
   // owner who has charted Serra Leoa and can get a nau puts her on the deep-water loop, where she
   // lies alongside everywhere; the biggest-ship owner sails her to Africa all the same.
   const flagPlan = () => {
-    if (!S.discovered.gambia) return { loop: 'home', hull: wantHull('home', false) };
+    if (!S.discovered.gambia || P.homebody) return { loop: 'home', hull: wantHull('home', false) };
     if (P.mixed && S.discovered.serraleoa && canSail('nau')) return { loop: 'deep', hull: 'nau' };
     return { loop: 'africa', hull: wantHull('africa', false) };
   };
@@ -322,7 +329,7 @@ function career(persona) {
     const room = Math.min(P.hires + (P.indies && S.discovered.calicut ? 1 : 0), Contracts.perks(S).maxShips) - hireds.length;
     if (room > 0) {
       // the India man keeps a berth for the India run, which opens in 1499
-      const loops = P.indies ? (S.discovered.calicut ? ['india', ...CAPTAIN_LOOPS] : CAPTAIN_LOOPS.slice(0, P.hires - 1)) : CAPTAIN_LOOPS;
+      const loops = P.homebody ? ['home', 'home2', 'home3'] : P.indies ? (S.discovered.calicut ? ['india', ...CAPTAIN_LOOPS] : CAPTAIN_LOOPS.slice(0, P.hires - 1)) : CAPTAIN_LOOPS;
       const loop = loops.find((l) => !hireds.some((x) => x.loop === l) && portsOf(l).every((id) => S.discovered[id]));
       if (loop) {
         const h = wantHull(loop, true);
@@ -610,7 +617,7 @@ function career(persona) {
         if (S.purse < price(h)) { if (R.broke == null) R.broke = yearOf(S.day); }
         S.purse -= price(h); R.spentOnShips += price(h);
         const loop = S.discovered.gambia && h !== 'barca' ? 'africa' : 'home';
-        add('flagship', h, loop, { nav: 5, trade: 5, wage: flagWage(h) });
+        add('flagship', h, loop, { nav: P.flagNav ?? 5, trade: P.flagTrade ?? 5, wage: flagWage(h) });
       } else {
         tidyRoute(f);
         if (S.day - lastDay >= 60) { flagRate = 0.7 * flagRate + 0.3 * Math.max(0, (f.profit - lastProfit) / (S.day - lastDay)); lastProfit = f.profit; lastDay = S.day; }
