@@ -222,7 +222,7 @@ export function contractCard(c, actions) {
     lines.push(c.stage === 'find' ? '<b>Next:</b> find and anchor at an uncharted port.' : `<b>Next:</b> report to Lisbon. You opened trade with ${PORTS.find((p) => p.id === c.found).name}.`);
   } else {
     const src = PORTS.find((p) => p.id === c.source);
-    lines.push(`${g.name} can be bought at ${src.name}.`);
+    lines.push(`${g.name} can be bought at ${src.name}.${c.spare ? ` Carry ${c.spare} extra: some will spoil on the way.` : ''}`);
     if (c.deadline != null) {
       const left = Math.ceil(c.deadline - S.day);
       lines.push(`<b>Due</b> ${fmtDate(c.deadline)} <span class="${left < 10 ? 'warn' : 'muted'}">(${left} days left)</span> · in your hold: ${S.cargo[c.good]} / ${c.qty}`);

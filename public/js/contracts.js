@@ -161,10 +161,16 @@ function makeOffer(S, market, portId, cand) {
   if (nm1 == null || nm2 == null) return null;
   const unit = market.buyPrice(src.id, g.id);
   const budget = Math.max(120, Math.min(S.purse * 0.8, 3000));
-  const most = Math.min(S.ship?.hull ? Ships.flagStats(S).hold : 40, Math.floor(budget / unit));
+  // Room to spare: a contract never asks for more than HOLD_SHARE of your hold, and for goods that
+  // spoil it leaves room for the extra you must carry to arrive with the full amount (spareFor).
+  const hold = S.ship?.hull ? Ships.flagStats(S).hold : 40;
+  const fits = (n) => n + spareFor(S, g, src, dest, nm2, n) <= hold;
+  let most = Math.min(Math.floor(hold * HOLD_SHARE), Math.floor(budget / unit));
+  while (most > 0 && !fits(most)) most--;
   const want = g.id === 'gold' ? 3 + Math.floor(Math.random() * 6) : 10 + 5 * Math.floor(Math.random() * 5);
   const qty = Math.min(want, most);
   if (qty < (g.id === 'gold' ? 2 : 5)) return null;
+  const spare = spareFor(S, g, src, dest, nm2, qty);
   const days = Math.round(((nm1 + nm2) / NM_PER_DAY) * 1.25 + 15 + Math.random() * 10);
   const cost = qty * unit;
   const reward = Math.round(Math.max(qty * market.basePrice(dest.id, g.id) * PREMIUM, cost * 1.35) * perk.payMult);
@@ -182,7 +188,18 @@ function makeOffer(S, market, portId, cand) {
     reward,
     standing: 3,
     offeredDays: days,
+    spare, // carry this many extra: some will spoil on the way
   };
+}
+
+// The extra units to carry so that `qty` arrive: twice the rot expected on a slow passage (contrary
+// winds, a cautious pace), hotter south of 26°N, plus one. None for goods that keep.
+export const HOLD_SHARE = 0.8;
+export function spareFor(S, g, src, dest, nm, qty) {
+  if (!g.spoil) return 0;
+  const days = (nm / NM_PER_DAY) * 2;
+  const heat = (Math.min(src.lat, dest.lat) < 26 ? 1.6 : 1) * (S.ship?.hull ? Ships.flagStats(S).spoil : 1);
+  return Math.ceil(2 * qty * g.spoil * heat * days) + 1;
 }
 
 function fillOffers(S, market, portId, n) {
