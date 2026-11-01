@@ -8,6 +8,7 @@ import * as Accounts from './accounts.js';
 import { GOODS, PORTUGUESE_PORTS } from './economy.js';
 import * as Ships from './ships.js';
 import * as Wear from './wear.js';
+import { isLand, distNm } from './world.js';
 
 const ZONES = [
   // [west, east, south, north, danger]
@@ -90,12 +91,114 @@ export function roll(S, days, lon, lat) {
   return { where, big, strength: big ? 1.35 : 1 };
 }
 
+// ---- Galleys at sea, to be hunted -----------------------------------------------------------------
+// Now and then a galley puts out from the Barbary coast and cruises its waters for a few weeks.
+// You see her when she is within your lookout's sight, and hear in port of any seen nearby; sail
+// onto her and you choose whether to attack. Hunted, she is taken by surprise: better odds, and
+// no tribute to be paid.
+export const GALLEYS = {
+  max: 3,
+  perDay: 0.02, // the chance a day, in the most dangerous waters, that one puts to sea
+  life: [20, 45], // days at sea
+  nmPerDay: 40, // cruising
+  sightNm: 45, // the lookout's sight, from the masthead
+  contactNm: 8, // close enough to engage
+  reportNm: 300, // heard of in a port this far away
+  surprise: 0.12, // added to the odds when you hunt her
+};
+const rand = (a, b) => a + Math.random() * (b - a);
+
+export function galleys(S) {
+  const P = ensurePirates(S);
+  if (!P.galleys) P.galleys = [];
+  if (P.galleyId == null) P.galleyId = 1;
+  return P.galleys;
+}
+
+// Days pass: galleys put to sea, cruise, and go home. `day` is the game day.
+const CALM = 1e5; // a cooldown this long means calm seas (the tests set it): no galleys either
+export function tickGalleys(S, days) {
+  const G = galleys(S);
+  const P = S.pirates;
+  if (P.cooldown > CALM) return;
+  for (let i = G.length - 1; i >= 0; i--) if (S.day > G[i].until) G.splice(i, 1);
+  for (const z of ZONES) {
+    if (G.length >= GALLEYS.max) break;
+    if (Math.random() > 1 - Math.exp(-GALLEYS.perDay * z.d * days)) continue;
+    for (let k = 0; k < 20; k++) { // a point at sea in the zone
+      const lon = rand(z.w, z.e), lat = rand(z.s, z.n);
+      if (isLand(lon, lat)) continue;
+      G.push({ id: P.galleyId++, lon, lat, heading: rand(0, 360), big: Math.random() < 0.25 + P.notoriety / 200, zone: z.name, until: S.day + rand(...GALLEYS.life), seen: null });
+      break;
+    }
+  }
+  for (const g of G) {
+    const z = ZONES.find((x) => x.name === g.zone) || ZONES[0];
+    g.heading = (g.heading + rand(-35, 35) * Math.min(1, days) + 360) % 360;
+    const nm = GALLEYS.nmPerDay * days;
+    for (let tries = 0; tries < 6; tries++) {
+      const r = g.heading * Math.PI / 180;
+      const lat = g.lat + (nm * Math.cos(r)) / 60, lon = g.lon + (nm * Math.sin(r)) / (60 * Math.cos(g.lat * Math.PI / 180));
+      if (lon >= z.w && lon <= z.e && lat >= z.s && lat <= z.n && !isLand(lon, lat)) { g.lon = lon; g.lat = lat; break; }
+      g.heading = (g.heading + rand(90, 270)) % 360; // the coast, or the edge of her waters: turn away
+    }
+  }
+}
+
+// From the ship at sea: galleys within sight are seen (and their place noted).
+export function lookout(S, lon, lat) {
+  const seen = [];
+  for (const g of galleys(S)) {
+    const inSight = distNm(lon, lat, g.lon, g.lat) <= GALLEYS.sightNm;
+    if (inSight) {
+      if (!g.inSight) seen.push(g); // she comes into sight (even one you heard of in port)
+      g.seen = S.day; g.seenLon = g.lon; g.seenLat = g.lat;
+    }
+    g.inSight = inSight;
+  }
+  return seen;
+}
+
+// In port: word of galleys seen within a few days' sail. Returns those newly reported.
+export function portReports(S, port) {
+  const out = [];
+  for (const g of galleys(S)) {
+    if (distNm(port.lon, port.lat, g.lon, g.lat) > GALLEYS.reportNm) continue;
+    if (g.reported != null && S.day - g.reported < 5) continue;
+    const fresh = g.seen == null || S.day - g.seen > 1;
+    g.reported = S.day;
+    if (fresh) { g.seen = S.day - 1; g.seenLon = g.lon; g.seenLat = g.lat; out.push(g); }
+  }
+  return out;
+}
+
+// Close enough to engage? Returns an encounter you have hunted down, or null.
+export function contact(S, lon, lat) {
+  if (S.pirates.cooldown > CALM) return null;
+  for (const g of galleys(S)) {
+    if (g.passed && S.day < g.passed) continue; // you let her go just now
+    if (distNm(lon, lat, g.lon, g.lat) <= GALLEYS.contactNm) {
+      return { where: g.zone, big: g.big, strength: g.big ? 1.35 : 1, hunted: true, galley: g.id };
+    }
+  }
+  return null;
+}
+
+// After a hunt: a galley beaten (or that beat you) goes home; one let go keeps clear a while.
+export function endHunt(S, enc, outcome) {
+  const G = galleys(S);
+  const i = G.findIndex((g) => g.id === enc.galley);
+  if (i < 0) return;
+  if (outcome === 'pass') { G[i].passed = S.day + 3; return; }
+  G.splice(i, 1);
+}
+
 // Odds the captain is shown, from the ship's speed through the water and his record.
 export function odds(S, enc, knots) {
   const P = ensurePirates(S);
   const run = clamp(0.25 + 0.11 * knots - (enc.big ? 0.1 : 0), 0.12, 0.88);
   const guns = S.ship?.hull ? Ships.flagStats(S).fight : 0;
-  const fight = clamp((0.5 + 0.03 * Math.min(P.won, 6)) * (S.hull / 100 * 0.4 + 0.6) / enc.strength + guns, 0.15, 0.9);
+  const fight = clamp((0.5 + 0.03 * Math.min(P.won, 6)) * (S.hull / 100 * 0.4 + 0.6) / enc.strength + guns + (enc.hunted ? GALLEYS.surprise : 0), 0.15, 0.92);
   return { run, fight };
 }
 

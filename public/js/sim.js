@@ -1,6 +1,6 @@
 // Time passing: sailing, wages, spoilage, events, the fleet, and time away.
 
-import { D2R, PORTS, isLand, windAt, sailFactor, bearing, distNm, angleDiff, isRiverLeg, RIVER_KNOTS, shoalDepth, SHOALS, isBeyond } from './world.js';
+import { D2R, PORTS, isLand, windAt, sailFactor, bearing, distNm, angleDiff, isRiverLeg, RIVER_KNOTS, shoalDepth, SHOALS, isBeyond, compassPoint } from './world.js';
 import * as Ports from './ports.js';
 import { GOODS, PORTUGUESE_PORTS } from './economy.js';
 import * as Contracts from './contracts.js';
@@ -241,9 +241,15 @@ export function advanceTime(dd, atSea, away = false) {
   report(Taxes.tick(S, House.renown(S)));
   report(Competition.tick(S, dd, market));
   syncMarket();
+  Pirates.tickGalleys(S, dd); // corsair galleys cruising their waters, to be hunted
   if (atSea) {
     spoil(dd);
     wearHull(dd);
+    for (const g of Pirates.lookout(S, S.ship.lon, S.ship.lat)) {
+      toast(`<b>${g.big ? 'A great corsair galley' : 'A corsair galley'}</b> in sight off ${g.zone}, bearing ${compassPoint(bearing(S.ship.lon, S.ship.lat, g.lon, g.lat))}, ${Math.round(distNm(S.ship.lon, S.ship.lat, g.lon, g.lat))} miles. Sail onto her to give chase, or keep clear.`, 'alert');
+    }
+    const hunt = !ui.modal && !ui.pendingEncounter ? Pirates.contact(S, S.ship.lon, S.ship.lat) : null;
+    if (hunt) ui.pendingEncounter = hunt;
     if (!ui.modal && !ui.pendingEncounter) {
       const enc = Pirates.roll(S, dd, S.ship.lon, S.ship.lat);
       if (enc) ui.pendingEncounter = enc;

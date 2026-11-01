@@ -30,6 +30,30 @@ export function openEncounter(enc) {
   const { knots } = shipWind();
   const o = Pirates.odds(S, enc, knots);
   const pct = (x) => `${Math.round(x * 100)}%`;
+  if (enc.hunted) { // you ran her down: attack, or let her go
+    confirmDialog({
+      title: enc.big ? 'You have run down a great galley' : 'You have run down a corsair galley',
+      body: `<p>${enc.big ? 'A big Barbary galley, packed with fighting men,' : 'A Barbary galley'} off ${enc.where}, caught before her rowers can get her away. You have the wind and the surprise.</p>
+        <dl class="facts">
+          <dt>Attack</dt><dd>${pct(o.fight)} chance to take her${S.hull < 100 ? `, hull at ${Math.round(S.hull)}%` : ''}</dd>
+          <dt>If you take her</dt><dd>her plunder, and the crown's bounty of ${enc.big ? Pirates.BOUNTY.big : Pirates.BOUNTY.galley} cz</dd>
+          <dt>If she beats you off</dt><dd>they board you and strip the ship</dd>
+        </dl>
+        <p class="fine">Hunting corsairs makes your name feared on the Barbary coast: more of them will come looking for you.</p>
+        <div class="row choice">
+          <button data-modal-action="pass">Let her go</button>
+          <button class="primary" data-modal-action="attack">Attack</button>
+        </div>`,
+      ok: null,
+      cancel: false,
+      kind: 'encounter',
+      actions: {
+        attack: () => settleEncounter(enc, 'fight', knots),
+        pass: () => { Pirates.endHunt(S, enc, 'pass'); toast('You let the galley go. She pulls away toward the coast.'); renderPanel(); save(); },
+      },
+    });
+    return;
+  }
   const t = Pirates.tribute(S, enc);
   confirmDialog({
     title: enc.big ? 'A great corsair galley!' : 'Corsairs!',
@@ -58,6 +82,7 @@ export function openEncounter(enc) {
 
 export function settleEncounter(enc, choice, knots) {
   const r = Pirates.resolve(S, enc, choice, knots);
+  if (enc.hunted) Pirates.endHunt(S, enc, 'fought'); // beaten or not, she goes home
   log(r.lines[r.lines.length - 1]);
   for (const line of r.lines) addNotice(line, r.kind);
   if (r.spoils) { offerPlunder(enc, r); return; }
@@ -491,6 +516,8 @@ export function dock(portId) {
   }
   const shut = Events.closure(S, portId);
   if (shut) toast(`<b>${p.name} is closed:</b> ${Events.template(shut).title.toLowerCase()}. You may anchor, but not trade.`, '');
+  const galleysHeard = Pirates.portReports(S, p);
+  if (galleysHeard.length) toast(`<b>Word on the quay:</b> ${galleysHeard.map((g) => `${g.big ? 'a great corsair galley' : 'a corsair galley'} was seen off ${g.zone}`).join('; ')}. The sighting is marked on your chart.`, 'alert');
   checkMilestones();
   ui.panelMode = 'port';
   renderPanel();

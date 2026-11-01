@@ -4,6 +4,7 @@ import { PORTS, findPath, loadRoutes, shoalDepth } from './world.js';
 import * as Fleet from './fleet.js';
 import * as Contracts from './contracts.js';
 import * as Cloud from './cloud.js';
+import * as Pirates from './pirates.js';
 import * as Accounts from './accounts.js';
 import { S, market, ui } from './state.js';
 import { DAYS_PER_SEC } from './config.js';
@@ -143,6 +144,8 @@ window.helmline = {
   sync: () => cloudSync(true),
   save: () => save(),
   panel: (mode) => { ui.panelMode = mode; renderPanel(); },
+  tickGalleys: (days) => Pirates.tickGalleys(S, days),
+  huntCheck: () => { const e = Pirates.contact(S, S.ship.lon, S.ship.lat); if (e) ui.pendingEncounter = e; return !!e; },
   fleetStatus: (id) => Fleet.statusText(S, S.fleet.ships.find((x) => x.id === id)),
   // sail on for some days of game time, as the frame loop would (stops for dialogs and arrivals)
   sailFor: (days) => { const sp = ui.speed; ui.speed = 1; for (let d = 0; d < days && !ui.modal && !ui.arrival; d += 0.25) update(0.25 / DAYS_PER_SEC); ui.speed = sp; renderPanel(); return S.ship.docked; },

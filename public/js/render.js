@@ -237,6 +237,34 @@ export function drawShipAt(lon, lat, heading, sail, flag, size) {
   ctx.restore();
 }
 
+// Corsair galleys: in sight, drawn where they are; seen earlier or heard of in port, a faded mark
+// where they were last seen, with how long ago. Old sightings fade out after a fortnight.
+export function drawGalleys() {
+  const G = S.pirates?.galleys;
+  if (!G?.length) return;
+  ctx.save();
+  ctx.font = 'italic 12px "IM Fell English", Georgia, serif';
+  ctx.textAlign = 'center';
+  for (const g of G) {
+    if (g.seen == null) continue;
+    const ago = S.day - g.seen;
+    if (ago > 15) continue;
+    const live = ago < 0.5;
+    const lon = live ? g.lon : g.seenLon, lat = live ? g.lat : g.seenLat;
+    ctx.globalAlpha = live ? 1 : Math.max(0.35, 0.8 - ago / 25);
+    drawShipAt(lon, lat, g.heading, '#7a1c14', '#1a1a1a', g.big ? 1.05 : 0.9);
+    const [sx, sy] = toScreen(lon, lat);
+    const label = live ? (g.big ? 'Great galley' : 'Corsairs') : `Corsairs, ${Math.max(1, Math.round(ago))} ${Math.round(ago) <= 1 ? 'day' : 'days'} ago`;
+    ctx.lineWidth = 3;
+    ctx.strokeStyle = 'rgba(236,223,192,0.9)';
+    ctx.strokeText(label, sx, sy + 20);
+    ctx.fillStyle = '#7a1c14';
+    ctx.fillText(label, sx, sy + 20);
+  }
+  ctx.globalAlpha = 1;
+  ctx.restore();
+}
+
 export function drawFleet() {
   const F = S.fleet;
   if (!F?.ships.length) return;
@@ -459,5 +487,6 @@ export function render() {
   ctx.restore();
 
   drawFleet();
+  drawGalleys();
   drawShip();
 }
