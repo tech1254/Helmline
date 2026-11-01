@@ -694,6 +694,9 @@ export function summarise(list) {
     firstHire: med(list.map((r) => r.firstHire ?? end)), explored: med(list.map((r) => r.explored ?? end)), nau: list.filter((r) => r.nau).length / list.length,
     rebuilds: avg(list.map((r) => r.rebuilds || 0)), replaced: avg(list.map((r) => r.replaced || 0)),
     shipsLost: avg(list.map((r) => r.lost)), broke: list.filter((r) => r.broke != null).length / list.length,
+    hired: list.filter((r) => r.firstHire != null).length / list.length,
+    ruinedBeforeHire: list.filter((r) => r.broke != null && (r.firstHire == null || r.broke < r.firstHire)).length / list.length,
+    firstHires: list.map((r) => r.firstHire).filter((y) => y != null).sort((a, b) => a - b),
     riverWaitDays: avg(list.map((r) => r.riverWaitDays)), boatDays: avg(list.map((r) => r.boatDays)),
     series: list[0].series.map((pt, i) => {
       const at = (r) => r.series[i] || r.series[r.series.length - 1];
@@ -728,6 +731,8 @@ export function printSummary(s) {
   console.log(`  corsairs: met ${K.met.toFixed(0)} (${(K.met / yrs).toFixed(1)}/yr) · paid ${K.pay.toFixed(0)}, ran ${K.run.toFixed(0)}, fought ${K.fight.toFixed(0)} · won ${K.won.toFixed(0)} (plundered ${K.plundered.toFixed(0)}), beaten ${K.lost.toFixed(0)} · notoriety ${K.notoriety.toFixed(0)}`);
   console.log(`  corsairs by decade (encounters · how strongly they are drawn to him): ${Object.entries(K.byDecade).map(([d, v]) => `${d}s ${v.met.toFixed(1)}·${v.attention.toFixed(2)}`).join('  ')}`);
   console.log(`  old ships: ${s.rebuilds.toFixed(1)} great rebuilds, ${s.replaced.toFixed(1)} new hulls`);
+  const fh = s.firstHires, q = (f) => fh.length ? fh[Math.min(fh.length - 1, Math.floor(f * fh.length))].toFixed(1) : '-';
+  console.log(`  first captain: hired in ${Math.round(s.hired * 100)}% of careers (earliest ${q(0)}, median ${q(0.5)}, latest ${q(1)}); ruined before hiring one: ${Math.round(s.ruinedBeforeHire * 100)}%; neither, still without one at the end: ${Math.round((1 - s.hired - s.ruinedBeforeHire) * 100)}%`);
   console.log(`  at sea: ships lost ${s.shipsLost.toFixed(1)}, ruined ${Math.round(s.broke * 100)}% · ${cz(s.boatDays)} ship-days with the boats, ${cz(s.riverWaitDays)} waiting for the river`);
   console.log(`  fleet at the end (one career): ${s.fleet}`);
 }

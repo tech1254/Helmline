@@ -318,10 +318,11 @@ function hullBanner(pid) {
   if (h >= Math.min(90, cap - 1) && ageLine) return `<p class="banner ${cap < Wear.LEAKS_BELOW ? 'warn' : ''}"><b>Hull ${Math.round(h)}%</b>${ageLine}</p>`;
   const yard = Wear.YARDS.includes(pid);
   const q = yard ? Wear.yardQuote(S.ship.hull, h, years) : Wear.beachQuote(S.ship.hull, h, years);
+  const bq = Wear.beachQuote(S.ship.hull, h, years); // the beach is there in a yard port too, and cheaper
   const days = (n) => `${n} ${n === 1 ? 'day' : 'days'}`;
   const state = h < Wear.DANGER_BELOW ? 'in danger, ' : h < Wear.LEAKS_BELOW ? 'leaking, ' : '';
   const act = yard
-    ? `<button data-repair ${S.purse < q.cost ? 'disabled' : ''}>Repair in the yard: ${q.cost.toLocaleString()} cz, ${days(q.days)}</button>`
+    ? `<button data-repair ${S.purse < q.cost ? 'disabled' : ''}>Repair in the yard: ${q.cost.toLocaleString()} cz, ${days(q.days)}</button>${bq.pts > 0 ? ` <button data-careen ${S.purse < bq.cost ? 'disabled' : ''}>Or careen her on the beach: ${bq.cost.toLocaleString()} cz, ${days(bq.days)}, to ${Wear.BEACH_TO}%</button>` : ''}`
     : q.pts > 0
       ? `<button data-careen ${S.purse < q.cost ? 'disabled' : ''}>Careen her on the beach: ${q.cost.toLocaleString()} cz, ${days(q.days)}, to ${Wear.BEACH_TO}%</button> <span class="fine">The yards of Lisbon, Lagos and Funchal make her fully sound.</span>`
       : '<span class="fine">The yards of Lisbon, Lagos and Funchal can make her fully sound.</span>';

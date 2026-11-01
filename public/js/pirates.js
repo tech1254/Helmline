@@ -52,6 +52,24 @@ export function hullFactor(S) {
   return 0.6 + 0.4 * (S.hull ?? 100) / 100; // a battered hull sails slower
 }
 
+// How tempting the ship is as a prize: corsairs hunt rich ships, and hardly trouble a poor coaster.
+// By what she is worth to take (her cargo at cost, and the purse aboard): a quarter as tempting
+// at a new trader's 500 cz, in full from PRIZE_FULL.
+export const PRIZE_FULL = 3000;
+export function prize(S) {
+  const cargo = Object.values(S.paid || {}).reduce((t, x) => t + (x || 0), 0);
+  return Math.min(1, Math.max(0.15, (Math.max(0, S.purse) + cargo) / PRIZE_FULL));
+}
+// Corsairs want the cargo, not to sink the ship: one fight leaves a sound hull just above leaking,
+// and takes at most a little more from one that is already worn that far.
+export const SPARED_HULL = Wear.LEAKS_BELOW + 2;
+export function battered(hull, dmg) {
+  if (hull > SPARED_HULL) return Math.max(SPARED_HULL, hull - dmg);
+  return Math.max(10, hull - Math.min(dmg, 5));
+}
+// What the corsairs leave a captain they have beaten: enough to get home and start again.
+export const LEAVE_PURSE = 150;
+
 // Called as days pass at sea. Returns an encounter, or null.
 export function roll(S, days, lon, lat) {
   const P = ensurePirates(S);
@@ -64,7 +82,7 @@ export function roll(S, days, lon, lat) {
   if (!d) return null;
   // galleys think twice about a big ship, and hardly bother with a poor little coaster
   const st = S.ship?.hull ? Ships.flagStats(S) : { shy: 1, lure: 1 };
-  const chance = 1 - Math.exp(-BASE_CHANCE * d * attention(S) * st.shy * (st.lure ?? 1) * days);
+  const chance = 1 - Math.exp(-BASE_CHANCE * d * attention(S) * st.shy * (st.lure ?? 1) * prize(S) * days);
   if (Math.random() > chance) return null;
   P.cooldown = COOLDOWN_DAYS;
   P.encounters++;
@@ -122,7 +140,7 @@ function fight(S, enc, p, forced = false) {
   let kind;
   if (Math.random() < p) {
     const dmg = Math.round(5 + Math.random() * 12);
-    S.hull = Math.max(10, S.hull - dmg);
+    S.hull = battered(S.hull, dmg);
     P.notoriety += forced ? 0 : 1;
     P.won++;
     lines.push(`Your crew beats off the corsairs. ${enc.big ? 'The great galley' : 'The galley'} lies alongside, her rowers beaten. Your hull is damaged (${Math.round(S.hull)}%).`);
@@ -141,11 +159,11 @@ function fight(S, enc, p, forced = false) {
         lostGoods.push(`${take} ${take === 1 ? good.one : good.unit} of ${good.name.toLowerCase()}`);
       }
     }
-    const cash = Math.round(Math.min(300, Math.max(0, S.purse) * 0.2) * (1 - guard));
+    const cash = Math.round(Math.min(300, Math.max(0, S.purse - LEAVE_PURSE) * 0.2) * (1 - guard));
     const dmg = Math.round(20 + Math.random() * 15);
     S.purse -= cash;
     Accounts.record(S, { kind: 'corsairs', amount: -cash, port: null, text: `Seized by corsairs off ${enc.where}` });
-    S.hull = Math.max(10, S.hull - dmg);
+    S.hull = battered(S.hull, dmg);
     P.notoriety += forced ? 0 : 2;
     P.lost++;
     lines.push(`The corsairs board you and strip the ship: ${lostGoods.length ? lostGoods.join(', ') : 'no cargo'}${cash ? ` and ${cash} cz` : ''}. The hull is badly damaged (${Math.round(S.hull)}%).`);
