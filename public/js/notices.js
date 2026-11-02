@@ -67,7 +67,7 @@ export function toast(html, kind = '', feed = true, level = 'normal') {
   run();
 }
 
-// On a phone the pop-ups sit just under the top bar, however many rows it wraps to.
+// On a phone the pop-ups sit at the bottom of the chart, above the status line and the panel.
 // Pop-ups never cover the side panel, so they cannot swallow a tap meant for its buttons.
 // On a wide screen they sit over the middle of the open chart, left of the panel; on a phone
 // just under the top bar, with the stack cut off where the panel begins.
@@ -76,18 +76,24 @@ export function placeToasts() {
   const panel = $('panel');
   const open = !panel.hidden ? panel.getBoundingClientRect() : null;
   if (window.innerWidth > 700) {
-    el.style.top = ''; el.style.maxHeight = '';
+    el.style.top = ''; el.style.bottom = ''; el.style.maxHeight = '';
     const room = open ? open.left : window.innerWidth;
     el.style.left = `${Math.round(room / 2)}px`;
     el.style.setProperty('--toast-max', `${Math.max(240, Math.min(560, room - 32))}px`);
     return;
   }
+  // On a phone they rise from the bottom, full width, just above the status line (or the open
+  // panel, or the pilot's buttons), newest at the bottom, so the ports up the chart stay clear.
   const top = Math.round($('hud').getBoundingClientRect().bottom + 8);
+  let anchor = open ? open.top : ($('status')?.getBoundingClientRect().top || window.innerHeight - 60);
+  const games = $('pilot-games');
+  if (games && !games.hidden) anchor = Math.min(anchor, games.getBoundingClientRect().top);
   el.style.left = '';
-  el.style.top = `${top}px`;
+  el.style.top = '';
+  el.style.bottom = `${Math.round(window.innerHeight - anchor + 8)}px`;
   el.style.removeProperty('--toast-max');
-  const room = open ? Math.round(open.top - top - 8) : null;
-  el.style.maxHeight = room === null ? '' : `${room < 44 ? 0 : room}px`; // no room for a whole pop-up: none
+  const room = Math.round(anchor - top - 16);
+  el.style.maxHeight = `${room < 44 ? 0 : room}px`; // no room for a whole pop-up: none
 }
 
 // Pop-ups held back during the arrival scene, shown when it ends (already in the feed).

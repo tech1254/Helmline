@@ -235,7 +235,8 @@ button.mini { font-size: 13px; padding: 3px 8px; justify-self: start; }
   .controls { margin-left: 0; }
   #panel { top: auto; bottom: 60px; right: 8px; left: 8px; width: auto; max-height: 58vh; }
   #status { font-size: 13px; }
-  #toast { bottom: auto; top: 136px; flex-direction: column-reverse; justify-content: flex-end; overflow: hidden; }
+  #toast { top: auto; left: 8px; right: 58px; transform: none; flex-direction: column; justify-content: flex-end; align-items: stretch; overflow: hidden; }
+  #toast .t { max-width: none; font-size: 14px; padding: 7px 12px; text-align: left; }
   #modal.aside { align-items: end; justify-items: stretch; padding: 10px 8px 60px; }
   #modal.aside .card { max-height: calc(100vh - 70px); max-height: calc(100dvh - 70px); }
   #zoom { bottom: 64px; }
