@@ -28,6 +28,7 @@ import { initDock } from './dock.js';
 import { initShipyard } from './shipyard.js';
 import * as Ships from './ships.js';
 import { startArrival } from './scene.js';
+import { initSight, sightTick } from './sightview.js';
 
 // ---- Intro & loop -----------------------------------------------------------
 function startIntro(hasSave) {
@@ -71,6 +72,7 @@ function frame(t) {
   const dt = Math.min(0.1, (t - last) / 1000);
   last = t;
   if (ui.introDone) update(dt);
+  if (ui.introDone) sightTick(dt); // the bonus sight at sea, when one can be taken
   // back wages are paid the moment there is money in the purse in port (a sale, a contract)
   if (ui.introDone && S?.ship?.docked && S.crewOwed > 0 && S.purse >= 1) { payCrew(); renderHud(); }
   const free = !ui.modal && !ui.screen && !ui.arrival;
@@ -94,6 +96,7 @@ initActions();
 initDialog();
 initNotices();
 initDock();
+initSight();
 initShipyard();
 window.addEventListener('resize', () => { resize(); clampCam(); });
 window.addEventListener('beforeunload', () => ui.introDone && save());
@@ -134,7 +137,7 @@ requestAnimationFrame(frame);
 
 // Exposed for debugging in the console.
 window.helmline = {
-  get state() { return S; }, market: () => market, offers: (pid) => Contracts.offersAt(S, market, pid), setCourse, setSpeed, screenOf: (lon, lat) => toScreen(lon, lat),
+  get state() { return S; }, get ui() { return ui; }, market: () => market, offers: (pid) => Contracts.offersAt(S, market, pid), setCourse, setSpeed, screenOf: (lon, lat) => toScreen(lon, lat),
   away: (minutes) => { S.lastSeen = Date.now() - minutes * 60000; const sum = catchUp(); if (sum) ui.pendingSummary = sum; return sum && { days: sum.days, purse: Math.round(sum.purse), capped: sum.capped }; },
   encounter: (big = false) => { ui.pendingEncounter = { where: 'the Barbary coast', big, strength: big ? 1.35 : 1 }; },
   route: (lon, lat) => findPath(S.ship.lon, S.ship.lat, lon, lat),

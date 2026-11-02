@@ -615,6 +615,7 @@ export function renderHelp(el) {
       <li><b>The price book</b> remembers only the prices you have seen, and they go stale. News of events reaches you in port, late for distant places.</li>
       <li><b>Perishables</b> such as wine, dye and pepper slowly spoil at sea, faster in the tropics. Gold and ivory keep.</li>
       <li><b>Corsairs</b> prowl off Morocco, the Algarve and the Canaries. When challenged, run, fight or pay. Beat a galley and you can plunder her, and the crown pays a bounty for her in any Portuguese port; but plundering makes your name feared and draws more of them, while avoiding fights calms the seas. Fighting men and boarding nets from the shipyard improve your odds. Battle damage slows you until a shipwright in Lisbon, Lagos or Funchal repairs it.</li>
+      <li><b>Taking a sight:</b> once a passage, when you are 8 days out with at least 6 to go, a <i>Take a sight</i> button appears. Line your sight up on the Pole Star (or, with an astrolabe, the noon sun south of the line) and press Mark as she rolls level: a good sight makes her 5% faster for the rest of the passage, a fine one 10%. Better instruments make the notch wider. A miss costs nothing.</li>
       <li><b>Charts:</b> the crown pays ${CHART_REWARD} cz for each new port or island group, on your return to ${homeName(S)}.</li>
     </ul>
     <p class="fine">Captain's notes explain each of these as it first matters. The rest, in full:</p>

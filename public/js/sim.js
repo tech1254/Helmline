@@ -15,6 +15,7 @@ import * as Competition from './competition.js';
 import * as Ships from './ships.js';
 import * as Wear from './wear.js';
 import * as Lending from './lending.js';
+import * as Sight from './navsight.js';
 import * as Pilots from './pilots.js';
 import { DAYS_PER_SEC, OFFLINE_DAYS_PER_DOUBLING, OFFLINE_FULL_DAYS, OFFLINE_MAX_DAYS, OFFLINE_MIN_SECONDS, OFFLINE_RATE, SIGHT, STANDING_FADES_AFTER_HOURS } from './config.js';
 import { S, market, ui } from './state.js';
@@ -36,7 +37,7 @@ export function shipWind() {
   const w = windAt(S.ship.lon, S.ship.lat, S.day);
   const off = angleDiff(S.ship.heading, w.from);
   const f = sailFactor(off) * (0.45 + 0.55 * w.strength);
-  return { w, off, f, knots: Ships.knotsAt(Ships.flagStats(S), off, f, Pirates.hullFactor(S)) };
+  return { w, off, f, knots: Ships.knotsAt(Ships.flagStats(S), off, f, Pirates.hullFactor(S)) * Sight.boost(S) }; // a good sight: a truer course for a few days (navsight.js)
 }
 
 // How full the flagship's hold is, 0 to 1 (her draft follows it).

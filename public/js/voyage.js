@@ -13,6 +13,7 @@ import * as Fleet from './fleet.js';
 import { CHART_REWARD, MILESTONES } from './config.js';
 import * as Ships from './ships.js';
 import * as Lending from './lending.js';
+import * as Sight from './navsight.js';
 import * as Wear from './wear.js';
 import { S, market, ui } from './state.js';
 import { save } from './save.js';
@@ -313,7 +314,8 @@ export function applyCourse(plan) {
     return;
   }
   if (S.ship.docked && S.ship.recruitUntil > S.day) { hint(`A new crew is signing on: about ${Math.ceil(S.ship.recruitUntil - S.day)} more days before she can sail. Wait in port.`); return; }
-  if (S.ship.docked) finishBoats();
+  if (S.ship.docked) { finishBoats(); Sight.beginPassage(S); } // a new passage: one sight in it
+  else if (!S.ship.passage) Sight.beginPassage(S);
   plog('sail', { from: S.ship.docked || null, to: plan.dest?.port || null, lon: Math.round(plan.dest?.lon * 100) / 100 || undefined, lat: Math.round(plan.dest?.lat * 100) / 100 || undefined });
   S.ship.route = plan.route;
   S.ship.dest = plan.dest;
@@ -476,6 +478,7 @@ export function dock(portId) {
   const sh = S.ship;
   const p = PORTS.find((x) => x.id === portId);
   sh.docked = portId;
+  Sight.endPassage(S);
   ui.planFocus = null;
   plog('dock', { port: portId, hull: Math.round(S.hull ?? 100), purse: Math.round(S.purse), cargo: Object.fromEntries(Object.entries(S.cargo).filter(([, n]) => n > 0)) });
   sh.route = [];
