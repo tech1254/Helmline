@@ -615,7 +615,10 @@ export function renderHelp(el) {
       <li><b>The price book</b> remembers only the prices you have seen, and they go stale. News of events reaches you in port, late for distant places.</li>
       <li><b>Perishables</b> such as wine, dye and pepper slowly spoil at sea, faster in the tropics. Gold and ivory keep.</li>
       <li><b>Corsairs</b> prowl off Morocco, the Algarve and the Canaries. When challenged, run, fight or pay. Beat a galley and you can plunder her, and the crown pays a bounty for her in any Portuguese port; but plundering makes your name feared and draws more of them, while avoiding fights calms the seas. Fighting men and boarding nets from the shipyard improve your odds. Battle damage slows you until a shipwright in Lisbon, Lagos or Funchal repairs it.</li>
-      <li><b>Taking a sight:</b> once a passage, when you are 8 days out with at least 6 to go, a <i>Take a sight</i> button appears. Line your sight up on the Pole Star (or, with an astrolabe, the noon sun south of the line) and press Mark as she rolls level: a good sight makes her 5% faster for the rest of the passage, a fine one 10%. Better instruments make the notch wider. A miss costs nothing.</li>
+      <li><b>The pilot's work:</b> your instruments help on their own, but at sea you can also do the pilot's work yourself, each once a passage, for a bonus that lasts until you make port. A miss costs nothing.
+        <b>Take a sight</b> (8 days out, 6 to go): set your sight on the Pole Star and mark as she rolls level; with an astrolabe (1485), shoot the noon sun instead, keeping its light through both sights as it swings, and with Zacuto's almanac (1496) work the latitude from the table. A good sight is 5% faster, a fine one 10%.
+        <b>Keep the traverse board</b> (3 days out, 4 to go): peg each course the helmsman calls, 3% or 5% faster.
+        <b>Heave the lead</b> (near a harbour where she must lie off): call the bottom as the lead touches, and she anchors closer: her boats work half as fast again, or twice as fast.</li>
       <li><b>Charts:</b> the crown pays ${CHART_REWARD} cz for each new port or island group, on your return to ${homeName(S)}.</li>
     </ul>
     <p class="fine">Captain's notes explain each of these as it first matters. The rest, in full:</p>

@@ -656,10 +656,25 @@ li.plan.focus { outline: 2px solid var(--gold, #b8892b); outline-offset: 2px; }
 #hud-purse .owed { display: block; font-style: normal; font-size: 11px; line-height: 1.1; letter-spacing: 0.02em; white-space: nowrap; }
 
 /* Taking a sight (sightview.js): a pill above the bottom controls, and the sight itself */
-.sight-btn { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(86px + env(safe-area-inset-bottom, 0px)); z-index: 30; display: inline-flex; align-items: center; gap: 8px; padding: 9px 16px; border-radius: 999px; font: 600 15px/1 Georgia, serif; background: linear-gradient(#d8b25a, #a8823a); color: #1d1209; border: 1px solid #120b06; box-shadow: 0 6px 18px rgba(0,0,0,0.35); cursor: pointer; }
-@media (min-width: 701px) { .sight-btn { bottom: calc(66px + env(safe-area-inset-bottom, 0px)); } }
-@media (prefers-reduced-motion: no-preference) { .sight-btn:not([hidden]) { animation: sight-in .4s ease-out; } @keyframes sight-in { from { opacity: 0; transform: translate(-50%, 8px); } to { opacity: 1; transform: translate(-50%, 0); } } }
+.pilot-games { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(86px + env(safe-area-inset-bottom, 0px)); z-index: 30; display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; width: max-content; max-width: calc(100vw - 32px); }
+.sight-btn { display: inline-flex; align-items: center; gap: 8px; padding: 9px 16px; border-radius: 999px; font: 600 15px/1 Georgia, serif; background: linear-gradient(#d8b25a, #a8823a); color: #1d1209; border: 1px solid #120b06; box-shadow: 0 6px 18px rgba(0,0,0,0.35); cursor: pointer; }
+@media (min-width: 701px) { .pilot-games { bottom: calc(66px + env(safe-area-inset-bottom, 0px)); } }
+@media (prefers-reduced-motion: no-preference) { .sight-btn { animation: sight-in .4s ease-out; } @keyframes sight-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } } }
 #sight-canvas { width: 100%; height: auto; display: block; border-radius: 6px; margin: 8px 0; background: #0b1626; }
 .sight-slider { display: grid !important; grid-template-columns: 1fr auto; align-items: center; gap: 6px 10px; }
 .sight-slider input { grid-column: 1 / -1; width: 100%; height: 34px; }
 .sight-slider output { grid-row: 1; grid-column: 2; font-variant-numeric: tabular-nums; font-weight: 600; }
+
+.astro-meter, .glass { height: 10px; border-radius: 5px; background: rgba(0,0,0,0.15); overflow: hidden; margin: 4px 0 8px; }
+.astro-meter i, .glass i { display: block; height: 100%; width: 0; background: linear-gradient(90deg, #d8b25a, #f0d48a); }
+.glass i { width: 100%; background: linear-gradient(90deg, #c8a05a, #e8c98a); }
+table.almanac { border-collapse: collapse; margin: 6px 0; font-variant-numeric: tabular-nums; }
+table.almanac th, table.almanac td { padding: 3px 12px; border-bottom: 1px solid rgba(0,0,0,0.12); text-align: left; }
+table.almanac .num { text-align: right; }
+.board-call { font-size: 17px; margin: 6px 0 2px; min-height: 2.6em; }
+.board { position: relative; width: min(300px, 78vw); aspect-ratio: 1; margin: 10px auto; border-radius: 50%; background: radial-gradient(circle, #b98d55 0 60%, #8a5f33 61% 100%); border: 3px solid #4a3018; }
+.board .peg { position: absolute; transform: translate(-50%, -50%); min-width: 40px; min-height: 30px; padding: 2px 4px; font-size: 12px; border-radius: 6px; }
+.board .peg.pegged { background: #3f6b3a; color: #fff; }
+.board .peg.wrong { background: #8a2c1c; color: #fff; }
+.board-hub { position: absolute; left: 50%; top: 50%; width: 14px; height: 14px; transform: translate(-50%, -50%); border-radius: 50%; background: #3b2412; }
+.pilot-games[hidden] { display: none; }

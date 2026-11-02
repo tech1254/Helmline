@@ -276,8 +276,8 @@ export function boatsFor(units) {
   if (!sh.offshore) return;
   const p = PORTS.find((x) => x.id === pid);
   const w = Ports.boatWork(pid, sh.hull, units, Ships.isDeep(sh.hull) && shoalDepth(p.lon, p.lat) <= DEEP_DRAFT);
-  const b = sh.boats || { total: 0, moved: 0, rate: w.rate };
-  sh.boats = { total: b.total - b.moved + units, moved: 0, rate: w.rate };
+  const b = sh.boats || { total: 0, moved: 0, rate: w.rate * (sh.leadRate || 1) };
+  sh.boats = { total: b.total - b.moved + units, moved: 0, rate: w.rate * (sh.leadRate || 1) };
   if (w.fee) {
     S.purse -= w.fee;
     Accounts.record(S, { kind: 'boats', amount: -w.fee, text: `Boatmen at ${p.name}, ${units} ${units === 1 ? 'unit' : 'units'}` });
@@ -478,6 +478,7 @@ export function dock(portId) {
   const sh = S.ship;
   const p = PORTS.find((x) => x.id === portId);
   sh.docked = portId;
+  sh.leadRate = Sight.leadRate(S); // the lead found the channel: she lies closer, her boats work faster
   Sight.endPassage(S);
   ui.planFocus = null;
   plog('dock', { port: portId, hull: Math.round(S.hull ?? 100), purse: Math.round(S.purse), cargo: Object.fromEntries(Object.entries(S.cargo).filter(([, n]) => n > 0)) });
