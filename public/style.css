@@ -679,3 +679,5 @@ table.almanac .num { text-align: right; }
 .board .peg.wrong { background: #8a2c1c; color: #fff; }
 .board-hub { position: absolute; left: 50%; top: 50%; width: 14px; height: 14px; transform: translate(-50%, -50%); border-radius: 50%; background: #3b2412; }
 .pilot-games[hidden] { display: none; }
+.yard-repair { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; background: #f3e8cf; color: #2e2216; border-color: #8a6a3a; margin: 8px 0 12px; }
+.yard-repair span { flex: 1 1 220px; }

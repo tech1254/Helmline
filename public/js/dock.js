@@ -142,7 +142,8 @@ export function initDock() {
   $('dock-time').addEventListener('contextmenu', (e) => e.preventDefault());
   $('dock-time').addEventListener('click', () => { if (longPress) { longPress = false; return; } setSpeed(nextTime(ui.speed)); });
   $('dock-ship').addEventListener('click', () => {
-    if (S.ship.docked && (S.hull ?? 100) < 90 && serviceHere()) { ui.panelMode = 'port'; renderPanel(); $('panel').scrollTop = 0; return; } // repairs: the hull box in the market
+    // no yard here, but she can be careened on the beach: the hull box in the market. In a yard port, the yard (repairs are there too).
+    if (S.ship.docked && (S.hull ?? 100) < 90 && serviceHere() === 'beach') { ui.panelMode = 'port'; renderPanel(); $('panel').scrollTop = 0; return; }
     ui.panelMode = null; renderPanel(); openShips(serviceHere() === 'yard' ? 'yard' : 'register');
   });
   $('dock-sail').addEventListener('click', () => toggle('sail'));

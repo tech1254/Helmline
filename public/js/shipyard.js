@@ -34,6 +34,18 @@ const portName = (id) => PORTS.find((p) => p.id === id)?.name || id;
 const fmt = (n) => Math.round(n).toLocaleString();
 const pct = (x) => `${Math.round(x * 100)}%`;
 
+// Her hull, at the top of the yard: repair her here (or careen her on the beach, cheaper, to 80%).
+function repairBanner() {
+  const h = Math.round(S.hull ?? 100);
+  const yrs = Ships.serviceYears(S.ship, S.day);
+  const q = Wear.yardQuote(S.ship.hull, S.hull ?? 100, yrs);
+  if (!q.pts) return '';
+  const bq = Wear.beachQuote(S.ship.hull, S.hull ?? 100, yrs);
+  const d = (n) => `${n} ${n === 1 ? 'day' : 'days'}`;
+  return `<div class="banner yard-repair"><span><b>Hull ${h}%.</b> The shipwrights can make her sound (${q.to}%).</span>
+    <button data-yard="repair" ${S.purse < q.cost ? 'disabled' : ''}>Repair: ${fmt(q.cost)} cz, ${d(q.days)}</button>${bq.pts > 0 ? `<button data-yard="careen" ${S.purse < bq.cost ? 'disabled' : ''}>Careen on the beach: ${fmt(bq.cost)} cz, ${d(bq.days)}, to ${Wear.BEACH_TO}%</button>` : ''}</div>`;
+}
+
 export function yardHere() {
   const pid = S.ship.docked;
   return YARDS.includes(pid) ? pid : null;
@@ -219,6 +231,7 @@ function yardHtml() {
   const renamed = (y.name || '').trim() && y.name.trim() !== sh.name;
   return `<div class="yard-card shipyard">
     ${header(full ? `The ${homeName(S)} shipyard` : `The shipwrights of ${portName(pid)}`, full ? 'Refits, new ships and orders for ships not yet built' : `Refits. New ships only in ${homeName(S)}.`)}
+    ${repairBanner()}
     ${ready.length && full ? `<div class="banner ready">${ready.map((o) => `<span>${o.kind === 'hull' ? `Your new ${Ships.HULLS[o.hull].name.toLowerCase()}${o.name ? ` <i>${esc(o.name)}</i>` : ''}` : Ships.choice(o.group, o.choice).name} is ready. ${fmt(o.price - o.paid)} cz due.</span><button class="primary" data-deliver-order="${S.yard.orders.indexOf(o)}">Take delivery</button>`).join('')}</div>` : ''}
     <div class="yard-body split">
       <section class="stage">
@@ -291,6 +304,14 @@ export function initShipyard() {
       const [g, c] = t.dataset.opt.split(':');
       y.draft[g] = c;
       renderShips();
+      return;
+    }
+    if (act === 'repair' || act === 'careen') {
+      const q = Pirates.repair(S, act === 'careen');
+      if (q.days) waitInPort(q.days);
+      toast(act === 'careen' ? `Her crew careen the <b>${S.ship.name}</b> on the beach: ${q.days} days and ${q.cost} cz, and she is at ${q.to}%.` : `The shipwrights make the <b>${S.ship.name}</b> sound again: ${q.days} days in the yard, ${q.cost} cz.`, 'port');
+      log(`${act === 'careen' ? 'Careened' : 'Repaired'} the hull: ${q.cost} cz, ${q.days} days.`);
+      save(); renderShips();
       return;
     }
     if (act === 'reset') { y.draft = { ...S.ship.fit }; renderShips(); return; }
