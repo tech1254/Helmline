@@ -29,6 +29,9 @@ const LOYALTY_REGAIN_PER_DAY = 0.3; // while the owner is playing
 // rechecking daily, before giving up and sailing empty.
 const MAX_WAIT_DAYS = 12;
 export const IDLE_PAY = 0.5;
+// A ship left with no route this long is laid up: her crew paid off, her captain ashore without
+// pay until he has orders again. She costs nothing while she waits.
+export const LAY_UP_DAYS = 14;
 const CANDIDATE_DAYS = 30;
 const REPORT_DAYS = 60; // a captain's rounds are summed up about every two months
 
@@ -581,7 +584,16 @@ export function tick(S, market, days, ownerPresent = true) {
   for (const ship of F.ships) {
     upgradeShip(ship);
     if (ship.built == null) { ship.built = S.day - 2 * 365; ship.tropic = 0; } // from before ships aged
-    const pay = dailyCost(ship) * (ship.status === 'sailing' ? 1 : IDLE_PAY) * days;
+    // no route: after a fortnight she is laid up and costs nothing
+    if (ship.route || ship.status === 'sailing') ship.idleSince = null;
+    else if (ship.idleSince == null) ship.idleSince = S.day;
+    const laidUp = ship.idleSince != null && S.day - ship.idleSince >= LAY_UP_DAYS;
+    if (laidUp && !ship.laidUp) {
+      ship.laidUp = true;
+      msgs.push({ html: `<b>${ship.name}</b> has waited ${LAY_UP_DAYS} days in ${port(ship.at).name} with no route: her crew are paid off and she is laid up. Captain ${ship.captain.name} waits ashore, unpaid, until you give him a route.`, kind: 'port', log: `${ship.name} laid up in ${port(ship.at).name}.` });
+    } else if (!laidUp) ship.laidUp = false;
+    const pay = laidUp ? 0 : dailyCost(ship) * (ship.status === 'sailing' ? 1 : IDLE_PAY) * days;
+    ship.paidTotal = (ship.paidTotal || 0) + pay;
     S.purse -= pay;
     roundOf(ship).net -= pay;
     Accounts.accrueCaptainWages(ship, pay);
@@ -865,7 +877,8 @@ export function statusText(S, ship) {
   if (ship.status === 'repair') return `${Wear.YARDS.includes(ship.at) ? `In the yard at ${port(ship.at).name}` : `Careened on the beach at ${port(ship.at).name}`} for ${Math.max(1, Math.ceil((ship.repairUntil ?? S.day) - S.day))} more days.`;
   if (ship.status === 'loading') return `Waiting in ${port(ship.at).name} for prices to recover, on half pay (${Math.max(0, Math.round(S.day - (ship.waitSince ?? S.day)))} of up to ${MAX_WAIT_DAYS} days).`;
   if (ship.status === 'ashore') return `Ashore in ${port(ship.at).name}: Captain ${ship.captain.name} will not sail until you give him orders there in person.`;
-  if (!r && ship.halted?.why === 'losing') return `Stopped in ${port(ship.at).name}: her route lost money. Give her a new one.`;
+  if (!r && ship.laidUp) return `Laid up in ${port(ship.at).name}, costing nothing: give her a route to send her out again.`;
+  if (!r && ship.halted?.why === 'losing') return `Stopped in ${port(ship.at).name}: her route lost money. Give her a new one (laid up, unpaid, after ${LAY_UP_DAYS} days).`;
   return r ? `In ${port(ship.at).name}.${skipsText(S, ship)}` : `Idle in ${port(ship.at).name}, awaiting a route.`;
 }
 

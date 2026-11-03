@@ -148,7 +148,7 @@ export function catchUp() {
   if (awaySec < OFFLINE_MIN_SECONDS || !S.fleet?.ships.length || !S.ship.docked) return null;
   const want = awaySec * DAYS_PER_SEC * OFFLINE_RATE;
   const days = offlineDays(want);
-  const before = { purse: S.purse, day: S.day, ships: Object.fromEntries(S.fleet.ships.map((x) => [x.id, { trips: x.trips, profit: x.profit, cargo: Fleet.holdPaid(x) }])) };
+  const before = { purse: S.purse, day: S.day, ships: Object.fromEntries(S.fleet.ships.map((x) => [x.id, { trips: x.trips, profit: x.profit, cargo: Fleet.holdPaid(x), paid: x.paidTotal || 0 }])) };
   // Long absences: captains stray (so they may skim or go ashore during it), and Lisbon's
   // merchants start to forget you.
   const hours = awaySec / 3600;
@@ -177,8 +177,8 @@ export function catchUp() {
     ui.offlineBuffer = null;
   }
   const ships = S.fleet.ships.map((x) => {
-    const b = before.ships[x.id] || { trips: 0, profit: 0, cargo: 0 };
-    return { name: x.name, trips: x.trips - b.trips, profit: x.profit - b.profit, cargoChange: Fleet.holdPaid(x) - b.cargo, status: Fleet.statusText(S, x) };
+    const b = before.ships[x.id] || { trips: 0, profit: 0, cargo: 0, paid: 0 };
+    return { name: x.name, trips: x.trips - b.trips, profit: x.profit - b.profit, cargoChange: Fleet.holdPaid(x) - b.cargo, wages: Math.round((x.paidTotal || 0) - (b.paid || 0)), status: Fleet.statusText(S, x) };
   });
   log(`Away ${awayText(awaySec)}: ${Math.round(days)} days passed; purse ${S.purse - before.purse >= 0 ? '+' : ''}${Math.round(S.purse - before.purse)} cz.`);
   save();
@@ -214,13 +214,15 @@ export function showSummary(sum) {
         <dt>Profit on cargoes sold</dt><dd>${sum.sales >= 0 ? '+' : ''}${Math.round(sum.sales).toLocaleString()} cz</dd>
         <dt>Wages and upkeep</dt><dd>−${Math.round(sum.wages).toLocaleString()} cz</dd>
         ${Math.abs(sum.cargo) >= 1 ? `<dt>${sum.cargo > 0 ? 'Cargo loaded for the next run' : 'Cargo from before, now sold'}</dt><dd>${sum.cargo > 0 ? '−' : '+'}${Math.abs(Math.round(sum.cargo)).toLocaleString()} cz</dd>` : ''}
-        <dt>Purse</dt><dd class="${sum.purse < 0 ? 'warn' : ''}">${sum.purse >= 0 ? '+' : ''}${Math.round(sum.purse).toLocaleString()} cz</dd>
+        <dt>Change in your purse</dt><dd class="${sum.purse < 0 ? 'warn' : ''}">${sum.purse >= 0 ? '+' : ''}${Math.round(sum.purse).toLocaleString()} cz</dd>
+        ${Math.abs(sum.cargo) >= 1 ? `<dt>Counting the cargo aboard</dt><dd class="${sum.purse + sum.cargo < 0 ? 'warn' : ''}">${sum.purse + sum.cargo >= 0 ? '+' : ''}${Math.round(sum.purse + sum.cargo).toLocaleString()} cz</dd>` : ''}
+        <dt>Your purse now</dt><dd class="${S.purse < 0 ? 'warn' : ''}">${Math.round(S.purse).toLocaleString()} cz</dd>
       </dl>
       <p class="fine">${sum.capped ? `That is the most that passes in one absence (${OFFLINE_MAX_DAYS} days).` : sum.slowed ? 'After the first few weeks, longer absences add time more slowly.' : 'The world moves at a tenth of its usual pace while you are gone.'}</p>
       ${sum.contractsHeld ? `<p class="fine">Your ${sum.contractsHeld === 1 ? 'contract waited' : `${sum.contractsHeld} contracts waited`} for you: deadlines moved back by ${Math.round(sum.days)} days.</p>` : ''}
       ${sum.strayed.length ? `<p class="warn">Your captains missed you: ${sum.strayed.map((x) => `Captain ${x.captain} is now ${Fleet.loyaltyText(x.after)}`).join('; ')}.</p>` : ''}
       ${sum.standingLost ? `<p class="warn">The merchants of ${homeName(S)} are starting to forget you: standing −${sum.standingLost}.</p>` : ''}
-      <ul class="help">${sum.ships.map((x) => `<li><b>${x.name}:</b> ${x.trips} ${x.trips === 1 ? 'cargo' : 'cargoes'} sold, ${x.profit >= 0 ? '+' : ''}${x.profit.toLocaleString()} cz. ${x.status}</li>`).join('')}
+      <ul class="help">${sum.ships.map((x) => `<li><b>${x.name}:</b> ${x.trips} ${x.trips === 1 ? 'cargo' : 'cargoes'} sold, ${x.profit >= 0 ? '+' : ''}${x.profit.toLocaleString()} cz; wages ${x.wages ? `−${x.wages.toLocaleString()}` : '0'} cz. ${x.status}</li>`).join('')}
         ${pick.map((m) => `<li>${strip(m.html)}</li>`).join('')}</ul>`,
     ok: 'Carry on',
     cancel: false,
