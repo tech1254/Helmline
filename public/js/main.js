@@ -29,6 +29,7 @@ import { initShipyard } from './shipyard.js';
 import * as Ships from './ships.js';
 import { startArrival } from './scene.js';
 import { initSight, sightTick } from './sightview.js';
+import { initUsage } from './usage.js';
 
 // ---- Intro & loop -----------------------------------------------------------
 function startIntro(hasSave) {
@@ -111,6 +112,7 @@ document.addEventListener('visibilitychange', () => {
 resize();
 setRecordHook(plog); // every ledger entry goes into the play log
 initPlaylog();
+initUsage(() => ui.introDone); // usage counts: opened, and minutes played
 Cloud.loadMeta();
 const hasSave = load();
 if (!hasSave) newGame();

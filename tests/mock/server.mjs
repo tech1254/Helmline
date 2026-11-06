@@ -19,7 +19,7 @@ class Stmt {
 }
 const types = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.svg': 'image/svg+xml', '.json': 'application/json' };
 const env = {
-  DB: { prepare: (sql) => new Stmt(sql) },
+  DB: { prepare: (sql) => new Stmt(sql), async batch(stmts) { const out = []; for (const s of stmts) out.push(await s.run()); return out; } },
   ASSETS: { async fetch(req) {
     let p = new URL(req.url).pathname; if (p.endsWith('/')) p += 'index.html';
     try { const body = await readFile(path.join(repo, 'public', p)); return new Response(body, { headers: { 'content-type': types[path.extname(p)] || 'application/octet-stream' } }); }
@@ -42,6 +42,11 @@ http.createServer(async (req, res) => {
   if (req.url === '/__test/playlog') { // tests read the play log
     res.writeHead(200, { 'content-type': 'application/json' });
     res.end(JSON.stringify(db.prepare('SELECT * FROM playlog ORDER BY id').all()));
+    return;
+  }
+  if (req.url === '/__test/usage') { // tests read the usage counts
+    res.writeHead(200, { 'content-type': 'application/json' });
+    res.end(JSON.stringify({ usage: db.prepare('SELECT * FROM usage').all(), devices: db.prepare('SELECT * FROM devices').all() }));
     return;
   }
   if (req.url === '/__test/feedback') { // tests read what was stored

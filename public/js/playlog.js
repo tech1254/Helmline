@@ -11,6 +11,7 @@
 
 import { S } from './state.js';
 import * as Cloud from './cloud.js';
+import { api } from './api.js';
 
 const KEY = 'helmline-playlog';
 const DEVICE_KEY = 'helmline-device';
@@ -29,7 +30,7 @@ export function setPlaylog(on) {
   if (!on) queue = [];
 }
 
-function deviceId() {
+export function deviceId() {
   if (device) return device;
   try {
     device = localStorage.getItem(DEVICE_KEY);
@@ -81,8 +82,8 @@ export async function flushPlaylog(beacon = false) {
   const body = batch();
   if (!body) return;
   try {
-    if (beacon && navigator.sendBeacon) { navigator.sendBeacon('/api/playlog', new Blob([body], { type: 'application/json' })); return; }
-    const r = await fetch('/api/playlog', { method: 'POST', headers: { 'content-type': 'application/json' }, body, keepalive: true });
+    if (beacon && navigator.sendBeacon) { navigator.sendBeacon(api('/api/playlog'), new Blob([body], { type: 'application/json' })); return; }
+    const r = await fetch(api('/api/playlog'), { method: 'POST', headers: { 'content-type': 'application/json' }, body, keepalive: true });
     if (!r.ok && r.status >= 500) queue.unshift(...JSON.parse(body).events); // try again later
   } catch (e) {
     queue.unshift(...JSON.parse(body).events); // offline: keep them for later

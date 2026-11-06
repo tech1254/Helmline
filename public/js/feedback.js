@@ -8,6 +8,7 @@ import { GOODS } from './economy.js';
 import { $, fmtDate } from './util.js';
 import { renderPanel, setSpeed } from './panels.js';
 import { hint } from './notices.js';
+import { api } from './api.js';
 
 const DRAFT_KEY = 'helmline-feedback-draft';
 const KINDS = {
@@ -127,7 +128,7 @@ export async function submitFeedback() {
   renderPanel();
   let r;
   try {
-    const res = await fetch('/api/feedback', {
+    const res = await fetch(api('/api/feedback'), {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ kind: draft.kind, message, contact: draft.contact.trim() || undefined, context: draft.details ? gameContext() : undefined }),

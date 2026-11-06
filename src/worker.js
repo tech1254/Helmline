@@ -20,16 +20,60 @@
 //   PATCH  /api/account/slots/:id { name }                     -> {}
 //   DELETE /api/account/slots/:id                              -> {}
 //   POST /api/playlog        { device, account?, run, events: [...] } -> {}   (the play log, for testing)
+//   POST /api/hello          { device, session, kind: 'start'|'beat', source, ref?, mobile? } -> {}   (usage counts)
 //   POST /api/feedback       { kind: 'bug'|'idea', message, contact?, context? } -> { id }
+// Admin (an account with the `admin` flag, signed in):
+//   GET  /api/admin/stats?days=N                                  -> players, play time, sources, feedback, accounts
+//   POST /api/admin/flags    { name, flags }                      -> {}   (settings for one account)
+//   POST /api/admin/feedback { id, status, note? }                -> {}
 //                            429 if one sender has sent too many in the last hour
 
 const MAX_BYTES = 512 * 1024;
 const CODE_ALPHABET = '23456789ABCDEFGHJKLMNPQRSTUVWXYZ'; // no 0/O or 1/I to mistype
 const CODE_LENGTH = 12;
 
+// The game is also played from itch.io, where its files are served from itch's own hosts: the API
+// answers those pages too (CORS), and only those and our own.
+const ALLOWED_ORIGIN = /^https:\/\/([a-z0-9-]+\.)*(helmline\.app|itch\.io|itch\.zone|hwcdn\.net)$/;
+function corsHeaders(request) {
+  const origin = request.headers.get('origin');
+  if (!origin || !ALLOWED_ORIGIN.test(origin)) return null;
+  return { 'access-control-allow-origin': origin, 'access-control-allow-methods': 'GET, POST, PUT, PATCH, DELETE, OPTIONS', 'access-control-allow-headers': 'content-type, authorization', 'access-control-max-age': '86400', vary: 'origin' };
+}
+
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
+    if (url.pathname.startsWith('/api/')) {
+      const cors = corsHeaders(request);
+      if (request.method === 'OPTIONS') return new Response(null, { status: cors ? 204 : 403, headers: cors || {} });
+      const res = await route(request, env, url);
+      if (!cors) return res;
+      const out = new Response(res.body, res);
+      for (const [k, v] of Object.entries(cors)) out.headers.set(k, v);
+      return out;
+    }
+    return env.ASSETS.fetch(request);
+  },
+};
+
+async function route(request, env, url) {
+    if (url.pathname.startsWith('/api/admin/')) {
+      try {
+        return await admin(request, env, url);
+      } catch (err) {
+        console.error('admin API error', err);
+        return json({ error: 'Something went wrong on the server.' }, 500);
+      }
+    }
+    if (url.pathname === '/api/hello') {
+      try {
+        return await hello(request, env);
+      } catch (err) {
+        console.error('usage API error', err);
+        return json({ error: 'Something went wrong on the server.' }, 500);
+      }
+    }
     if (url.pathname === '/api/saves' || url.pathname.startsWith('/api/saves/')) {
       try {
         return await saves(request, env, url);
@@ -62,10 +106,8 @@ export default {
         return json({ error: 'Something went wrong on the server.' }, 500);
       }
     }
-    if (url.pathname.startsWith('/api/')) return json({ error: 'Not found' }, 404);
-    return env.ASSETS.fetch(request);
-  },
-};
+    return json({ error: 'Not found' }, 404);
+}
 
 async function saves(request, env, url) {
   const parts = url.pathname.split('/').filter(Boolean); // ['api', 'saves', code?]
@@ -293,6 +335,87 @@ async function playlog(request, env) {
   const days = events.map((e) => e && Number.isFinite(e.day) ? e.day : null).filter((d) => d != null);
   await env.DB.prepare('INSERT INTO playlog (device, account, run, first_day, last_day, n, events, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)')
     .bind(device, account, run, days.length ? Math.min(...days) : null, days.length ? Math.max(...days) : null, events.length, JSON.stringify(events), now).run();
+  return json({}, 201);
+}
+
+// ---- Admin --------------------------------------------------------------------------
+async function adminAccount(request, env) {
+  const auth = (request.headers.get('authorization') || '').replace(/^Bearer\s+/i, '');
+  if (!auth) return null;
+  const sess = await env.DB.prepare('SELECT account_id, expires_at FROM sessions WHERE id = ?').bind(await hash(`session:${auth}`)).first();
+  if (!sess || sess.expires_at < Date.now()) return null;
+  const a = await env.DB.prepare('SELECT id, name, flags FROM accounts WHERE id = ?').bind(sess.account_id).first();
+  let flags = {};
+  try { flags = JSON.parse(a?.flags || '{}'); } catch { flags = {}; }
+  return a && flags.admin ? a : null;
+}
+
+async function admin(request, env, url) {
+  const me = await adminAccount(request, env);
+  if (!me) return json({ error: 'Admins only. Sign in with an admin account.' }, 403);
+  const what = url.pathname.split('/')[3];
+  if (what === 'stats' && request.method === 'GET') {
+    const days = Math.max(1, Math.min(365, parseInt(url.searchParams.get('days') || '30', 10) || 30));
+    const since = new Date(Date.now() - (days - 1) * 86400000).toISOString().slice(0, 10);
+    const q = (sql, ...a) => env.DB.prepare(sql).bind(...a).all().then((r) => r.results || []);
+    const one = (sql, ...a) => env.DB.prepare(sql).bind(...a).first();
+    const [daily, fresh, refs, totals, returning, feedback, accounts, runs] = await Promise.all([
+      q(`SELECT day, COUNT(*) AS active, SUM(source = 'itch') AS itch, SUM(source = 'direct') AS direct, SUM(source = 'other') AS other,
+          SUM(mobile) AS mobile, SUM(sessions) AS sessions, SUM(minutes) AS minutes FROM usage WHERE day >= ? GROUP BY day ORDER BY day`, since),
+      q('SELECT first_day AS day, COUNT(*) AS n, SUM(source = \'itch\') AS itch FROM devices WHERE first_day >= ? GROUP BY first_day', since),
+      q('SELECT COALESCE(ref, \'(none)\') AS ref, source, COUNT(DISTINCT device) AS players, SUM(minutes) AS minutes FROM usage WHERE day >= ? GROUP BY ref, source ORDER BY players DESC LIMIT 20', since),
+      one(`SELECT COUNT(*) AS players, SUM(source = 'itch') AS itch, SUM(source = 'direct') AS direct FROM devices`),
+      one('SELECT COUNT(*) AS n FROM (SELECT device FROM usage GROUP BY device HAVING COUNT(*) >= 2)'),
+      q('SELECT id, kind, message, contact, status, note, created_at FROM feedback ORDER BY id DESC LIMIT 30'),
+      q('SELECT a.name, a.flags, a.created_at, (SELECT COUNT(*) FROM saves s WHERE s.account_id = a.id) AS saves, (SELECT MAX(s.updated_at) FROM saves s WHERE s.account_id = a.id) AS last_save FROM accounts a ORDER BY a.created_at DESC LIMIT 200'),
+      one('SELECT COUNT(DISTINCT run) AS runs, COUNT(DISTINCT device) AS devices FROM playlog WHERE created_at > ?', Date.now() - days * 86400000),
+    ]);
+    const minutes = await one('SELECT SUM(minutes) AS m, COUNT(DISTINCT device) AS players FROM usage WHERE day >= ?', since);
+    return json({ days, since, daily, fresh, refs, totals, returning: returning?.n || 0, minutes, feedback, accounts, runs, now: Date.now() });
+  }
+  if (what === 'flags' && request.method === 'POST') {
+    const b = await request.json().catch(() => null);
+    if (!b || typeof b.name !== 'string' || !b.flags || typeof b.flags !== 'object' || Array.isArray(b.flags)) return json({ error: 'Give a name and flags.' }, 400);
+    const flags = JSON.stringify(b.flags);
+    if (flags.length > 500) return json({ error: 'Too many flags.' }, 400);
+    const r = await env.DB.prepare('UPDATE accounts SET flags = ? WHERE name = ?').bind(flags, b.name).run();
+    return r.meta?.changes ? json({}) : json({ error: 'No such account.' }, 404);
+  }
+  if (what === 'feedback' && request.method === 'POST') {
+    const b = await request.json().catch(() => null);
+    const status = ['new', 'backlog', 'dismissed', 'done'].includes(b?.status) ? b.status : null;
+    if (!b || !Number.isInteger(b.id) || !status) return json({ error: 'Give an id and a status.' }, 400);
+    await env.DB.prepare('UPDATE feedback SET status = ?, note = COALESCE(?, note), reviewed_at = ? WHERE id = ?').bind(status, typeof b.note === 'string' ? b.note.slice(0, 500) : null, Date.now(), b.id).run();
+    return json({});
+  }
+  return json({ error: 'Not found' }, 404);
+}
+
+// ---- Usage ------------------------------------------------------------------------
+// A ping when the game opens ('start') and every few minutes while it is played ('beat'): one row
+// per browser per day, counting sessions and minutes; the first day each browser was seen.
+const BEAT_MINUTES = 2;
+async function hello(request, env) {
+  if (request.method !== 'POST') return json({ error: 'Method not allowed' }, 405);
+  const text = await request.text();
+  if (text.length > 2000) return json({ error: 'Too large.' }, 413);
+  let b;
+  try { b = JSON.parse(text); } catch { return json({ error: 'Request is not valid JSON.' }, 400); }
+  const id = (x) => (typeof x === 'string' && /^[A-Za-z0-9_.-]{4,48}$/.test(x) ? x : null);
+  const device = id(b.device);
+  const kind = b.kind === 'start' || b.kind === 'beat' ? b.kind : null;
+  if (!device || !kind) return json({ error: 'Nothing to count.' }, 400);
+  const source = ['itch', 'direct', 'other'].includes(b.source) ? b.source : 'other';
+  const ref = typeof b.ref === 'string' && /^[a-z0-9.-]{1,80}$/i.test(b.ref) ? b.ref.toLowerCase() : null;
+  const mobile = b.mobile ? 1 : 0;
+  const now = Date.now();
+  const day = new Date(now).toISOString().slice(0, 10);
+  await env.DB.batch([
+    env.DB.prepare(`INSERT INTO usage (day, device, source, ref, mobile, sessions, minutes, first_ts, last_ts) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+      ON CONFLICT(day, device) DO UPDATE SET sessions = MIN(sessions + excluded.sessions, 200), minutes = MIN(minutes + excluded.minutes, 1440), last_ts = excluded.last_ts`)
+      .bind(day, device, source, ref, mobile, kind === 'start' ? 1 : 0, kind === 'beat' ? BEAT_MINUTES : 0, now, now),
+    env.DB.prepare('INSERT OR IGNORE INTO devices (device, first_day, source, ref) VALUES (?, ?, ?, ?)').bind(device, day, source, ref),
+  ]);
   return json({}, 201);
 }
 

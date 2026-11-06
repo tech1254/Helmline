@@ -2,6 +2,8 @@
 // only key to the save, so it is kept on this device and shown to the player) or as one of the
 // named saves of an account (signed in with a name and password; see account below).
 
+import { api } from './api.js';
+
 const META_KEY = 'helmline-cloud-v1';
 const ACCOUNT_KEY = 'helmline-account-v1';
 
@@ -47,7 +49,7 @@ function saveAccount() {
 async function call(method, path, body) {
   const headers = body ? { 'content-type': 'application/json' } : {};
   if (account.token && path.startsWith('/api/account')) headers.authorization = `Bearer ${account.token}`;
-  const res = await fetch(path, {
+  const res = await fetch(api(path), {
     method,
     headers,
     body: body ? JSON.stringify(body) : undefined,
