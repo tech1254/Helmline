@@ -31,6 +31,7 @@ import { draftFor, renderPanel, renderTip, routeDrafts, routeSummary, setSpeed, 
 import { log, passage, quote, tradeFacts } from './pricebook.js';
 import { confirmDialog } from './dialog.js';
 import { hint, toast } from './notices.js';
+import { endFirst } from './firstvoyage.js';
 
 // Route editor: keep the draft in step with the selects.
 
@@ -356,6 +357,8 @@ export function initActions() {
       const plan = planCourse(p.lon, p.lat, p.id, false);
       if (plan) { ui.panelMode = null; confirmVoyage(plan); }
       else hint(noPassage());
+    } else if (t.hasAttribute('data-first-end')) {
+      endFirst();
     } else if (t.hasAttribute('data-prices')) {
       ui.panelMode = 'prices';
     } else if (t.hasAttribute('data-close-prices') || t.hasAttribute('data-close-ledger')) {

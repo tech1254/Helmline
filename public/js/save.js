@@ -100,7 +100,8 @@ export function applySaveData(d) {
   }
 }
 
-export function newGame(nation = 'portugal') {
+// quiet: the stand-in game shown behind the intro before a crown is chosen (not logged, not saved).
+export function newGame(nation = 'portugal', { quiet = false } = {}) {
   setGame(freshState(nation), new Market());
   const N = NATIONS[S.nation];
   initFog(null);
@@ -115,11 +116,11 @@ export function newGame(nation = 'portugal') {
   Accounts.ensureAccounts(S);
   Taxes.ensureTaxes(S);
   Story.ensureStory(S, true);
-  S.runId = null; playlogBegin('new'); // a new game: a new run in the play log
+  S.runId = null; if (!quiet) playlogBegin('new'); // a new game: a new run in the play log
   Ships.ensureFlagship(S);
   Ports.ensurePorts(S);
   syncMarket();
   observe(N.start);
   centerOn(...N.view);
-  save();
+  if (!quiet) save();
 }

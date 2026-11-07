@@ -115,7 +115,7 @@ initPlaylog();
 initUsage(() => ui.introDone); // usage counts: opened, and minutes played
 Cloud.loadMeta();
 const hasSave = load();
-if (!hasSave) newGame();
+if (!hasSave) newGame('portugal', { quiet: true }); // the chart behind the intro; the real game starts when a crown is chosen
 if (Cloud.cloud.code && hasSave) ui.lastPushed = null;
 renderCloudButton();
 checkCloudOnStart();

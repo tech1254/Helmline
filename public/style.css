@@ -681,3 +681,18 @@ table.almanac .num { text-align: right; }
 .pilot-games[hidden] { display: none; }
 .yard-repair { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; background: #f3e8cf; color: #2e2216; border-color: #8a6a3a; margin: 8px 0 12px; }
 .yard-repair span { flex: 1 1 220px; }
+
+/* The first voyage (firstvoyage.js): three steps at the top of the market for a new player. */
+.first { border: 1.5px solid var(--gold); border-radius: 8px; background: #f6ecc9; padding: 10px 12px; margin: 0 0 12px; }
+.first h3 { font: 400 19px/1.2 var(--display); margin: 0 0 6px; }
+.first-head { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+.first-head .link { font-size: 13px; color: var(--muted); }
+.first ol { margin: 0; padding-left: 22px; display: grid; gap: 8px; }
+.first li { font-size: 15px; }
+.first li > span { display: block; }
+.first li.did { color: var(--muted); text-decoration: line-through; text-decoration-thickness: 1px; }
+.first li.next { color: var(--muted); }
+.first li.now { font-weight: 600; }
+.first li button { margin-top: 5px; font-size: 15px; padding: 6px 12px; }
+.first p { margin: 8px 0 0; font-size: 14px; }
+.first .row { margin-top: 10px; display: flex; flex-wrap: wrap; gap: 8px; }

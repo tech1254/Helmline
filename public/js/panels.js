@@ -35,6 +35,7 @@ import { renderFeedback } from './feedback.js';
 import { isBook, renderDock, renderMenu, serviceHere } from './dock.js';
 import { YARDS } from './shipyard.js';
 import { moneyBox } from './lendingview.js';
+import { ensureFirst, firstActive, firstAtSea, firstBox } from './firstvoyage.js';
 
 // ---- HUD & panels -----------------------------------------------------------
 
@@ -214,6 +215,7 @@ export function renderPort(el) {
   const st = Ships.flagStats(S);
   const free = st.hold - held();
   const shut = Events.closure(S, pid);
+  ensureFirst(); // a new game: the guided first voyage (firstvoyage.js)
   const rows = GOODS.map((g) => {
     const sells = market.sells(pid, g.id) && !shut;
     const buy = sells ? market.buyPrice(pid, g.id) : null;
@@ -237,6 +239,7 @@ export function renderPort(el) {
     ${portKnown(pid)
       ? `<details class="port-about"><summary>About ${p.name}</summary><p class="blurb">${p.blurb}</p>${S.ship.offshore ? '' : harbourLine(pid)}</details>${S.ship.offshore ? harbourLine(pid) : ''}`
       : `<p class="blurb">${p.blurb}</p>${harbourLine(pid)}`}
+    ${firstBox()}
     ${debtBox()}
     ${moneyBox()}
     ${hullBanner(pid)}
@@ -690,6 +693,7 @@ export function tipText() {
   ui.tipKey = null;
   const sh = S.ship;
   const seen = S.tips.seen || {};
+  if (firstActive()) return sh.docked ? null : firstAtSea(); // the first voyage box says it in port
   if (!S.contracts?.unlocked) {
     if (seen.early) return null;
     ui.tipKey = 'early';
