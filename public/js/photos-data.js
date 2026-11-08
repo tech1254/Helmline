@@ -22,7 +22,21 @@ export const PHOTOS = {
     "seville",
     "palos",
     "sanlucar",
-    "gomera"
+    "gomera",
+    "algiers",
+    "angra",
+    "antwerp",
+    "bristol",
+    "bruges",
+    "cove",
+    "flores",
+    "galway",
+    "genoa",
+    "ribeiragrande",
+    "sale",
+    "santodomingo",
+    "stjohns",
+    "valencia"
   ],
   "ships": {
     "caravel": {
@@ -218,6 +232,51 @@ export const PHOTOS = {
         223.6,
         201.7,
         153.3
+      ]
+    },
+    "holk": {
+      "w": 900,
+      "h": 512,
+      "length": 26,
+      "lo": [
+        1.7,
+        0.4,
+        0.8
+      ],
+      "hi": [
+        206.0,
+        200.0,
+        145.9
+      ]
+    },
+    "carrack": {
+      "w": 900,
+      "h": 575,
+      "length": 34,
+      "lo": [
+        0.9,
+        0.3,
+        0.4
+      ],
+      "hi": [
+        215.2,
+        212.0,
+        177.8
+      ]
+    },
+    "merchantman": {
+      "w": 900,
+      "h": 590,
+      "length": 30,
+      "lo": [
+        2.3,
+        0.1,
+        0.8
+      ],
+      "hi": [
+        187.7,
+        178.3,
+        134.1
       ]
     }
   },
@@ -595,6 +654,366 @@ export const PHOTOS = {
         111,
         76,
         42
+      ]
+    },
+    "seville": {
+      "light": [
+        255,
+        226,
+        180
+      ],
+      "shade": [
+        40,
+        32,
+        24
+      ],
+      "bright": 0.95,
+      "sat": 0.95,
+      "haze": 0.07,
+      "hazeColour": [
+        102,
+        73,
+        40
+      ]
+    },
+    "palos": {
+      "light": [
+        250,
+        236,
+        212
+      ],
+      "shade": [
+        30,
+        30,
+        30
+      ],
+      "bright": 0.92,
+      "sat": 0.95,
+      "haze": 0.05,
+      "hazeColour": [
+        118,
+        109,
+        103
+      ]
+    },
+    "sanlucar": {
+      "light": [
+        255,
+        236,
+        205
+      ],
+      "shade": [
+        32,
+        32,
+        34
+      ],
+      "bright": 1.0,
+      "sat": 1.0,
+      "haze": 0.04,
+      "hazeColour": [
+        144,
+        136,
+        108
+      ]
+    },
+    "gomera": {
+      "light": [
+        255,
+        238,
+        212
+      ],
+      "shade": [
+        24,
+        24,
+        28
+      ],
+      "bright": 1.0,
+      "sat": 1.0,
+      "haze": 0.04,
+      "hazeColour": [
+        106,
+        97,
+        82
+      ]
+    },
+    "algiers": {
+      "light": [
+        255,
+        236,
+        205
+      ],
+      "shade": [
+        30,
+        32,
+        38
+      ],
+      "bright": 1.0,
+      "sat": 1.0,
+      "haze": 0.04,
+      "hazeColour": [
+        86,
+        95,
+        91
+      ]
+    },
+    "angra": {
+      "light": [
+        226,
+        230,
+        230
+      ],
+      "shade": [
+        20,
+        24,
+        24
+      ],
+      "bright": 0.85,
+      "sat": 0.8,
+      "haze": 0.06,
+      "hazeColour": [
+        88,
+        89,
+        63
+      ]
+    },
+    "antwerp": {
+      "light": [
+        240,
+        234,
+        222
+      ],
+      "shade": [
+        28,
+        28,
+        30
+      ],
+      "bright": 0.92,
+      "sat": 0.85,
+      "haze": 0.05,
+      "hazeColour": [
+        107,
+        101,
+        95
+      ]
+    },
+    "bristol": {
+      "light": [
+        225,
+        226,
+        226
+      ],
+      "shade": [
+        24,
+        26,
+        28
+      ],
+      "bright": 0.85,
+      "sat": 0.72,
+      "haze": 0.08,
+      "hazeColour": [
+        96,
+        90,
+        81
+      ]
+    },
+    "bruges": {
+      "light": [
+        212,
+        220,
+        228
+      ],
+      "shade": [
+        24,
+        28,
+        32
+      ],
+      "bright": 0.82,
+      "sat": 0.65,
+      "haze": 0.1,
+      "hazeColour": [
+        128,
+        124,
+        126
+      ]
+    },
+    "cove": {
+      "light": [
+        255,
+        228,
+        185
+      ],
+      "shade": [
+        40,
+        30,
+        24
+      ],
+      "bright": 1.0,
+      "sat": 1.0,
+      "haze": 0.05,
+      "hazeColour": [
+        100,
+        73,
+        56
+      ]
+    },
+    "flores": {
+      "light": [
+        214,
+        222,
+        226
+      ],
+      "shade": [
+        14,
+        18,
+        20
+      ],
+      "bright": 0.75,
+      "sat": 0.7,
+      "haze": 0.08,
+      "hazeColour": [
+        73,
+        77,
+        63
+      ]
+    },
+    "galway": {
+      "light": [
+        210,
+        218,
+        226
+      ],
+      "shade": [
+        20,
+        24,
+        28
+      ],
+      "bright": 0.78,
+      "sat": 0.6,
+      "haze": 0.1,
+      "hazeColour": [
+        93,
+        102,
+        103
+      ]
+    },
+    "genoa": {
+      "light": [
+        255,
+        212,
+        160
+      ],
+      "shade": [
+        40,
+        30,
+        22
+      ],
+      "bright": 0.9,
+      "sat": 1.0,
+      "haze": 0.05,
+      "hazeColour": [
+        155,
+        123,
+        88
+      ]
+    },
+    "ribeiragrande": {
+      "light": [
+        255,
+        238,
+        210
+      ],
+      "shade": [
+        30,
+        28,
+        26
+      ],
+      "bright": 1.0,
+      "sat": 0.95,
+      "haze": 0.07,
+      "hazeColour": [
+        118,
+        102,
+        90
+      ]
+    },
+    "sale": {
+      "light": [
+        255,
+        236,
+        210
+      ],
+      "shade": [
+        36,
+        34,
+        32
+      ],
+      "bright": 1.0,
+      "sat": 0.95,
+      "haze": 0.07,
+      "hazeColour": [
+        172,
+        147,
+        112
+      ]
+    },
+    "santodomingo": {
+      "light": [
+        255,
+        244,
+        225
+      ],
+      "shade": [
+        24,
+        30,
+        34
+      ],
+      "bright": 1.0,
+      "sat": 1.0,
+      "haze": 0.04,
+      "hazeColour": [
+        68,
+        79,
+        52
+      ]
+    },
+    "stjohns": {
+      "light": [
+        235,
+        225,
+        210
+      ],
+      "shade": [
+        12,
+        14,
+        18
+      ],
+      "bright": 0.78,
+      "sat": 0.75,
+      "haze": 0.06,
+      "hazeColour": [
+        57,
+        50,
+        52
+      ]
+    },
+    "valencia": {
+      "light": [
+        255,
+        240,
+        215
+      ],
+      "shade": [
+        28,
+        34,
+        44
+      ],
+      "bright": 1.0,
+      "sat": 1.0,
+      "haze": 0.04,
+      "hazeColour": [
+        170,
+        150,
+        116
       ]
     }
   }

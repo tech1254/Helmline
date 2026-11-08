@@ -18,7 +18,7 @@ import { CHART_REWARD } from './config.js';
 import { releaseToasts, toast } from './notices.js';
 import { save } from './save.js';
 
-const SETTING = { lisbon: 'lisbon', porto: 'iberia', cadiz: 'iberia', sanlucar: 'iberia', palos: 'iberia', seville: 'river', gomera: 'volcanic', ceuta: 'iberia', safi: 'iberia', lagos: 'iberia', funchal: 'madeira', lanzarote: 'volcanic', arguin: 'desert', gambia: 'river', serraleoa: 'river', cestos: 'river', mina: 'surf', cantor: 'river', mpinda: 'river', saotome: 'volcanic', saobras: 'desert', portoseguro: 'surf', calicut: 'surf' };
+const SETTING = { lisbon: 'lisbon', porto: 'iberia', cadiz: 'iberia', sanlucar: 'iberia', palos: 'iberia', seville: 'river', gomera: 'volcanic', ceuta: 'iberia', safi: 'iberia', lagos: 'iberia', funchal: 'madeira', lanzarote: 'volcanic', arguin: 'desert', gambia: 'river', serraleoa: 'river', cestos: 'river', mina: 'surf', cantor: 'river', mpinda: 'river', saotome: 'volcanic', saobras: 'desert', portoseguro: 'surf', calicut: 'surf', bruges: 'iberia', antwerp: 'river', bristol: 'river', galway: 'iberia', valencia: 'surf', genoa: 'iberia', sale: 'desert', algiers: 'iberia', angra: 'volcanic', flores: 'volcanic', ribeiragrande: 'volcanic', stjohns: 'madeira', santodomingo: 'surf' };
 const T_ZOOM = 0.9, T_FADE = 0.5, T_SAIL = 3.6, T_HOLD = 0.9, T_OUT = 0.45;
 
 export const SCENE_MODES = [['all', 'Every port'], ['first', 'First visits only'], ['off', 'Off']];
@@ -302,6 +302,61 @@ function drawPhotoShip(c, A, t, sailT, s, waterY) {
   c.rotate(tilt);
   c.drawImage(img, -shipW / 2, -shipH, shipW, shipH);
   c.restore();
+  // She sits in the water, not on it: the harbour's own water washes over the bottom of her hull,
+  // fading in towards the waterline, with a darker line where hull and water meet.
+  if (A.waterRGB === undefined) A.waterRGB = waterColour(A.painting);
+  if (A.waterRGB) {
+    const band = Math.max(4, Math.round(shipH * 0.05));
+    const key = `${Math.round(shipW)}x${Math.round(shipH)}`;
+    if (A.washKey !== key) { A.washKey = key; A.wash = hullWash(img, shipW, shipH, band, A.waterRGB); }
+    if (A.wash) {
+      c.save();
+      c.translate(x + shipW / 2, waterY + bob);
+      c.rotate(tilt);
+      c.drawImage(A.wash, -shipW / 2, -band);
+      c.restore();
+    }
+  }
+}
+
+// The water over the bottom of her hull: the harbour's water colour, fading in towards the
+// waterline, only where the hull is, with a darker line where hull and water meet.
+function hullWash(img, shipW, shipH, band, [r, g, b]) {
+  try {
+    const cv = document.createElement('canvas');
+    cv.width = Math.ceil(shipW); cv.height = band;
+    const c = cv.getContext('2d');
+    c.drawImage(img, 0, -(shipH - band), shipW, shipH); // the bottom `band` pixels of the ship
+    c.globalCompositeOperation = 'source-in';
+    const wash = c.createLinearGradient(0, 0, 0, band);
+    wash.addColorStop(0, `rgba(${r},${g},${b},0)`);
+    wash.addColorStop(0.7, `rgba(${r},${g},${b},0.5)`);
+    wash.addColorStop(0.92, `rgba(${Math.round(r * 0.7)},${Math.round(g * 0.7)},${Math.round(b * 0.7)},0.8)`);
+    wash.addColorStop(1, `rgba(${r},${g},${b},0.9)`);
+    c.fillStyle = wash;
+    c.fillRect(0, 0, cv.width, band);
+    return cv;
+  } catch (e) {
+    return null;
+  }
+}
+
+// The colour of a harbour photograph's near water (where a ship comes to rest), or null.
+function waterColour(img) {
+  try {
+    const cv = document.createElement('canvas');
+    cv.width = 8; cv.height = 2;
+    const c = cv.getContext('2d', { willReadFrequently: true });
+    const w = img.naturalWidth, h = img.naturalHeight;
+    c.drawImage(img, w * 0.25, h * 0.81, w * 0.35, h * 0.05, 0, 0, 8, 2);
+    const d = c.getImageData(0, 0, 8, 2).data;
+    let r = 0, g = 0, b = 0;
+    for (let i = 0; i < d.length; i += 4) { r += d[i]; g += d[i + 1]; b += d[i + 2]; }
+    const n = d.length / 4;
+    return [Math.round(r / n), Math.round(g / n), Math.round(b / n)];
+  } catch (e) {
+    return null;
+  }
 }
 
 function drawVignette(c, A, w, h) {

@@ -15,7 +15,7 @@ export const NATIONS = {
     view: [-13, 29, 0.85],
     sub: 'Lisbon, the first of March, 1451',
     blurb: 'Prince Henry\'s captains have pushed past Cape Bojador. You own a small coasting barca, the <i>São Cristóvão</i>, and a purse of 300 cruzados. Everything south of the known coast is uncharted.',
-    hearsay: [['lagos', 20], ['safi', 75], ['lanzarote', 110]],
+    hearsay: [['lagos', 20], ['safi', 75], ['lanzarote', 110], ['bruges', 140]], // Portugal keeps a factory in Bruges
   },
   castile: {
     id: 'castile', name: 'Castile', adj: 'Castilian', home: 'seville', homeName: 'Seville', start: 'palos',
@@ -28,7 +28,7 @@ export const NATIONS = {
     view: [-9, 33, 0.85],
     sub: 'Palos, the first of March, 1451',
     blurb: 'Your father was a pilot of Palos, and the sea kept him. You have his barca, a debt to the Genoese of Seville, and a purse of 300 cruzados. Portugal claims the Guinea coast; Castile\'s lords hold the Canaries.',
-    hearsay: [['cadiz', 15], ['lanzarote', 60], ['safi', 90]],
+    hearsay: [['cadiz', 15], ['lanzarote', 60], ['safi', 90], ['bruges', 120]], // Castile's wool goes to Bruges
   },
 };
 
