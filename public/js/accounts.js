@@ -4,6 +4,8 @@
 // his own dealings go into the books at once, but a hired captain's dealings are only
 // written up when the owner docks at a port where that captain has traded and reads
 // the factor's report there. Until then they show as "not yet accounted for".
+import { noteSale } from './ambitions.js';
+import { noteTrade } from './houses.js';
 
 const MAX_ENTRIES = 400; // totals are kept separately, so old lines can go
 
@@ -19,6 +21,7 @@ export const KINDS = {
   bounty: 'Corsair bounty',
   invest: 'Feitorias and fleet shares',
   house: 'Your house and honours',
+  rivals: 'Rival houses',
   crown: 'The crown\'s share',
   repairs: 'Repairs',
   boats: 'Boatmen',
@@ -56,6 +59,8 @@ export function setRecordHook(fn) { hook = fn; }
 
 export function record(S, e) {
   if (!e.amount) return;
+  if (e.kind === 'sale') noteSale(S, e.good, e.qty, e.amount, e.port ?? S.ship?.docked ?? null); // for the ambitions
+  if (e.kind === 'sale' || e.kind === 'purchase') noteTrade(S, e.port ?? S.ship?.docked ?? null, e.amount); // your share of the port's trade
   hook?.('money', { entry: e.kind, amount: Math.round(e.amount), good: e.good, qty: e.qty, port: e.port ?? S.ship?.docked ?? null, text: e.text });
   const A = ensureAccounts(S);
   post(A, { who: 'you', port: S.ship.docked || null, ...e, day: S.day, heard: S.day });
@@ -64,6 +69,7 @@ export function record(S, e) {
 // A hired captain's dealing, written up in the port where it happened.
 export function captain(S, ship, e) {
   if (!e.amount) return;
+  if (e.kind === 'sale' || e.kind === 'purchase') noteTrade(S, ship.at, e.amount); // your house's share of the port's trade
   hook?.('captain', { ship: ship.name, entry: e.kind, amount: Math.round(e.amount), good: e.good, qty: e.qty, port: ship.at });
   const A = ensureAccounts(S);
   const entry = { who: ship.id, ship: ship.name, port: ship.at, ...e, day: S.day };

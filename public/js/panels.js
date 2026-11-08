@@ -11,6 +11,7 @@ import * as Pirates from './pirates.js';
 import * as Investments from './investments.js';
 import * as House from './house.js';
 import * as Competition from './competition.js';
+import { renderHouses, shareLine, housesOpen } from './housesview.js';
 import { CHART_REWARD, OFFLINE_MAX_DAYS, STANDING_FADES_AFTER_HOURS } from './config.js';
 import * as Ships from './ships.js';
 import * as Captains from './captains.js';
@@ -76,7 +77,9 @@ export function renderHud() {
     const b = sh.boats;
     if (b && b.moved < b.total) {
       const left = Math.max(1, Math.ceil((b.total - b.moved) / b.rate));
-      status = `At anchor off ${pn} · her boats are working the cargo: ${Math.floor(b.moved)} of ${b.total} units, about ${left} ${left === 1 ? 'day' : 'days'} more${ui.speed === 0 ? ' (paused)' : ''}.`;
+      status = b.quay
+        ? `Alongside in ${pn} · working the cargo: ${Math.floor(b.moved)} of ${b.total} units, about ${left} ${left === 1 ? 'day' : 'days'} more${ui.speed === 0 ? ' (paused)' : ''}.`
+        : `At anchor off ${pn} · her boats are working the cargo: ${Math.floor(b.moved)} of ${b.total} units, about ${left} ${left === 1 ? 'day' : 'days'} more${ui.speed === 0 ? ' (paused)' : ''}.`;
     } else {
       status = `${sh.offshore ? `At anchor off ${pn}` : `At anchor in ${pn}`}. Click the chart to set sail.`;
     }
@@ -127,7 +130,7 @@ export function renderPanel() {
   if (ui.panelMode === 'contracts' && !S.contracts?.unlocked) ui.panelMode = S.ship.docked ? 'port' : null;
   if (!ui.panelMode) { el.hidden = true; placeToasts(); renderDock(); return; }
   el.hidden = false;
-  el.classList.toggle('wide', ui.panelMode === 'prices' || ui.panelMode === 'ledger');
+  el.classList.toggle('wide', ui.panelMode === 'prices' || ui.panelMode === 'ledger' || ui.panelMode === 'houses');
   if (ui.panelMode === 'port') renderPort(el);
   else if (ui.panelMode === 'sail') renderSail(el);
   else if (ui.panelMode === 'contracts') renderContracts(el);
@@ -137,6 +140,7 @@ export function renderPanel() {
   else if (ui.panelMode === 'feedback') renderFeedback(el);
   else if (ui.panelMode === 'menu') renderMenu(el);
   else if (ui.panelMode === 'ledger') renderLedger(el);
+  else if (ui.panelMode === 'houses') renderHouses(el);
   else if (ui.panelMode === 'notices') renderNotices(el);
   else if (ui.panelMode === 'rutter') renderRutter(el);
   else renderPrices(el);
@@ -239,6 +243,7 @@ export function renderPort(el) {
     ${portKnown(pid)
       ? `<details class="port-about"><summary>About ${p.name}</summary><p class="blurb">${p.blurb}</p>${S.ship.offshore ? '' : harbourLine(pid)}</details>${S.ship.offshore ? harbourLine(pid) : ''}`
       : `<p class="blurb">${p.blurb}</p>${harbourLine(pid)}`}
+    ${shareLine(pid)}
     ${firstBox()}
     ${debtBox()}
     ${moneyBox()}
@@ -637,6 +642,8 @@ export function renderHelp(el) {
     </ul></details>
     <details class="help-more"><summary>Harbours and rivers</summary>
     <ul class="help">
+      <li><b>Your calling:</b> after your first voyage you choose to be a free merchant, a captain of the crown or a privateer. Three ambitions under the date show what to aim for; finishing them earns money, standing and merit, and merit raises your rank, which pays (better prices, bigger rewards or bigger prizes). You can change calling freely in the first year; after that it costs more the longer you have followed it.</li>
+      <li><b>Rival houses:</b> the Houses tab ranks you against the great merchant houses. Every port's trade is shared between its merchants, the houses and you; trade there to grow your share. A ring round a port shows who leads it. Weakened houses can be ruined, or bought out once you are worth twice as much.</li>
       <li><b>Draft:</b> a laden ship sits deeper. Where she draws more than the harbour has, she anchors offshore and her boats ferry the cargo: some days, and a small fee to the boatmen. A nau keeps outside the Arguin banks. River bars rise in the rains and fall in the dry season.</li>
       <li><b>Up the Gambia:</b> Cantor, far upriver, trades gold and ivory from the caravans and pays well for salt. Only a shallow ship gets there: a barca, or a caravel not too deeply laden.</li>
       <li><b>Ports grow:</b> with their history and with the trade through them. A bigger port has a deeper market, and some build quays that let deeper ships come in. The market panel shows each port's size.</li>
@@ -737,6 +744,7 @@ export function tabs(active) {
       ${docked ? `<button role="tab" data-tab="port" aria-selected="${active === 'port'}" class="${active === 'port' ? 'on' : ''}">Market</button>` : ''}
       <button role="tab" data-tab="prices" aria-selected="${active === 'prices'}" class="${active === 'prices' ? 'on' : ''}">Price book</button>
       <button role="tab" data-tab="ledger" aria-selected="${active === 'ledger'}" class="${active === 'ledger' ? 'on' : ''}">Ledger</button>
+      ${housesOpen() ? `<button role="tab" data-tab="houses" aria-selected="${active === 'houses'}" class="${active === 'houses' ? 'on' : ''}">Houses</button>` : ''}
       ${storyOn() || S.story?.letters?.length ? `<button role="tab" data-tab="rutter" aria-selected="${active === 'rutter'}" class="${active === 'rutter' ? 'on' : ''}">Rutter</button>` : ''}
       ${S.contracts?.unlocked ? `<button role="tab" data-tab="contracts" aria-selected="${active === 'contracts'}" class="${active === 'contracts' ? 'on' : ''}">Contracts</button>` : ''}
       ${fleetUnlocked() ? `<button role="tab" data-tab="fleet" aria-selected="${active === 'fleet'}" class="${active === 'fleet' ? 'on' : ''}">Fleet</button>` : ''}

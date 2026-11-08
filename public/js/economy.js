@@ -31,7 +31,7 @@ export const GOODS = [
 export const PORTUGUESE_PORTS = ['lisbon', 'porto', 'lagos', 'funchal', 'ceuta', 'saotome', 'angra', 'ribeiragrande'];
 
 // [base price, sold here?]. Every port buys every good; only some sell.
-const MARKETS = {
+export const MARKETS = {
   lisbon:    { k: 0.012, p: { wine: [9, 1], cloth: [11, 1], sugar: [26], dye: [24], gold: [120], ivory: [54], pepper: [44], wheat: [14], salt: [4, 1], alquices: [14], copper: [16, 1], brazilwood: [30], spices: [140] } },
   porto:     { k: 0.02, p: { wine: [7, 1], cloth: [12, 1], sugar: [28], dye: [26], gold: [118], ivory: [52], pepper: [46], wheat: [12], salt: [7], alquices: [15], copper: [18], brazilwood: [32], spices: [130] } },
   lagos:     { k: 0.02, p: { wine: [8, 1], cloth: [12, 1], sugar: [24], dye: [22], gold: [110], ivory: [46], pepper: [38], wheat: [13], salt: [5], alquices: [14], copper: [18], brazilwood: [28], spices: [125] } },

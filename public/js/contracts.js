@@ -1,5 +1,6 @@
 import * as Accounts from './accounts.js';
 import * as Ships from './ships.js';
+import * as Callings from './callings.js';
 // Contracts: jobs from the crown and the merchant houses that give each voyage a goal.
 // Two kinds for now:
 //  - discover: chart and anchor at a port no one in Lisbon trades with yet, then report home.
@@ -309,9 +310,10 @@ function complete(S, c, what) {
   C.active = C.active.filter((x) => x.id !== c.id);
   C.done++;
   C.standing += c.standing;
-  S.purse += c.reward;
-  Accounts.record(S, { kind: 'contract', amount: c.reward, text: `${c.title} (${c.patron})` });
-  return { html: `${what}: <b>+${c.reward.toLocaleString()} cz</b>.`, kind: 'discover', log: `Contract done: ${c.title} (+${c.reward} cz).` };
+  const pay = Math.round(c.reward * Callings.perk(S, 'contract')); // a crown's captain is paid more
+  S.purse += pay;
+  Accounts.record(S, { kind: 'contract', amount: pay, text: `${c.title} (${c.patron})` });
+  return { html: `${what}: <b>+${pay.toLocaleString()} cz</b>${pay > c.reward ? ` (${(pay - c.reward).toLocaleString()} more as a ${Callings.rankName(S)})` : ''}.`, kind: 'discover', log: `Contract done: ${c.title} (+${pay} cz).` };
 }
 
 export function abandon(S, c) {

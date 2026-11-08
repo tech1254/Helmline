@@ -1,5 +1,6 @@
 // Saving and loading on this device, and starting a new game.
 
+import * as Houses from './houses.js';
 import { BOUNDS, PORTS, KNOWN_LANDS } from './world.js';
 import { GOODS, Market } from './economy.js';
 import * as Contracts from './contracts.js';
@@ -121,6 +122,7 @@ export function newGame(nation = 'portugal', { quiet = false } = {}) {
   S.runId = null; if (!quiet) playlogBegin('new'); // a new game: a new run in the play log
   Ships.ensureFlagship(S);
   Ports.ensurePorts(S);
+  Houses.ensureHouses(S);
   syncMarket();
   observe(N.start);
   centerOn(...N.view);

@@ -145,7 +145,7 @@ th small, td small { display: block; font-size: 12px; font-weight: 400; color: v
 #zoom button:first-child { border-radius: 6px 6px 0 0; }
 #zoom button:last-child { border-radius: 0 0 6px 6px; margin-top: -1px; }
 /* the note sits under the top bar, clear of the toasts at the bottom and beside an open panel */
-#tip { position: fixed; left: 10px; top: calc(var(--hud-h, 66px) + 10px); max-width: min(360px, calc(100vw - 80px)); background: rgba(244, 234, 210, 0.96); border: 1px solid var(--gold); border-radius: 6px; box-shadow: var(--shadow); padding: 7px 30px 8px 12px; font-size: 14px; line-height: 1.35; z-index: 2; }
+#tip { position: fixed; left: 10px; top: calc(var(--hud-h, 66px) + 10px + var(--amb-h, 0px)); max-width: min(360px, calc(100vw - 80px)); background: rgba(244, 234, 210, 0.96); border: 1px solid var(--gold); border-radius: 6px; box-shadow: var(--shadow); padding: 7px 30px 8px 12px; font-size: 14px; line-height: 1.35; z-index: 2; }
 #tip[hidden] { display: none; }
 body.panel-open #tip { max-width: min(360px, calc(100vw - min(520px, 100vw - 20px) - 40px)); }
 #tip .tip-label { display: block; font-family: var(--display); color: var(--gold); font-size: 14px; }
@@ -241,7 +241,7 @@ button.mini { font-size: 13px; padding: 3px 8px; justify-self: start; }
   #modal.aside .card { max-height: calc(100vh - 70px); max-height: calc(100dvh - 70px); }
   #zoom { bottom: 64px; }
   #zoom button { width: 44px; height: 44px; }
-  #tip, body.panel-open #tip { left: 8px; right: 8px; top: calc(var(--hud-h, 60px) + 8px); max-width: none; font-size: 13px; z-index: 6; }
+  #tip, body.panel-open #tip { left: 8px; right: 8px; top: calc(var(--hud-h, 60px) + 8px + var(--amb-h, 0px)); max-width: none; font-size: 13px; z-index: 6; }
   .route { grid-template-columns: minmax(0, 1fr); }
   .order { grid-template-columns: 66px minmax(0, 1fr) 30px; }
   .order select[data-f="pct"] { grid-column: 2 / 3; }
@@ -541,7 +541,7 @@ body.scene-open #panel, body.scene-open #toast, body.scene-open #tip { visibilit
 .notice-filter { margin: 0 0 10px; font-size: 14px; }
 .notice-filter label { display: inline-flex; gap: 6px; align-items: center; }
 .afloat.drawn .ship-art { position: absolute; inset: 4% 4% 0; width: 92%; height: 96%; }
-.harbour { font-size: 14px; color: var(--ink-2); margin: 4px 0 10px; line-height: 1.4; }
+.harbour { font-size: 14px; color: var(--ink); margin: 4px 0 10px; line-height: 1.4; }
 .stop-note { font-size: 13px; color: var(--ink-2); margin: 2px 0 4px; } .stop-note.warn { color: var(--red); }
 
 /* Your house (houseview.js) */
@@ -696,3 +696,55 @@ table.almanac .num { text-align: right; }
 .first li button { margin-top: 5px; font-size: 15px; padding: 6px 12px; }
 .first p { margin: 8px 0 0; font-size: 14px; }
 .first .row { margin-top: 10px; display: flex; flex-wrap: wrap; gap: 8px; }
+
+/* Callings and ambitions (ambitionsview.js): a ledger slip under the HUD, three goals with bars. */
+#ambitions { position: fixed; left: 10px; top: calc(var(--hud-h, 66px) + 10px); width: min(320px, calc(100vw - 80px)); background: rgba(244, 234, 210, 0.96); border: 1px solid var(--gold); border-radius: 6px; box-shadow: var(--shadow); padding: 6px 10px 8px; font-size: 13.5px; line-height: 1.3; z-index: 2; }
+#ambitions[hidden] { display: none; }
+body.panel-open #ambitions { width: min(320px, calc(100vw - min(520px, 100vw - 20px) - 40px)); }
+.amb-head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+.amb-fold { all: unset; cursor: pointer; display: flex; flex-direction: column; min-width: 0; }
+.amb-fold:focus-visible, .amb-link:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+.amb-title { font-family: var(--display); font-size: 17px; color: var(--ink); }
+.amb-sub { font-size: 12px; color: var(--ink-2); }
+.amb-link { border: 0; background: none; padding: 0; font-size: 12px; text-decoration: underline; color: var(--ink-2); cursor: pointer; }
+.amb-list { list-style: none; margin: 6px 0 0; padding: 0; display: grid; gap: 6px; }
+.amb-list li { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 2px 8px; align-items: center; }
+.amb-text { grid-column: 1 / -1; }
+.amb-list li.big .amb-text::before { content: "★ "; color: var(--gold); }
+.amb-bar { height: 6px; background: rgba(90, 70, 40, 0.15); border-radius: 3px; overflow: hidden; }
+.amb-bar i { display: block; height: 100%; background: var(--gold); border-radius: 3px; }
+.amb-of { font-size: 11.5px; color: var(--ink-2); font-variant-numeric: tabular-nums; }
+.amb-choose { margin-top: 7px; width: 100%; font-size: 13px; padding: 5px 8px; }
+#ambitions.folded .amb-list { display: none; }
+/* the choices */
+.calling-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; margin-top: 10px; }
+.calling-card { border: 1px solid var(--gold); border-radius: 6px; padding: 10px 12px; display: flex; flex-direction: column; gap: 6px; background: rgba(255, 250, 238, 0.6); }
+.calling-card.current { border-width: 2px; }
+.calling-card > button, .calling-card > p:last-child { margin-top: auto; }
+.calling-card h3 { font-family: var(--display); font-weight: 400; font-size: 21px; margin: 0; }
+.calling-card p { margin: 0; font-size: 14px; }
+.calling-card .ranks { font-size: 12.5px; color: var(--ink-2); font-style: italic; }
+.ambition-offers { display: grid; gap: 8px; margin-top: 10px; }
+.ambition-offer { display: grid; gap: 2px; text-align: left; padding: 9px 12px; border: 1px solid var(--gold); border-radius: 6px; background: rgba(255, 250, 238, 0.6); font: inherit; color: inherit; cursor: pointer; }
+.ambition-offer:hover { background: rgba(255, 250, 238, 0.95); }
+.ambition-offer.big { border-width: 2px; }
+.ambition-offer .who { font-size: 12px; color: var(--ink-2); }
+#modal[data-kind="calling"] .card { width: min(780px, 100%); }
+#modal[data-kind="ambition"] .card { width: min(520px, 100%); }
+#modal .card button.ambition-offer { background: rgba(255, 250, 238, 0.7); color: var(--ink); text-shadow: none; border-color: var(--gold); }
+#modal .card button.ambition-offer:hover { background: #fffaf0; filter: none; }
+@media (max-width: 640px) {
+  #ambitions, body.panel-open #ambitions { left: 8px; right: 8px; width: auto; top: calc(var(--hud-h, 60px) + 8px); font-size: 13px; z-index: 6; }
+}
+
+/* The Houses of the Sea (housesview.js) */
+table.houses { width: 100%; border-collapse: collapse; font-size: 15px; }
+table.houses th, table.houses td { padding: 6px 6px; border-bottom: 1px solid rgba(90, 70, 40, 0.25); vertical-align: top; text-align: left; }
+table.houses .num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+table.houses small { display: block; color: var(--ink-2); font-size: 12.5px; }
+table.houses tr.you td { font-weight: 600; }
+table.houses tr.gone td { opacity: 0.55; }
+table.houses tr.act td { border-bottom-style: dashed; padding-top: 0; }
+.house-sw { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 6px; vertical-align: 0; }
+p.shares { font-size: 14px; margin: 6px 0 0; color: var(--ink); }
+p.shares .sw-you { color: #8a5a0a; }

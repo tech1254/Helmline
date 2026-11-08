@@ -9,6 +9,7 @@ import * as Accounts from './accounts.js';
 import { S, market, ui } from './state.js';
 import { DAYS_PER_SEC } from './config.js';
 import { storyTick } from './storyview.js';
+import { ambitionsTick, initAmbitions } from './ambitionsview.js';
 import { initPlaylog, playlogTick, plog, flushPlaylog } from './playlog.js';
 import { setRecordHook } from './accounts.js';
 import { load, newGame, save } from './save.js';
@@ -80,6 +81,7 @@ function frame(t) {
   if (ui.pendingSummary && free && ui.introDone) { const sm = ui.pendingSummary; ui.pendingSummary = null; showSummary(sm); }
   if (ui.pendingEncounter && free && ui.introDone) { const e = ui.pendingEncounter; ui.pendingEncounter = null; openEncounter(e); }
   if (free && ui.introDone && !ui.pendingSummary && !ui.pendingEncounter) storyTick(dt); // letters and chapter cards (storyview.js)
+  if (ui.introDone) ambitionsTick(dt, free && !ui.modal && !ui.pendingSummary && !ui.pendingEncounter); // callings and ambitions (ambitionsview.js)
   if (ui.introDone) playlogTick();
   saveClock += dt;
   if (saveClock > 5 && ui.introDone) { saveClock = 0; save(); }
@@ -98,6 +100,7 @@ initDialog();
 initNotices();
 initDock();
 initSight();
+initAmbitions();
 initShipyard();
 window.addEventListener('resize', () => { resize(); clampCam(); });
 window.addEventListener('beforeunload', () => ui.introDone && save());

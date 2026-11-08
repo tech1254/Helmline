@@ -3,6 +3,8 @@
 import { BOUNDS, CHART_OUTLINE, D2R, LANDS, PORTS, RIVERS, SHOALS, isLand, inBounds, windAt, isBeyond as isBeyondPort } from './world.js';
 import * as Contracts from './contracts.js';
 import * as Fleet from './fleet.js';
+import * as Houses from './houses.js';
+import { findPath, distNm } from './world.js';
 import { reported } from './pilots.js';
 import { FH, FW } from './config.js';
 import { S, ui } from './state.js';
@@ -316,6 +318,50 @@ export function drawFleet() {
   ctx.restore();
 }
 
+// The rival houses' ships at work between their ports (houses.js), in their colours, where the
+// chart is known. Their passages follow the sea routes.
+const housePaths = new Map();
+function pathFor(from, to) {
+  const key = `${from}>${to}`;
+  if (!housePaths.has(key)) {
+    const a = PORTS.find((p) => p.id === from), b = PORTS.find((p) => p.id === to);
+    let pts = a && b ? findPath(a.lon, a.lat, b.lon, b.lat, 1, false, false) : null;
+    if (a && b && !(pts?.length >= 2)) pts = [[a.lon, a.lat], [b.lon, b.lat]];
+    let run = 0;
+    const cum = pts ? pts.map((p, i) => (run += i ? distNm(pts[i - 1][0], pts[i - 1][1], p[0], p[1]) : 0)) : [];
+    housePaths.set(key, pts && { pts, cum, len: run });
+  }
+  return housePaths.get(key);
+}
+export function drawHouses() {
+  if (!S?.houses) return;
+  ctx.save();
+  ctx.font = 'italic 12px "IM Fell English", Georgia, serif';
+  ctx.textAlign = 'center';
+  for (const v of Houses.vessels(S)) {
+    const P = pathFor(v.from, v.to);
+    if (!P) continue;
+    const at = v.t * P.len;
+    let i = 1;
+    while (i < P.pts.length - 1 && P.cum[i] < at) i++;
+    const [x0, y0] = P.pts[i - 1], [x1, y1] = P.pts[i];
+    const seg = P.cum[i] - P.cum[i - 1] || 1, f = Math.max(0, Math.min(1, (at - P.cum[i - 1]) / seg));
+    const lon = x0 + (x1 - x0) * f, lat = y0 + (y1 - y0) * f;
+    if (!isRevealed(lon, lat)) continue;
+    const heading = Math.atan2((x1 - x0) * Math.cos(lat * D2R), y1 - y0) / D2R;
+    drawShipAt(lon, lat, heading, '#e9dcc0', v.colour, 0.8);
+    if (cam.scale > 22) {
+      const [sx, sy] = toScreen(lon, lat);
+      ctx.lineWidth = 3;
+      ctx.strokeStyle = 'rgba(236,223,192,0.9)';
+      ctx.strokeText(v.name, sx, sy + 19);
+      ctx.fillStyle = v.colour;
+      ctx.fillText(v.name, sx, sy + 19);
+    }
+  }
+  ctx.restore();
+}
+
 // The edge of the chart as a closed path (the parts off the chart left out).
 function chartOutline() {
   ctx.beginPath();
@@ -494,6 +540,14 @@ export function render() {
       ctx.strokeStyle = 'rgba(154, 106, 18, 0.9)';
       ctx.stroke();
     }
+    const lead = S.houses && Houses.leader(S, p.id); // who leads this port's trade: a ring in their colour
+    if (lead) {
+      ctx.beginPath();
+      ctx.arc(sx, sy, 8.5, 0, Math.PI * 2);
+      ctx.lineWidth = 2.5;
+      ctx.strokeStyle = lead === 'you' ? '#b8860b' : Houses.defOf(lead).colour;
+      ctx.stroke();
+    }
     ctx.beginPath();
     ctx.arc(sx, sy, p.id === ui.hoverPort ? 7 : 5, 0, Math.PI * 2);
     ctx.fillStyle = RED;
@@ -518,6 +572,7 @@ export function render() {
   ctx.restore();
 
   drawReported();
+  drawHouses();
   drawFleet();
   drawGalleys();
   drawShip();

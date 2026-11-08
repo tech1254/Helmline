@@ -10,6 +10,8 @@
 // It follows them slowly (over a couple of years), and eases slowly where trade stops.
 
 import { yearOf } from './ships.js';
+import * as Houses from './houses.js';
+import { PORTS } from './world.js';
 import { GOODS } from './economy.js';
 
 export const REGIONS = {
@@ -73,9 +75,15 @@ export function tick(S, days, market) {
 export function factors(S, market) {
   const R = ensureRivals(S);
   const out = {};
-  for (const [pid, goods] of Object.entries(R.r)) {
+  for (const p of PORTS) {
+    const pid = p.id, goods = R.r[pid] || {};
+    const hp = Houses.pressure(S, pid); // the rival houses that work this port (houses.js)
+    if (!hp && !R.r[pid]) continue;
     out[pid] = {};
-    for (const [g, r] of Object.entries(goods)) out[pid][g] = market.sells(pid, g) ? 1 + TUNING.premium * r : 1 - TUNING.cut * r;
+    for (const g of GOODS) {
+      const r = 1 - (1 - (goods[g.id] || 0)) * (1 - hp);
+      out[pid][g.id] = market.sells(pid, g.id) ? 1 + TUNING.premium * r : 1 - TUNING.cut * r;
+    }
   }
   return out;
 }

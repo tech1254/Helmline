@@ -12,9 +12,11 @@ SP = sys.argv[1] if len(sys.argv) > 1 else os.environ.get('HELMLINE_OUT', '.')
 # a new player's plan: buy here what sells for the most, relative to its price, in a port the barca can reach
 PLAN = """() => {
   const h = window.helmline, s = h.state, m = h.market(), here = s.ship.docked;
+  const at = h.ports.find((p) => p.id === here), R = Math.PI / 180;
+  const nm = (p) => 3440 * Math.acos(Math.min(1, Math.sin(at.lat * R) * Math.sin(p.lat * R) + Math.cos(at.lat * R) * Math.cos(p.lat * R) * Math.cos((p.lon - at.lon) * R)));
   let best = null;
   for (const p of h.ports) {
-    if (p.id === here || !s.discovered[p.id]) continue;
+    if (p.id === here || !s.discovered[p.id] || nm(p) > 700) continue; // a few days' sail: not up to Flanders in a barca
     for (const g of new Set([...document.querySelectorAll('#panel [data-buy]')].map((e) => e.dataset.buy))) {
       const r = m.sellPrice(p.id, g) / m.buyPrice(here, g);
       if (!best || r > best.r) best = { port: p.id, good: g, r };

@@ -1,5 +1,6 @@
 // Voyages and port calls: corsairs, planning a course, docking, milestones.
 
+import * as Callings from './callings.js';
 import { COS0, D2R, PORTS, windAt, sailFactor, bearing, distNm, angleDiff, findPath, COASTAL_NM, berth, anchorage, isRiverLeg, RIVER_KNOTS, riverOf, shoalDepth, DEEP_DRAFT, isBeyond } from './world.js';
 import * as Indies from './indies.js';
 import * as Ports from './ports.js';
@@ -273,7 +274,11 @@ export function boatsFor(units) {
   const sh = S.ship, pid = sh.docked;
   if (!pid || !units) return;
   anchorOffIfNeeded(pid);
-  if (!sh.offshore) return;
+  if (!sh.offshore) { // alongside: the cargo is worked from the quay, and the days pass
+    const b = sh.boats?.quay ? sh.boats : { total: 0, moved: 0 };
+    sh.boats = { total: b.total - b.moved + units, moved: 0, rate: Ships.quayRate(sh.hull), quay: true };
+    return;
+  }
   const p = PORTS.find((x) => x.id === pid);
   const w = Ports.boatWork(pid, sh.hull, units, Ships.isDeep(sh.hull) && shoalDepth(p.lon, p.lat) <= DEEP_DRAFT);
   const b = sh.boats || { total: 0, moved: 0, rate: w.rate * (sh.leadRate || 1) };
@@ -376,7 +381,7 @@ export function confirmVoyage(plan) {
   confirmDialog({
     title: S.ship.docked || !S.ship.route.length ? `Set sail for ${to}?` : `Change course for ${to}?`,
     body: `<dl class="facts">
-        ${wait ? `<dt>Her boats</dt><dd>about ${Math.max(1, Math.round(wait))} more ${Math.round(wait) <= 1 ? 'day' : 'days'} to finish the cargo first</dd>` : ''}
+        ${wait ? `<dt>${S.ship.boats?.quay ? 'Loading' : 'Her boats'}</dt><dd>about ${Math.max(1, Math.round(wait))} more ${Math.round(wait) <= 1 ? 'day' : 'days'} to finish the cargo first</dd>` : ''}
         ${home ? `<dt>Home across the Indian Ocean</dt><dd>about ${home.days} days to the Cape, ${home.season}</dd>` : ''}
         <dt>Passage</dt><dd>about ${Math.max(1, Math.round(est.days))} ${Math.round(est.days) <= 1 ? 'day' : 'days'} · ${Math.round(nm).toLocaleString()} nm</dd>
         <dt>Arrival</dt><dd>around ${fmtDate(S.day + days)}</dd>
@@ -502,7 +507,7 @@ export function dock(portId) {
     ? `Anchored off <b>${p.name}</b>: the <b>${sh.name}</b> draws ${Ships.draftOf(sh.hull, loadOf())} m and ${p.kind} has ${Ports.depthOf(S, portId)} m. Her boats will work the cargo.`
     : `Dropped anchor at <b>${p.name}</b>.`;
   if (portId === home(S) && S.unpaidCharts.length) {
-    const reward = S.unpaidCharts.length * CHART_REWARD;
+    const reward = Math.round(S.unpaidCharts.length * CHART_REWARD * Callings.perk(S, 'charts')); // more for a crown's captain
     S.purse += reward;
     Accounts.record(S, { kind: 'charts', amount: reward, text: `Charts of ${S.unpaidCharts.join(', ')}` });
     msg = `The crown buys your charts of ${S.unpaidCharts.join(', ')} for <b>${reward} cz</b>.`;

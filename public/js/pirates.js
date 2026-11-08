@@ -9,6 +9,7 @@ import * as Lending from './lending.js';
 import { GOODS, PORTUGUESE_PORTS } from './economy.js';
 import * as Ships from './ships.js';
 import * as Wear from './wear.js';
+import * as Callings from './callings.js';
 import { isLand, distNm } from './world.js';
 
 const ZONES = [
@@ -199,7 +200,7 @@ export function odds(S, enc, knots) {
   const P = ensurePirates(S);
   const run = clamp(0.25 + 0.11 * knots - (enc.big ? 0.1 : 0), 0.12, 0.88);
   const guns = S.ship?.hull ? Ships.flagStats(S).fight : 0;
-  const fight = clamp((0.5 + 0.03 * Math.min(P.won, 6)) * (S.hull / 100 * 0.4 + 0.6) / enc.strength + guns + (enc.hunted ? GALLEYS.surprise : 0), 0.15, 0.92);
+  const fight = clamp((0.5 + 0.03 * Math.min(P.won, 6)) * (S.hull / 100 * 0.4 + 0.6) / enc.strength + guns + (enc.hunted ? GALLEYS.surprise : 0) + Callings.perk(S, 'fight'), 0.15, 0.92);
   return { run, fight };
 }
 
@@ -296,6 +297,8 @@ function spoilsOf(enc) {
 // bounty, but a fearsome name), or let her limp home. `free` is the room left in his hold.
 export function plunder(S, enc, spoils, take, free = Infinity) {
   const P = ensurePirates(S);
+  // a privateer's name and crew get more out of a prize (callings.js)
+  spoils = { ...spoils, cash: Math.round(spoils.cash * Callings.perk(S, 'plunder')), bounty: Math.round(spoils.bounty * Callings.perk(S, 'bounty')) };
   const lines = [];
   if (!take) {
     P.caution += 1;
