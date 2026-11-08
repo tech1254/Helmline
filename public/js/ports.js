@@ -43,6 +43,7 @@ export const START = {
   algiers: { size: 15000, grow: 0.006 },
   angra: { size: 300, grow: 0.04 }, // settled from 1450
   flores: { size: 20, grow: 0.02 }, // nobody yet
+  cove: { size: 60, grow: 0 }, // smugglers' huts
   ribeiragrande: { size: 40, grow: 0.05 }, // settled from 1462
   stjohns: { size: 30, grow: 0.01 }, // fishermen in the season
   santodomingo: { size: 800, grow: 0.01 }, // a Taíno village; a Castilian town from 1496

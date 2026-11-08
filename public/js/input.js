@@ -10,6 +10,7 @@ import { renderPanel, setSpeed, togglePanel, toggleWind } from './panels.js';
 import { passage } from './pricebook.js';
 import { closeModal } from './dialog.js';
 import { hint } from './notices.js';
+import { vesselAt, openShip } from './huntview.js';
 import * as Cloud from './cloud.js';
 
 // ---- Input --------------------------------------------------------------------
@@ -55,6 +56,8 @@ export function chartClick(sx, sy, append) {
     confirmVoyage(plan);
     return;
   }
+  const v = vesselAt(sx, sy, lastPointerType !== 'mouse'); // a rival house's ship: see her, and give chase
+  if (v) { openShip(v); return; }
   const [lon, lat] = toWorld(sx, sy);
   if (!inBounds(lon, lat)) { hint('That lies beyond the edge of the chart.'); return; }
   if (isLand(lon, lat)) {

@@ -39,6 +39,8 @@ import { isBook, renderDock, renderMenu, serviceHere } from './dock.js';
 import { YARDS } from './shipyard.js';
 import { moneyBox } from './lendingview.js';
 import { ensureFirst, firstActive, firstAtSea, firstBox } from './firstvoyage.js';
+import * as Law from './law.js';
+import { lawBox } from './lawview.js';
 
 // ---- HUD & panels -----------------------------------------------------------
 
@@ -222,9 +224,10 @@ export function renderPort(el) {
   const st = Ships.flagStats(S);
   const free = st.hold - held();
   const shut = Events.closure(S, pid);
+  const barred = Law.closedTo(S, pid); // at war with its crown, or wanted there (law.js)
   ensureFirst(); // a new game: the guided first voyage (firstvoyage.js)
   const rows = GOODS.map((g) => {
-    const sells = market.sells(pid, g.id) && !shut;
+    const sells = market.sells(pid, g.id) && !shut && !barred;
     const buy = sells ? market.buyPrice(pid, g.id) : null;
     const sell = market.sellPrice(pid, g.id);
     const have = S.cargo[g.id];
@@ -237,7 +240,7 @@ export function renderPort(el) {
       <td class="num">${have || '<span class="muted">0</span>'}${avg ? `<small>paid ~${avg}</small>` : ''}</td>
       <td class="acts">
         ${sells ? `<button data-buy="${g.id}" data-n="1" ${buy > S.purse || !free ? 'disabled' : ''}>+1</button><button data-buy="${g.id}" data-n="10" ${buy > S.purse || !free ? 'disabled' : ''}>+10</button><button data-buy="${g.id}" data-n="max" ${buy > S.purse || !free ? 'disabled' : ''}>Max</button>` : ''}
-        ${have && !shut ? `<button data-sell="${g.id}" data-n="1">−1</button><button data-sell="${g.id}" data-n="all">All</button>` : ''}
+        ${have && !shut && !barred ? `<button data-sell="${g.id}" data-n="1">−1</button><button data-sell="${g.id}" data-n="all">All</button>` : ''}
       </td></tr>`;
   }).join('');
   el.innerHTML = `
@@ -251,6 +254,8 @@ export function renderPort(el) {
     ${debtBox()}
     ${moneyBox()}
     ${hullBanner(pid)}
+    ${barred ? `<p class="banner warn"><b>Shut to you:</b> ${barred.text}</p>` : ''}
+    ${lawBox(pid)}
     ${shut ? `<p class="banner warn"><b>Closed to trade:</b> ${Events.template(shut).title.toLowerCase()}. Expected to reopen around ${fmtDate(shut.end)}.</p>` : ''}
     <table class="market">
       <thead><tr><th>Good</th><th class="num">Buy</th><th class="num">Sell</th><th class="num">Hold</th><th></th></tr></thead>
@@ -651,6 +656,15 @@ export function renderHelp(el) {
       <li><b>Draft:</b> a laden ship sits deeper. Where she draws more than the harbour has, she anchors offshore and her boats ferry the cargo: some days, and a small fee to the boatmen. A nau keeps outside the Arguin banks. River bars rise in the rains and fall in the dry season.</li>
       <li><b>Up the Gambia:</b> Cantor, far upriver, trades gold and ivory from the caravans and pays well for salt. Only a shallow ship gets there: a barca, or a caravel not too deeply laden.</li>
       <li><b>Ports grow:</b> with their history and with the trade through them. A bigger port has a deeper market, and some build quays that let deeper ships come in. The market panel shows each port's size.</li>
+    </ul></details>
+    <details class="help-more"><summary>Fights, prizes, piracy and war</summary>
+    <ul class="help">
+      <li><b>Fights</b> are played in up to four rounds. Each round you see what the other ship means to do, then choose: attacking, close in, rake her rigging, fire, board or call on her to strike; attacked, run, turn and fire, repel boarders, pay tribute or strike your colours. Timing matters: repel when she comes to board, board when her crew is shaken, cut her rigging when she runs. Or leave it to your sailing master.</li>
+      <li><b>Hunting:</b> tap a rival house's ship on the chart to see her flag, cargo and arms, and give chase. Catch her before she makes port and you fight her. If she is yours: take her cargo, send her in as a prize, ransom her to her house, or take a toll and let her go.</li>
+      <li><b>Privateer or pirate:</b> corsairs are fair game. An enemy's ships in wartime are lawful prize under a letter of marque, and, for Portugal from 1455, foreign interlopers on the Guinea coast under the crown's licence. Lawful prizes sell at any port of your crown (the crown takes a fifth). Anything else is piracy: prizes can only be fenced at a haven (Salé, Algiers, or a hidden cove you hear of there), and the victim's crown remembers.</li>
+      <li><b>Infamy:</b> enough of it and that crown's hunters come for you; more, and its ports are shut to you. A pardon, bought at its court, clears your name; service in a war makes it cheaper. A pirate crew sails on shares: keep the prizes coming or they mutiny.</li>
+      <li><b>War:</b> from 1475 Portugal and Castile are at war over the crown of Castile and the Guinea trade. The enemy's ports are shut, its warships cruise the Guinea coast, the Canaries and the Algarve, and service in the war is rewarded at the peace of 1479.</li>
+      <li><b>The years ahead:</b> when Act I ends you can let the years pass to 1474, the eve of the war, from your home port (Houses of the Sea). Your captains and factors trade through them.</li>
     </ul></details>
     <details class="help-more"><summary>Your fleet and time away</summary>
     <ul class="help">

@@ -159,7 +159,7 @@ export const BEATS = [
     when: (S) => docked(S) && S.day >= GIBRALTAR,
     show: () => ({
       kind: 'card', title: 'Gibraltar is Castile\'s',
-      body: '<p><i>August 1462.</i> The men of the Duke of Medina Sidonia take Gibraltar from the Moors of Granada. The Strait is a Christian sea on both shores now: Portugal holds Ceuta, Castile the Rock. Fewer corsairs will slip out of the Strait to the Andalusian coast.</p>',
+      body: '<p><i>August 1462.</i> The men of the Duke of Medina Sidonia take Gibraltar from the Moors of Granada. The Strait is a Christian sea on both shores now: Portugal holds Ceuta, Castile the Rock. Fewer corsairs will slip out of the Strait to the Andalusian coast.</p><p class="fine">Sail on year by year, or, in Seville, let the years pass to 1474, the eve of the war with Portugal.</p>',
     }),
     choose: () => 'Gibraltar taken from the Moors.',
   },

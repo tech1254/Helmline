@@ -69,6 +69,8 @@ export const MARKETS = {
   genoa:     { k: 0.01, p: { wine: [12], cloth: [11, 1], sugar: [30], dye: [28], gold: [132], ivory: [58], pepper: [48], wheat: [20], salt: [8], alquices: [15], copper: [17], brazilwood: [32], spices: [120, 1] } },
   sale:      { k: 0.025, p: { wine: [20], cloth: [20], sugar: [22], dye: [18], gold: [92], ivory: [42], pepper: [34], wheat: [6, 1], salt: [7], alquices: [9, 1], copper: [25], brazilwood: [24], spices: [110] } },
   algiers:   { k: 0.025, p: { wine: [20], cloth: [21], sugar: [24], dye: [20], gold: [98], ivory: [44], pepper: [36], wheat: [8, 1], salt: [7], alquices: [10, 1], copper: [26], brazilwood: [26], spices: [115] } },
+  // The hidden cove on Fuerteventura: a thin market of smugglers, where nobody asks.
+  cove:      { k: 0.09, p: { wine: [20], cloth: [22], sugar: [24], dye: [20], gold: [92], ivory: [40], pepper: [36], wheat: [16], salt: [12], alquices: [16], copper: [24], brazilwood: [24], spices: [110] } },
   // The Atlantic islands and the far west.
   angra:     { k: 0.035, p: { wine: [16], cloth: [18], sugar: [22], dye: [8, 1], gold: [100], ivory: [40], pepper: [34], wheat: [7, 1], salt: [9], alquices: [16], copper: [22], brazilwood: [24], spices: [120] } },
   flores:    { k: 0.08, p: { wine: [22], cloth: [22], sugar: [24], dye: [6, 1], gold: [90], ivory: [36], pepper: [30], wheat: [18], salt: [12], alquices: [18], copper: [24], brazilwood: [22], spices: [100] } },
@@ -82,7 +84,7 @@ const FISH = {
   safi: [16], funchal: [17], lanzarote: [14], arguin: [9], gambia: [18], serraleoa: [18], cestos: [18], mina: [20], mpinda: [20],
   saotome: [20], saobras: [22], portoseguro: [20], calicut: [25], cantor: [24],
   bruges: [11], antwerp: [11], bristol: [8, 1], galway: [6, 1], valencia: [16], genoa: [17], sale: [14], algiers: [15],
-  angra: [12], flores: [14], ribeiragrande: [14], stjohns: [3, 1], santodomingo: [22],
+  angra: [12], flores: [14], cove: [15], ribeiragrande: [14], stjohns: [3, 1], santodomingo: [22],
 };
 for (const [pid, f] of Object.entries(FISH)) MARKETS[pid].p.fish = f;
 

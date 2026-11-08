@@ -29,6 +29,10 @@ export const KINDS = {
   repairs: 'Repairs',
   boats: 'Boatmen',
   debt: 'Debts and partners',
+  prizes: 'Prizes, ransoms and tolls',
+  plunder: 'Plunder',
+  fines: 'Fines, pardons and licences',
+  war: 'The crown\'s thanks for the war',
 };
 
 export function ensureAccounts(S) {

@@ -3,6 +3,15 @@ from playwright.async_api import async_playwright
 import os
 URL = os.environ.get('HELMLINE_URL', 'http://localhost:8787/')
 SP = sys.argv[1] if len(sys.argv) > 1 else os.environ.get('HELMLINE_OUT', '.')
+async def finish_fight(pg):
+    """Play out an open fight (fightview.js): the sailing master fights it, then Continue."""
+    for _ in range(12):
+        acts = await pg.evaluate("() => document.getElementById('modal').hidden ? [] : [...document.querySelectorAll('#modal-body [data-modal-action]')].map(b => b.dataset.modalAction)")
+        if 'done' in acts: await pg.click('#modal-body [data-modal-action="done"]'); await pg.wait_for_timeout(200); return True
+        if 'auto' in acts: await pg.click('#modal-body [data-modal-action="auto"]'); await pg.wait_for_timeout(200); continue
+        return False
+    return False
+
 async def main():
     async with async_playwright() as p:
         b = await p.chromium.launch(); pg = await b.new_page(viewport={'width':1280,'height':820})
@@ -14,7 +23,7 @@ async def main():
         await pg.click('[data-buy="wine"][data-n="10"]'); await pg.click('#modal-ok')
         await J("() => { window.helmline.setCourse(-13.38, 28.92, 'lanzarote'); window.helmline.setSpeed(1); }")
         await pg.wait_for_timeout(1500)
-        for n, choice in enumerate(['run', 'fight', 'pay', 'fight']):
+        for n, choice in enumerate(['run', 'turn', 'pay', 'turn']):
             await J("() => window.helmline.encounter(false)"); await pg.wait_for_timeout(300)
             title = await J("() => document.getElementById('modal-title').textContent")
             okHidden = await J("() => document.getElementById('modal-ok').hidden && document.getElementById('modal-cancel').hidden")
@@ -22,9 +31,9 @@ async def main():
                 await pg.screenshot(path=f'{SP}/28-corsairs.png')
                 await pg.keyboard.press('Escape'); still = await J("() => !document.getElementById('modal').hidden")
                 print('Escape cannot dismiss the encounter:', still)
-            if n == 1: await J("() => { Math._r = Math.random; Math.random = () => 0.02; }")  # the first fight is won
+            if n == 1: await J("() => { window.helmline.ui.fight.foe.morale = 5; }")  # the first fight is won: her crew is beaten
             await pg.click(f'[data-modal-action="{choice}"]'); await pg.wait_for_timeout(200)
-            if n == 1: await J("() => { Math.random = Math._r; }")
+            await finish_fight(pg)
             if await J("() => !!document.querySelector('[data-modal-action=\"plunder\"]')"):
                 await pg.screenshot(path=f'{SP}/28b-plunder.png')
                 body = await J("() => document.getElementById('modal-body').innerText.replace(/\\s+/g, ' ').slice(0, 200)")
@@ -52,8 +61,8 @@ async def main():
         for _ in range(150):
             if await J("() => !document.getElementById('modal').hidden"):
                 if await J("() => !!document.querySelector('[data-modal-action=\"pay\"]')"):
-                    seen += 1; await pg.click('[data-modal-action="pay"]')
-                else:
+                    seen += 1; await pg.click('[data-modal-action="pay"]'); await finish_fight(pg)
+                elif not await finish_fight(pg):
                     await pg.click('#modal-ok')
             if await J("() => window.helmline.state.ship.docked") == 'lanzarote': break
             await pg.wait_for_timeout(200)
@@ -63,7 +72,8 @@ async def main():
         for _ in range(150):
             if await J("() => window.helmline.state.ship.docked") == 'lagos': break
             if await J("() => !document.getElementById('modal').hidden"):
-                await pg.click('[data-modal-action="pay"]' if await J("() => !!document.querySelector('[data-modal-action=\"pay\"]')") else '#modal-ok')
+                if await J("() => !!document.querySelector('[data-modal-action=\"pay\"]')"): await pg.click('[data-modal-action="pay"]'); await finish_fight(pg)
+                elif not await finish_fight(pg): await pg.click('#modal-ok')
             await pg.wait_for_timeout(200)
         btn = await pg.query_selector('[data-repair]'); print('repair button:', await btn.inner_text() if btn else None)
         pir = await J("() => window.helmline.state.pirates")

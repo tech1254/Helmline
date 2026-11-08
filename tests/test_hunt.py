@@ -6,6 +6,15 @@ from playwright.async_api import async_playwright
 URL = os.environ.get('HELMLINE_URL', 'http://localhost:8787/')
 SP = sys.argv[1] if len(sys.argv) > 1 else os.environ.get('HELMLINE_OUT', '.')
 
+async def finish_fight(pg):
+    """Play out an open fight (fightview.js): the sailing master fights it, then Continue."""
+    for _ in range(12):
+        acts = await pg.evaluate("() => document.getElementById('modal').hidden ? [] : [...document.querySelectorAll('#modal-body [data-modal-action]')].map(b => b.dataset.modalAction)")
+        if 'done' in acts: await pg.click('#modal-body [data-modal-action="done"]'); await pg.wait_for_timeout(200); return True
+        if 'auto' in acts: await pg.click('#modal-body [data-modal-action="auto"]'); await pg.wait_for_timeout(200); continue
+        return False
+    return False
+
 async def main():
     async with async_playwright() as p:
         b = await p.chromium.launch(); errs = []
@@ -46,8 +55,10 @@ async def main():
         if title != 'You have run down a corsair galley': errs.append('no hunt dialog')
         if 'Pay' in body: errs.append('a tribute was offered when hunting')
         await pg.screenshot(path=f'{SP}/hunt-2-dialog.png')
-        await J("() => { Math.random = () => 0.01; }")  # the attack succeeds
         await pg.click('#modal-body [data-modal-action="attack"]'); await pg.wait_for_timeout(300)
+        await J("() => { window.helmline.ui.fight.foe.morale = 5; }")  # her rowers are beaten: the attack succeeds
+        await pg.click('#modal-body [data-modal-action="fire"]'); await pg.wait_for_timeout(300)
+        await finish_fight(pg)
         t2 = await J("() => document.getElementById('modal').hidden ? null : document.getElementById('modal-title').textContent")
         print('after the attack:', t2)
         if t2 == 'The galley is yours':

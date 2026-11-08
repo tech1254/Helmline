@@ -2,6 +2,15 @@ import asyncio, sys
 from playwright.async_api import async_playwright
 import os
 URL = os.environ.get('HELMLINE_URL', 'http://localhost:8787/')
+async def finish_fight(pg):
+    """Play out an open fight (fightview.js): the sailing master fights it, then Continue."""
+    for _ in range(12):
+        acts = await pg.evaluate("() => document.getElementById('modal').hidden ? [] : [...document.querySelectorAll('#modal-body [data-modal-action]')].map(b => b.dataset.modalAction)")
+        if 'done' in acts: await pg.click('#modal-body [data-modal-action="done"]'); await pg.wait_for_timeout(200); return True
+        if 'auto' in acts: await pg.click('#modal-body [data-modal-action="auto"]'); await pg.wait_for_timeout(200); continue
+        return False
+    return False
+
 async def main():
     async with async_playwright() as p:
         b = await p.chromium.launch(); pg = await b.new_page(viewport={'width':1280,'height':900})
@@ -24,6 +33,8 @@ async def main():
         await J("() => window.helmline.encounter(false)"); await pg.wait_for_timeout(400)
         print('encounter dialog:', await J("() => document.getElementById('modal').hidden ? null : document.getElementById('modal-title').textContent"))
         await pg.click('[data-modal-action="run"]'); await pg.wait_for_timeout(300)
+        await finish_fight(pg)
+        if await J("() => !document.getElementById('modal').hidden && !document.getElementById('modal-ok').hidden"): await pg.click('#modal-ok'); await pg.wait_for_timeout(100)
         await J("() => { const s = window.helmline.state; s.purse = 6000; s.contracts.unlocked = true; s.contracts.standing = 6; }")
         await pg.click('#btn-port'); await pg.wait_for_timeout(50)
         if await J("() => !document.querySelector('[data-tab=\"fleet\"]')"): await pg.click('#btn-port')

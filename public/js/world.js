@@ -430,16 +430,16 @@ export const HARBOURS = {
   algiers: { depth: 5, kind: 'an anchorage sheltered by a chain of islets' },
   angra: { depth: 6, kind: 'a sheltered bay under Monte Brasil' },
   flores: { depth: 4, kind: 'an open cove under the cliffs' },
+  cove: { depth: 3, kind: 'a narrow bay behind a reef' },
   ribeiragrande: { depth: 5, kind: 'an open roadstead at the mouth of a valley' },
   stjohns: { depth: 10, kind: 'a deep harbour behind narrows' },
   santodomingo: { depth: 4, kind: 'the mouth of the Ozama river' },
 };
-// A port planned for the pirate path (the design doc, phase 4): a haven the player builds on
-// Fuerteventura. Not on the chart until then; its picture is ready.
-export const FUTURE_PORTS = [
-  { id: 'cove', name: 'A hidden cove', lon: -14.05, lat: 28.15, known: false, built: true,
-    blurb: 'A narrow bay on the empty east coast of Fuerteventura, out of sight of any lookout: your own haven.' },
-];
+// The pirate path's haven (the design doc, phase 4): a cove on Fuerteventura that no chart shows.
+// It is never charted by sailing past; word of it comes from the havens (law.js, `hidden`).
+PORTS.push({ id: 'cove', name: 'A hidden cove', lon: -13.76, lat: 28.17, known: false, hidden: true,
+  blurb: 'A narrow bay on the empty east coast of Fuerteventura, out of sight of any lookout. Smugglers and corsairs water here, and nobody asks where a cargo came from.' });
+export const FUTURE_PORTS = [];
 for (const p of PORTS) Object.assign(p, HARBOURS[p.id] || { depth: 5 });
 
 // ---- Shoals --------------------------------------------------------------------------

@@ -29,8 +29,14 @@ export const BUILDINGS = {
     does: 'Repairs and refits here, as at home.' },
   church: { id: 'church', name: 'Church and hospital', cost: (S, pid) => round(2500 + size(S, pid) * 0.03), upkeep: 20, days: 90, standing: 0, weight: 0.5,
     does: 'Your sick are tended and the town remembers your name: standing and renown when it is done.' },
+  // Only at your own haven, the hidden cove (law.js): the pirate path's port works.
+  stockade: { id: 'stockade', name: 'Stockade and careening beach', cost: () => 3000, upkeep: 20, days: 60, standing: 0, weight: 0, only: 'cove',
+    does: 'Your own haven: prizes fetch four-fifths of their worth here instead of half, your crew spend their shares ashore and come back content, and you can careen and refit.' },
 };
 export const BUILDING_IDS = Object.keys(BUILDINGS);
+// What can be built in a port: at the hidden cove only a stockade, a quay and a warehouse.
+const COVE_WORKS = ['stockade', 'quay', 'warehouse'];
+export const buildingsAt = (pid) => BUILDING_IDS.filter((id) => (pid === 'cove' ? COVE_WORKS.includes(id) : !BUILDINGS[id].only));
 export const FORT_REACH_NM = 300;
 
 export function ensureWorks(S) {
@@ -57,7 +63,7 @@ export function list(S) {
 // Whether a building can be put up here, and if not, why not.
 export function canBuild(S, pid, id) {
   const B = BUILDINGS[id], p = portById(pid);
-  if (!B || !p) return { ok: false, why: 'unknown' };
+  if (!B || !p || !buildingsAt(pid).includes(id)) return { ok: false, why: 'unknown' };
   if (atPort(S, pid)[id]) return { ok: false, why: S.day < atPort(S, pid)[id].ready ? 'Being built.' : 'Already yours.' };
   if (p.beyond) return { ok: false, why: 'Too far from home to build.' };
   if (id === 'post' && pid === home(S)) return { ok: false, why: 'Home: your own house does a factor\'s work here.' };
@@ -105,7 +111,7 @@ export function corsairDamp(S, lon, lat) {
 }
 
 // A shipyard: the crown's yards and your own.
-export const isYard = (S, pid) => Wear.YARDS.includes(pid) || (S ? has(S, pid, 'yard') : false);
+export const isYard = (S, pid) => Wear.YARDS.includes(pid) || (S ? has(S, pid, 'yard') || has(S, pid, 'stockade') : false);
 
 // Your ships berth alongside here whatever their draught; cargo moves twice as fast.
 export const quay = (S, pid) => has(S, pid, 'quay');

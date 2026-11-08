@@ -12,6 +12,8 @@ import { home } from './nations.js';
 import * as Callings from './callings.js';
 import * as Houses from './houses.js';
 import * as Works from './works.js';
+import * as Law from './law.js';
+import * as War from './war.js';
 
 const SLOTS = 3;
 const portById = (id) => PORTS.find((p) => p.id === id);
@@ -205,6 +207,48 @@ export const KINDS = {
     value: (S) => S.pirates?.notoriety || 0 },
 };
 
+// Phase 4: ships taken, prizes condemned, a haven of your own, a house raided, service in a war.
+const law = (S) => S.law || {};
+Object.assign(KINDS, {
+  prizes: { calling: 'privateer',
+    make(S, big) {
+      if (!S.voyages) return null;
+      const target = big ? 4 : 1;
+      return { text: target === 1 ? 'Take a ship at sea (tap a rival\'s ship on the chart)' : `Take ${target} ships at sea`, target, base: law(S).taken || 0 };
+    },
+    value: (S, a) => (law(S).taken || 0) - a.base },
+  condemn: { calling: 'privateer',
+    make(S) {
+      if (!War.hasMarque(S) && !Law.licensed(S)) return null;
+      return { text: 'Have a prize condemned at a prize court', target: 1, base: law(S).condemned || 0 };
+    },
+    value: (S, a) => (law(S).condemned || 0) - a.base },
+  haven: { calling: 'privateer',
+    make(S, big) {
+      if (!big || !S.discovered?.cove || Works.building(S, 'cove', 'stockade')) return null;
+      return { text: 'Make the hidden cove your own haven (build its stockade)', target: 1, base: 0, big: true };
+    },
+    value: (S) => (Works.has(S, 'cove', 'stockade') ? 1 : 0) },
+  raid: { calling: 'privateer',
+    make(S, big, rand = Math.random) {
+      const hs = Houses.active(S);
+      if (!hs.length || !S.voyages) return null;
+      const house = hs[Math.floor(rand() * hs.length)];
+      const target = big ? 3 : 1;
+      const name = Houses.defOf(house).name;
+      return { text: target === 1 ? `Take a ship of the house of ${name}` : `Take ${target} ships of the house of ${name}`, target, house, base: law(S).byHouse?.[house] || 0 };
+    },
+    value: (S, a) => (law(S).byHouse?.[a.house] || 0) - a.base },
+  service: { calling: 'crown',
+    make(S, big) {
+      if (!War.enemyOf(S)) return null;
+      const target = War.service(S) + (big ? 5 : 2);
+      return { text: `Serve the crown in the war: win ${big ? 5 : 2} fights or prizes against ${Law.CROWNS[War.enemyOf(S)].name}`, target, base: 0 };
+    },
+    value: (S) => War.service(S),
+    lost: (S) => !War.enemyOf(S) },
+});
+
 export function ensureAmbitions(S) {
   if (!S.ambitions) S.ambitions = { active: [], offers: null, done: 0, nextId: 1 };
   return S.ambitions;
@@ -286,7 +330,8 @@ export function checkAmbitions(S, rand = Math.random) {
       if (rose) msgs.push({ html: `<b>You rise in the world:</b> you are now known as a <b>${rose}</b>.`, kind: 'discover', log: `Rose to ${rose}.`, rank: rose });
     } else if (K.lost?.(S, a)) {
       A.active = A.active.filter((x) => x !== a);
-      msgs.push({ html: `${a.who} got there first: the race to ${portById(a.port).name} is lost.`, kind: '', log: `Lost the race to ${portById(a.port).name}.` });
+      if (a.kind === 'race') msgs.push({ html: `${a.who} got there first: the race to ${portById(a.port).name} is lost.`, kind: '', log: `Lost the race to ${portById(a.port).name}.` });
+      else msgs.push({ html: `The war is over: <i>${a.text}</i> can no longer be done.`, kind: '', log: `Ambition lapsed: ${a.text}.` });
     }
   }
   if (A.active.length < SLOTS && !A.offers?.length) makeOffers(S, rand);

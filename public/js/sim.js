@@ -1,6 +1,10 @@
 // Time passing: sailing, wages, spoilage, events, the fleet, and time away.
 
 import * as Works from './works.js';
+import { findPath } from './world.js';
+import * as Hunt from './hunt.js';
+import * as Law from './law.js';
+import * as War from './war.js';
 import { D2R, PORTS, isLand, windAt, sailFactor, bearing, distNm, angleDiff, isRiverLeg, RIVER_KNOTS, shoalDepth, SHOALS, isBeyond, compassPoint } from './world.js';
 import * as Ports from './ports.js';
 import { GOODS, PORTUGUESE_PORTS } from './economy.js';
@@ -71,6 +75,7 @@ export function update(dtSec) {
   const sh = S.ship;
   if (ui.speed === 0 || ui.modal || ui.screen || ui.arrival) return;
   if (sh.docked) { workBoats(dtSec); return; }
+  if (!sh.route.length && S.chase) steerChase(true);
   if (!sh.route.length) return;
   let days = dtSec * DAYS_PER_SEC * ui.speed * timeScale(); // timeScale: an account setting (cloud.js)
   while (days > 0 && sh.route.length) {
@@ -106,13 +111,32 @@ export function update(dtSec) {
       S.trail.push([+sh.lon.toFixed(3), +sh.lat.toFixed(3)]);
       if (S.trail.length > 4000) S.trail.splice(0, S.trail.length - 4000);
     }
+    if (S.chase) { steerChase(!sh.route.length); if (ui.pendingEncounter) break; }
     if (!sh.route.length) {
+      if (S.chase) break; // the chase steers on
       if (sh.dest?.port) { try { if (!isBeyond(sh.dest.port)) startArrival(sh.dest.port); } catch (e) { console.error(e); } dock(sh.dest.port); }
       else { sh.dest = null; toast('Arrived at the mark. Awaiting orders.'); save(); }
       break;
     }
   }
 }
+
+// The chase (hunt.js): steer to cut her off, every half day or when the course runs out; on
+// contact, fight her; if she makes port first, the chase is over.
+function steerChase(now = false) {
+  const sh = S.ship;
+  const t = Hunt.tickChase(S);
+  if (t?.lost) { toast(t.lost, ''); if (!sh.route.length) { sh.dest = null; setSpeed0(); } return; }
+  if (t?.contact) { if (!ui.modal && !ui.pendingEncounter) ui.pendingEncounter = { kind: 'prey', v: t.contact }; return; }
+  if (!now && S.day - S.chase.steered < 0.5) return;
+  const v = Hunt.quarry(S);
+  if (!v) return;
+  S.chase.steered = S.day;
+  const [lon, lat] = Hunt.intercept(S, v, Math.max(2, shipWind().knots));
+  const path = findPath(sh.lon, sh.lat, lon, lat, 1, !!Ships.hullOf(sh).coastal, Ships.isDeep(sh.hull));
+  if (path?.length) { sh.route = path; sh.dest = { lon, lat, port: null }; }
+}
+const setSpeed0 = () => { ui.lastSpeed = ui.speed || ui.lastSpeed; ui.speed = 0; };
 
 // Aground on a shoal: the crew kedge her off over a few days, and the hull suffers.
 function aground() {
@@ -282,6 +306,10 @@ export function advanceTime(dd, atSea, away = false) {
   report(Taxes.tick(S, House.renown(S)));
   report(Competition.tick(S, dd, market));
   report(Houses.tick(S)); // the rival houses (houses.js)
+  const war = War.tick(S); // the wars between the crowns (war.js)
+  for (const m of war) if (m.reward) Accounts.record(S, { kind: 'war', amount: m.reward, text: 'The crown\'s thanks for service in the war' });
+  report(war);
+  for (const m of Law.tick(S, dd, atSea)) { if (m.mutiny) ui.mutiny = true; else report([m]); } // infamy fades; a pirate crew counts the dry days
   const works = Works.tick(S); // your port works: upkeep, the trading posts' earnings (works.js)
   if (works.upkeep) Accounts.record(S, { kind: 'works', amount: -works.upkeep, text: 'Upkeep of your port works' });
   if (works.income) Accounts.record(S, { kind: 'post', amount: works.income, text: 'Your factors\' trade' });
@@ -301,6 +329,10 @@ export function advanceTime(dd, atSea, away = false) {
     if (hunt) ui.pendingEncounter = hunt;
     if (!ui.modal && !ui.pendingEncounter) {
       const enc = Pirates.roll(S, dd, S.ship.lon, S.ship.lat);
+      if (enc) ui.pendingEncounter = enc;
+    }
+    if (!ui.modal && !ui.pendingEncounter && !away) { // the crown's hunters, the enemy's warships (law.js)
+      const enc = Law.hunters(S, dd, S.ship.lon, S.ship.lat);
       if (enc) ui.pendingEncounter = enc;
     }
   }

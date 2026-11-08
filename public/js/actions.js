@@ -1,6 +1,9 @@
 // What the panel buttons and top-bar controls do.
 
 import { worksClick } from './worksview.js';
+import { lawClick } from './lawview.js';
+import * as Law from './law.js';
+import { offerSkip } from './timeskip.js';
 import { home, homeName } from './nations.js';
 import { PORTS, findPath } from './world.js';
 import { GOODS } from './economy.js';
@@ -83,6 +86,7 @@ export function initActions() {
       hint('The port is closed to trade.');
       return;
     }
+    if ((t.dataset.buy || t.dataset.sell) && pid && Law.closedTo(S, pid)) { hint(Law.closedTo(S, pid).text); return; }
     if (t.dataset.buy && pid) {
       const g = t.dataset.buy;
       const planRow = t.closest('li.plan');
@@ -361,8 +365,12 @@ export function initActions() {
       const plan = planCourse(p.lon, p.lat, p.id, false);
       if (plan) { ui.panelMode = null; confirmVoyage(plan); }
       else hint(noPassage());
+    } else if ((t.dataset.prizeSell || t.dataset.pardon || t.dataset.licence !== undefined) && lawClick(t)) {
+      // prizes, pardons, the licence (lawview.js)
     } else if (ui.panelMode === 'works' && worksClick(t)) {
       // port works: building, the warehouse (worksview.js)
+    } else if (t.dataset.timeskip !== undefined) {
+      offerSkip(false);
     } else if (t.dataset.buyout) {
       const id = t.dataset.buyout, q = Houses.buyOutPrice(S, id), d = Houses.defOf(id);
       if (!q?.ok || S.purse < q.price) return;

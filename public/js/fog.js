@@ -149,7 +149,7 @@ export function revealAt(lon, lat, r, quiet = false) {
   if (changed) fogDirty = true;
   if (quiet || !S) return;
   for (const p of PORTS) {
-    if (!S.discovered[p.id] && !p.beyond && portOpen(p.id, yearOf(S.day)) && distNm(lon, lat, p.lon, p.lat) <= r * 55) {
+    if (!S.discovered[p.id] && !p.beyond && !p.hidden && portOpen(p.id, yearOf(S.day)) && distNm(lon, lat, p.lon, p.lat) <= r * 55) {
       S.discovered[p.id] = true;
       S.unpaidCharts.push(p.name);
       warmRoutes();
