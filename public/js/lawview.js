@@ -4,6 +4,8 @@
 
 import * as Law from './law.js';
 import * as War from './war.js';
+import * as Race from './race.js';
+import { report } from './sim.js';
 import * as Fight from './fight.js';
 import * as Pirates from './pirates.js';
 import * as Houses from './houses.js';
@@ -157,6 +159,10 @@ function openMutiny() {
 // What happens on making port: crew ashore at a haven, mutineers walking off, a closed port, word
 // of the cove, and prizes to sell.
 export function onDock(pid) {
+  const won = Race.charted(S, pid); // first here? (race.js; charting by sight is in fog.js)
+  for (const m of won) if (m.prize) Accounts.record(S, { kind: 'discovery', amount: m.prize, port: pid, text: `The crown's prize for charting ${portName(pid)}` });
+  report(won);
+  report(Race.hear(S, pid)); // the pilots' talk of coasts not yet charted (race.js)
   const L = Law.ensureLaw(S);
   Law.ashore(S, pid);
   if (L.walkOff) {

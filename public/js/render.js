@@ -5,6 +5,7 @@ import * as Contracts from './contracts.js';
 import * as Fleet from './fleet.js';
 import * as Houses from './houses.js';
 import * as Works from './works.js';
+import * as Race from './race.js';
 import { findPath, distNm } from './world.js';
 import { reported } from './pilots.js';
 import { FH, FW } from './config.js';
@@ -319,6 +320,37 @@ export function drawFleet() {
   ctx.restore();
 }
 
+// Rumours and legends (race.js): a dashed ring and a question mark, in the fog or out of it.
+export function drawRumours() {
+  if (!S) return;
+  ctx.save();
+  ctx.textAlign = 'center';
+  for (const m of Race.marks(S)) {
+    const [sx, sy] = toScreen(m.lon, m.lat);
+    if (sx < -60 || sy < -60 || sx > W + 60 || sy > H + 60) continue;
+    const r = m.kind === 'legend' ? 15 : 13;
+    ctx.setLineDash([3, 3]);
+    ctx.lineWidth = 1.6;
+    ctx.strokeStyle = 'rgba(236,223,192,0.85)';
+    ctx.beginPath(); ctx.arc(sx, sy, r + 1.5, 0, Math.PI * 2); ctx.stroke();
+    ctx.strokeStyle = RED;
+    ctx.beginPath(); ctx.arc(sx, sy, r, 0, Math.PI * 2); ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.font = 'bold 16px "IM Fell English", Georgia, serif';
+    ctx.lineWidth = 3; ctx.strokeStyle = 'rgba(236,223,192,0.9)';
+    ctx.strokeText('?', sx, sy + 5.5);
+    ctx.fillStyle = RED; ctx.fillText('?', sx, sy + 5.5);
+    if (cam.scale > 9 || m.kind === 'legend') {
+      const label = m.kind === 'legend' ? m.name.replace(/^the /, 'The ') : m.name;
+      ctx.font = 'italic 14px "IM Fell English", Georgia, serif';
+      ctx.lineWidth = 6; ctx.lineJoin = 'round'; ctx.strokeStyle = 'rgba(236,223,192,0.96)';
+      ctx.strokeText(label, sx, sy + r + 15);
+      ctx.fillStyle = RED; ctx.fillText(label, sx, sy + r + 15);
+    }
+  }
+  ctx.restore();
+}
+
 // The rival houses' ships at work between their ports (houses.js), in their colours, where the
 // chart is known. Their passages follow the sea routes. The ship you are chasing is ringed.
 export function drawHouses() {
@@ -565,6 +597,7 @@ export function render() {
   ctx.restore();
 
   drawReported();
+  drawRumours();
   drawHouses();
   drawFleet();
   drawGalleys();

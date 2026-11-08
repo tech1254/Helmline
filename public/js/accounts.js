@@ -30,6 +30,7 @@ export const KINDS = {
   boats: 'Boatmen',
   debt: 'Debts and partners',
   prizes: 'Prizes, ransoms and tolls',
+  discovery: 'Prizes for discovery',
   plunder: 'Plunder',
   fines: 'Fines, pardons and licences',
   war: 'The crown\'s thanks for the war',

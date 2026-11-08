@@ -41,6 +41,7 @@ import { moneyBox } from './lendingview.js';
 import { ensureFirst, firstActive, firstAtSea, firstBox } from './firstvoyage.js';
 import * as Law from './law.js';
 import { lawBox } from './lawview.js';
+import { indiaBox } from './raceview.js';
 
 // ---- HUD & panels -----------------------------------------------------------
 
@@ -256,6 +257,7 @@ export function renderPort(el) {
     ${hullBanner(pid)}
     ${barred ? `<p class="banner warn"><b>Shut to you:</b> ${barred.text}</p>` : ''}
     ${lawBox(pid)}
+    ${indiaBox(pid)}
     ${shut ? `<p class="banner warn"><b>Closed to trade:</b> ${Events.template(shut).title.toLowerCase()}. Expected to reopen around ${fmtDate(shut.end)}.</p>` : ''}
     <table class="market">
       <thead><tr><th>Good</th><th class="num">Buy</th><th class="num">Sell</th><th class="num">Hold</th><th></th></tr></thead>
@@ -664,6 +666,7 @@ export function renderHelp(el) {
       <li><b>Privateer or pirate:</b> corsairs are fair game. An enemy's ships in wartime are lawful prize under a letter of marque, and, for Portugal from 1455, foreign interlopers on the Guinea coast under the crown's licence. Lawful prizes sell at any port of your crown (the crown takes a fifth). Anything else is piracy: prizes can only be fenced at a haven (Salé, Algiers, or a hidden cove you hear of there), and the victim's crown remembers.</li>
       <li><b>Infamy:</b> enough of it and that crown's hunters come for you; more, and its ports are shut to you. A pardon, bought at its court, clears your name; service in a war makes it cheaper. A pirate crew sails on shares: keep the prizes coming or they mutiny.</li>
       <li><b>War:</b> from 1475 Portugal and Castile are at war over the crown of Castile and the Guinea trade. The enemy's ports are shut, its warships cruise the Guinea coast, the Canaries and the Algarve, and service in the war is rewarded at the peace of 1479.</li>
+      <li><b>The race:</b> the explorers are rivals. Chart a coast before history does (the Gambia before Cadamosto, the Cape before Dias, the Indies before Columbus) and the crown pays a prize and grants your house its trade for ten years. Rival houses send caravels of their own. Pilots in port tell of coasts not yet charted: rumours are marked on your chart, roughly. The legendary islands of the old charts are marked too: most are empty sea, but some point further on. From São Brás you can seek the way to India.</li>
       <li><b>The years ahead:</b> when Act I ends you can let the years pass to 1474, the eve of the war, from your home port (Houses of the Sea). Your captains and factors trade through them.</li>
     </ul></details>
     <details class="help-more"><summary>Your fleet and time away</summary>
