@@ -33,6 +33,19 @@ export const START = {
   saobras: { size: 150, grow: 0.002 }, // a watering place
   portoseguro: { size: 400, grow: 0.02 },
   calicut: { size: 60000, grow: 0.005 },
+  bruges: { size: 40000, grow: -0.004 }, // the Zwin is silting up
+  antwerp: { size: 20000, grow: 0.02 }, // rising fast
+  bristol: { size: 10000, grow: 0.005 },
+  galway: { size: 3000, grow: 0.005 },
+  valencia: { size: 40000, grow: 0.01 },
+  genoa: { size: 60000, grow: 0.003 },
+  sale: { size: 10000, grow: 0.004 },
+  algiers: { size: 15000, grow: 0.006 },
+  angra: { size: 300, grow: 0.04 }, // settled from 1450
+  flores: { size: 20, grow: 0.02 }, // nobody yet
+  ribeiragrande: { size: 40, grow: 0.05 }, // settled from 1462
+  stjohns: { size: 30, grow: 0.01 }, // fishermen in the season
+  santodomingo: { size: 800, grow: 0.01 }, // a Taíno village; a Castilian town from 1496
 };
 const GROWTH_UNTIL = { funchal: 1490, saotome: 1530 }; // the boom slows after this year (to the ordinary 1%)
 
@@ -55,6 +68,19 @@ export const HISTORY = [
   { year: 1503, port: 'lisbon', size: 1.1, text: 'The Casa da Índia opens in Lisbon to handle the spice trade. Merchants from all Europe crowd the Tagus.' },
   { year: 1510, port: 'calicut', text: 'Afonso de Albuquerque has taken Goa. Portuguese power on the Malabar coast grows.' },
   { year: 1511, port: 'calicut', size: 1.1, text: 'Albuquerque takes Malacca: the clove and nutmeg trade of the Spice Islands now runs through Portuguese hands.' },
+  // The north and the west (Nov 2026). `beaten`: the news when you charted the place first.
+  { year: 1452, port: 'flores', opens: true, text: 'Diogo de Teive is home from a voyage in search of the island of the Seven Cities. He found none, but he charted two islands far west of the Azores: Flores and Corvo.',
+    beaten: 'Diogo de Teive is home from the west with news of two islands beyond the Azores. The Lisbon pilots smile: your charts had Flores and Corvo first.' },
+  { year: 1462, port: 'ribeiragrande', opens: true, size: 10, text: 'António de Noli has settled the island of Santiago in the Cape Verdes. Ribeira Grande, in a green valley, is the first town in the tropics.',
+    beaten: 'António de Noli settles Santiago in the Cape Verdes, in the valley where you watered years ago. Ribeira Grande grows into a town.' },
+  { year: 1492, port: 'antwerp', size: 1.2, text: 'The Zwin is silting up and Bruges is dying: the foreign merchants are leaving for Antwerp.' },
+  { year: 1492, port: 'bruges', size: 0.8, text: 'The Zwin silts up further. Fewer ships reach Sluis each year, and the merchants of Bruges move to Antwerp.' },
+  { year: 1496, port: 'santodomingo', opens: true, size: 4, text: 'Bartolomé Colón founds a Castilian town at the mouth of the Ozama on Hispaniola: Santo Domingo, the capital of the Indies.',
+    beaten: 'Bartolomé Colón founds Santo Domingo at the mouth of the Ozama, where your ships traded with the Taíno long before Columbus sailed.' },
+  { year: 1497, port: 'stjohns', opens: true, text: 'John Cabot, a Venetian sailing from Bristol for King Henry, is home from a new found land far to the west, with seas so full of cod they can be scooped up in baskets.',
+    beaten: 'John Cabot is home in Bristol from the New Found Land, the land your ships have fished for years. England claims it all the same.' },
+  { year: 1501, port: 'antwerp', size: 1.5, text: 'The King of Portugal makes Antwerp the staple of the spice trade: Portuguese pepper and cinnamon are sold there to all the north.' },
+  { year: 1516, port: 'algiers', size: 1.3, text: 'The corsair Aruj Barbarossa has taken Algiers. It is a corsairs\' stronghold now.' },
 ];
 // Harbour works a port builds once it is big enough: quays and moles that deepen the berth.
 export const WORKS = {
@@ -132,8 +158,10 @@ export function grow(S, days, market, from = S.day - days) {
     if (!P) continue;
     if (h.size) P.size *= h.size;
     if (h.depth) P.depthAdd = (P.depthAdd || 0) + h.depth;
+    const first = h.beaten && S.discovered?.[h.port]; // the player charted it before history did
     if (h.opens && S.discovered && !S.discovered[h.port]) S.discovered[h.port] = true; // charted by the crown's pilots
-    msgs.push({ html: `<b>News:</b> ${h.text}`, kind: 'discover', port: h.port, log: h.text, opens: h.opens ? h.port : null });
+    const text = first ? h.beaten : h.text;
+    msgs.push({ html: `<b>News:</b> ${text}`, kind: 'discover', port: h.port, log: text, opens: h.opens ? h.port : null });
   }
   return msgs;
 }

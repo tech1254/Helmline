@@ -1,6 +1,6 @@
 // Saving and loading on this device, and starting a new game.
 
-import { BOUNDS, PORTS } from './world.js';
+import { BOUNDS, PORTS, KNOWN_LANDS } from './world.js';
 import { GOODS, Market } from './economy.js';
 import * as Contracts from './contracts.js';
 import * as Events from './events.js';
@@ -32,7 +32,7 @@ export function freshState(nation = 'portugal') {
     paid: Object.fromEntries(GOODS.map((g) => [g.id, 0])), // total paid for current stock, for average cost
     ship: { lon: lis.lon, lat: lis.lat, heading: 210, route: [], dest: null, docked: N.start, hull: 'barca', name: N.flagship, fit: { ...Ships.DEFAULT_FIT } },
     discovered: Object.fromEntries(PORTS.map((p) => [p.id, p.known || N.known.includes(p.id)])),
-    sighted: { iberia: true, africa: true, madeira: true, canaries: true },
+    sighted: Object.fromEntries(KNOWN_LANDS.map((g) => [g, true])),
     unpaidCharts: [],
     seen: {},
     trail: [[lis.lon, lis.lat]],
@@ -85,6 +85,8 @@ export function applySaveData(d) {
     Ports.ensurePorts(S);
     // Ports and goods added since the save was made: the known ports charted, an empty hold for new goods.
     for (const p of PORTS) if (p.known && S.discovered[p.id] == null) S.discovered[p.id] = true;
+    S.sighted = S.sighted || {};
+    for (const g of KNOWN_LANDS) if (!S.sighted[g]) S.sighted[g] = true; // lands known in 1451, charted since the save
     for (const g of GOODS) { S.cargo[g.id] = S.cargo[g.id] || 0; S.paid[g.id] = S.paid[g.id] || 0; }
     if (S.yard.refunds?.length) {
       const total = S.yard.refunds.reduce((t, x) => t + x, 0);

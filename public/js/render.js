@@ -503,14 +503,17 @@ export function render() {
     ctx.stroke();
     if (p.beyond) { drawBeyond(p, sx, sy); continue; }
     const label = p.name;
-    const left = p.lon > -10.5;
-    const tx = left ? sx + 10 : sx - 10;
-    ctx.textAlign = left ? 'left' : 'right';
+    // the label goes east of the port, or west out in the ocean; `label` in world.js PORTS where
+    // neighbours crowd (n, s, e, w)
+    const side = p.label || (p.lon > -10.5 ? 'e' : 'w');
+    const tx = side === 'e' ? sx + 10 : side === 'w' ? sx - 10 : sx;
+    const ty = side === 'n' ? sy - 14 : side === 's' ? sy + 14 : sy;
+    ctx.textAlign = side === 'e' ? 'left' : side === 'w' ? 'right' : 'center';
     ctx.lineWidth = 4;
     ctx.strokeStyle = 'rgba(236,223,192,0.9)';
-    ctx.strokeText(label, tx, sy);
+    ctx.strokeText(label, tx, ty);
     ctx.fillStyle = '#3a2716';
-    ctx.fillText(label, tx, sy);
+    ctx.fillText(label, tx, ty);
   }
   ctx.restore();
 

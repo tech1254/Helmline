@@ -1,6 +1,6 @@
 // The fog of war: which cells of the chart are known, and the soft image drawn over the map.
 
-import { BOUNDS, OLD_BOUNDS, D2R, LANDS, LAND_GROUPS, PORTS, isLand, distNm, portOpen } from './world.js';
+import { BOUNDS, OLD_BOUNDS, LEGACY_OFF_CHART, D2R, LANDS, LAND_GROUPS, PORTS, isLand, distNm, portOpen } from './world.js';
 import { yearOf } from './ships.js';
 import { FH, FOG_CELL, FW } from './config.js';
 import { S } from './state.js';
@@ -29,6 +29,10 @@ export function initFog(saved, savedBounds) {
           if (k >= 0) fog[k] = 0;
         }
       }
+      // What the chart has grown to show since that save: Europe and the Mediterranean, known to
+      // every captain of 1451, are charted; the far west is not.
+      const added = (x, y) => x < b.west || x > b.east || y < b.south || y > b.north || LEGACY_OFF_CHART.some((r) => x >= r.w && x <= r.e && y >= r.s && y <= r.n);
+      chartKnownEurope(added);
     }
     return;
   }
@@ -50,10 +54,30 @@ export function initFog(saved, savedBounds) {
       if (x > -14 && y > 27.4 && y <= 35.5 && isLand(x, y)) fog[j * FW + i] = 0;
     }
   }
+  chartKnownEurope();
+  // The Azores were known (all but Flores and Corvo, found in 1452).
+  for (const l of LANDS) if (l.group === 'azores') for (const [x, y] of l.pts) revealAt(x, y, 0.7, true);
   // The sea lanes between them.
   const lanes = [[-9.4, 38.6, -16.9, 32.6], [-9.4, 38.6, -13.4, 28.9], [-16.9, 32.6, -13.4, 28.9], [-9.4, 38.6, -8.7, 37.0], [-13.4, 28.9, -14.6, 26.1]];
   for (const [a, b, c, d] of lanes) {
     for (let t = 0; t <= 1; t += 0.02) revealAt(a + (c - a) * t, b + (d - b) * t, 0.8, true);
+  }
+}
+
+// Europe and the western Mediterranean were well charted by 1451: the Bay of Biscay, the
+// Channel and the North Sea, Britain and Ireland, the coasts to Genoa and the Barbary coast.
+// `only(x, y)`: limit it to these cells (for older saves).
+function chartKnownEurope(only = null) {
+  for (const l of LANDS) {
+    if (!['iberia', 'britain', 'ireland', 'tyrrhenian'].includes(l.group)) continue;
+    for (const [x, y] of l.pts) if (!only || only(x, y)) revealAt(x, y, 1.4, true);
+  }
+  for (let j = 0; j < FH; j++) {
+    for (let i = 0; i < FW; i++) {
+      const x = BOUNDS.west + (i + 0.5) * FOG_CELL, y = BOUNDS.south + (j + 0.5) * FOG_CELL;
+      if (only && !only(x, y)) continue;
+      if ((x > -6.5 && y > 33.5 && x < 13) || (x > -5.5 && y > 48.3)) fog[j * FW + i] = 0; // the Mediterranean, the Channel and the North Sea
+    }
   }
 }
 

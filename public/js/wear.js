@@ -10,8 +10,9 @@
 // crew can careen her on a beach, cheaper but slower, and only back to 80%.
 
 import * as Ships from './ships.js';
+import { START_DATE } from './config.js';
 
-export const YARDS = ['lisbon', 'lagos', 'funchal', 'seville', 'palos'];
+export const YARDS = ['lisbon', 'lagos', 'funchal', 'seville', 'palos', 'bruges', 'antwerp', 'bristol'];
 export const WEAR_PER_DAY = { temperate: 0.08, tropic: 0.2 };
 export const TROPIC_LAT = 26;
 export const STORM = { perDay: 0.004, min: 5, max: 15 };
@@ -50,10 +51,24 @@ export function ageWear(hullId, years) {
   return 1 + 2 * Math.max(0, Ships.lifeShare(hullId, years) - SOUND_UNTIL);
 }
 
-// Points lost to storms over a stretch of days at sea (0 most of the time).
-export function storms(days, rand = Math.random) {
+// How much likelier a storm is here and now than in the trades: the Bay of Biscay, the Channel
+// and the North Sea are rough all year and worst from September to February; the open North
+// Atlantic north of the Azores somewhat less; the Caribbean has its hurricanes from August to
+// October. 1 elsewhere.
+export function galeFactor(lon, lat, day) {
+  const m = new Date(START_DATE.getTime() + day * 864e5).getUTCMonth();
+  const winter = m >= 8 || m <= 1;
+  const ramp = (a, b, x) => Math.max(0, Math.min(1, (x - a) / (b - a)));
+  const northern = ramp(42.5, 45.5, lat) * (lon > -20 ? 1 : 0.6);
+  let f = 1 + northern * (winter ? 6 : 2);
+  if (lon < -55 && lat > 10 && lat < 32 && m >= 7 && m <= 9) f += 4; // hurricane season
+  return f;
+}
+
+// Points lost to storms over a stretch of days at sea (0 most of the time). `factor`: galeFactor.
+export function storms(days, rand = Math.random, factor = 1) {
   let hit = 0;
-  const p = STORM.perDay * days;
+  const p = STORM.perDay * days * factor;
   if (rand() < p) hit += STORM.min + rand() * (STORM.max - STORM.min);
   return hit;
 }

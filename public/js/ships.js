@@ -58,6 +58,27 @@ export const HULLS = {
     life: 12, upkeep: 10, hiredUpkeep: 3, scale: 2.4, size: 1.7, fight: 0.15, shy: 0.6,
     blurb: 'A great carrack built for the Carreira da Índia: four decks, a vast hold for pepper, and room for a hundred men. Clumsy to windward and too deep for most African ports, but nothing else carries so much round the Cape.',
   },
+  // The northern holk: bought only in the yards of Bruges, Antwerp and Bristol, until the urca
+  // takes her place (`foreign`, `until`).
+  holk: {
+    draft: [2.0, 2.8], // metres, light and fully laden
+    id: 'holk', name: 'Holk', year: 1451, until: 1500, standing: KNOWN, price: 2400, hold: 80, knots: 4.1, up: 0.6, down: 1.05,
+    life: 16, upkeep: 4, hiredUpkeep: 1, scale: 1.3, size: 1.25, lure: 1.1, foreign: ['bruges', 'antwerp', 'bristol'],
+    blurb: 'The big cargo ship of the Hanse and the North Sea: clinker-built, round and deep, with one great square sail. Roomy and cheap for her hold, slow and poor to windward. Built only in the northern yards.',
+  },
+  // Rival houses' ships (the design doc, phase 2): not for sale to the player.
+  carrack: {
+    draft: [3.0, 4.2], // metres, light and fully laden
+    id: 'carrack', name: 'Carrack', year: 1451, rival: true, price: 9000, hold: 140, knots: 5.2, up: 0.75, down: 1.1,
+    life: 20, upkeep: 7, hiredUpkeep: 2, scale: 2, size: 1.8, lure: 1.5,
+    blurb: 'A great Genoese merchant ship, high-sided and hard to board, with a fighting top on her mainmast.',
+  },
+  merchantman: {
+    draft: [2.6, 3.6], // metres, light and fully laden
+    id: 'merchantman', name: 'Armed merchantman', year: 1520, rival: true, price: 7000, hold: 90, knots: 5.8, up: 0.9, down: 1.1,
+    life: 18, upkeep: 6, hiredUpkeep: 2, scale: 1.8, size: 1.5, lure: 1.2,
+    blurb: 'An English or Dutch trader with a row of guns: fast, and dangerous to hunt.',
+  },
   urca: {
     draft: [2.2, 3.0], // metres, light and fully laden
     id: 'urca', name: 'Urca', year: 1480, standing: KNOWN, price: 3300, hold: 95, knots: 4.3, up: 0.65, down: 1.05,
@@ -113,6 +134,9 @@ export function boatRate(hullId, nm = 7) {
 export const HULL_ORDER = ['barca', 'caravel', 'barinel', 'largecaravel', 'redonda', 'urca', 'nau', 'armedcaravel', 'galeao', 'naudaindia'];
 // The hulls a house's own yards build, in order (nations.js).
 export const hullOrder = (S) => (NATIONS[S?.nation] || NATIONS.portugal).ladder;
+// The hulls a yard here can build: the house's own at home, a foreign yard's own abroad.
+export const FOREIGN_YARDS = ['bruges', 'antwerp', 'bristol'];
+export const foreignHulls = (pid) => Object.values(HULLS).filter((h) => h.foreign?.includes(pid)).map((h) => h.id);
 // Hull prices above, and refits, are 30% dearer than first set (economy change C, 27 Oct 2026):
 // close to what ships cost per ton in the period, and enough to make buying one a decision.
 export const PRICE_RISE = 1.3;
@@ -344,7 +368,11 @@ export function priceFor(hullId, c) {
 // or 'no', with the reason.
 export function availability(S, thing) {
   const year = yearOf(S.day);
-  if (thing?.draft && HULLS[thing.id] === thing) { // a hull: as this house's yards build it
+  if (thing?.rival) return { ok: 'no', why: 'not for sale' };
+  if (thing?.foreign) { // a hull built only in certain foreign yards
+    if (thing.until && year >= thing.until) return { ok: 'no', why: `no longer built: the urca has taken her place` };
+    if (!thing.foreign.includes(S?.ship?.docked)) return { ok: 'no', why: `built only in the yards of ${thing.foreign.map((p) => p[0].toUpperCase() + p.slice(1)).join(', ')}` };
+  } else if (thing?.draft && HULLS[thing.id] === thing) { // a hull: as this house's yards build it
     const N = NATIONS[S?.nation] || NATIONS.portugal;
     if (!N.ladder.includes(thing.id)) return { ok: 'no', why: `not built in ${N.name}'s yards` };
     thing = { ...thing, ...(N.years[thing.id] || {}) };

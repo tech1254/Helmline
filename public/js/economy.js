@@ -17,7 +17,10 @@ export const GOODS = [
   { id: 'copper', name: 'Copper', unit: 'bars', one: 'bar', spoil: 0, rot: '' },
   { id: 'brazilwood', name: 'Brazilwood', unit: 'logs', one: 'log', spoil: 0.001, rot: 'rotted' },
   { id: 'spices', name: 'Indian spices', unit: 'quintals', one: 'quintal', spoil: 0.0004, rot: 'lost their savour' }, // dry pepper keeps well
+  { id: 'fish', name: 'Salt cod', unit: 'barrels', one: 'barrel', spoil: 0.0008, rot: 'gone bad' },
 ];
+// Salt cod and stockfish: cheap where they are caught (Bristol's Iceland trade, Galway, and the
+// banks of the New Found Land), wanted everywhere a Church keeps Lent and down the African coast.
 // Wheat from Morocco fed Portugal, Madeira and the Ceuta garrison; salt from the pans of Cádiz
 // and Setúbal was prized all down the African coast; Moorish cloth (alquicés) bought at Safi was
 // what the factors at Arguin traded for gold.
@@ -25,7 +28,7 @@ export const GOODS = [
 // Copper bars from Flanders were what the Kongo and Malabar wanted; brazilwood was the red dye
 // that gave Brazil its name; and pepper, cinnamon and cloves from Calicut were the prize of it all.
 
-export const PORTUGUESE_PORTS = ['lisbon', 'porto', 'lagos', 'funchal', 'ceuta', 'saotome'];
+export const PORTUGUESE_PORTS = ['lisbon', 'porto', 'lagos', 'funchal', 'ceuta', 'saotome', 'angra', 'ribeiragrande'];
 
 // [base price, sold here?]. Every port buys every good; only some sell.
 const MARKETS = {
@@ -55,7 +58,33 @@ const MARKETS = {
   // Calicut, beyond the chart: pepper and spices for gold, copper and good cloth.
   calicut:   { k: 0.01, p: { wine: [40], cloth: [34], sugar: [30], dye: [20], gold: [150], ivory: [45], pepper: [12], wheat: [20], salt: [12], alquices: [20], copper: [42], brazilwood: [25], spices: [12, 1] } }, // pepper at a tenth of its Lisbon price, as in the 1500s
   cantor:    { k: 0.03, p: { wine: [28], cloth: [36], sugar: [24], dye: [20], gold: [58, 1], ivory: [13, 1], pepper: [14], wheat: [16], salt: [30], alquices: [32], copper: [34], brazilwood: [16], spices: [60] } },
+  // The north: Flemish and English cloth, German copper, Iceland fish; the best buyers of sugar,
+  // dyes and spices outside Italy (Antwerp more so every year: ports.js HISTORY).
+  bruges:    { k: 0.012, p: { wine: [16], cloth: [9, 1], sugar: [34], dye: [30], gold: [125], ivory: [60], pepper: [52], wheat: [15], salt: [9], alquices: [18], copper: [12, 1], brazilwood: [36], spices: [170] } },
+  antwerp:   { k: 0.014, p: { wine: [16], cloth: [10, 1], sugar: [33], dye: [29], gold: [128], ivory: [62], pepper: [54], wheat: [14], salt: [9], alquices: [18], copper: [9, 1], brazilwood: [38], spices: [180] } },
+  bristol:   { k: 0.02, p: { wine: [15], cloth: [7, 1], sugar: [32], dye: [30], gold: [120], ivory: [58], pepper: [50], wheat: [12], salt: [10], alquices: [18], copper: [18], brazilwood: [34], spices: [165] } },
+  galway:    { k: 0.035, p: { wine: [17], cloth: [14], sugar: [30], dye: [26], gold: [110], ivory: [50], pepper: [46], wheat: [13], salt: [11], alquices: [18], copper: [20], brazilwood: [30], spices: [150] } },
+  // The western Mediterranean: Valencia's wine and sugar, Genoa's Levant spices, the Barbary ports.
+  valencia:  { k: 0.015, p: { wine: [9, 1], cloth: [13], sugar: [15, 1], dye: [24], gold: [125], ivory: [54], pepper: [46], wheat: [17], salt: [6], alquices: [14], copper: [18], brazilwood: [30], spices: [150] } },
+  genoa:     { k: 0.01, p: { wine: [12], cloth: [11, 1], sugar: [30], dye: [28], gold: [132], ivory: [58], pepper: [48], wheat: [20], salt: [8], alquices: [15], copper: [17], brazilwood: [32], spices: [120, 1] } },
+  sale:      { k: 0.025, p: { wine: [20], cloth: [20], sugar: [22], dye: [18], gold: [92], ivory: [42], pepper: [34], wheat: [6, 1], salt: [7], alquices: [9, 1], copper: [25], brazilwood: [24], spices: [110] } },
+  algiers:   { k: 0.025, p: { wine: [20], cloth: [21], sugar: [24], dye: [20], gold: [98], ivory: [44], pepper: [36], wheat: [8, 1], salt: [7], alquices: [10, 1], copper: [26], brazilwood: [26], spices: [115] } },
+  // The Atlantic islands and the far west.
+  angra:     { k: 0.035, p: { wine: [16], cloth: [18], sugar: [22], dye: [8, 1], gold: [100], ivory: [40], pepper: [34], wheat: [7, 1], salt: [9], alquices: [16], copper: [22], brazilwood: [24], spices: [120] } },
+  flores:    { k: 0.08, p: { wine: [22], cloth: [22], sugar: [24], dye: [6, 1], gold: [90], ivory: [36], pepper: [30], wheat: [18], salt: [12], alquices: [18], copper: [24], brazilwood: [22], spices: [100] } },
+  ribeiragrande: { k: 0.04, p: { wine: [24], cloth: [26], sugar: [22], dye: [18], gold: [90], ivory: [30], pepper: [26], wheat: [20], salt: [2, 1], alquices: [24], copper: [28], brazilwood: [18], spices: [80] } },
+  stjohns:   { k: 0.05, p: { wine: [22], cloth: [22], sugar: [30], dye: [26], gold: [100], ivory: [40], pepper: [40], wheat: [18], salt: [14], alquices: [22], copper: [22], brazilwood: [26], spices: [120] } },
+  santodomingo: { k: 0.04, p: { wine: [32], cloth: [34], sugar: [26], dye: [22], gold: [60, 1], ivory: [40], pepper: [36], wheat: [24], salt: [18], alquices: [30], copper: [30], brazilwood: [8, 1], spices: [100] } },
 };
+// Salt cod in each port: [base price, sold here?].
+const FISH = {
+  lisbon: [14], porto: [12], lagos: [13], cadiz: [14], sanlucar: [14], palos: [12], seville: [16], gomera: [16], ceuta: [18],
+  safi: [16], funchal: [17], lanzarote: [14], arguin: [9], gambia: [18], serraleoa: [18], cestos: [18], mina: [20], mpinda: [20],
+  saotome: [20], saobras: [22], portoseguro: [20], calicut: [25], cantor: [24],
+  bruges: [11], antwerp: [11], bristol: [8, 1], galway: [6, 1], valencia: [16], genoa: [17], sale: [14], algiers: [15],
+  angra: [12], flores: [14], ribeiragrande: [14], stjohns: [3, 1], santodomingo: [22],
+};
+for (const [pid, f] of Object.entries(FISH)) MARKETS[pid].p.fish = f;
 
 const GOLD_K = 1.6; // gold is scarce: each pouch moves the price more
 const SPICE_K = 0.2; // all Europe wants spices: a cargo moves the price far less than other goods

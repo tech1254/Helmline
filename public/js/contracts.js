@@ -62,6 +62,19 @@ export const PATRONS = {
   saobras: 'The watering party at São Brás',
   portoseguro: 'The brazilwood cutters',
   calicut: 'The Zamorin\'s merchants',
+  bruges: 'The Portuguese factor in Bruges',
+  antwerp: 'The merchants of the Antwerp fairs',
+  bristol: 'The merchants of Bristol',
+  galway: 'The tribes of Galway',
+  valencia: 'The bankers of Valencia',
+  genoa: 'The Salvago of Genoa',
+  sale: 'The governor of Salé',
+  algiers: 'The emir\'s factor at Algiers',
+  angra: 'The captain-donee of Terceira',
+  flores: 'Nobody yet',
+  ribeiragrande: 'The captain-donee of Santiago',
+  stjohns: 'The fishing masters',
+  santodomingo: 'The cacique of the Ozama',
 };
 
 const portName = (id) => PORTS.find((p) => p.id === id).name;

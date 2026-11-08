@@ -1,18 +1,24 @@
 // Geography, ports and winds: the eastern Atlantic from Iberia to the Cape of Good Hope and Brazil.
 // Coordinates are [longitude, latitude] in degrees. Coastlines are hand-simplified.
 
-export const BOUNDS = { west: -42, east: 24, south: -36, north: 44 };
+export const BOUNDS = { west: -86, east: 24, south: -36, north: 56 };
 // The chart before the Gulf of Guinea was added, for reading older saves.
 export const OLD_BOUNDS = { west: -32, east: 0, south: 8, north: 44 };
-// Parts of the rectangle that are not on the chart: the open Atlantic west of the Azores north
-// of the line, and the Sahara and the Mediterranean east of Algiers. Treated as land by the
-// pathfinder and drawn as the bare margin of the parchment.
+// Parts of the rectangle that are not on the chart: the eastern Mediterranean and the Sahara
+// east of Tunis, and the inside of South America. Treated as land by the pathfinder and drawn
+// as the bare margin of the parchment.
 export const OFF_CHART = [
+  { w: 12.6, e: 24, s: 12, n: 56 },
+  { w: -86, e: -52, s: -36, n: 4 },
+];
+// The parts of the chart that were off it before the chart grew north and west (Nov 2026):
+// fog.js charts what a captain of 1451 knew there when an older save is opened.
+export const LEGACY_OFF_CHART = [
   { w: -42, e: -32, s: 2, n: 44 },
   { w: 4.6, e: 24, s: 12, n: 44 },
 ];
 // The edge of the chart, going round: the bounds less the parts off the chart.
-export const CHART_OUTLINE = [[-32, 44], [4.6, 44], [4.6, 12], [24, 12], [24, -36], [-42, -36], [-42, 2], [-32, 2]];
+export const CHART_OUTLINE = [[-86, 56], [12.6, 56], [12.6, 12], [24, 12], [24, -36], [-52, -36], [-52, 4], [-86, 4]];
 export const offChart = (lon, lat) => OFF_CHART.some((r) => lon >= r.w && lon <= r.e && lat >= r.s && lat <= r.n);
 export const D2R = Math.PI / 180;
 // Equirectangular projection centred near the Canaries.
@@ -38,8 +44,18 @@ const IBERIA = [
   [-8.78, 38.3], [-9.2, 38.42], [-9.3, 38.66], [-9.42, 38.7], [-9.5, 38.78], [-9.42, 39.0],
   [-9.4, 39.36], [-9.07, 39.6], [-8.9, 40.15], [-8.75, 40.7], [-8.68, 41.2], [-8.85, 41.7],
   [-8.9, 42.1], [-9.05, 42.5], [-9.3, 42.9], [-9.2, 43.2], [-8.3, 43.6], [-7.7, 43.75],
-  [-6.0, 43.6], [-4.0, 43.45], [-1.8, 43.4], [-1.5, 43.5], [-1.3, 44.5], [1.0, 44.5],
-  [4.5, 44.5], [4.5, 43.45], [3.6, 43.5], [3.0, 43.1], [3.2, 42.3], [3.2, 41.9], [2.2, 41.35], [1.0, 41.05], [0.0, 40.0], [-0.3, 39.4], [0.1, 38.8], [-0.5, 38.3], [-0.8, 37.6],
+  [-6.0, 43.6], [-4.0, 43.45], [-1.8, 43.4], [-1.5, 43.5],
+  // France on the Bay of Biscay, Brittany, the Channel and the Low Countries
+  [-1.45, 44.0], [-1.25, 44.65], [-1.15, 45.5], [-1.1, 45.9], [-1.2, 46.2], [-1.9, 46.75], [-2.2, 47.15], [-2.5, 47.3],
+  [-2.9, 47.55], [-3.5, 47.7], [-4.35, 47.8], [-4.55, 48.05], [-4.8, 48.35], [-4.65, 48.6], [-4.0, 48.72], [-3.2, 48.85],
+  [-2.7, 48.55], [-2.0, 48.65], [-1.55, 48.65], [-1.6, 49.2], [-1.9, 49.7], [-1.25, 49.7], [-1.1, 49.4], [-0.2, 49.3],
+  [0.15, 49.45], [0.6, 49.85], [1.4, 50.1], [1.6, 50.4], [1.65, 50.9], [2.3, 51.05], [2.9, 51.2], [3.35, 51.36],
+  [3.55, 51.42], [3.8, 51.75], [4.05, 52.0], [4.45, 52.4], [4.65, 52.85], [4.75, 53.05], [5.35, 53.3], [6.2, 53.45],
+  [7.0, 53.55], [8.0, 53.6], [8.6, 53.85], [8.85, 54.3], [8.6, 54.6], [8.55, 55.0], [8.1, 55.6], [8.2, 56.5], [8.2, 57],
+  // round the back of the chart (Germany and the Alps) to the Italian coast at Ostia
+  [12.6, 57], [12.6, 41.6], [12.2, 41.7], [11.65, 42.15], [11.1, 42.4], [10.55, 42.95], [10.5, 43.3], [10.3, 43.6],
+  [10.05, 44.0], [9.6, 44.12], [9.2, 44.3], [8.9, 44.41], [8.4, 44.2], [8.1, 43.9], [7.5, 43.75], [7.0, 43.55],
+  [6.6, 43.15], [6.0, 43.05], [5.4, 43.2], [4.85, 43.35], [4.5, 43.45], [3.6, 43.5], [3.0, 43.1], [3.2, 42.3], [3.2, 41.9], [2.2, 41.35], [1.0, 41.05], [0.0, 40.0], [-0.3, 39.4], [0.1, 38.8], [-0.5, 38.3], [-0.8, 37.6],
   [-1.6, 37.3], [-2.1, 36.73], [-2.9, 36.75], [-4.4, 36.7], [-5.0, 36.45],
 ];
 
@@ -82,9 +98,87 @@ const AFRICA = [
   [17.05, -29.7], [17.3, -30.6], [17.9, -31.6], [18.3, -32.6], [17.95, -33.0], [18.4, -33.9], [18.47, -34.36],
   [18.8, -34.12], [19.3, -34.45], [19.75, -34.75], [20.0, -34.83], [20.6, -34.45], [21.4, -34.38], [22.15, -34.2],
   [22.7, -34.0], [23.4, -34.05], [24.5, -34.15],
-  // round the back of the chart to the Mediterranean, which lies off it
-  [24.5, 36.8], [2.0, 36.5],
+  // round the back of the chart (the Sahara, off the chart) to Tunisia and the Barbary coast
+  [24.5, 33.0], [12.6, 33.0], [11.15, 33.2], [10.9, 33.75], [10.15, 33.9], [10.5, 34.4], [10.8, 34.8], [11.1, 35.25],
+  [11.05, 35.55], [10.85, 35.75], [10.6, 35.95], [10.55, 36.4], [11.1, 37.08], [10.55, 36.85], [10.25, 36.8], [10.2, 37.15],
+  [9.85, 37.33], [9.2, 37.2], [8.75, 36.97], [8.2, 36.95], [7.75, 36.95], [7.2, 37.08], [6.9, 36.9], [6.55, 37.05],
+  [6.1, 36.85], [5.75, 36.82], [5.1, 36.75], [4.6, 36.9], [3.9, 36.92], [3.2, 36.8], [3.05, 36.76], [2.8, 36.65],
+  [2.2, 36.6], [1.3, 36.52],
   [0.5, 35.9], [-1.2, 35.3], [-2.2, 35.1], [-3.5, 35.2], [-4.6, 35.2],
+];
+
+
+// Great Britain, from Land's End round the south and east coasts, over the top of the chart and
+// down the west coast through Wales and the Bristol Channel.
+const BRITAIN = [
+  [-5.7, 50.05], [-5.2, 49.96], [-4.15, 50.35], [-3.65, 50.22], [-3.4, 50.62], [-2.45, 50.55], [-1.95, 50.65], [-1.3, 50.75],
+  [-0.8, 50.72], [-0.25, 50.76], [0.4, 50.82], [0.97, 50.92], [1.38, 51.13], [1.45, 51.38], [0.9, 51.5], [1.2, 51.8],
+  [1.6, 52.1], [1.75, 52.5], [1.7, 52.9], [0.9, 52.97], [0.3, 52.85], [0.3, 53.4], [0.15, 53.6], [-0.2, 54.1],
+  [-0.6, 54.5], [-1.15, 54.65], [-1.45, 55.0], [-1.6, 55.6], [-2.0, 56.0], [-2.0, 57], [-6.0, 57], [-5.6, 56.2],
+  [-5.6, 55.3], [-5.0, 54.65], [-4.4, 54.85], [-3.6, 54.9], [-3.6, 54.5], [-3.0, 54.1], [-3.05, 53.6], [-3.05, 53.4],
+  [-3.4, 53.35], [-4.1, 53.3], [-4.6, 53.35], [-4.75, 52.8], [-4.1, 52.45], [-4.25, 52.15], [-4.7, 52.05], [-5.3, 51.88],
+  [-5.05, 51.68], [-4.2, 51.55], [-3.6, 51.42], [-3.15, 51.45], [-2.7, 51.62], [-2.62, 51.55], [-2.95, 51.32],
+  [-3.4, 51.2], [-4.2, 51.2], [-4.55, 51.0], [-5.0, 50.55],
+];
+
+const IRELAND = [
+  [-7.35, 55.4], [-6.15, 55.2], [-5.7, 54.65], [-5.5, 54.3], [-6.3, 54.0], [-6.1, 53.35], [-6.0, 52.95], [-6.35, 52.17],
+  [-7.0, 52.15], [-8.3, 51.8], [-9.8, 51.45], [-10.2, 51.8], [-10.5, 52.15], [-9.8, 52.6], [-9.5, 52.95], [-9.3, 53.12],
+  [-9.0, 53.15], [-8.95, 53.27], [-9.4, 53.25], [-9.7, 53.3], [-10.1, 53.45], [-10.0, 54.1], [-9.1, 54.3], [-8.6, 54.3],
+  [-8.6, 54.65], [-8.5, 55.0], [-7.6, 55.25],
+];
+
+const CORSICA = [[9.4, 43.0], [9.55, 42.6], [9.55, 42.1], [9.4, 41.6], [9.15, 41.38], [8.75, 41.6], [8.6, 41.9], [8.55, 42.35], [8.75, 42.6], [9.3, 42.7]];
+const SARDINIA = [[9.2, 41.25], [9.65, 40.9], [9.8, 40.4], [9.6, 39.95], [9.6, 39.2], [9.05, 39.1], [8.6, 38.9], [8.4, 39.2], [8.4, 39.75], [8.5, 40.3], [8.2, 40.6], [8.25, 40.95], [8.65, 40.9]];
+
+// The western mainland, from the Florida panhandle round the peninsula, up the coast to Cape
+// Breton, across the Gulf of St Lawrence (left off the chart as land) and up Labrador.
+const NORTH_AMERICA = [
+  [-87, 57], [-87, 30.3], [-85.4, 29.7], [-84.4, 30.0], [-83.5, 29.6], [-82.8, 28.9], [-82.7, 27.9], [-82.3, 26.9],
+  [-81.8, 26.1], [-81.3, 25.5], [-80.9, 25.15], [-80.4, 25.25], [-80.15, 25.8], [-80.05, 26.7], [-80.2, 27.4],
+  [-80.6, 28.4], [-80.95, 29.2], [-81.3, 30.0], [-81.4, 30.7], [-81.15, 31.5], [-80.85, 32.1], [-79.9, 32.7],
+  [-79.2, 33.3], [-78.55, 33.85], [-77.9, 34.1], [-77.4, 34.6], [-76.5, 34.75], [-75.5, 35.25], [-75.6, 36.0],
+  [-75.95, 36.9], [-75.9, 37.2], [-75.6, 37.9], [-75.1, 38.4], [-75.05, 38.8], [-74.9, 39.0], [-74.5, 39.4],
+  [-74.05, 40.0], [-74.0, 40.5], [-73.7, 40.6], [-72.6, 40.9], [-71.9, 41.05], [-71.4, 41.45], [-70.95, 41.5],
+  [-70.6, 41.55], [-70.0, 41.65], [-70.0, 42.05], [-70.6, 41.95], [-70.85, 42.35], [-70.6, 42.65], [-70.8, 43.1],
+  [-70.2, 43.65], [-69.5, 43.85], [-68.6, 44.2], [-67.6, 44.5], [-67.0, 44.8], [-66.1, 44.1], [-66.0, 43.7],
+  [-65.5, 43.45], [-64.6, 43.9], [-63.6, 44.5], [-62.5, 44.8], [-61.3, 45.15], [-60.9, 45.45], [-60.3, 45.7],
+  [-59.85, 46.0], [-60.0, 46.6], [-60.4, 47.05], [-61.5, 47.6], [-60.0, 48.6], [-59.2, 49.6], [-58.4, 50.5],
+  [-57.2, 51.45], [-56.0, 52.0], [-55.75, 52.6], [-56.1, 53.4], [-57.3, 54.3], [-58.5, 54.8], [-59.9, 55.5],
+  [-61.0, 56.0], [-61.5, 57],
+];
+
+const NEWFOUNDLAND = [
+  [-59.35, 47.6], [-57.9, 47.65], [-56.9, 47.6], [-56.0, 47.5], [-55.5, 47.1], [-55.3, 46.95], [-54.9, 47.25],
+  [-54.3, 47.0], [-53.9, 46.85], [-53.6, 46.65], [-53.1, 46.65], [-52.65, 47.15], [-52.66, 47.55], [-52.8, 47.85],
+  [-53.1, 48.0], [-53.55, 48.4], [-53.05, 48.7], [-53.6, 49.1], [-54.4, 49.55], [-55.4, 49.6], [-55.9, 50.1],
+  [-55.6, 50.6], [-55.5, 51.4], [-55.6, 51.6], [-56.1, 51.45], [-56.8, 50.6], [-57.4, 49.95], [-57.95, 49.2],
+  [-58.4, 48.6], [-59.1, 48.1],
+];
+
+const CUBA = [
+  [-84.95, 21.85], [-84.0, 22.7], [-83.0, 22.95], [-82.35, 23.15], [-81.5, 23.1], [-80.0, 22.95], [-78.6, 22.4],
+  [-77.2, 21.6], [-75.7, 21.1], [-74.15, 20.25], [-74.5, 20.05], [-75.8, 19.95], [-77.7, 19.85], [-77.3, 20.7],
+  [-78.0, 21.3], [-79.5, 21.6], [-80.6, 22.05], [-81.6, 22.2], [-82.5, 22.6], [-83.4, 22.2], [-84.4, 21.8],
+];
+
+const HISPANIOLA = [
+  [-74.45, 18.45], [-73.5, 18.55], [-72.4, 18.55], [-72.75, 19.3], [-73.4, 19.75], [-72.6, 19.9], [-71.65, 19.9],
+  [-70.7, 19.8], [-69.95, 19.65], [-69.2, 19.35], [-68.35, 18.6], [-68.7, 18.2], [-69.9, 18.45], [-70.5, 18.2],
+  [-71.4, 17.6], [-71.7, 18.1], [-72.8, 18.15], [-73.8, 18.05],
+];
+
+// Tierra Firme: the north coast of South America from Maranhão to the Mosquito Coast, with the
+// land behind it down to the edge of the chart.
+const TIERRA_FIRME = [
+  [-44, -2.7], [-44.5, -2.5], [-46.0, -1.1], [-47.8, -0.6], [-49.0, -0.2], [-50.0, 0.5], [-50.6, 1.8], [-51.2, 3.3],
+  [-51.6, 4.2], [-52.3, 4.9], [-53.5, 5.6], [-54.9, 5.95], [-56.5, 5.95], [-57.6, 6.4], [-58.6, 7.0], [-59.8, 8.2],
+  [-60.7, 8.6], [-61.5, 9.8], [-61.9, 10.7], [-63.5, 10.7], [-64.7, 10.2], [-66.0, 10.6], [-67.5, 10.55],
+  [-68.3, 10.55], [-69.0, 11.5], [-70.0, 12.2], [-70.3, 11.6], [-71.3, 11.0], [-71.9, 11.6], [-72.3, 11.9],
+  [-73.3, 11.3], [-74.2, 11.3], [-74.8, 10.9], [-75.5, 10.45], [-75.7, 9.4], [-76.3, 9.0], [-76.8, 8.6], [-77.4, 8.7],
+  [-77.9, 9.2], [-78.6, 9.5], [-79.5, 9.6], [-80.4, 9.1], [-81.5, 8.9], [-82.3, 9.4], [-83.0, 10.0], [-83.6, 10.9],
+  [-83.7, 12.0], [-83.5, 13.0], [-83.4, 14.0], [-83.2, 15.0], [-84.0, 15.8], [-84.9, 15.95], [-87, 15.95], [-87, -37],
+  [-44, -37],
 ];
 
 export const LANDS = [
@@ -108,7 +202,8 @@ export const LANDS = [
   { group: 'capeverde', pts: islet(-23.62, 15.08, 0.14, 0.27, 0, 16) },
   { group: 'capeverde', pts: islet(-24.38, 14.93, 0.12, 0.12, 0, 17) },
   { group: 'capeverde', pts: islet(-24.7, 14.85, 0.05, 0.05, 0, 18) },
-  { group: 'azores', pts: islet(-31.2, 39.45, 0.09, 0.12, 0, 19) },
+  { group: 'flores', pts: islet(-31.2, 39.45, 0.09, 0.12, 0, 19) },
+  { group: 'flores', pts: islet(-31.1, 39.7, 0.04, 0.05, 0, 37) }, // Corvo
   { group: 'azores', pts: islet(-28.0, 39.05, 0.06, 0.05, 0, 20) },
   { group: 'azores', pts: islet(-27.2, 38.72, 0.16, 0.09, 0, 21) },
   { group: 'azores', pts: islet(-28.0, 38.65, 0.27, 0.05, -0.3, 22) },
@@ -127,6 +222,35 @@ export const LANDS = [
   { group: 'ascension', pts: islet(-14.37, -7.95, 0.08, 0.07, 0, 34) },
   { group: 'sthelena', pts: islet(-5.72, -15.95, 0.09, 0.08, 0, 35) },
   { group: 'noronha', pts: islet(-32.42, -3.85, 0.09, 0.04, 0.3, 36) },
+  { group: 'britain', pts: BRITAIN },
+  { group: 'ireland', pts: IRELAND },
+  { group: 'tyrrhenian', pts: CORSICA },
+  { group: 'tyrrhenian', pts: SARDINIA },
+  { group: 'mainland', pts: NORTH_AMERICA },
+  { group: 'newfoundland', pts: NEWFOUNDLAND },
+  { group: 'antilles', pts: CUBA },
+  { group: 'antilles', pts: HISPANIOLA },
+  { group: 'antilles', pts: islet(-77.3, 18.15, 0.85, 0.22, 0, 38) }, // Jamaica
+  { group: 'antilles', pts: islet(-66.45, 18.22, 0.85, 0.22, 0, 39) }, // Puerto Rico
+  { group: 'antilles', pts: islet(-64.7, 18.35, 0.15, 0.06, 0, 40) }, // the Virgin Islands
+  { group: 'antilles', pts: islet(-62.75, 17.3, 0.07, 0.07, 0, 41) }, // St Kitts
+  { group: 'antilles', pts: islet(-61.8, 17.07, 0.1, 0.08, 0, 42) }, // Antigua
+  { group: 'antilles', pts: islet(-61.55, 16.2, 0.22, 0.17, 0, 43) }, // Guadeloupe
+  { group: 'antilles', pts: islet(-61.35, 15.42, 0.08, 0.13, 0, 44) }, // Dominica
+  { group: 'antilles', pts: islet(-61.0, 14.65, 0.1, 0.16, 0.3, 45) }, // Martinique
+  { group: 'antilles', pts: islet(-60.97, 13.9, 0.07, 0.12, 0, 46) }, // St Lucia
+  { group: 'antilles', pts: islet(-61.2, 13.25, 0.06, 0.09, 0, 47) }, // St Vincent
+  { group: 'antilles', pts: islet(-59.55, 13.15, 0.07, 0.09, 0, 48) }, // Barbados
+  { group: 'antilles', pts: islet(-61.68, 12.12, 0.06, 0.08, 0, 49) }, // Grenada
+  { group: 'antilles', pts: islet(-61.3, 10.45, 0.38, 0.28, 0, 50) }, // Trinidad
+  { group: 'bahamas', pts: islet(-78.4, 26.65, 0.55, 0.1, -0.15, 51) }, // Grand Bahama
+  { group: 'bahamas', pts: islet(-77.2, 26.4, 0.18, 0.4, 0.3, 52) }, // Abaco
+  { group: 'bahamas', pts: islet(-78.0, 24.4, 0.35, 0.65, 0, 53) }, // Andros
+  { group: 'bahamas', pts: islet(-76.25, 25.2, 0.09, 0.45, 0.4, 54) }, // Eleuthera
+  { group: 'bahamas', pts: islet(-75.1, 23.4, 0.09, 0.4, 0.4, 55) }, // Long Island
+  { group: 'bahamas', pts: islet(-74.5, 24.05, 0.05, 0.08, 0, 56) }, // Guanahani (San Salvador)
+  { group: 'bahamas', pts: islet(-73.3, 21.1, 0.3, 0.15, 0, 57) }, // Inagua
+  { group: 'tierrafirme', pts: TIERRA_FIRME },
 ];
 
 export const LAND_GROUPS = {
@@ -141,7 +265,18 @@ export const LAND_GROUPS = {
   ascension: 'Ascension',
   sthelena: 'Saint Helena',
   noronha: 'Fernão de Noronha',
+  britain: 'England',
+  ireland: 'Ireland',
+  tyrrhenian: 'Corsica and Sardinia',
+  flores: 'Flores and Corvo',
+  mainland: 'a great land in the west',
+  newfoundland: 'the New Found Land',
+  antilles: 'the islands of the Indies',
+  bahamas: 'the Lucayan islands',
+  tierrafirme: 'Tierra Firme',
 };
+// Land groups every captain of 1451 knew: charted from the start, no reward for sighting them.
+export const KNOWN_LANDS = ['iberia', 'africa', 'madeira', 'canaries', 'azores', 'britain', 'ireland', 'tyrrhenian'];
 
 for (const l of LANDS) {
   let w = Infinity, e = -Infinity, s = Infinity, n = -Infinity;
@@ -178,9 +313,9 @@ export const PORTS = [
     blurb: 'Home port. Merchants here pay well for anything from the south, and the crown rewards new charts.' },
   { id: 'porto', name: 'Porto', lon: -8.68, lat: 41.15, known: true,
     blurb: 'The granite city on the Douro. Cheap northern wine and English cloth; pays well for sugar and spices.' },
-  { id: 'lagos', name: 'Lagos', lon: -8.67, lat: 37.03, known: true,
+  { id: 'lagos', label: 'w', name: 'Lagos', lon: -8.67, lat: 37.03, known: true,
     blurb: "Prince Henry's harbour on the Algarve. Wine and cloth are cheap here." },
-  { id: 'cadiz', name: 'Cádiz', lon: -6.3, lat: 36.53, known: true,
+  { id: 'cadiz', label: 's', name: 'Cádiz', lon: -6.3, lat: 36.53, known: true,
     blurb: 'Castile\'s island port, with the Seville trade behind it. Salt from the pans is cheap; gold and spices fetch the best prices on the coast.' },
   // Castile's Andalusian ports (the home of a Castilian house; open to every ship)
   { id: 'sanlucar', name: 'Sanlúcar', lon: -6.4, lat: 36.79, known: true,
@@ -220,6 +355,35 @@ export const PORTS = [
     blurb: 'A watering place in a bay beyond the Cape, where Dias found fresh water and Khoikhoi herders. Little trade, but the last good anchorage before the Indian Ocean.' },
   { id: 'portoseguro', name: 'Porto Seguro', lon: -38.9, lat: -16.45, known: false, from: 1500,
     blurb: 'The safe harbour where Cabral came ashore in the Land of the Holy Cross. Brazilwood, the red dye wood, for the cutting.' },
+  // The north: the markets of Flanders, England and Ireland (open from the start).
+  { id: 'bruges', label: 'w', name: 'Bruges', lon: 3.38, lat: 51.37, known: true,
+    blurb: 'The great market of the north, reached through its outport of Sluis on the Zwin. Flemish cloth and German copper are cheap; sugar, dyes, wine and spices fetch the best prices this side of Italy. Portugal keeps a factory here.' },
+  { id: 'antwerp', name: 'Antwerp', lon: 4.4, lat: 51.22, known: true, river: 'scheldt',
+    blurb: 'A rising town up the deep Scheldt, with fairs twice a year. Copper and cloth are cheap; it pays well for sugar and spices, and better every year.' },
+  { id: 'bristol', name: 'Bristol', lon: -2.72, lat: 51.52, known: true,
+    blurb: 'England\'s western port on the Avon, where the tide runs higher than anywhere. Broadcloth and Iceland fish are cheap; it wants wine, salt and dyes. Its seamen whisper of islands far to the west.' },
+  { id: 'galway', name: 'Galway', lon: -9, lat: 53.24, known: true,
+    blurb: 'A walled Irish town of merchant families at the mouth of the Corrib, trading fish and hides for the wine and salt of Iberia.' },
+  // The western Mediterranean: the rival houses' home ports and the Barbary coast.
+  { id: 'valencia', name: 'Valencia', lon: -0.27, lat: 39.45, known: true,
+    blurb: 'The richest city of the Crown of Aragon. Its beach at the Grau ships wine and the sugar of Gandia; its bankers and silk merchants want gold, wheat and spices.' },
+  { id: 'genoa', name: 'Genoa', lon: 8.9, lat: 44.41, known: true,
+    blurb: 'Home of the Salvago and the great Genoese houses: bankers to every crown in Europe. Spices come in from the Levant cheaper than anywhere in the west; gold, sugar and dyes fetch high prices.' },
+  { id: 'sale', name: 'Salé', lon: -6.94, lat: 34.07, known: true,
+    blurb: 'A Moroccan port behind a dangerous bar at the mouth of the Bou Regreg. Wheat and Moorish cloth are cheap, and nobody asks where a cargo came from.' },
+  { id: 'algiers', name: 'Algiers', lon: 3.06, lat: 36.77, known: true,
+    blurb: 'A Berber town on the Barbary coast, its anchorage sheltered by a chain of islets. Wheat and Moorish cloth, and corsairs\' plunder sold quietly.' },
+  // The Atlantic islands and the far west.
+  { id: 'angra', name: 'Angra', lon: -27.18, lat: 38.63, known: true,
+    blurb: 'A new Portuguese settlement on Terceira in the Azores, under the green bulk of Monte Brasil. Wheat and woad are cheap; the settlers want everything else.' },
+  { id: 'flores', name: 'Flores', lon: -31.12, lat: 39.41, known: false,
+    blurb: 'The westernmost of the Azores, all cliffs and waterfalls, with nobody on it. Orchil grows on the rocks; a house could settle it.' },
+  { id: 'ribeiragrande', name: 'Ribeira Grande', lon: -23.53, lat: 14.87, known: false,
+    blurb: 'A green valley on Santiago in the Cape Verde islands, with water and palms in a dry land. Salt is cheap from the pans of the islands; ships for Guinea call for water and food.' },
+  { id: 'stjohns', name: "St John's", lon: -52.67, lat: 47.59, known: false,
+    blurb: 'A deep harbour behind narrows in the New Found Land, on the edge of the richest fishing banks in the world. Cod for the taking; salt and everything else must be brought.' },
+  { id: 'santodomingo', name: 'Santo Domingo', lon: -69.87, lat: 18.44, known: false,
+    blurb: 'The mouth of the Ozama on the island the Taíno call Ayiti. Its caciques trade river gold and red dyewood for cloth, copper and brass.' },
   { id: 'calicut', name: 'Calicut', lon: 23.4, lat: -35.75, known: false, from: 1499, beyond: true,
     blurb: 'The pepper port of the Malabar coast, ruled by the Zamorin, months of sailing beyond the Cape. Pepper, cinnamon and cloves, for gold, copper and fine cloth.' },
 ];
@@ -256,7 +420,26 @@ export const HARBOURS = {
   saobras: { depth: 6, kind: 'an open bay with a spring of fresh water' },
   portoseguro: { depth: 3.5, kind: 'a river mouth behind the reef' },
   calicut: { depth: 4, kind: 'an open roadstead off the Malabar coast' },
+  bruges: { depth: 3.2, kind: 'the silting channel of the Zwin at Sluis' },
+  antwerp: { depth: 6, kind: 'a river port on the deep Scheldt' },
+  bristol: { depth: 3.0, kind: 'a tidal river harbour where ships take the ground at low water' },
+  galway: { depth: 3.5, kind: 'a small harbour at the mouth of the Corrib' },
+  valencia: { depth: 3.0, kind: 'an open beach at the Grau, with ships anchored off' },
+  genoa: { depth: 9, kind: 'a deep harbour behind the mole' },
+  sale: { depth: 2.4, kind: 'a river mouth behind a dangerous bar' },
+  algiers: { depth: 5, kind: 'an anchorage sheltered by a chain of islets' },
+  angra: { depth: 6, kind: 'a sheltered bay under Monte Brasil' },
+  flores: { depth: 4, kind: 'an open cove under the cliffs' },
+  ribeiragrande: { depth: 5, kind: 'an open roadstead at the mouth of a valley' },
+  stjohns: { depth: 10, kind: 'a deep harbour behind narrows' },
+  santodomingo: { depth: 4, kind: 'the mouth of the Ozama river' },
 };
+// A port planned for the pirate path (the design doc, phase 4): a haven the player builds on
+// Fuerteventura. Not on the chart until then; its picture is ready.
+export const FUTURE_PORTS = [
+  { id: 'cove', name: 'A hidden cove', lon: -14.05, lat: 28.15, known: false, built: true,
+    blurb: 'A narrow bay on the empty east coast of Fuerteventura, out of sight of any lookout: your own haven.' },
+];
 for (const p of PORTS) Object.assign(p, HARBOURS[p.id] || { depth: 5 });
 
 // ---- Shoals --------------------------------------------------------------------------
@@ -282,6 +465,8 @@ export const RIVER_KNOTS = 2.4;
 export const RIVERS = {
   guadalquivir: { name: 'the Guadalquivir', mouth: 'sanlucar', port: 'seville',
     pts: [[-6.4, 36.79], [-6.33, 36.86], [-6.26, 36.93], [-6.18, 37.0], [-6.11, 37.08], [-6.06, 37.17], [-6.02, 37.27], [-5.99, 37.38]] },
+  scheldt: { name: 'the Scheldt', mouth: 'bruges', port: 'antwerp',
+    pts: [[3.38, 51.37], [3.57, 51.42], [3.75, 51.4], [3.95, 51.38], [4.1, 51.36], [4.25, 51.33], [4.32, 51.28], [4.4, 51.22]] },
   gambia: { name: 'the Gambia', mouth: 'gambia', port: 'cantor',
     pts: [[-16.85, 13.45], [-16.62, 13.43], [-16.38, 13.36], [-16.08, 13.34], [-15.82, 13.43], [-15.55, 13.56], [-15.32, 13.68], [-15.1, 13.65], [-14.9, 13.66]] },
 };
@@ -331,21 +516,27 @@ const smooth = (e0, e1, x) => {
 // carry a ship round the Cape. Returns where the wind blows FROM.
 export function windAt(lon, lat, day) {
   const north = 1 - smooth(33, 28, lat); // 1 north of the trades
-  const guinea = smooth(9.5, 5, lat); // 1 from the Gulf of Guinea southward
+  const guinea = smooth(9.5, 5, lat) * smooth(-50, -42, lon); // 1 from the Gulf of Guinea southward (the doldrums; off the Guianas the trades blow on)
   const south = smooth(1, -4, lat); // 1 south of the line
   const trade = (1 - north) * (1 - guinea); // 1 in the trades
-  const coastal = smooth(-16, -11, lon); // 1 near Iberia/Morocco
-  const tradeFrom = 50 - 32 * smooth(-24, -15, lon); // NNE near Africa, NE offshore
+  // the Mediterranean inside the Strait: its own fickle winds, westerly and north-westerly
+  const med = smooth(-6, -4.5, lon) * smooth(30, 33, lat) * (1 - smooth(44.5, 46.5, lat));
+  // the Portuguese northerlies blow down the coast of Iberia and Morocco, not in the Bay of Biscay
+  const coastal = smooth(-16, -11, lon) * (1 - smooth(43.5, 45.5, lat)) * (1 - med);
+  // NE trades off Africa, NE offshore, and ENE to E across the Caribbean
+  const tradeFrom = 50 - 32 * smooth(-24, -15, lon) + 28 * smooth(-45, -62, lon);
   const roaring = smooth(-29, -34, lat); // 1 in the westerlies
   const horse = smooth(-22, -27, lat) * (1 - roaring); // the calms of the South Atlantic high
   const seTrade = south * (1 - smooth(-22, -27, lat));
   const benguela = smooth(6, 11, lon); // close along the coast of Angola and Namibia
   const seFrom = 125 - 30 * smooth(-30, -36, lon); // SE near Africa, ESE off Brazil
+  const sw = smooth(45, 50, lat); // the westerlies back south-westerly in the Channel and the North Sea
   const zones = [
     { from: tradeFrom, w: trade, s: 1.0 },
     { from: 352, w: north * coastal, s: 0.85 },
-    { from: 278, w: north * (1 - coastal) * smooth(33, 38, lat), s: 1.0 },
-    { from: 15, w: north * (1 - coastal) * (1 - smooth(33, 38, lat)), s: 0.55 }, // lighter northerlies
+    { from: 278 - 30 * sw, w: north * (1 - coastal) * (1 - med) * smooth(33, 38, lat), s: 1.0 + 0.1 * sw },
+    { from: 15, w: north * (1 - coastal) * (1 - med) * (1 - smooth(33, 38, lat)), s: 0.55 }, // lighter northerlies
+    { from: 300, w: north * med, s: 0.6 }, // the Mediterranean: the poniente and the mistral, often light
     { from: 220, w: guinea * (1 - south), s: 0.5 }, // Gulf of Guinea: light south-westerlies, calms offshore
     { from: seFrom, w: seTrade * (1 - benguela), s: 1.0 },
     { from: 165, w: seTrade * benguela, s: 0.9 }, // southerlies up the coast of Angola

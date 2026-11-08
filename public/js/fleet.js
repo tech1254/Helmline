@@ -608,7 +608,7 @@ export function tick(S, market, days, ownerPresent = true) {
       const lat = (port(leg.from).lat + port(leg.to).lat) / 2;
       const lost = spoilOnArrival(ship, leg.days, lat);
       if (lost.length) msgs.push({ html: `<b>${ship.name}</b>: ${lost.join(', ')} on the passage.`, kind: '', level: 'routine' });
-      const w = wearOnPassage(S, ship, leg, lat);
+      const w = wearOnPassage(S, ship, leg, lat, (port(leg.from).lon + port(leg.to).lon) / 2);
       if (w) msgs.push(w);
       if (!ship.sunk && (leg.pre || leg.post)) { const b = beyondHazards(S, ship, leg); if (b) msgs.push(b); }
       if (ship.sunk) continue;
@@ -670,13 +670,13 @@ function endTraining(S, ship) {
 
 // Wear on a passage (wear.js): the hull loses condition, more in the tropics and in storms; a
 // leaking hull spoils cargo; a hull in danger can founder with all she carries.
-function wearOnPassage(S, ship, leg, lat) {
+function wearOnPassage(S, ship, leg, lat, lon) {
   const before = ship.hullPct ?? 100;
   const fx = hullStats(ship);
   if (lat < Wear.TROPIC_LAT) ship.tropic = (ship.tropic || 0) + leg.days * fx.tropicWear; // shipworm waters (less under lead)
   if (before < Wear.LEAKS_BELOW) ship.strain = (ship.strain || 0) + leg.days; // sailed leaking
   const years = Ships.serviceYears(ship, S.day);
-  const storm = Wear.storms(leg.days) * fx.peril;
+  const storm = Wear.storms(leg.days, Math.random, Wear.galeFactor(lon, lat, S.day)) * fx.peril;
   ship.hullPct = Math.max(5, before - Wear.wearPerDay(lat, ship.hull, years, fx.tropicWear) * leg.days - storm);
   const share = Wear.leakShare(ship.hullPct, fx.leak);
   if (share) for (const [g, lot] of Object.entries(holdOf(ship))) { lot.qty -= Math.round(lot.qty * share); if (lot.qty <= 0) delete holdOf(ship)[g]; }

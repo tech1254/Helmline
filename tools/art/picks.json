@@ -1,5 +1,5 @@
 {
-  "note": "The art chosen for the game (picks of 27 Oct 2026). publish.py turns these into public/img. Paths are inside the art branch (art/<batch>/<file>).",
+  "note": "The art chosen for the game (picks of 27 Oct 2026). publish.py turns these into public/img. Paths are inside the art branch (art/<batch>/<file>). North and west (8 Nov 2026): defaults chosen by Claude, for Allan to confirm in the picker.",
   "ports": {
     "lisbon": "production-1/lisbon-clean-a.png",
     "porto": "production-6/porto-b.png",
@@ -25,7 +25,21 @@
     "seville": "production-12/seville-b.png",
     "palos": "production-12/palos-a.png",
     "sanlucar": "production-12/sanlucar-b.png",
-    "gomera": "production-12/gomera-b.png"
+    "gomera": "production-12/gomera-b.png",
+    "algiers": "production-13/algiers-a.png",
+    "angra": "production-13/angra-b.png",
+    "antwerp": "production-13/antwerp-b.png",
+    "bristol": "production-13/bristol-b.png",
+    "bruges": "production-13/bruges-b.png",
+    "cove": "production-13/cove-b.png",
+    "flores": "production-13/flores-b.png",
+    "galway": "production-13/galway-a.png",
+    "genoa": "production-13/genoa-b.png",
+    "ribeiragrande": "production-13/ribeiragrande-b.png",
+    "sale": "production-13/sale-b.png",
+    "santodomingo": "production-13/santodomingo-b.png",
+    "stjohns": "production-13/stjohns-b.png",
+    "valencia": "production-13/valencia-a.png"
   },
   "ships": {
     "caravel": {
@@ -92,6 +106,21 @@
       "src": "production-12/ship-naovizcaina-a-cut.png",
       "waterline": 0.08,
       "length": 24
+    },
+    "holk": {
+      "src": "production-14/ship-holk-d-cut.png",
+      "waterline": 0.11,
+      "length": 26
+    },
+    "carrack": {
+      "src": "production-14/ship-carrack-d-cut.png",
+      "waterline": 0.1,
+      "length": 34
+    },
+    "merchantman": {
+      "src": "production-13/ship-merchantman-b-cut.png",
+      "waterline": 0.09,
+      "length": 30
     }
   },
   "stocks": {
@@ -389,6 +418,276 @@
       "bright": 0.95,
       "sat": 0.95,
       "haze": 0.1
+    },
+    "algiers": {
+      "light": [
+        255,
+        236,
+        205
+      ],
+      "shade": [
+        30,
+        32,
+        38
+      ],
+      "bright": 1.0,
+      "sat": 1.0,
+      "haze": 0.04
+    },
+    "angra": {
+      "light": [
+        226,
+        230,
+        230
+      ],
+      "shade": [
+        20,
+        24,
+        24
+      ],
+      "bright": 0.85,
+      "sat": 0.8,
+      "haze": 0.06
+    },
+    "antwerp": {
+      "light": [
+        240,
+        234,
+        222
+      ],
+      "shade": [
+        28,
+        28,
+        30
+      ],
+      "bright": 0.92,
+      "sat": 0.85,
+      "haze": 0.05
+    },
+    "bristol": {
+      "light": [
+        225,
+        226,
+        226
+      ],
+      "shade": [
+        24,
+        26,
+        28
+      ],
+      "bright": 0.85,
+      "sat": 0.72,
+      "haze": 0.08
+    },
+    "bruges": {
+      "light": [
+        212,
+        220,
+        228
+      ],
+      "shade": [
+        24,
+        28,
+        32
+      ],
+      "bright": 0.82,
+      "sat": 0.65,
+      "haze": 0.1
+    },
+    "cove": {
+      "light": [
+        255,
+        228,
+        185
+      ],
+      "shade": [
+        40,
+        30,
+        24
+      ],
+      "bright": 1.0,
+      "sat": 1.0,
+      "haze": 0.05
+    },
+    "flores": {
+      "light": [
+        214,
+        222,
+        226
+      ],
+      "shade": [
+        14,
+        18,
+        20
+      ],
+      "bright": 0.75,
+      "sat": 0.7,
+      "haze": 0.08
+    },
+    "galway": {
+      "light": [
+        210,
+        218,
+        226
+      ],
+      "shade": [
+        20,
+        24,
+        28
+      ],
+      "bright": 0.78,
+      "sat": 0.6,
+      "haze": 0.1
+    },
+    "genoa": {
+      "light": [
+        255,
+        212,
+        160
+      ],
+      "shade": [
+        40,
+        30,
+        22
+      ],
+      "bright": 0.9,
+      "sat": 1.0,
+      "haze": 0.05
+    },
+    "ribeiragrande": {
+      "light": [
+        255,
+        238,
+        210
+      ],
+      "shade": [
+        30,
+        28,
+        26
+      ],
+      "bright": 1.0,
+      "sat": 0.95,
+      "haze": 0.07
+    },
+    "sale": {
+      "light": [
+        255,
+        236,
+        210
+      ],
+      "shade": [
+        36,
+        34,
+        32
+      ],
+      "bright": 1.0,
+      "sat": 0.95,
+      "haze": 0.07
+    },
+    "santodomingo": {
+      "light": [
+        255,
+        244,
+        225
+      ],
+      "shade": [
+        24,
+        30,
+        34
+      ],
+      "bright": 1.0,
+      "sat": 1.0,
+      "haze": 0.04
+    },
+    "stjohns": {
+      "light": [
+        235,
+        225,
+        210
+      ],
+      "shade": [
+        12,
+        14,
+        18
+      ],
+      "bright": 0.78,
+      "sat": 0.75,
+      "haze": 0.06
+    },
+    "valencia": {
+      "light": [
+        255,
+        240,
+        215
+      ],
+      "shade": [
+        28,
+        34,
+        44
+      ],
+      "bright": 1.0,
+      "sat": 1.0,
+      "haze": 0.04
+    },
+    "seville": {
+      "light": [
+        255,
+        226,
+        180
+      ],
+      "shade": [
+        40,
+        32,
+        24
+      ],
+      "bright": 0.95,
+      "sat": 0.95,
+      "haze": 0.07
+    },
+    "palos": {
+      "light": [
+        250,
+        236,
+        212
+      ],
+      "shade": [
+        30,
+        30,
+        30
+      ],
+      "bright": 0.92,
+      "sat": 0.95,
+      "haze": 0.05
+    },
+    "sanlucar": {
+      "light": [
+        255,
+        236,
+        205
+      ],
+      "shade": [
+        32,
+        32,
+        34
+      ],
+      "bright": 1.0,
+      "sat": 1.0,
+      "haze": 0.04
+    },
+    "gomera": {
+      "light": [
+        255,
+        238,
+        212
+      ],
+      "shade": [
+        24,
+        24,
+        28
+      ],
+      "bright": 1.0,
+      "sat": 1.0,
+      "haze": 0.04
     }
   }
 }

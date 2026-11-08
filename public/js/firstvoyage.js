@@ -32,7 +32,7 @@ export function pickRun(from) {
   for (const to of Object.keys(S.seen || {})) {
     if (to === from || !S.discovered[to] || !S.seen[to]?.prices) continue;
     const days = daysTo(to);
-    if (!days || days > 14) continue;
+    if (!days || days > 9) continue; // a short first run: not up through Biscay to Bruges
     const wages = Math.round(days * st.upkeep);
     for (const g of GOODS) {
       if (SKIP.includes(g.id) || !market.sells(from, g.id)) continue;

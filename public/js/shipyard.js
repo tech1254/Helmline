@@ -29,7 +29,7 @@ import { home, homeName } from './nations.js';
 
 // The house's home yard builds ships; the others refit (nations.js).
 export const fullYard = () => home(S);
-export const YARDS = ['lisbon', 'lagos', 'funchal', 'seville', 'palos'];
+export const YARDS = Wear.YARDS; // the shipyards: one list, in wear.js
 const portName = (id) => PORTS.find((p) => p.id === id)?.name || id;
 const fmt = (n) => Math.round(n).toLocaleString();
 const pct = (x) => `${Math.round(x * 100)}%`;
@@ -197,16 +197,17 @@ function yardHtml() {
   const sh = S.ship;
   const pid = yardHere();
   const full = pid === fullYard();
+  const foreign = Ships.FOREIGN_YARDS.includes(pid); // a northern yard: its own holks for sale
   const draft = Ships.normalFit(sh.hull, y.draft);
   y.draft = draft;
   const now = Ships.flagStats(S);
   const after = Ships.stats({ hull: sh.hull, fit: draft });
   const q = Ships.quoteFit(S, draft);
   const ready = Ships.ready(S);
-  const tabs = [...Ships.TABS, ...(full ? [['new', 'New ship']] : [])];
+  const tabs = [...Ships.TABS, ...(full || foreign ? [['new', 'New ship']] : [])];
   const tabBar = `<nav class="tabs" role="tablist">${tabs.map(([id, label]) => `<button role="tab" data-yard-tab="${id}" class="${y.tab === id ? 'on' : ''}" aria-selected="${y.tab === id}">${label}</button>`).join('')}</nav>`;
   let content;
-  if (y.tab === 'new') content = newShipHtml();
+  if (y.tab === 'new') content = newShipHtml(full ? Ships.hullOrder(S) : Ships.foreignHulls(pid), !full);
   else {
     content = Ships.groupsFor(sh.hull).filter((g) => g.tab === y.tab).map((g) => {
       const lock = g.id === 'rig' && !full;
@@ -230,7 +231,7 @@ function yardHtml() {
   const canPay = !q.error && q.lines.length && S.purse >= q.cost + q.down;
   const renamed = (y.name || '').trim() && y.name.trim() !== sh.name;
   return `<div class="yard-card shipyard">
-    ${header(full ? `The ${homeName(S)} shipyard` : `The shipwrights of ${portName(pid)}`, full ? 'Refits, new ships and orders for ships not yet built' : `Refits. New ships only in ${homeName(S)}.`)}
+    ${header(full ? `The ${homeName(S)} shipyard` : `The shipwrights of ${portName(pid)}`, full ? 'Refits, new ships and orders for ships not yet built' : foreign ? `Refits, and the northern holk. Other ships only in ${homeName(S)}.` : `Refits. New ships only in ${homeName(S)}.`)}
     ${repairBanner()}
     ${ready.length && full ? `<div class="banner ready">${ready.map((o) => `<span>${o.kind === 'hull' ? `Your new ${Ships.HULLS[o.hull].name.toLowerCase()}${o.name ? ` <i>${esc(o.name)}</i>` : ''}` : Ships.choice(o.group, o.choice).name} is ready. ${fmt(o.price - o.paid)} cz due.</span><button class="primary" data-deliver-order="${S.yard.orders.indexOf(o)}">Take delivery</button>`).join('')}</div>` : ''}
     <div class="yard-body split">
@@ -254,14 +255,14 @@ function yardHtml() {
   </div>`;
 }
 
-function newShipHtml() {
+function newShipHtml(hulls, abroad = false) {
   const sh = S.ship;
   const repair = Pirates.repairCost(S);
   const value = Ships.tradeInValue(S, repair);
   const years = Ships.serviceYears(sh, S.day);
   const old = Ships.lifeShare(sh.hull, years) >= 0.5;
-  return `<p class="blurb">Trade up your flagship: the yard takes the <i>${esc(sh.name)}</i> in part exchange for ${fmt(value)} cz (half her hull price new, less for her ${Math.floor(years)} years${repair ? ' and her repairs' : ''}). Her fittings stay with her; her name and colours go with you. Ships for your captains are bought in the Fleet tab.</p>
-    <ol class="hulls compact">${Ships.hullOrder(S).map((id) => {
+  return `<p class="blurb">Trade up your flagship: the yard takes the <i>${esc(sh.name)}</i> in part exchange for ${fmt(value)} cz (half her hull price new, less for her ${Math.floor(years)} years${repair ? ' and her repairs' : ''}). Her fittings stay with her; her name and colours go with you. ${abroad ? `This yard builds only its own northern ships; the rest are built in ${homeName(S)}.` : 'Ships for your captains are bought in the Fleet tab.'}</p>
+    <ol class="hulls compact">${hulls.map((id) => {
       const H = Ships.HULLS[id];
       const av = Ships.availability(S, H);
       const st = Ships.stats({ hull: id });
@@ -386,6 +387,7 @@ function commission() {
 function tradeUp(hullId) {
   const sh = S.ship;
   const H = Ships.HULLS[hullId];
+  if (Ships.availability(S, H).ok !== 'yes') return;
   const repair = Pirates.repairCost(S);
   const value = Ships.tradeInValue(S, repair);
   const net = H.price - value;

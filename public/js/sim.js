@@ -331,11 +331,12 @@ function wearHull(dd) {
   if (S.ship.lat < Wear.TROPIC_LAT) S.ship.tropic = (S.ship.tropic || 0) + dd * fx.tropicWear; // shipworm waters: she ages faster (less under lead)
   if (S.hull < Wear.LEAKS_BELOW) S.ship.strain = (S.ship.strain || 0) + dd; // sailing her leaking wears her out
   const years = Ships.serviceYears(S.ship, S.day);
-  const storm = Wear.storms(dd) * fx.peril;
+  const gale = Wear.galeFactor(S.ship.lon, S.ship.lat, S.day);
+  const storm = Wear.storms(dd, Math.random, gale) * fx.peril;
   S.hull = Math.max(5, S.hull - Wear.wearPerDay(S.ship.lat, S.ship.hull, years, fx.tropicWear) * dd - storm);
   const aged = Wear.ageNotice(S.ship, S.ship.hull, years, `the <b>${S.ship.name}</b>`, true);
   if (aged) toast(aged, 'alert', true, 'alert');
-  if (storm) toast(`A storm batters the <b>${S.ship.name}</b>: her hull is at ${Math.round(S.hull)}%.`, '');
+  if (storm) toast(`${gale > 2.5 ? 'A gale' : 'A storm'} batters the <b>${S.ship.name}</b>: her hull is at ${Math.round(S.hull)}%.`, '');
   const warned = S.hullWarned || 0;
   if (S.hull < Wear.DANGER_BELOW && warned < 2) {
     S.hullWarned = 2;

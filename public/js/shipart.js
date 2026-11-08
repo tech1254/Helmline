@@ -33,6 +33,13 @@ const SHAPES = {
   // a Flemish hulk: round-bowed and broad, a high square stern, two square sails and a mizzen
   urca: { L: 250, free: 28, stern: 26, bow: 20, keel: 26, aft: [0, 0.26, 22], fore: [0.86, 1.0, 12],
     masts: [{ at: 0.74, h: 112, rig: 'square', w: 84 }, { at: 0.5, h: 148, rig: 'square', w: 112 }, { at: 0.2, h: 98, rig: 'lateen', s: 0.55 }], tumble: 1.35 },
+  // the Hanseatic holk: deep and round, one great square sail and a small mizzen
+  holk: { L: 245, free: 30, stern: 26, bow: 22, keel: 26, aft: [0, 0.24, 22], fore: [0.86, 1.0, 14],
+    masts: [{ at: 0.52, h: 168, rig: 'square', w: 128 }, { at: 0.16, h: 92, rig: 'lateen', s: 0.5 }], tumble: 1.4 },
+  carrack: { L: 320, free: 34, stern: 30, bow: 22, keel: 26, aft: [0, 0.3, 34], fore: [0.78, 1.0, 30],
+    masts: [{ at: 0.8, h: 120, rig: 'square', w: 88 }, { at: 0.52, h: 172, rig: 'square', w: 128, top: true }, { at: 0.22, h: 110, rig: 'lateen', s: 0.6 }], tumble: 1.3 },
+  merchantman: { L: 300, free: 26, stern: 28, bow: 14, keel: 22, aft: [0, 0.28, 26], fore: [0.82, 0.97, 16],
+    masts: [{ at: 0.78, h: 128, rig: 'square', w: 86, top: true }, { at: 0.54, h: 164, rig: 'square', w: 116, top: true }, { at: 0.3, h: 112, rig: 'lateen', s: 0.6 }, { at: 0.12, h: 94, rig: 'lateen', s: 0.5 }], tumble: 1.1 },
   // the caravela de armada: a square foresail and three lateens on a long, low hull
   armedcaravel: { L: 255, free: 20, stern: 20, bow: 10, keel: 18, aft: [0, 0.25, 14], fore: null,
     masts: [{ at: 0.76, h: 124, rig: 'square', w: 78 }, { at: 0.55, h: 160, rig: 'lateen', s: 1 }, { at: 0.35, h: 128, rig: 'lateen', s: 0.75 }, { at: 0.15, h: 100, rig: 'lateen', s: 0.55 }], tumble: 1 },
