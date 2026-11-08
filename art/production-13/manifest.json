@@ -1,0 +1,400 @@
+{
+  "batch": "production-13",
+  "note": "North and west: harbours for the fourteen new ports, the holk, the rival carrack and the armed merchantman.",
+  "commit": "a65a1cf18355d8d313bf7d3bbbb0efd32b347f2c",
+  "generated": "2026-11-08T06:14:01.842Z",
+  "items": [
+    {
+      "id": "bruges-a",
+      "model": "black-forest-labs/flux-2-pro-preview",
+      "width": 1600,
+      "height": 896,
+      "seed": 7401,
+      "refs": [],
+      "prompt": "A photorealistic still from a big-budget historical film set in 1455, natural light, shot on a 35mm lens, meticulous period detail. Sluis, the outport of Bruges in Flanders, on the tidal channel of the Zwin: a walled brick town with stepped-gabled houses, a tall square brick belfry and a Gothic church, a wooden quay along the channel with a treadwheel crane, broad round-bellied cogs and hulks with single square sails moored three deep, flat green polder land with post windmills and dykes, wide grey-silver northern sky with soft clouds. Soft diffuse northern light, cool tones. Camera on the water about 250 to 300 metres from the shore, at water level, horizon exactly at mid-height. The lower half of the frame is calm open water with soft ripples and long reflections, completely empty in the near water and across the left two-thirds: no boats, no quay, no posts, no rocks, nothing close to the camera. The shore and everything on it sit in the middle distance, small with distance. Nothing later than 1455 anywhere: no cars, street lamps, power lines, tyres, concrete, plastic, glass windows, motorboats, ferries, modern clothing, Baroque spires, modern bridges. No text, no border, no watermark.",
+      "file": "bruges-a.png",
+      "seconds": 12.9
+    },
+    {
+      "id": "bruges-b",
+      "model": "black-forest-labs/flux-2-pro-preview",
+      "width": 1600,
+      "height": 896,
+      "seed": 7402,
+      "refs": [],
+      "prompt": "A photorealistic still from a big-budget historical film set in 1455, natural light, shot on a 35mm lens, meticulous period detail. Sluis, the outport of Bruges in Flanders, on the tidal channel of the Zwin: a walled brick town with stepped-gabled houses, a tall square brick belfry and a Gothic church, a wooden quay along the channel with a treadwheel crane, broad round-bellied cogs and hulks with single square sails moored three deep, flat green polder land with post windmills and dykes, wide grey-silver northern sky with soft clouds. Soft diffuse northern light, cool tones. Camera on the water about 250 to 300 metres from the shore, at water level, horizon exactly at mid-height. The lower half of the frame is calm open water with soft ripples and long reflections, completely empty in the near water and across the left two-thirds: no boats, no quay, no posts, no rocks, nothing close to the camera. The shore and everything on it sit in the middle distance, small with distance. Nothing later than 1455 anywhere: no cars, street lamps, power lines, tyres, concrete, plastic, glass windows, motorboats, ferries, modern clothing, Baroque spires, modern bridges. No text, no border, no watermark.",
+      "file": "bruges-b.png",
+      "seconds": 10.9
+    },
+    {
+      "id": "antwerp-a",
+      "model": "black-forest-labs/flux-2-pro-preview",
+      "width": 1600,
+      "height": 896,
+      "seed": 7403,
+      "refs": [],
+      "prompt": "A photorealistic still from a big-budget historical film set in 1460, natural light, shot on a 35mm lens, meticulous period detail. Antwerp in Brabant on the broad grey river Scheldt: the stone riverside castle Het Steen with its round towers, a long wooden quay with a treadwheel crane, tall brick and timber stepped-gabled merchants' houses, the great Gothic cathedral of Our Lady behind with its tower unfinished and wrapped in wooden scaffolding, several hulks and carracks moored along the quay, bales and casks being handled. Bright hazy northern summer light with tall white clouds. Camera on the water about 250 to 300 metres from the shore, at water level, horizon exactly at mid-height. The lower half of the frame is calm open water with soft ripples and long reflections, completely empty in the near water and across the left two-thirds: no boats, no quay, no posts, no rocks, nothing close to the camera. The shore and everything on it sit in the middle distance, small with distance. Nothing later than 1460 anywhere: no cars, street lamps, power lines, tyres, concrete, plastic, glass windows, motorboats, ferries, modern clothing, Baroque spires, modern bridges. No text, no border, no watermark.",
+      "file": "antwerp-a.png",
+      "seconds": 20.7
+    },
+    {
+      "id": "antwerp-b",
+      "model": "black-forest-labs/flux-2-pro-preview",
+      "width": 1600,
+      "height": 896,
+      "seed": 7404,
+      "refs": [],
+      "prompt": "A photorealistic still from a big-budget historical film set in 1460, natural light, shot on a 35mm lens, meticulous period detail. Antwerp in Brabant on the broad grey river Scheldt: the stone riverside castle Het Steen with its round towers, a long wooden quay with a treadwheel crane, tall brick and timber stepped-gabled merchants' houses, the great Gothic cathedral of Our Lady behind with its tower unfinished and wrapped in wooden scaffolding, several hulks and carracks moored along the quay, bales and casks being handled. Bright hazy northern summer light with tall white clouds. Camera on the water about 250 to 300 metres from the shore, at water level, horizon exactly at mid-height. The lower half of the frame is calm open water with soft ripples and long reflections, completely empty in the near water and across the left two-thirds: no boats, no quay, no posts, no rocks, nothing close to the camera. The shore and everything on it sit in the middle distance, small with distance. Nothing later than 1460 anywhere: no cars, street lamps, power lines, tyres, concrete, plastic, glass windows, motorboats, ferries, modern clothing, Baroque spires, modern bridges. No text, no border, no watermark.",
+      "file": "antwerp-b.png",
+      "seconds": 11.3
+    },
+    {
+      "id": "bristol-a",
+      "model": "black-forest-labs/flux-2-pro-preview",
+      "width": 1600,
+      "height": 896,
+      "seed": 7405,
+      "refs": [],
+      "prompt": "A photorealistic still from a big-budget historical film set in 1460, natural light, shot on a 35mm lens, meticulous period detail. Bristol in England, the quay on the river Frome near the Avon: a busy stone quay crowded with tall-masted cogs and small ships, timber-framed merchants' houses with jettied upper storeys, the stone keep of Bristol Castle, the square tower of St Mary Redcliffe church without its spire, wooded red sandstone hills of the Avon gorge in the distance, mud banks at the waterline from the big tide. Soft English morning light under a broken cloudy sky. Camera on the water about 250 to 300 metres from the shore, at water level, horizon exactly at mid-height. The lower half of the frame is calm open water with soft ripples and long reflections, completely empty in the near water and across the left two-thirds: no boats, no quay, no posts, no rocks, nothing close to the camera. The shore and everything on it sit in the middle distance, small with distance. Nothing later than 1460 anywhere: no cars, street lamps, power lines, tyres, concrete, plastic, glass windows, motorboats, ferries, modern clothing, Baroque spires, modern bridges. No text, no border, no watermark.",
+      "file": "bristol-a.png",
+      "seconds": 10.7
+    },
+    {
+      "id": "bristol-b",
+      "model": "black-forest-labs/flux-2-pro-preview",
+      "width": 1600,
+      "height": 896,
+      "seed": 7406,
+      "refs": [],
+      "prompt": "A photorealistic still from a big-budget historical film set in 1460, natural light, shot on a 35mm lens, meticulous period detail. Bristol in England, the quay on the river Frome near the Avon: a busy stone quay crowded with tall-masted cogs and small ships, timber-framed merchants' houses with jettied upper storeys, the stone keep of Bristol Castle, the square tower of St Mary Redcliffe church without its spire, wooded red sandstone hills of the Avon gorge in the distance, mud banks at the waterline from the big tide. Soft English morning light under a broken cloudy sky. Camera on the water about 250 to 300 metres from the shore, at water level, horizon exactly at mid-height. The lower half of the frame is calm open water with soft ripples and long reflections, completely empty in the near water and across the left two-thirds: no boats, no quay, no posts, no rocks, nothing close to the camera. The shore and everything on it sit in the middle distance, small with distance. Nothing later than 1460 anywhere: no cars, street lamps, power lines, tyres, concrete, plastic, glass windows, motorboats, ferries, modern clothing, Baroque spires, modern bridges. No text, no border, no watermark.",
+      "file": "bristol-b.png",
+      "seconds": 20.8
+    },
+    {
+      "id": "galway-a",
+      "model": "black-forest-labs/flux-2-pro-preview",
+      "width": 1600,
+      "height": 896,
+      "seed": 7407,
+      "refs": [],
+      "prompt": "A photorealistic still from a big-budget historical film set in 1460, natural light, shot on a 35mm lens, meticulous period detail. Galway in Ireland, where the river Corrib meets Galway Bay: a small walled town of grey limestone, square stone tower houses of the merchant families, the Gothic church of St Nicholas with a low square tower, a stone quay with a few small ships and Irish currachs, salt marsh and stone walls on the shore, the bare grey limestone hills of the Burren across the bay. Silvery Atlantic light, rain clouds breaking, the water grey-green. Camera on the water about 250 to 300 metres from the shore, at water level, horizon exactly at mid-height. The lower half of the frame is calm open water with soft ripples and long reflections, completely empty in the near water and across the left two-thirds: no boats, no quay, no posts, no rocks, nothing close to the camera. The shore and everything on it sit in the middle distance, small with distance. Nothing later than 1460 anywhere: no cars, street lamps, power lines, tyres, concrete, plastic, glass windows, motorboats, ferries, modern clothing, Baroque spires, modern bridges. No text, no border, no watermark.",
+      "file": "galway-a.png",
+      "seconds": 11
+    },
+    {
+      "id": "galway-b",
+      "model": "black-forest-labs/flux-2-pro-preview",
+      "width": 1600,
+      "height": 896,
+      "seed": 7408,
+      "refs": [],
+      "prompt": "A photorealistic still from a big-budget historical film set in 1460, natural light, shot on a 35mm lens, meticulous period detail. Galway in Ireland, where the river Corrib meets Galway Bay: a small walled town of grey limestone, square stone tower houses of the merchant families, the Gothic church of St Nicholas with a low square tower, a stone quay with a few small ships and Irish currachs, salt marsh and stone walls on the shore, the bare grey limestone hills of the Burren across the bay. Silvery Atlantic light, rain clouds breaking, the water grey-green. Camera on the water about 250 to 300 metres from the shore, at water level, horizon exactly at mid-height. The lower half of the frame is calm open water with soft ripples and long reflections, completely empty in the near water and across the left two-thirds: no boats, no quay, no posts, no rocks, nothing close to the camera. The shore and everything on it sit in the middle distance, small with distance. Nothing later than 1460 anywhere: no cars, street lamps, power lines, tyres, concrete, plastic, glass windows, motorboats, ferries, modern clothing, Baroque spires, modern bridges. No text, no border, no watermark.",
+      "file": "galway-b.png",
+      "seconds": 13
+    },
+    {
+      "id": "valencia-a",
+      "model": "black-forest-labs/flux-2-pro-preview",
+      "width": 1600,
+      "height": 896,
+      "seed": 7409,
+      "refs": [],
+      "prompt": "A photorealistic still from a big-budget historical film set in 1460, natural light, shot on a 35mm lens, meticulous period detail. The Grau, the sea port of Valencia in Aragon, on the Mediterranean shore: a long golden sand beach where lateen-rigged ships and galleys are drawn up and a few carracks ride at anchor offshore, a customs house and low warehouses of whitewashed stone, and two kilometres inland across green orchards and orange groves the walled city of Valencia with the octagonal Gothic bell tower of the cathedral (the Micalet) and the tall twin towers of the Serranos gate. Bright clear Mediterranean morning light, deep blue sea. Camera on the water about 250 to 300 metres from the shore, at water level, horizon exactly at mid-height. The lower half of the frame is calm open water with soft ripples and long reflections, completely empty in the near water and across the left two-thirds: no boats, no quay, no posts, no rocks, nothing close to the camera. The shore and everything on it sit in the middle distance, small with distance. Nothing later than 1460 anywhere: no cars, street lamps, power lines, tyres, concrete, plastic, glass windows, motorboats, ferries, modern clothing, Baroque spires, modern bridges. No text, no border, no watermark.",
+      "file": "valencia-a.png",
+      "seconds": 20.7
+    },
+    {
+      "id": "valencia-b",
+      "model": "black-forest-labs/flux-2-pro-preview",
+      "width": 1600,
+      "height": 896,
+      "seed": 7410,
+      "refs": [],
+      "prompt": "A photorealistic still from a big-budget historical film set in 1460, natural light, shot on a 35mm lens, meticulous period detail. The Grau, the sea port of Valencia in Aragon, on the Mediterranean shore: a long golden sand beach where lateen-rigged ships and galleys are drawn up and a few carracks ride at anchor offshore, a customs house and low warehouses of whitewashed stone, and two kilometres inland across green orchards and orange groves the walled city of Valencia with the octagonal Gothic bell tower of the cathedral (the Micalet) and the tall twin towers of the Serranos gate. Bright clear Mediterranean morning light, deep blue sea. Camera on the water about 250 to 300 metres from the shore, at water level, horizon exactly at mid-height. The lower half of the frame is calm open water with soft ripples and long reflections, completely empty in the near water and across the left two-thirds: no boats, no quay, no posts, no rocks, nothing close to the camera. The shore and everything on it sit in the middle distance, small with distance. Nothing later than 1460 anywhere: no cars, street lamps, power lines, tyres, concrete, plastic, glass windows, motorboats, ferries, modern clothing, Baroque spires, modern bridges. No text, no border, no watermark.",
+      "file": "valencia-b.png",
+      "seconds": 11.3
+    },
+    {
+      "id": "genoa-a",
+      "model": "black-forest-labs/flux-2-pro-preview",
+      "width": 1600,
+      "height": 896,
+      "seed": 7411,
+      "refs": [],
+      "prompt": "A photorealistic still from a big-budget historical film set in 1460, natural light, shot on a 35mm lens, meticulous period detail. Genoa on the Ligurian coast: a crescent harbour enclosed by a long stone mole, the tall stone lighthouse tower of the Lanterna on its rocky point at the left of the town, tiers of tall narrow stone tower-houses painted ochre, pink and pale yellow climbing the steep hillside, the black-and-white striped Romanesque cathedral of San Lorenzo, big carracks and long oared galleys moored inside the mole, green mountains behind. Warm golden Italian afternoon light. Camera on the water about 250 to 300 metres from the shore, at water level, horizon exactly at mid-height. The lower half of the frame is calm open water with soft ripples and long reflections, completely empty in the near water and across the left two-thirds: no boats, no quay, no posts, no rocks, nothing close to the camera. The shore and everything on it sit in the middle distance, small with distance. Nothing later than 1460 anywhere: no cars, street lamps, power lines, tyres, concrete, plastic, glass windows, motorboats, ferries, modern clothing, Baroque spires, modern bridges. No text, no border, no watermark.",
+      "file": "genoa-a.png",
+      "seconds": 20.6
+    },
+    {
+      "id": "genoa-b",
+      "model": "black-forest-labs/flux-2-pro-preview",
+      "width": 1600,
+      "height": 896,
+      "seed": 7412,
+      "refs": [],
+      "prompt": "A photorealistic still from a big-budget historical film set in 1460, natural light, shot on a 35mm lens, meticulous period detail. Genoa on the Ligurian coast: a crescent harbour enclosed by a long stone mole, the tall stone lighthouse tower of the Lanterna on its rocky point at the left of the town, tiers of tall narrow stone tower-houses painted ochre, pink and pale yellow climbing the steep hillside, the black-and-white striped Romanesque cathedral of San Lorenzo, big carracks and long oared galleys moored inside the mole, green mountains behind. Warm golden Italian afternoon light. Camera on the water about 250 to 300 metres from the shore, at water level, horizon exactly at mid-height. The lower half of the frame is calm open water with soft ripples and long reflections, completely empty in the near water and across the left two-thirds: no boats, no quay, no posts, no rocks, nothing close to the camera. The shore and everything on it sit in the middle distance, small with distance. Nothing later than 1460 anywhere: no cars, street lamps, power lines, tyres, concrete, plastic, glass windows, motorboats, ferries, modern clothing, Baroque spires, modern bridges. No text, no border, no watermark.",
+      "file": "genoa-b.png",
+      "seconds": 20.7
+    },
+    {
+      "id": "sale-a",
+      "model": "black-forest-labs/flux-2-pro-preview",
+      "width": 1600,
+      "height": 896,
+      "seed": 7413,
+      "refs": [],
+      "prompt": "A photorealistic still from a big-budget historical film set in 1460, natural light, shot on a 35mm lens, meticulous period detail. Salé on the Atlantic coast of Morocco, at the mouth of the Bou Regreg river: a white walled Moroccan town with crenellated ochre ramparts, square minarets and flat roofs, the great mosque, a sandbar at the river mouth with long Atlantic breakers, small lateen-rigged boats and a pair of slim corsair galleys drawn up on the beach, across the river the kasbah walls of Rabat and the tall unfinished square minaret of the Hassan tower standing alone on a hill. Hot bright North African light, slight haze of sea spray. Camera on the water about 250 to 300 metres from the shore, at water level, horizon exactly at mid-height. The lower half of the frame is calm open water with soft ripples and long reflections, completely empty in the near water and across the left two-thirds: no boats, no quay, no posts, no rocks, nothing close to the camera. The shore and everything on it sit in the middle distance, small with distance. Nothing later than 1460 anywhere: no cars, street lamps, power lines, tyres, concrete, plastic, glass windows, motorboats, ferries, modern clothing, Baroque spires, modern bridges. No text, no border, no watermark.",
+      "file": "sale-a.png",
+      "seconds": 10.6
+    },
+    {
+      "id": "sale-b",
+      "model": "black-forest-labs/flux-2-pro-preview",
+      "width": 1600,
+      "height": 896,
+      "seed": 7414,
+      "refs": [],
+      "prompt": "A photorealistic still from a big-budget historical film set in 1460, natural light, shot on a 35mm lens, meticulous period detail. Salé on the Atlantic coast of Morocco, at the mouth of the Bou Regreg river: a white walled Moroccan town with crenellated ochre ramparts, square minarets and flat roofs, the great mosque, a sandbar at the river mouth with long Atlantic breakers, small lateen-rigged boats and a pair of slim corsair galleys drawn up on the beach, across the river the kasbah walls of Rabat and the tall unfinished square minaret of the Hassan tower standing alone on a hill. Hot bright North African light, slight haze of sea spray. Camera on the water about 250 to 300 metres from the shore, at water level, horizon exactly at mid-height. The lower half of the frame is calm open water with soft ripples and long reflections, completely empty in the near water and across the left two-thirds: no boats, no quay, no posts, no rocks, nothing close to the camera. The shore and everything on it sit in the middle distance, small with distance. Nothing later than 1460 anywhere: no cars, street lamps, power lines, tyres, concrete, plastic, glass windows, motorboats, ferries, modern clothing, Baroque spires, modern bridges. No text, no border, no watermark.",
+      "file": "sale-b.png",
+      "seconds": 10.6
+    },
+    {
+      "id": "algiers-a",
+      "model": "black-forest-labs/flux-2-pro-preview",
+      "width": 1600,
+      "height": 896,
+      "seed": 7415,
+      "refs": [],
+      "prompt": "A photorealistic still from a big-budget historical film set in 1460, natural light, shot on a 35mm lens, meticulous period detail. Algiers on the Barbary coast, a modest Berber port town: white cube houses climbing a steep hillside in a triangle above the sea, crowned by a small fortress, slender square minarets, a stone jetty linking the shore to a chain of small rocky islets that shelter the anchorage, lateen-rigged xebecs and a galley at anchor inside the islets, green hills and gardens behind. Clear bright Mediterranean afternoon light, turquoise water. Camera on the water about 250 to 300 metres from the shore, at water level, horizon exactly at mid-height. The lower half of the frame is calm open water with soft ripples and long reflections, completely empty in the near water and across the left two-thirds: no boats, no quay, no posts, no rocks, nothing close to the camera. The shore and everything on it sit in the middle distance, small with distance. Nothing later than 1460 anywhere: no cars, street lamps, power lines, tyres, concrete, plastic, glass windows, motorboats, ferries, modern clothing, Baroque spires, modern bridges. No text, no border, no watermark.",
+      "file": "algiers-a.png",
+      "seconds": 10.7
+    },
+    {
+      "id": "algiers-b",
+      "model": "black-forest-labs/flux-2-pro-preview",
+      "width": 1600,
+      "height": 896,
+      "seed": 7416,
+      "refs": [],
+      "prompt": "A photorealistic still from a big-budget historical film set in 1460, natural light, shot on a 35mm lens, meticulous period detail. Algiers on the Barbary coast, a modest Berber port town: white cube houses climbing a steep hillside in a triangle above the sea, crowned by a small fortress, slender square minarets, a stone jetty linking the shore to a chain of small rocky islets that shelter the anchorage, lateen-rigged xebecs and a galley at anchor inside the islets, green hills and gardens behind. Clear bright Mediterranean afternoon light, turquoise water. Camera on the water about 250 to 300 metres from the shore, at water level, horizon exactly at mid-height. The lower half of the frame is calm open water with soft ripples and long reflections, completely empty in the near water and across the left two-thirds: no boats, no quay, no posts, no rocks, nothing close to the camera. The shore and everything on it sit in the middle distance, small with distance. Nothing later than 1460 anywhere: no cars, street lamps, power lines, tyres, concrete, plastic, glass windows, motorboats, ferries, modern clothing, Baroque spires, modern bridges. No text, no border, no watermark.",
+      "file": "algiers-b.png",
+      "seconds": 20.6
+    },
+    {
+      "id": "angra-a",
+      "model": "black-forest-labs/flux-2-pro-preview",
+      "width": 1600,
+      "height": 896,
+      "seed": 7417,
+      "refs": [],
+      "prompt": "A photorealistic still from a big-budget historical film set in 1460, natural light, shot on a 35mm lens, meticulous period detail. Angra on the island of Terceira in the Azores, a new Portuguese settlement: a small village of whitewashed stone houses and a little church around a sheltered bay, the great green volcanic headland of Monte Brasil rising steeply at the left, lush green pastures divided by black volcanic stone walls on the slopes behind, a small caravel anchored in the bay. Soft changeable Atlantic light, clouds over the hills, mild and green. Camera on the water about 250 to 300 metres from the shore, at water level, horizon exactly at mid-height. The lower half of the frame is calm open water with soft ripples and long reflections, completely empty in the near water and across the left two-thirds: no boats, no quay, no posts, no rocks, nothing close to the camera. The shore and everything on it sit in the middle distance, small with distance. Nothing later than 1460 anywhere: no cars, street lamps, power lines, tyres, concrete, plastic, glass windows, motorboats, ferries, modern clothing, Baroque spires, modern bridges. No text, no border, no watermark.",
+      "file": "angra-a.png",
+      "seconds": 10.8
+    },
+    {
+      "id": "angra-b",
+      "model": "black-forest-labs/flux-2-pro-preview",
+      "width": 1600,
+      "height": 896,
+      "seed": 7418,
+      "refs": [],
+      "prompt": "A photorealistic still from a big-budget historical film set in 1460, natural light, shot on a 35mm lens, meticulous period detail. Angra on the island of Terceira in the Azores, a new Portuguese settlement: a small village of whitewashed stone houses and a little church around a sheltered bay, the great green volcanic headland of Monte Brasil rising steeply at the left, lush green pastures divided by black volcanic stone walls on the slopes behind, a small caravel anchored in the bay. Soft changeable Atlantic light, clouds over the hills, mild and green. Camera on the water about 250 to 300 metres from the shore, at water level, horizon exactly at mid-height. The lower half of the frame is calm open water with soft ripples and long reflections, completely empty in the near water and across the left two-thirds: no boats, no quay, no posts, no rocks, nothing close to the camera. The shore and everything on it sit in the middle distance, small with distance. Nothing later than 1460 anywhere: no cars, street lamps, power lines, tyres, concrete, plastic, glass windows, motorboats, ferries, modern clothing, Baroque spires, modern bridges. No text, no border, no watermark.",
+      "file": "angra-b.png",
+      "seconds": 20.7
+    },
+    {
+      "id": "flores-a",
+      "model": "black-forest-labs/flux-2-pro-preview",
+      "width": 1600,
+      "height": 896,
+      "seed": 7419,
+      "refs": [],
+      "prompt": "A photorealistic still from a big-budget historical film set in 1452, natural light, shot on a 35mm lens, meticulous period detail. The island of Flores in the far western Azores, never settled: high sheer cliffs of dark volcanic rock covered in dense green vegetation, several tall white waterfalls falling straight into the sea, a small cove with a pebble beach, lush green ferns, juniper and laurel woods, no buildings, no people, no boats, sea birds wheeling. Dramatic Atlantic light breaking through grey clouds, misty peaks. Camera on the water about 250 to 300 metres from the shore, at water level, horizon exactly at mid-height. The lower half of the frame is calm open water with soft ripples and long reflections, completely empty in the near water and across the left two-thirds: no boats, no quay, no posts, no rocks, nothing close to the camera. The shore and everything on it sit in the middle distance, small with distance. Nothing later than 1452 anywhere: no cars, street lamps, power lines, tyres, concrete, plastic, glass windows, motorboats, ferries, modern clothing, Baroque spires, modern bridges. No text, no border, no watermark.",
+      "file": "flores-a.png",
+      "seconds": 10.9
+    },
+    {
+      "id": "flores-b",
+      "model": "black-forest-labs/flux-2-pro-preview",
+      "width": 1600,
+      "height": 896,
+      "seed": 7420,
+      "refs": [],
+      "prompt": "A photorealistic still from a big-budget historical film set in 1452, natural light, shot on a 35mm lens, meticulous period detail. The island of Flores in the far western Azores, never settled: high sheer cliffs of dark volcanic rock covered in dense green vegetation, several tall white waterfalls falling straight into the sea, a small cove with a pebble beach, lush green ferns, juniper and laurel woods, no buildings, no people, no boats, sea birds wheeling. Dramatic Atlantic light breaking through grey clouds, misty peaks. Camera on the water about 250 to 300 metres from the shore, at water level, horizon exactly at mid-height. The lower half of the frame is calm open water with soft ripples and long reflections, completely empty in the near water and across the left two-thirds: no boats, no quay, no posts, no rocks, nothing close to the camera. The shore and everything on it sit in the middle distance, small with distance. Nothing later than 1452 anywhere: no cars, street lamps, power lines, tyres, concrete, plastic, glass windows, motorboats, ferries, modern clothing, Baroque spires, modern bridges. No text, no border, no watermark.",
+      "file": "flores-b.png",
+      "seconds": 11.1
+    },
+    {
+      "id": "ribeiragrande-a",
+      "model": "black-forest-labs/flux-2-pro-preview",
+      "width": 1600,
+      "height": 896,
+      "seed": 7421,
+      "refs": [],
+      "prompt": "A photorealistic still from a big-budget historical film set in 1462, natural light, shot on a 35mm lens, meticulous period detail. Ribeira Grande on the island of Santiago in the Cape Verde Islands, a newly founded Portuguese settlement: a narrow green valley of coconut palms and sugar cane opening onto a black pebble beach, a handful of new stone houses with red tile and thatch roofs, a small whitewashed chapel, a wooden jetty, dry brown volcanic hills and cliffs on both sides of the valley, a small caravel at anchor. Harsh bright tropical sun, dusty haze. Camera on the water about 250 to 300 metres from the shore, at water level, horizon exactly at mid-height. The lower half of the frame is calm open water with soft ripples and long reflections, completely empty in the near water and across the left two-thirds: no boats, no quay, no posts, no rocks, nothing close to the camera. The shore and everything on it sit in the middle distance, small with distance. Nothing later than 1462 anywhere: no cars, street lamps, power lines, tyres, concrete, plastic, glass windows, motorboats, ferries, modern clothing, Baroque spires, modern bridges. No text, no border, no watermark.",
+      "file": "ribeiragrande-a.png",
+      "seconds": 10.6
+    },
+    {
+      "id": "ribeiragrande-b",
+      "model": "black-forest-labs/flux-2-pro-preview",
+      "width": 1600,
+      "height": 896,
+      "seed": 7422,
+      "refs": [],
+      "prompt": "A photorealistic still from a big-budget historical film set in 1462, natural light, shot on a 35mm lens, meticulous period detail. Ribeira Grande on the island of Santiago in the Cape Verde Islands, a newly founded Portuguese settlement: a narrow green valley of coconut palms and sugar cane opening onto a black pebble beach, a handful of new stone houses with red tile and thatch roofs, a small whitewashed chapel, a wooden jetty, dry brown volcanic hills and cliffs on both sides of the valley, a small caravel at anchor. Harsh bright tropical sun, dusty haze. Camera on the water about 250 to 300 metres from the shore, at water level, horizon exactly at mid-height. The lower half of the frame is calm open water with soft ripples and long reflections, completely empty in the near water and across the left two-thirds: no boats, no quay, no posts, no rocks, nothing close to the camera. The shore and everything on it sit in the middle distance, small with distance. Nothing later than 1462 anywhere: no cars, street lamps, power lines, tyres, concrete, plastic, glass windows, motorboats, ferries, modern clothing, Baroque spires, modern bridges. No text, no border, no watermark.",
+      "file": "ribeiragrande-b.png",
+      "seconds": 10.6
+    },
+    {
+      "id": "stjohns-a",
+      "model": "black-forest-labs/flux-2-pro-preview",
+      "width": 1600,
+      "height": 896,
+      "seed": 7423,
+      "refs": [],
+      "prompt": "A photorealistic still from a big-budget historical film set in 1497, natural light, shot on a 35mm lens, meticulous period detail. The harbour of St John's in Newfoundland, a wild natural harbour: a narrow entrance between steep rocky headlands of dark red and grey rock, dense dark spruce and fir forest on the hills, a rocky shore with a few rough timber fishing stages and racks of split cod drying in the sun, two small fishing ships at anchor, no town. Cold clear northern light, low sun, a bank of fog on the horizon, dark green water. Camera on the water about 250 to 300 metres from the shore, at water level, horizon exactly at mid-height. The lower half of the frame is calm open water with soft ripples and long reflections, completely empty in the near water and across the left two-thirds: no boats, no quay, no posts, no rocks, nothing close to the camera. The shore and everything on it sit in the middle distance, small with distance. Nothing later than 1497 anywhere: no cars, street lamps, power lines, tyres, concrete, plastic, glass windows, motorboats, ferries, modern clothing, Baroque spires, modern bridges. No text, no border, no watermark.",
+      "file": "stjohns-a.png",
+      "seconds": 10.4
+    },
+    {
+      "id": "stjohns-b",
+      "model": "black-forest-labs/flux-2-pro-preview",
+      "width": 1600,
+      "height": 896,
+      "seed": 7424,
+      "refs": [],
+      "prompt": "A photorealistic still from a big-budget historical film set in 1497, natural light, shot on a 35mm lens, meticulous period detail. The harbour of St John's in Newfoundland, a wild natural harbour: a narrow entrance between steep rocky headlands of dark red and grey rock, dense dark spruce and fir forest on the hills, a rocky shore with a few rough timber fishing stages and racks of split cod drying in the sun, two small fishing ships at anchor, no town. Cold clear northern light, low sun, a bank of fog on the horizon, dark green water. Camera on the water about 250 to 300 metres from the shore, at water level, horizon exactly at mid-height. The lower half of the frame is calm open water with soft ripples and long reflections, completely empty in the near water and across the left two-thirds: no boats, no quay, no posts, no rocks, nothing close to the camera. The shore and everything on it sit in the middle distance, small with distance. Nothing later than 1497 anywhere: no cars, street lamps, power lines, tyres, concrete, plastic, glass windows, motorboats, ferries, modern clothing, Baroque spires, modern bridges. No text, no border, no watermark.",
+      "file": "stjohns-b.png",
+      "seconds": 20.5
+    },
+    {
+      "id": "santodomingo-a",
+      "model": "black-forest-labs/flux-2-pro-preview",
+      "width": 1600,
+      "height": 896,
+      "seed": 7425,
+      "refs": [],
+      "prompt": "A photorealistic still from a big-budget historical film set in 1492, natural light, shot on a 35mm lens, meticulous period detail. The mouth of the Ozama river on the south coast of the island of Hispaniola in the Caribbean, before any European town: a sandy beach and low coral rocks, a Taíno village of round thatched huts (bohíos) under coconut palms, long dugout canoes drawn up on the sand, dense lush tropical forest behind, green hills in the distance. Brilliant tropical sun, turquoise and emerald water, tall white clouds. Camera on the water about 250 to 300 metres from the shore, at water level, horizon exactly at mid-height. The lower half of the frame is calm open water with soft ripples and long reflections, completely empty in the near water and across the left two-thirds: no boats, no quay, no posts, no rocks, nothing close to the camera. The shore and everything on it sit in the middle distance, small with distance. Nothing later than 1492 anywhere: no cars, street lamps, power lines, tyres, concrete, plastic, glass windows, motorboats, ferries, modern clothing, Baroque spires, modern bridges. No text, no border, no watermark.",
+      "file": "santodomingo-a.png",
+      "seconds": 10.7
+    },
+    {
+      "id": "santodomingo-b",
+      "model": "black-forest-labs/flux-2-pro-preview",
+      "width": 1600,
+      "height": 896,
+      "seed": 7426,
+      "refs": [],
+      "prompt": "A photorealistic still from a big-budget historical film set in 1492, natural light, shot on a 35mm lens, meticulous period detail. The mouth of the Ozama river on the south coast of the island of Hispaniola in the Caribbean, before any European town: a sandy beach and low coral rocks, a Taíno village of round thatched huts (bohíos) under coconut palms, long dugout canoes drawn up on the sand, dense lush tropical forest behind, green hills in the distance. Brilliant tropical sun, turquoise and emerald water, tall white clouds. Camera on the water about 250 to 300 metres from the shore, at water level, horizon exactly at mid-height. The lower half of the frame is calm open water with soft ripples and long reflections, completely empty in the near water and across the left two-thirds: no boats, no quay, no posts, no rocks, nothing close to the camera. The shore and everything on it sit in the middle distance, small with distance. Nothing later than 1492 anywhere: no cars, street lamps, power lines, tyres, concrete, plastic, glass windows, motorboats, ferries, modern clothing, Baroque spires, modern bridges. No text, no border, no watermark.",
+      "file": "santodomingo-b.png",
+      "seconds": 11
+    },
+    {
+      "id": "cove-a",
+      "model": "black-forest-labs/flux-2-pro-preview",
+      "width": 1600,
+      "height": 896,
+      "seed": 7427,
+      "refs": [],
+      "prompt": "A photorealistic still from a big-budget historical film set in 1470, natural light, shot on a 35mm lens, meticulous period detail. A hidden cove on the remote eastern coast of Fuerteventura in the Canary Islands, a corsairs' anchorage: a narrow bay of golden sand between rugged bare brown volcanic cliffs, a small lateen-rigged ship careened on the beach on her side, canvas tents and a cooking fire, barrels and bales stacked under a rock overhang, a lookout on a cliff top, no town. Hot dry light, dusty ochre landscape, deep blue sea. Camera on the water about 250 to 300 metres from the shore, at water level, horizon exactly at mid-height. The lower half of the frame is calm open water with soft ripples and long reflections, completely empty in the near water and across the left two-thirds: no boats, no quay, no posts, no rocks, nothing close to the camera. The shore and everything on it sit in the middle distance, small with distance. Nothing later than 1470 anywhere: no cars, street lamps, power lines, tyres, concrete, plastic, glass windows, motorboats, ferries, modern clothing, Baroque spires, modern bridges. No text, no border, no watermark.",
+      "file": "cove-a.png",
+      "seconds": 21
+    },
+    {
+      "id": "cove-b",
+      "model": "black-forest-labs/flux-2-pro-preview",
+      "width": 1600,
+      "height": 896,
+      "seed": 7428,
+      "refs": [],
+      "prompt": "A photorealistic still from a big-budget historical film set in 1470, natural light, shot on a 35mm lens, meticulous period detail. A hidden cove on the remote eastern coast of Fuerteventura in the Canary Islands, a corsairs' anchorage: a narrow bay of golden sand between rugged bare brown volcanic cliffs, a small lateen-rigged ship careened on the beach on her side, canvas tents and a cooking fire, barrels and bales stacked under a rock overhang, a lookout on a cliff top, no town. Hot dry light, dusty ochre landscape, deep blue sea. Camera on the water about 250 to 300 metres from the shore, at water level, horizon exactly at mid-height. The lower half of the frame is calm open water with soft ripples and long reflections, completely empty in the near water and across the left two-thirds: no boats, no quay, no posts, no rocks, nothing close to the camera. The shore and everything on it sit in the middle distance, small with distance. Nothing later than 1470 anywhere: no cars, street lamps, power lines, tyres, concrete, plastic, glass windows, motorboats, ferries, modern clothing, Baroque spires, modern bridges. No text, no border, no watermark.",
+      "file": "cove-b.png",
+      "seconds": 20.8
+    },
+    {
+      "id": "ship-holk-a",
+      "model": "black-forest-labs/flux-2-pro-preview",
+      "width": 1280,
+      "height": 896,
+      "seed": 7501,
+      "refs": [
+        "art:production-1/ship-nau-a.png"
+      ],
+      "cutout": true,
+      "prompt": "A photorealistic photograph of a real full-size Hanseatic holk of about 1460, the big northern cargo ship of the Baltic and the North Sea: about 26 metres long, a very broad, deep, round-bellied hull with clinker-built overlapping planks, a strongly curved banana-shaped sheer rising high at both ends, a square sterncastle and a small forecastle built onto the hull, one tall mast with a single very large square sail of undyed linen with a bonnet laced to its foot, a round fighting top at the masthead, and a small lateen mizzen. A plain working ship: no carving, no gilding, no windows, no flags, no gunports. Seen exactly side-on, bow pointing right, warm late afternoon light from the right, the same light and style as the reference photo. Weathered sails, hemp rigging, dark tarred planking. Not a fantasy ship, not a pirate ship, not a model: a real ship, photographed. She is isolated on a solid, flat, evenly lit chroma-key green background (#00b140) filling everything around her, including below the hull: no sea, no sky, no shadow, no floor, no stand, no cradle. The whole ship from the mastheads to the keel in frame, with a margin all round.",
+      "file": "ship-holk-a.png",
+      "seconds": 11.1
+    },
+    {
+      "id": "ship-holk-b",
+      "model": "black-forest-labs/flux-2-pro-preview",
+      "width": 1280,
+      "height": 896,
+      "seed": 7502,
+      "refs": [
+        "art:production-1/ship-nau-a.png"
+      ],
+      "cutout": true,
+      "prompt": "A photorealistic photograph of a real full-size Hanseatic holk of about 1460, the big northern cargo ship of the Baltic and the North Sea: about 26 metres long, a very broad, deep, round-bellied hull with clinker-built overlapping planks, a strongly curved banana-shaped sheer rising high at both ends, a square sterncastle and a small forecastle built onto the hull, one tall mast with a single very large square sail of undyed linen with a bonnet laced to its foot, a round fighting top at the masthead, and a small lateen mizzen. A plain working ship: no carving, no gilding, no windows, no flags, no gunports. Seen exactly side-on, bow pointing right, warm late afternoon light from the right, the same light and style as the reference photo. Weathered sails, hemp rigging, dark tarred planking. Not a fantasy ship, not a pirate ship, not a model: a real ship, photographed. She is isolated on a solid, flat, evenly lit chroma-key green background (#00b140) filling everything around her, including below the hull: no sea, no sky, no shadow, no floor, no stand, no cradle. The whole ship from the mastheads to the keel in frame, with a margin all round.",
+      "file": "ship-holk-b.png",
+      "seconds": 10.8
+    },
+    {
+      "id": "ship-carrack-a",
+      "model": "black-forest-labs/flux-2-pro-preview",
+      "width": 1280,
+      "height": 896,
+      "seed": 7503,
+      "refs": [
+        "art:production-1/ship-nau-a.png"
+      ],
+      "cutout": true,
+      "prompt": "A photorealistic photograph of a real full-size Genoese carrack of about 1470, a big Mediterranean merchant ship: about 34 metres long, a tall, deep, round hull of smooth carvel planking with heavy wales, a high multi-deck sterncastle and a tall overhanging triangular forecastle, three masts: a huge square mainsail with a fighting top above it, a square foresail and a lateen mizzen, a small square topsail on the main. Sturdy and imposing, painted dark red and ochre on the castles. No gunports, no flags with crosses, no figurehead. Seen exactly side-on, bow pointing right, warm late afternoon light from the right, the same light and style as the reference photo. Weathered sails, hemp rigging, dark tarred planking. Not a fantasy ship, not a pirate ship, not a model: a real ship, photographed. She is isolated on a solid, flat, evenly lit chroma-key green background (#00b140) filling everything around her, including below the hull: no sea, no sky, no shadow, no floor, no stand, no cradle. The whole ship from the mastheads to the keel in frame, with a margin all round.",
+      "file": "ship-carrack-a.png",
+      "seconds": 10.5
+    },
+    {
+      "id": "ship-carrack-b",
+      "model": "black-forest-labs/flux-2-pro-preview",
+      "width": 1280,
+      "height": 896,
+      "seed": 7504,
+      "refs": [
+        "art:production-1/ship-nau-a.png"
+      ],
+      "cutout": true,
+      "prompt": "A photorealistic photograph of a real full-size Genoese carrack of about 1470, a big Mediterranean merchant ship: about 34 metres long, a tall, deep, round hull of smooth carvel planking with heavy wales, a high multi-deck sterncastle and a tall overhanging triangular forecastle, three masts: a huge square mainsail with a fighting top above it, a square foresail and a lateen mizzen, a small square topsail on the main. Sturdy and imposing, painted dark red and ochre on the castles. No gunports, no flags with crosses, no figurehead. Seen exactly side-on, bow pointing right, warm late afternoon light from the right, the same light and style as the reference photo. Weathered sails, hemp rigging, dark tarred planking. Not a fantasy ship, not a pirate ship, not a model: a real ship, photographed. She is isolated on a solid, flat, evenly lit chroma-key green background (#00b140) filling everything around her, including below the hull: no sea, no sky, no shadow, no floor, no stand, no cradle. The whole ship from the mastheads to the keel in frame, with a margin all round.",
+      "file": "ship-carrack-b.png",
+      "seconds": 20.5
+    },
+    {
+      "id": "ship-merchantman-a",
+      "model": "black-forest-labs/flux-2-pro-preview",
+      "width": 1280,
+      "height": 896,
+      "seed": 7505,
+      "refs": [
+        "art:production-1/ship-nau-a.png"
+      ],
+      "cutout": true,
+      "prompt": "A photorealistic photograph of a real full-size English armed merchantman of about 1525: about 30 metres long, a strong carvel-built hull with a lower forecastle and a two-deck sterncastle, a single row of square gunports with small cannon along the side, four masts: square-rigged fore and main masts each with a topsail, and two lateen mizzens, painted in plain dark ochre and black. Fast and purposeful, a warship's teeth on a trading hull. No flags, no figurehead, no gilding. Seen exactly side-on, bow pointing right, warm late afternoon light from the right, the same light and style as the reference photo. Weathered sails, hemp rigging, dark tarred planking. Not a fantasy ship, not a pirate ship, not a model: a real ship, photographed. She is isolated on a solid, flat, evenly lit chroma-key green background (#00b140) filling everything around her, including below the hull: no sea, no sky, no shadow, no floor, no stand, no cradle. The whole ship from the mastheads to the keel in frame, with a margin all round.",
+      "file": "ship-merchantman-a.png",
+      "seconds": 20.7
+    },
+    {
+      "id": "ship-merchantman-b",
+      "model": "black-forest-labs/flux-2-pro-preview",
+      "width": 1280,
+      "height": 896,
+      "seed": 7506,
+      "refs": [
+        "art:production-1/ship-nau-a.png"
+      ],
+      "cutout": true,
+      "prompt": "A photorealistic photograph of a real full-size English armed merchantman of about 1525: about 30 metres long, a strong carvel-built hull with a lower forecastle and a two-deck sterncastle, a single row of square gunports with small cannon along the side, four masts: square-rigged fore and main masts each with a topsail, and two lateen mizzens, painted in plain dark ochre and black. Fast and purposeful, a warship's teeth on a trading hull. No flags, no figurehead, no gilding. Seen exactly side-on, bow pointing right, warm late afternoon light from the right, the same light and style as the reference photo. Weathered sails, hemp rigging, dark tarred planking. Not a fantasy ship, not a pirate ship, not a model: a real ship, photographed. She is isolated on a solid, flat, evenly lit chroma-key green background (#00b140) filling everything around her, including below the hull: no sea, no sky, no shadow, no floor, no stand, no cradle. The whole ship from the mastheads to the keel in frame, with a margin all round.",
+      "file": "ship-merchantman-b.png",
+      "seconds": 10.9
+    }
+  ]
+}
