@@ -1,3 +1,4 @@
+import * as Works from './works.js';
 import * as Accounts from './accounts.js';
 import * as Lending from './lending.js';
 // Barbary corsairs: the first danger at sea.
@@ -85,7 +86,7 @@ export function roll(S, days, lon, lat) {
   if (!d) return null;
   // galleys think twice about a big ship, and hardly bother with a poor little coaster
   const st = S.ship?.hull ? Ships.flagStats(S) : { shy: 1, lure: 1 };
-  const chance = 1 - Math.exp(-BASE_CHANCE * d * attention(S) * st.shy * (st.lure ?? 1) * prize(S) * days);
+  const chance = 1 - Math.exp(-BASE_CHANCE * d * attention(S) * st.shy * (st.lure ?? 1) * prize(S) * Works.corsairDamp(S, lon, lat) * days); // your forts keep them off
   if (Math.random() > chance) return null;
   P.cooldown = COOLDOWN_DAYS;
   P.encounters++;

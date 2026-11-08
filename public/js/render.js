@@ -4,6 +4,7 @@ import { BOUNDS, CHART_OUTLINE, D2R, LANDS, PORTS, RIVERS, SHOALS, isLand, inBou
 import * as Contracts from './contracts.js';
 import * as Fleet from './fleet.js';
 import * as Houses from './houses.js';
+import * as Works from './works.js';
 import { findPath, distNm } from './world.js';
 import { reported } from './pilots.js';
 import { FH, FW } from './config.js';
@@ -552,6 +553,16 @@ export function render() {
     ctx.arc(sx, sy, p.id === ui.hoverPort ? 7 : 5, 0, Math.PI * 2);
     ctx.fillStyle = RED;
     ctx.fill();
+    // your port works: a small gold block for each finished building, under the port
+    const built = S.works ? Works.BUILDING_IDS.filter((id) => Works.has(S, p.id, id)).length : 0;
+    for (let k = 0; k < built; k++) {
+      ctx.fillStyle = '#b8860b';
+      ctx.strokeStyle = 'rgba(58,39,22,0.8)';
+      ctx.lineWidth = 1;
+      const bx = sx - (built * 6) / 2 + k * 6, by = sy + 9;
+      ctx.fillRect(bx, by, 5, 5);
+      ctx.strokeRect(bx, by, 5, 5);
+    }
     ctx.lineWidth = 1.5;
     ctx.strokeStyle = '#f7f0de';
     ctx.stroke();

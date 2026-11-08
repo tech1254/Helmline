@@ -1,5 +1,5 @@
 # Small things that add up, on a phone: the bell counts only alerts; a row of tabs too wide for the
-# panel fades where there are more; the feitoria is offered below the goods and only when you can
+# panel fades where there are more; the feitoria (a trading post in Port works) is offered only when you can
 # found one; and pressing and holding the time button pauses at once.
 import asyncio, sys, os
 from playwright.async_api import async_playwright
@@ -34,14 +34,16 @@ async def main():
         t2 = await J("() => { const t = document.querySelector('#panel .tabs'), on = t.querySelector('.on').getBoundingClientRect(), r = t.getBoundingClientRect(); return { onVisible: on.left >= r.left - 1 && on.right <= r.right + 1, left: t.classList.contains('more-left') }; }")
         print('tabs at Fleet:', t2)
         if not t2['onVisible']: errs.append('the open tab is scrolled out of sight')
-        # the feitoria: not offered where you cannot found one; below the goods where you can
-        await J("() => { window.helmline.state.contracts.standing = 5; window.helmline.dockAt('safi'); }"); await pg.wait_for_timeout(200)
-        low = await J("() => !!document.querySelector('[data-feitoria]')")
-        await J("() => { window.helmline.state.contracts.standing = 25; window.helmline.state.purse = 9000; window.helmline.panel('port'); }"); await pg.wait_for_timeout(200)
-        pos = await J("() => { const f = document.querySelector('[data-feitoria]'), t = document.querySelector('#panel table.market'); return f && t ? !!(t.compareDocumentPosition(f) & Node.DOCUMENT_POSITION_FOLLOWING) : null; }")
-        print('feitoria offered at standing 5:', low, '| at 25 with 9000 cz, below the goods:', pos)
-        if low: errs.append('a feitoria was offered to a captain who cannot found one')
-        if pos is not True: errs.append('the feitoria is not offered below the goods')
+        # the feitoria (a trading post in Port works): not offered without standing; offered with it
+        await J("() => { const s = window.helmline.state; s.contracts.standing = 5; s.voyages = Math.max(1, s.voyages || 0); window.helmline.dockAt('safi'); }"); await pg.wait_for_timeout(200)
+        await J("() => { window.helmline.ui.arrival = null; window.helmline.panel(null); window.helmline.panel('works'); }"); await pg.wait_for_timeout(200)
+        low = await J("() => !!document.querySelector('[data-build=\"post\"]')")
+        await J("() => { window.helmline.state.contracts.standing = 25; window.helmline.state.purse = 9000; window.helmline.panel(null); window.helmline.panel('works'); }"); await pg.wait_for_timeout(200)
+        pos = await J("() => !!document.querySelector('[data-build=\"post\"]')")
+        print('trading post offered at standing 5:', low, '| at 25 with 9000 cz:', pos)
+        if low: errs.append('a trading post was offered to a captain who cannot found one')
+        if pos is not True: errs.append('the trading post is not offered in Port works')
+        await J("() => window.helmline.panel(null)")
         # press and hold the time button: paused at once
         await J("() => { window.helmline.panel(null); window.helmline.setSpeed(2); }")
         box = await pg.locator('#dock-time').bounding_box()

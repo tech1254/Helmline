@@ -1,5 +1,6 @@
 // The HUD and the side panels: market, contracts, sail, fleet, help, tips and tabs.
 
+import * as Works from './works.js';
 import { home, homeName } from './nations.js';
 import { PORTS, pointOfSail, compassPoint, distNm, findPath, shoalDepth, DEEP_DRAFT } from './world.js';
 import { GOODS, Market } from './economy.js';
@@ -12,6 +13,7 @@ import * as Investments from './investments.js';
 import * as House from './house.js';
 import * as Competition from './competition.js';
 import { renderHouses, shareLine, housesOpen } from './housesview.js';
+import { renderWorks } from './worksview.js';
 import { CHART_REWARD, OFFLINE_MAX_DAYS, STANDING_FADES_AFTER_HOURS } from './config.js';
 import * as Ships from './ships.js';
 import * as Captains from './captains.js';
@@ -130,7 +132,7 @@ export function renderPanel() {
   if (ui.panelMode === 'contracts' && !S.contracts?.unlocked) ui.panelMode = S.ship.docked ? 'port' : null;
   if (!ui.panelMode) { el.hidden = true; placeToasts(); renderDock(); return; }
   el.hidden = false;
-  el.classList.toggle('wide', ui.panelMode === 'prices' || ui.panelMode === 'ledger' || ui.panelMode === 'houses');
+  el.classList.toggle('wide', ui.panelMode === 'prices' || ui.panelMode === 'ledger' || ui.panelMode === 'houses' || ui.panelMode === 'works');
   if (ui.panelMode === 'port') renderPort(el);
   else if (ui.panelMode === 'sail') renderSail(el);
   else if (ui.panelMode === 'contracts') renderContracts(el);
@@ -141,6 +143,7 @@ export function renderPanel() {
   else if (ui.panelMode === 'menu') renderMenu(el);
   else if (ui.panelMode === 'ledger') renderLedger(el);
   else if (ui.panelMode === 'houses') renderHouses(el);
+  else if (ui.panelMode === 'works') renderWorks(el);
   else if (ui.panelMode === 'notices') renderNotices(el);
   else if (ui.panelMode === 'rutter') renderRutter(el);
   else renderPrices(el);
@@ -193,10 +196,10 @@ function investLine(pid) {
   if (Investments.hasFeitoria(S, pid)) {
     parts.push(`<p class="harbour">Your <b>feitoria</b> here: your factor gets you prices ${Math.round(Investments.FEITORIA_EDGE * 100)}% better and finds you an extra contract. He and his clerks draw ${Investments.FACTOR_WAGE} cz a day.</p>`);
   } else if (pid !== home(S)) {
-    const c = Investments.canFound(S, pid);
-    const cost = Investments.feitoriaCost(S, pid);
-    if (c.ok) parts.push(`<div class="row invest"><span class="fine">A factor of your own here: prices ${Math.round(Investments.FEITORIA_EDGE * 100)}% better and an extra contract, for ${Investments.FACTOR_WAGE} cz a day.</span><button data-feitoria>Found a feitoria: ${cost.toLocaleString()} cz</button></div>`);
+    // a feitoria is now founded from the port works (worksview.js)
   }
+  const mine = Works.BUILDING_IDS.filter((id) => id !== 'post' && Works.building(S, pid, id));
+  if (mine.length) parts.push(`<p class="harbour">Your works here: ${mine.map((id) => Works.BUILDINGS[id].name.toLowerCase() + (Works.has(S, pid, id) ? '' : Works.building(S, pid, id).neglected ? ' (neglected)' : ' (being built)')).join(', ')}.</p>`);
   if (pid === home(S) && S.purse >= 5000) {
     const t = House.title(S);
     parts.push(`<div class="row invest"><button data-house>Your house${House.renown(S) ? `: ${t.name}, renown ${House.renown(S)}` : ''}…</button></div>`);
@@ -256,7 +259,7 @@ export function renderPort(el) {
     ${investLine(pid)}
     <p class="foot">Hold ${held()} / ${st.hold} · purse ${Math.floor(S.purse).toLocaleString()} cz · upkeep ${st.upkeep} cz a day at sea.<br>
     Buying pushes the price up; selling pushes it down. Prices recover over a few weeks. <i>Max</i> keeps two weeks of wages in the purse.</p>
-    <div class="row"><button data-ships="register" title="Your ship and the ships ahead (S)">Your ship</button>${YARDS.includes(pid) ? `<button data-ships="yard" title="Refit your ship${pid === home(S) ? ', or buy and order new ones' : ''}">Shipyard</button>` : ''}<button data-wait title="Let a week pass: prices recover, news arrives, your fleet sails on. Your crew draws no wages in port; hired captains are still paid.">Wait a week</button><button class="primary" data-tab="sail">Set sail…</button></div>`;
+    <div class="row"><button data-ships="register" title="Your ship and the ships ahead (S)">Your ship</button>${Works.isYard(S, pid) ? `<button data-ships="yard" title="Refit your ship${pid === home(S) ? ', or buy and order new ones' : ''}">Shipyard</button>` : ''}${S.voyages >= 1 || Works.list(S).length ? '<button data-tab="works" title="Build quays, warehouses, trading posts, forts, shipyards and churches here">Port works</button>' : ''}<button data-wait title="Let a week pass: prices recover, news arrives, your fleet sails on. Your crew draws no wages in port; hired captains are still paid.">Wait a week</button><button class="primary" data-tab="sail">Set sail…</button></div>`;
 }
 
 export function contractCard(c, actions) {
@@ -361,7 +364,7 @@ function hullBanner(pid) {
     : '';
   if (h >= 90 && !ageLine) return '';
   if (h >= Math.min(90, cap - 1) && ageLine) return `<p class="banner ${cap < Wear.LEAKS_BELOW ? 'warn' : ''}"><b>Hull ${Math.round(h)}%</b>${ageLine}</p>`;
-  const yard = Wear.YARDS.includes(pid);
+  const yard = Works.isYard(S, pid);
   const q = yard ? Wear.yardQuote(S.ship.hull, h, years) : Wear.beachQuote(S.ship.hull, h, years);
   const bq = Wear.beachQuote(S.ship.hull, h, years); // the beach is there in a yard port too, and cheaper
   const days = (n) => `${n} ${n === 1 ? 'day' : 'days'}`;
@@ -644,6 +647,7 @@ export function renderHelp(el) {
     <ul class="help">
       <li><b>Your calling:</b> after your first voyage you choose to be a free merchant, a captain of the crown or a privateer. Three ambitions under the date show what to aim for; finishing them earns money, standing and merit, and merit raises your rank, which pays (better prices, bigger rewards or bigger prizes). You can change calling freely in the first year; after that it costs more the longer you have followed it.</li>
       <li><b>Rival houses:</b> the Houses tab ranks you against the great merchant houses. Every port's trade is shared between its merchants, the houses and you; trade there to grow your share. A ring round a port shows who leads it. Weakened houses can be ruined, or bought out once you are worth twice as much.</li>
+      <li><b>Port works:</b> in any port you trade with, the Port works button builds a quay (any ship berths, cargo moves twice as fast), a warehouse (store cargo), a trading post (better prices and its own earnings), a fort (keeps corsairs off and halves the rival houses' sway), a shipyard (refits) or a church and hospital (standing). Each takes weeks, costs upkeep monthly and raises your share of the port's trade.</li>
       <li><b>Draft:</b> a laden ship sits deeper. Where she draws more than the harbour has, she anchors offshore and her boats ferry the cargo: some days, and a small fee to the boatmen. A nau keeps outside the Arguin banks. River bars rise in the rains and fall in the dry season.</li>
       <li><b>Up the Gambia:</b> Cantor, far upriver, trades gold and ivory from the caravans and pays well for salt. Only a shallow ship gets there: a barca, or a caravel not too deeply laden.</li>
       <li><b>Ports grow:</b> with their history and with the trade through them. A bigger port has a deeper market, and some build quays that let deeper ships come in. The market panel shows each port's size.</li>

@@ -11,6 +11,7 @@ import { yearOf } from './ships.js';
 import { home } from './nations.js';
 import * as Callings from './callings.js';
 import * as Houses from './houses.js';
+import * as Works from './works.js';
 
 const SLOTS = 3;
 const portById = (id) => PORTS.find((p) => p.id === id);
@@ -112,6 +113,25 @@ export const KINDS = {
       const iy = rows.findIndex((r) => r.id === 'you'), ih = rows.findIndex((r) => r.id === a.house);
       return ih < 0 || iy < ih ? 1 : 0;
     } },
+  build: { calling: 'merchant',
+    make(S, big) {
+      if (big) {
+        const now = new Set(Works.list(S).filter((b) => b.done).map((b) => b.pid)).size;
+        const target = now + 3;
+        return { text: `Have port works in ${target} ports`, target, base: 0 };
+      }
+      const now = Works.list(S).filter((b) => b.done && (b.id === 'quay' || b.id === 'warehouse')).length;
+      return { text: 'Build a quay or a warehouse in a port you trade with', target: now + 1, base: 0 };
+    },
+    value: (S, a) => (a.text.startsWith('Have port works') ? new Set(Works.list(S).filter((b) => b.done).map((b) => b.pid)).size : Works.list(S).filter((b) => b.done && (b.id === 'quay' || b.id === 'warehouse')).length) },
+  fortify: { calling: 'crown',
+    make(S, big) {
+      if ((S.contracts?.standing ?? 0) < 20 && !big) return null;
+      const what = big ? 'fort' : 'church';
+      const now = Works.list(S).filter((b) => b.done && b.id === what).length;
+      return { text: big ? 'Build a fort to guard a coast for the crown' : 'Build a church and hospital in a port you serve', target: now + 1, base: 0, what: big ? 'fort' : 'church' };
+    },
+    value: (S, a) => Works.list(S).filter((b) => b.done && (a.what ? b.id === a.what : b.id === 'fort' || b.id === 'church')).length },
   contracts: { calling: 'crown',
     make(S, big) {
       if (!S.contracts?.unlocked) return null;

@@ -8,6 +8,7 @@
 //   Lagos and Funchal.
 // Time stands still while either screen is open.
 
+import * as Works from './works.js';
 import { PORTS } from './world.js';
 import * as Ships from './ships.js';
 import * as Fleet from './fleet.js';
@@ -48,7 +49,7 @@ function repairBanner() {
 
 export function yardHere() {
   const pid = S.ship.docked;
-  return YARDS.includes(pid) ? pid : null;
+  return Works.isYard(S, pid) ? pid : null;
 }
 
 export function openShips(view = 'register', opts = {}) {

@@ -4,6 +4,7 @@
 //   More: winds, centre on the ship, saves, a new voyage, how to play, feedback
 // On a wide screen the full top bar is shown instead and this bar is hidden.
 
+import * as Works from './works.js';
 import { S, ui } from './state.js';
 import { $ } from './util.js';
 import { renderPanel, setSpeed, toggleWind } from './panels.js';
@@ -28,7 +29,7 @@ const nextTime = (v) => (v === 4 && Cloud.fastest() === 10 ? 10 : NEXT_TIME[v] ?
 export function serviceHere() {
   const pid = S.ship.docked;
   if (!pid) return null;
-  if (YARDS.includes(pid)) return 'yard';
+  if (Works.isYard(S, pid)) return 'yard';
   if ((S.hull ?? 100) < BEACH_TO) return 'beach';
   return null;
 }
