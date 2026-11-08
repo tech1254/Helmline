@@ -1,0 +1,60 @@
+{
+  "batch": "production-14",
+  "note": "North and west, second try: the holk and the carrack without a sail at the bow.",
+  "commit": "b6fd5b6248999af8c8e932dc2bacc8176afa3381",
+  "generated": "2026-11-08T06:25:22.603Z",
+  "items": [
+    {
+      "id": "ship-holk-c",
+      "model": "black-forest-labs/flux-2-pro-preview",
+      "width": 1280,
+      "height": 896,
+      "seed": 7601,
+      "refs": [
+        "art:production-1/ship-nau-a.png"
+      ],
+      "cutout": true,
+      "prompt": "A photorealistic photograph of a real full-size Hanseatic holk of about 1460, the big northern cargo ship of the Baltic and the North Sea: about 26 metres long, a very broad, deep, round-bellied hull with clinker-built overlapping planks, a strongly curved banana-shaped sheer rising high at both ends, a plain square sterncastle and a small forecastle built onto the hull. ONE single tall mast amidships carrying ONE very large square sail of undyed linen, no topsail, a round fighting top at the masthead, and a small lateen mizzen near the stern. A plain working ship: no carving, no gilding, no windows, no flags, no gunports, no decoration. Important: the bowsprit at the bow (right) carries no sail at all, no triangular jib and no staysail; the only triangular sail is the small lateen on the mizzen mast at the stern (left end). Seen exactly side-on, bow pointing right, warm late afternoon light from the right, the same light and style as the reference photo. Weathered sails, hemp rigging, dark tarred planking. Not a fantasy ship, not a pirate ship, not a model: a real ship, photographed. She is isolated on a solid, flat, evenly lit chroma-key green background (#00b140) filling everything around her, including below the hull: no sea, no sky, no shadow, no floor, no stand, no cradle. The whole ship from the mastheads to the keel in frame, with a margin all round.",
+      "file": "ship-holk-c.png",
+      "seconds": 12.4
+    },
+    {
+      "id": "ship-holk-d",
+      "model": "black-forest-labs/flux-2-pro-preview",
+      "width": 1280,
+      "height": 896,
+      "seed": 7602,
+      "refs": [],
+      "cutout": true,
+      "prompt": "A photorealistic photograph of a real full-size Hanseatic holk of about 1460, the big northern cargo ship of the Baltic and the North Sea: about 26 metres long, a very broad, deep, round-bellied hull with clinker-built overlapping planks, a strongly curved banana-shaped sheer rising high at both ends, a plain square sterncastle and a small forecastle built onto the hull. ONE single tall mast amidships carrying ONE very large square sail of undyed linen, no topsail, a round fighting top at the masthead, and a small lateen mizzen near the stern. A plain working ship: no carving, no gilding, no windows, no flags, no gunports, no decoration. Important: the bowsprit at the bow (right) carries no sail at all, no triangular jib and no staysail; the only triangular sail is the small lateen on the mizzen mast at the stern (left end). Seen exactly side-on, bow pointing right, warm late afternoon light from the right, plain natural light. Weathered sails, hemp rigging, dark tarred planking. Not a fantasy ship, not a pirate ship, not a model: a real ship, photographed. She is isolated on a solid, flat, evenly lit chroma-key green background (#00b140) filling everything around her, including below the hull: no sea, no sky, no shadow, no floor, no stand, no cradle. The whole ship from the mastheads to the keel in frame, with a margin all round.",
+      "file": "ship-holk-d.png",
+      "seconds": 11.1
+    },
+    {
+      "id": "ship-carrack-c",
+      "model": "black-forest-labs/flux-2-pro-preview",
+      "width": 1280,
+      "height": 896,
+      "seed": 7603,
+      "refs": [
+        "art:production-1/ship-nau-a.png"
+      ],
+      "cutout": true,
+      "prompt": "A photorealistic photograph of a real full-size Genoese carrack of about 1470, a big Mediterranean merchant ship: about 34 metres long, a tall, deep, round hull of smooth carvel planking with heavy wales, a high multi-deck sterncastle and a tall overhanging triangular forecastle, three masts: a huge square mainsail with a fighting top above it, a square foresail and a lateen mizzen, a small square topsail on the main. Sturdy and imposing, painted dark red and ochre on the castles. No gunports, no flags with crosses, no figurehead. Important: the bowsprit at the bow (right) carries no sail at all, no triangular jib and no staysail; the only triangular sail is the small lateen on the mizzen mast at the stern (left end). Seen exactly side-on, bow pointing right, warm late afternoon light from the right, the same light and style as the reference photo. Weathered sails, hemp rigging, dark tarred planking. Not a fantasy ship, not a pirate ship, not a model: a real ship, photographed. She is isolated on a solid, flat, evenly lit chroma-key green background (#00b140) filling everything around her, including below the hull: no sea, no sky, no shadow, no floor, no stand, no cradle. The whole ship from the mastheads to the keel in frame, with a margin all round.",
+      "file": "ship-carrack-c.png",
+      "seconds": 21.1
+    },
+    {
+      "id": "ship-carrack-d",
+      "model": "black-forest-labs/flux-2-pro-preview",
+      "width": 1280,
+      "height": 896,
+      "seed": 7604,
+      "refs": [],
+      "cutout": true,
+      "prompt": "A photorealistic photograph of a real full-size Genoese carrack of about 1470, a big Mediterranean merchant ship: about 34 metres long, a tall, deep, round hull of smooth carvel planking with heavy wales, a high multi-deck sterncastle and a tall overhanging triangular forecastle, three masts: a huge square mainsail with a fighting top above it, a square foresail and a lateen mizzen, a small square topsail on the main. Sturdy and imposing, painted dark red and ochre on the castles. No gunports, no flags with crosses, no figurehead. Important: the bowsprit at the bow (right) carries no sail at all, no triangular jib and no staysail; the only triangular sail is the small lateen on the mizzen mast at the stern (left end). Seen exactly side-on, bow pointing right, warm late afternoon light from the right, plain natural light. Weathered sails, hemp rigging, dark tarred planking. Not a fantasy ship, not a pirate ship, not a model: a real ship, photographed. She is isolated on a solid, flat, evenly lit chroma-key green background (#00b140) filling everything around her, including below the hull: no sea, no sky, no shadow, no floor, no stand, no cradle. The whole ship from the mastheads to the keel in frame, with a margin all round.",
+      "file": "ship-carrack-d.png",
+      "seconds": 10.9
+    }
+  ]
+}
