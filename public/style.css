@@ -748,3 +748,17 @@ table.houses tr.act td { border-bottom-style: dashed; padding-top: 0; }
 .house-sw { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 6px; vertical-align: 0; }
 p.shares { font-size: 14px; margin: 6px 0 0; color: var(--ink); }
 p.shares .sw-you { color: #8a5a0a; }
+
+/* Port works (worksview.js) */
+ol.works { list-style: none; margin: 10px 0; padding: 0; display: grid; gap: 10px; }
+ol.works li.work { border: 1px solid rgba(90, 70, 40, 0.3); border-radius: 6px; padding: 9px 11px; display: grid; gap: 4px; }
+ol.works li.work.have { border-color: var(--gold); background: rgba(255, 250, 238, 0.5); }
+ol.works li.work > div:first-child { display: flex; justify-content: space-between; gap: 8px; flex-wrap: wrap; align-items: baseline; }
+ol.works li.work p { margin: 0; font-size: 14.5px; }
+.tag { font-size: 13px; padding: 2px 8px; border-radius: 999px; border: 1px solid currentColor; }
+.tag.ok { color: #3f6b3a; } .tag.bad { color: #a2372b; }
+table.store { width: 100%; border-collapse: collapse; font-size: 15px; }
+table.store th, table.store td { padding: 5px 6px; border-bottom: 1px solid rgba(90, 70, 40, 0.25); text-align: left; }
+table.store .num { text-align: right; font-variant-numeric: tabular-nums; }
+table.store .acts { display: flex; gap: 6px; justify-content: flex-end; }
+ul.empire { margin: 6px 0; padding-left: 18px; font-size: 14.5px; }

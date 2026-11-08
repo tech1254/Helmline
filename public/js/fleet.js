@@ -2,6 +2,7 @@
 // They sail the same winds and trade in the same markets as the player, so their
 // buying and selling moves real prices. Money comes from, and goes to, the player's purse.
 
+import * as Works from './works.js';
 import { PORTS, findPath, windAt, sailFactor, angleDiff, bearing, distNm, D2R, berth, anchorage, isRiverLeg, RIVER_KNOTS, riverOf, shoalDepth, DEEP_DRAFT, isBeyond } from './world.js';
 import * as Indies from './indies.js';
 import * as Ports from './ports.js';
@@ -706,7 +707,7 @@ function beyondHazards(S, ship, leg) {
 // worn, or on a beach anywhere if she is badly worn. Returns a message, or null.
 function repairIfNeeded(S, ship) {
   const h = ship.hullPct ?? 100;
-  const yard = Wear.YARDS.includes(ship.at);
+  const yard = Works.isYard(S, ship.at);
   if (!(yard ? h < Wear.CAPTAIN_YARD_BELOW : h < Wear.CAPTAIN_BEACH_BELOW)) return null;
   const years = Ships.serviceYears(ship, S.day);
   const q = yard ? Wear.yardQuote(ship.hull, h, years) : Wear.beachQuote(ship.hull, h, years);
@@ -739,7 +740,7 @@ export const hasOrders = (ship) => !!(ship.orders?.fit || ship.orders?.hull);
 function yardWork(S, market, ship) {
   const o = ship.orders;
   const out = [];
-  if (!o || !Wear.YARDS.includes(ship.at)) return out;
+  if (!o || !Works.isYard(S, ship.at)) return out;
   if (o.hull && ship.at === home(S)) {
     const q = replaceQuote(S, ship, o.hull);
     if (S.purse - q.net >= RESERVE) {
@@ -874,7 +875,7 @@ export function statusText(S, ship) {
   if (ship.status === 'monsoon') return `In ${port(ship.at).name}, waiting for the monsoon to sail ${isBeyond(ship.at) ? 'home' : 'for the Indies'}.`;
   if (ship.status === 'river') return `In ${port(ship.at).name}, too deep for the river as she is loaded: waiting for the water to rise.`;
   if (ship.status === 'training') return `In ${port(ship.at).name}: Captain ${ship.captain.name} is ${Captains.TRAINING[ship.training].where.replace('with', 'learning with')}, ${Math.max(1, Math.ceil((ship.trainUntil ?? S.day) - S.day))} more days.`;
-  if (ship.status === 'repair') return `${Wear.YARDS.includes(ship.at) ? `In the yard at ${port(ship.at).name}` : `Careened on the beach at ${port(ship.at).name}`} for ${Math.max(1, Math.ceil((ship.repairUntil ?? S.day) - S.day))} more days.`;
+  if (ship.status === 'repair') return `${Works.isYard(S, ship.at) ? `In the yard at ${port(ship.at).name}` : `Careened on the beach at ${port(ship.at).name}`} for ${Math.max(1, Math.ceil((ship.repairUntil ?? S.day) - S.day))} more days.`;
   if (ship.status === 'loading') return `Waiting in ${port(ship.at).name} for prices to recover, on half pay (${Math.max(0, Math.round(S.day - (ship.waitSince ?? S.day)))} of up to ${MAX_WAIT_DAYS} days).`;
   if (ship.status === 'ashore') return `Ashore in ${port(ship.at).name}: Captain ${ship.captain.name} will not sail until you give him orders there in person.`;
   if (!r && ship.laidUp) return `Laid up in ${port(ship.at).name}, costing nothing: give her a route to send her out again.`;

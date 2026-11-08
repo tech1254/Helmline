@@ -6,6 +6,7 @@
 // can be ruined; a weakened house can be bought out, and its share of every port becomes yours.
 // The Houses of the Sea ledger ranks them all. Pure rules: no browser modules.
 
+import * as Works from './works.js';
 import { PORTS, distNm } from './world.js';
 import { yearOf } from './ships.js';
 import { worth as yourWorth } from './ambitions.js';
@@ -66,12 +67,12 @@ export function aggression(S) {
 // Each party's weight in a port: { local, you, <house id>: weight }.
 function weights(S, pid) {
   const H = ensureHouses(S);
-  const w = { local: TUNE.local, you: (H.you[pid] || 0) / TUNE.youPer + (H.held[pid] || 0) };
+  const w = { local: TUNE.local, you: (H.you[pid] || 0) / TUNE.youPer + (H.held[pid] || 0) + Works.weight(S, pid) };
   for (const id of active(S)) {
     const d = defOf(id), h = H.h[id];
     if (!d.ports.includes(pid)) continue;
     const spread = TUNE.perShip * h.ships / d.ports.length;
-    w[id] = spread * (pid === d.home ? 2.5 : 1) * aggression(S);
+    w[id] = spread * (pid === d.home ? 2.5 : 1) * aggression(S) * Works.houseDamp(S, pid); // a fort of yours halves their sway
   }
   return w;
 }

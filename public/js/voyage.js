@@ -1,5 +1,6 @@
 // Voyages and port calls: corsairs, planning a course, docking, milestones.
 
+import * as Works from './works.js';
 import * as Callings from './callings.js';
 import { COS0, D2R, PORTS, windAt, sailFactor, bearing, distNm, angleDiff, findPath, COASTAL_NM, berth, anchorage, isRiverLeg, RIVER_KNOTS, riverOf, shoalDepth, DEEP_DRAFT, isBeyond } from './world.js';
 import * as Indies from './indies.js';
@@ -261,7 +262,7 @@ export function noPassage() {
 // to the anchorage (with word why).
 function anchorOffIfNeeded(pid) {
   const sh = S.ship;
-  if (sh.offshore || !Ports.needsBoats(S, pid, sh.hull, loadOf())) return;
+  if (sh.offshore || Works.quay(S, pid) || !Ports.needsBoats(S, pid, sh.hull, loadOf())) return; // your own quay takes any draught
   const p = PORTS.find((x) => x.id === pid);
   const a = anchorage(pid, Ships.isDeep(sh.hull) && shoalDepth(p.lon, p.lat) <= DEEP_DRAFT);
   sh.offshore = true;
@@ -276,7 +277,7 @@ export function boatsFor(units) {
   anchorOffIfNeeded(pid);
   if (!sh.offshore) { // alongside: the cargo is worked from the quay, and the days pass
     const b = sh.boats?.quay ? sh.boats : { total: 0, moved: 0 };
-    sh.boats = { total: b.total - b.moved + units, moved: 0, rate: Ships.quayRate(sh.hull), quay: true };
+    sh.boats = { total: b.total - b.moved + units, moved: 0, rate: Ships.quayRate(sh.hull) * (Works.quay(S, pid) ? 2 : 1), quay: true };
     return;
   }
   const p = PORTS.find((x) => x.id === pid);

@@ -1,5 +1,6 @@
 // Time passing: sailing, wages, spoilage, events, the fleet, and time away.
 
+import * as Works from './works.js';
 import { D2R, PORTS, isLand, windAt, sailFactor, bearing, distNm, angleDiff, isRiverLeg, RIVER_KNOTS, shoalDepth, SHOALS, isBeyond, compassPoint } from './world.js';
 import * as Ports from './ports.js';
 import { GOODS, PORTUGUESE_PORTS } from './economy.js';
@@ -281,6 +282,13 @@ export function advanceTime(dd, atSea, away = false) {
   report(Taxes.tick(S, House.renown(S)));
   report(Competition.tick(S, dd, market));
   report(Houses.tick(S)); // the rival houses (houses.js)
+  const works = Works.tick(S); // your port works: upkeep, the trading posts' earnings (works.js)
+  if (works.upkeep) Accounts.record(S, { kind: 'works', amount: -works.upkeep, text: 'Upkeep of your port works' });
+  if (works.income) Accounts.record(S, { kind: 'post', amount: works.income, text: 'Your factors\' trade' });
+  for (const m of works.msgs) {
+    if (m.finished?.id === 'church') { if (S.contracts) S.contracts.standing = (S.contracts.standing || 0) + 8; House.ensureHouse(S).renown += 2; }
+  }
+  report(works.msgs.filter((m) => m.html));
   syncMarket();
   Pirates.tickGalleys(S, dd); // corsair galleys cruising their waters, to be hunted
   if (atSea) {
