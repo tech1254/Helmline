@@ -131,6 +131,13 @@ export function boatRate(hullId, nm = 7) {
   return Math.round((6 + 8 * h.size) * Math.min(1, 10 / Math.max(10, nm)));
 }
 
+// Units a day worked alongside a quay (the design doc, phase 2: days pass in port). Faster than
+// her boats offshore, and free.
+export function quayRate(hullId) {
+  const h = HULLS[hullId] || HULLS.caravel;
+  return Math.round(16 + 12 * h.size);
+}
+
 export const HULL_ORDER = ['barca', 'caravel', 'barinel', 'largecaravel', 'redonda', 'urca', 'nau', 'armedcaravel', 'galeao', 'naudaindia'];
 // The hulls a house's own yards build, in order (nations.js).
 export const hullOrder = (S) => (NATIONS[S?.nation] || NATIONS.portugal).ladder;

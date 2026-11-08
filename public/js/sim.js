@@ -12,6 +12,7 @@ import * as Investments from './investments.js';
 import * as House from './house.js';
 import * as Taxes from './taxes.js';
 import * as Competition from './competition.js';
+import * as Houses from './houses.js';
 import * as Ships from './ships.js';
 import * as Wear from './wear.js';
 import * as Lending from './lending.js';
@@ -60,7 +61,7 @@ function workBoats(dtSec) {
   }
   if (b.moved >= b.total - 1e-6) {
     S.ship.boats = null;
-    toast(`Her boats have finished: the cargo is worked at ${PORTS.find((p) => p.id === S.ship.docked).name}.`, 'port', true, 'routine');
+    toast(b.quay ? `The cargo is worked at ${PORTS.find((p) => p.id === S.ship.docked).name}.` : `Her boats have finished: the cargo is worked at ${PORTS.find((p) => p.id === S.ship.docked).name}.`, 'port', true, 'routine');
     save();
   }
 }
@@ -279,6 +280,7 @@ export function advanceTime(dd, atSea, away = false) {
   report(House.tick(S, dd));
   report(Taxes.tick(S, House.renown(S)));
   report(Competition.tick(S, dd, market));
+  report(Houses.tick(S)); // the rival houses (houses.js)
   syncMarket();
   Pirates.tickGalleys(S, dd); // corsair galleys cruising their waters, to be hunted
   if (atSea) {

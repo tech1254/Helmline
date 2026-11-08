@@ -17,6 +17,8 @@ import { WAGE_RESERVE_DAYS } from './config.js';
 import * as Ships from './ships.js';
 import * as Wear from './wear.js';
 import * as Ports from './ports.js';
+import * as Callings from './callings.js';
+import * as Houses from './houses.js';
 import { S, market, ui } from './state.js';
 import { newGame, save } from './save.js';
 import { cloudSync, loadFromCloud, loadSlot, renderCloudButton, saveAsNewSlot, startCloudSave } from './cloudsync.js';
@@ -115,7 +117,8 @@ export function initActions() {
       const n = t.dataset.n === 'all' ? S.cargo[g] : Math.min(+t.dataset.n, S.cargo[g]);
       const doSell = () => {
         const avgCost = S.cargo[g] ? S.paid[g] / S.cargo[g] : 0;
-        const { sold, income } = market.sell(pid, g, n);
+        const { sold, income: gross } = market.sell(pid, g, n);
+        const income = Math.round(gross * Callings.perk(S, 'sale')); // a merchant house's name gets a better price
         S.cargo[g] -= sold; S.paid[g] = Math.max(0, S.paid[g] - avgCost * sold); S.purse += income;
         Accounts.record(S, { kind: 'sale', good: g, qty: sold, amount: income });
       boatsFor(sold);
@@ -357,6 +360,20 @@ export function initActions() {
       const plan = planCourse(p.lon, p.lat, p.id, false);
       if (plan) { ui.panelMode = null; confirmVoyage(plan); }
       else hint(noPassage());
+    } else if (t.dataset.buyout) {
+      const id = t.dataset.buyout, q = Houses.buyOutPrice(S, id), d = Houses.defOf(id);
+      if (!q?.ok || S.purse < q.price) return;
+      confirmDialog({
+        title: `Buy out the ${d.name}`, kind: 'trade', ok: `Buy them out for ${q.price.toLocaleString()} cz`,
+        body: `<p>The house of ${d.name} of ${d.of} will sell you its factors, its warehouses and its custom in ${d.ports.map((p) => PORTS.find((x) => x.id === p)?.name).filter(Boolean).join(', ')}. The house is finished; its share of those ports becomes yours.</p>`,
+        onOk: () => {
+          const r = Houses.buyOut(S, id);
+          if (!r) return;
+          Accounts.record(S, { kind: 'rivals', amount: -r.price, text: `Bought out the house of ${d.name}` });
+          report([{ html: r.html, kind: 'discover', log: r.log }]);
+        },
+      });
+      return;
     } else if (t.hasAttribute('data-first-end')) {
       endFirst();
     } else if (t.hasAttribute('data-prices')) {

@@ -6,13 +6,14 @@ import { $ } from './util.js';
 import { renderPanel } from './panels.js';
 
 // ---- Confirmation dialog ----------------------------------------------------
-export function confirmDialog({ title, body, ok = 'Confirm', onOk, kind = 'trade', preview = null, actions = {}, cancel = true }) {
+export function confirmDialog({ title, body, ok = 'Confirm', onOk, onCancel = null, kind = 'trade', preview = null, actions = {}, cancel = true }) {
   $('modal-cancel').textContent = typeof cancel === 'string' ? cancel : 'Cancel';
   // With neither OK nor Cancel (a corsair attack), a choice in the body must be made.
-  ui.modal = { onOk, kind, preview, actions, locked: !cancel && ok === null };
+  ui.modal = { onOk, onCancel, kind, preview, actions, locked: !cancel && ok === null };
   $('modal-ok').hidden = ok === null;
   $('modal-cancel').hidden = !cancel;
   $('modal').classList.toggle('aside', kind === 'voyage');
+  $('modal').dataset.kind = kind;
   $('modal-title').textContent = title;
   $('modal-body').innerHTML = body;
   if (ok !== null) $('modal-ok').textContent = ok;
@@ -26,6 +27,7 @@ export function closeModal(accept, viaAction = false) {
   ui.modal = null;
   $('modal').hidden = true;
   if (accept) m.onOk();
+  else if (!viaAction) m.onCancel?.();
   renderPanel();
   save();
 }
