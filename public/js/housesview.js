@@ -5,6 +5,9 @@ import * as Houses from './houses.js';
 import { PORTS } from './world.js';
 import { S } from './state.js';
 import { tabs } from './panels.js';
+import * as Law from './law.js';
+import * as War from './war.js';
+import * as Skip from './timeskip.js';
 
 const fmt = (n) => Math.round(n).toLocaleString('en-GB');
 const pct = (x) => `${Math.round(x * 100)}%`;
@@ -46,5 +49,23 @@ export function renderHouses(el) {
     ${lead}
     <div class="scroll"><table class="houses"><thead><tr><th class="num">#</th><th>House</th><th class="num">Worth, cz</th><th class="num">Ships</th><th class="num">Ports led</th></tr></thead><tbody>${body}</tbody></table></div>
     ${here ? `<h3>${portName(S.ship.docked)}</h3>${here}` : ''}
+    ${nameAtSea()}
+    ${Skip.actOver(S) && S.day < Skip.SKIP_TO - 30 ? `<h3>The years ahead</h3><p class="fine">Let the years to 1474 pass at once, to the eve of the war: your captains and factors trade through them.</p><div class="row"><button data-timeskip>Let the years pass…</button></div>` : ''}
     <p class="fine">Every port's trade is shared between its own merchants, the houses that work it and you. Buy and sell in a port and your share grows; a ring round a port on the chart shows who leads it. Where the houses hold sway, prices are narrower. Weaken a house enough and it is ruined; once your house is worth twice as much, you can buy it out and take its custom.</p>`;
+}
+
+// Your name at sea: infamy with each crown, a letter of marque, the Guinea licence, prizes,
+// the war (law.js, war.js).
+function nameAtSea() {
+  const L = Law.ensureLaw(S);
+  const w = War.current(S);
+  const bits = [];
+  if (w && War.enemyOf(S)) bits.push(`<b>At war</b> with ${Law.CROWNS[War.enemyOf(S)].name} (${w.name}).${War.hasMarque(S) ? ' You carry a letter of marque.' : ''}`);
+  if (War.service(S)) bits.push(`Service in the war: ${War.service(S)} ${War.service(S) === 1 ? 'action' : 'actions'}.`);
+  bits.push(Law.nameText(S));
+  if (Law.licensed(S)) bits.push('You hold the crown\'s licence against interlopers on the Guinea coast.');
+  if (L.taken) bits.push(`Ships taken: ${L.taken}${L.pirated ? `, ${L.pirated} of them in piracy` : ''}. Prizes condemned at court ${L.condemned}, fenced ${L.fenced}.`);
+  if (L.prizes.length) bits.push(`Prize crews waiting: ${L.prizes.map((p) => p.name).join(', ')}.`);
+  if (L.shares) bits.push(`Your crew sail on shares: ${Math.round(L.dry)} days at sea since the last prize.`);
+  return `<h3>Your name at sea</h3><p class="fine">${bits.join(' ')}</p><p class="fine">Tap a rival's ship on the chart to see her, and give chase.</p>`;
 }

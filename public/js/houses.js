@@ -7,7 +7,7 @@
 // The Houses of the Sea ledger ranks them all. Pure rules: no browser modules.
 
 import * as Works from './works.js';
-import { PORTS, distNm } from './world.js';
+import { PORTS, distNm, findPath, D2R } from './world.js';
 import { yearOf } from './ships.js';
 import { worth as yourWorth } from './ambitions.js';
 
@@ -209,10 +209,64 @@ export function vessels(S) {
         const to = choices[seed % choices.length];
         const a = portById(from), b = portById(to);
         const days = Math.max(3, distNm(a.lon, a.lat, b.lon, b.lat) * 1.25 / 95);
-        v = list[i] = { from, to, start: v ? v.start + v.days + 2 : S.day - (i * 4) % Math.max(3, days), days, hull: h.ships > 6 && i === 0 ? 'carrack' : 'nau' };
+        v = list[i] = { from, to, start: v ? v.start + v.days + 2 : S.day - (i * 4) % Math.max(3, days), days, hull: h.ships > 6 && i === 0 ? 'carrack' : i === 2 ? 'caravel' : 'nau' };
       }
-      out.push({ house: id, colour: d.colour, name: d.name, ...v, t: Math.max(0, Math.min(1, (S.day - v.start) / v.days)) });
+      if (v.taken && v.taken === v.start) continue; // taken on this passage
+      out.push({ house: id, i, colour: d.colour, name: d.name, armed: h.armed || 0, ...v, t: Math.max(0, Math.min(1, (S.day - v.start) / v.days)) });
     }
   }
   return out;
+}
+
+// Where a vessel is now, along the sea route of her passage: { lon, lat, heading }.
+const paths = new Map();
+export function pathOf(from, to) {
+  const key = `${from}>${to}`;
+  if (!paths.has(key)) {
+    const a = portById(from), b = portById(to);
+    let pts = a && b ? findPath(a.lon, a.lat, b.lon, b.lat, 1, false, false) : null;
+    if (a && b && !(pts?.length >= 2)) pts = [[a.lon, a.lat], [b.lon, b.lat]];
+    let run = 0;
+    const cum = pts ? pts.map((p, i) => (run += i ? distNm(pts[i - 1][0], pts[i - 1][1], p[0], p[1]) : 0)) : [];
+    paths.set(key, pts && { pts, cum, len: run });
+  }
+  return paths.get(key);
+}
+export function vesselAt(v, day = null) {
+  const P = pathOf(v.from, v.to);
+  if (!P) return null;
+  const t = day == null ? v.t : Math.max(0, Math.min(1, (day - v.start) / v.days));
+  const at = t * P.len;
+  let i = 1;
+  while (i < P.pts.length - 1 && P.cum[i] < at) i++;
+  const [x0, y0] = P.pts[i - 1], [x1, y1] = P.pts[i];
+  const seg = P.cum[i] - P.cum[i - 1] || 1, f = Math.max(0, Math.min(1, (at - P.cum[i - 1]) / seg));
+  const lon = x0 + (x1 - x0) * f, lat = y0 + (y1 - y0) * f;
+  return { lon, lat, heading: Math.atan2((x1 - x0) * Math.cos(lat * D2R), y1 - y0) / D2R, t };
+}
+// Every house ship at sea now, with where she is.
+export function positions(S) {
+  const out = [];
+  for (const v of vessels(S)) {
+    if (v.t >= 1) continue;
+    const at = vesselAt(v);
+    if (at) out.push({ ...v, ...at, key: `${v.house}:${v.i}:${Math.round(v.start * 100)}` });
+  }
+  return out;
+}
+
+// A raid on a house: what was taken comes out of its wealth; a ship taken is a ship lost; and a
+// house raided twice arms its ships and sails them in company (escorts: harder to take).
+export function raided(S, id, value, shipTaken = false, key = null) {
+  const h = ensureHouses(S).h[id];
+  if (!h) return;
+  h.wealth -= value;
+  if (shipTaken) h.ships = Math.max(1, h.ships - 1);
+  h.raids = (h.raids || 0) + 1;
+  h.armed = Math.min(2, Math.floor(h.raids / 2));
+  if (key) { // she no longer sails this passage
+    const [, i, start] = key.split(':');
+    const v = S.houses.vessels[id]?.[+i];
+    if (v && Math.round(v.start * 100) === +start) v.taken = v.start;
+  }
 }

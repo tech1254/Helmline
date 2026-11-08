@@ -18,7 +18,7 @@ import { CHART_REWARD } from './config.js';
 import { releaseToasts, toast } from './notices.js';
 import { save } from './save.js';
 
-const SETTING = { lisbon: 'lisbon', porto: 'iberia', cadiz: 'iberia', sanlucar: 'iberia', palos: 'iberia', seville: 'river', gomera: 'volcanic', ceuta: 'iberia', safi: 'iberia', lagos: 'iberia', funchal: 'madeira', lanzarote: 'volcanic', arguin: 'desert', gambia: 'river', serraleoa: 'river', cestos: 'river', mina: 'surf', cantor: 'river', mpinda: 'river', saotome: 'volcanic', saobras: 'desert', portoseguro: 'surf', calicut: 'surf', bruges: 'iberia', antwerp: 'river', bristol: 'river', galway: 'iberia', valencia: 'surf', genoa: 'iberia', sale: 'desert', algiers: 'iberia', angra: 'volcanic', flores: 'volcanic', ribeiragrande: 'volcanic', stjohns: 'madeira', santodomingo: 'surf' };
+const SETTING = { cove: 'volcanic', lisbon: 'lisbon', porto: 'iberia', cadiz: 'iberia', sanlucar: 'iberia', palos: 'iberia', seville: 'river', gomera: 'volcanic', ceuta: 'iberia', safi: 'iberia', lagos: 'iberia', funchal: 'madeira', lanzarote: 'volcanic', arguin: 'desert', gambia: 'river', serraleoa: 'river', cestos: 'river', mina: 'surf', cantor: 'river', mpinda: 'river', saotome: 'volcanic', saobras: 'desert', portoseguro: 'surf', calicut: 'surf', bruges: 'iberia', antwerp: 'river', bristol: 'river', galway: 'iberia', valencia: 'surf', genoa: 'iberia', sale: 'desert', algiers: 'iberia', angra: 'volcanic', flores: 'volcanic', ribeiragrande: 'volcanic', stjohns: 'madeira', santodomingo: 'surf' };
 const T_ZOOM = 0.9, T_FADE = 0.5, T_SAIL = 3.6, T_HOLD = 0.9, T_OUT = 0.45;
 
 export const SCENE_MODES = [['all', 'Every port'], ['first', 'First visits only'], ['off', 'Off']];

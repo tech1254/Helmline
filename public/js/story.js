@@ -188,7 +188,7 @@ export const BEATS = [
       body: `<p><i>Sagres, November 1460.</i> Prince Henry is dead. The man who sent ships past Bojador for forty years leaves debts, a school of pilots, and a coast charted to the mountains of Serra Leoa. The commissions from Sagres end with him.</p>
         <p>Your mother writes: "Now we find out who our friends were."</p>
         <p class="fine">${actOneSummary(S)}</p>
-        <p class="fine">Act II, <i>The Guinea lease</i>, comes in a later update. Your voyages go on meanwhile.</p>`,
+        <p class="fine">Act II, <i>The Guinea lease</i>, comes in a later update. Sail on year by year, or, in Lisbon, let the years pass to the eve of the war with Castile in 1475.</p>`,
       ok: 'Sail on',
     }),
     choose: () => 'Prince Henry died at Sagres. The end of Act I.',

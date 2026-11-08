@@ -23,7 +23,7 @@ export function renderWorks(el) {
   if (!pid) { ui.panelMode = 'port'; return; }
   const p = PORTS.find((x) => x.id === pid);
   const sh = Houses.shares(S, pid);
-  const cards = Works.BUILDING_IDS.map((id) => {
+  const cards = Works.buildingsAt(pid).map((id) => {
     const B = Works.BUILDINGS[id];
     const b = Works.building(S, pid, id);
     const cost = B.cost(S, pid);

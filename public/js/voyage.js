@@ -29,23 +29,30 @@ import { log, passage } from './pricebook.js';
 import { confirmDialog } from './dialog.js';
 import { addNotice, hint, toast } from './notices.js';
 import { home, homeName } from './nations.js';
+import { openFight } from './fightview.js';
+import { engagePrey } from './huntview.js';
+import { openDefence, onDock } from './lawview.js';
+import * as Law from './law.js';
 
 // ---- Corsairs ----------------------------------------------------------------------
 
 export function openEncounter(enc) {
+  if (enc.kind === 'prey') { engagePrey(enc.v); return; } // a rival's ship you have run down (huntview.js)
+  if (enc.kind === 'hunter' || enc.kind === 'warship') { openDefence(enc); return; } // the law, or the enemy (lawview.js)
   const { knots } = shipWind();
   const o = Pirates.odds(S, enc, knots);
   const pct = (x) => `${Math.round(x * 100)}%`;
   if (enc.hunted) { // you ran her down: attack, or let her go
+    setSpeed(0);
     confirmDialog({
       title: enc.big ? 'You have run down a great galley' : 'You have run down a corsair galley',
       body: `<p>${enc.big ? 'A big Barbary galley, packed with fighting men,' : 'A Barbary galley'} off ${enc.where}, caught before her rowers can get her away. You have the wind and the surprise.</p>
         <dl class="facts">
-          <dt>Attack</dt><dd>${pct(o.fight)} chance to take her${S.hull < 100 ? `, hull at ${Math.round(S.hull)}%` : ''}</dd>
+          <dt>Your chances</dt><dd>about ${pct(o.fight)}${S.hull < 100 ? `, hull at ${Math.round(S.hull)}%` : ''}</dd>
           <dt>If you take her</dt><dd>her plunder, and the crown's bounty of ${enc.big ? Pirates.BOUNTY.big : Pirates.BOUNTY.galley} cz</dd>
-          <dt>If she beats you off</dt><dd>they board you and strip the ship</dd>
+          <dt>If she beats you off</dt><dd>she gets away, and your hull and crew are the worse for it</dd>
         </dl>
-        <p class="fine">Hunting corsairs makes your name feared on the Barbary coast: more of them will come looking for you.</p>
+        <p class="fine">You fight it round by round. Hunting corsairs makes your name feared on the Barbary coast: more of them will come looking for you.</p>
         <div class="row choice">
           <button data-modal-action="pass">Let her go</button>
           <button class="primary" data-modal-action="attack">Attack</button>
@@ -54,41 +61,29 @@ export function openEncounter(enc) {
       cancel: false,
       kind: 'encounter',
       actions: {
-        attack: () => settleEncounter(enc, 'fight', knots),
+        attack: () => fightCorsairs(enc),
         pass: () => { Pirates.endHunt(S, enc, 'pass'); toast('You let the galley go. She pulls away toward the coast.'); renderPanel(); save(); },
       },
     });
     return;
   }
-  const t = Pirates.tribute(S, enc);
-  confirmDialog({
-    title: enc.big ? 'A great corsair galley!' : 'Corsairs!',
-    body: `<p>${enc.big ? 'A big Barbary galley, packed with fighting men,' : 'A Barbary galley, oars flashing,'} is closing on you off ${enc.where}.</p>
-      <dl class="facts">
-        <dt>Run for it</dt><dd>${pct(o.run)} chance to escape at ${knots.toFixed(1)} kn</dd>
-        <dt>Fight</dt><dd>${pct(o.fight)} chance to win${S.hull < 100 ? `, hull at ${Math.round(S.hull)}%` : ''}</dd>
-        <dt>Pay tribute</dt><dd>${t} cz, and they let you pass</dd>
-      </dl>
-      <p class="fine">Beat them and you may plunder the galley and claim the crown's bounty, but a feared name draws more corsairs. Avoiding fights makes the seas around you calmer. Crossbowmen, men-at-arms and boarding nets from the shipyard improve your odds.</p>
-      <div class="row choice">
-        <button data-modal-action="pay">Pay ${t} cz</button>
-        <button data-modal-action="fight">Fight</button>
-        <button class="primary" data-modal-action="run">Run</button>
-      </div>`,
-    ok: null,
-    cancel: false,
-    kind: 'encounter',
-    actions: {
-      run: () => settleEncounter(enc, 'run', knots),
-      fight: () => settleEncounter(enc, 'fight', knots),
-      pay: () => settleEncounter(enc, 'pay', knots),
-    },
+  fightCorsairs(enc);
+}
+
+// The corsairs, round by round (fight.js): attacked, or attacking a galley you have run down.
+function fightCorsairs(enc) {
+  const F = Pirates.startFight(S, enc);
+  const t = F.tribute;
+  openFight(F, {
+    title: enc.hunted ? (enc.big ? 'Attacking a great galley' : 'Attacking a corsair galley') : (enc.big ? 'A great corsair galley!' : 'Corsairs!'),
+    intro: enc.hunted ? '' : `<p>${enc.big ? 'A big Barbary galley, packed with fighting men,' : 'A Barbary galley, oars flashing,'} is closing on you off ${enc.where}. Run for it, fight, or pay her ${t} cz to let you pass.</p>`,
+    onDone: (done) => settleEncounter(enc, done),
   });
 }
 
-export function settleEncounter(enc, choice, knots) {
-  plog('corsairs', { choice, hunted: !!enc.hunted, big: !!enc.big, where: enc.where });
-  const r = Pirates.resolve(S, enc, choice, knots);
+export function settleEncounter(enc, F) {
+  plog('corsairs', { result: F.done?.result, hunted: !!enc.hunted, big: !!enc.big, where: enc.where, rounds: F.round });
+  const r = Pirates.settleFight(S, enc, F);
   if (enc.hunted) Pirates.endHunt(S, enc, 'fought'); // beaten or not, she goes home
   log(r.lines[r.lines.length - 1]);
   for (const line of r.lines) addNotice(line, r.kind);
@@ -135,7 +130,7 @@ const dayText = (d) => { const n = Math.max(1, Math.round(d)); return `${n} ${n 
 
 // After a brush with the corsairs the game pauses, so the captain can take stock: his hull,
 // his purse, what his contracts still need, and whether to hold his course or turn back.
-function afterEncounter(r) {
+export function afterEncounter(r) {
   const resume = ui.speed || ui.lastSpeed || 1;
   setSpeed(0);
   const sh = S.ship;
@@ -156,7 +151,7 @@ function afterEncounter(r) {
     const due = daysLeft == null ? 'no deadline' : `due in ${daysLeft} ${daysLeft === 1 ? 'day' : 'days'}`;
     return `<li><b>${c.title}</b>: ${due}${c.good && c.qty ? `, you hold ${S.cargo[c.good] || 0} of ${c.qty}` : ''}.</li>`;
   }).join('');
-  const title = /escaped/i.test(r.lines.join(' ')) ? 'You got away' : /pay the corsairs/i.test(r.lines.join(' ')) ? 'Tribute paid' : r.kind === 'discover' ? 'The corsairs are beaten off' : 'The corsairs have had their way';
+  const title = r.title || (/escaped/i.test(r.lines.join(' ')) ? 'You got away' : /pay the corsairs/i.test(r.lines.join(' ')) ? 'Tribute paid' : r.kind === 'discover' ? 'The corsairs are beaten off' : 'The corsairs have had their way');
   confirmDialog({
     title,
     body: `${r.lines.map((l) => `<p>${l}</p>`).join('')}
@@ -537,6 +532,7 @@ export function dock(portId) {
   } else if (prices.length) {
     toast(`Your captains' notes bring fresh prices from ${prices.map((x) => PORTS.find((q) => q.id === x).name).join(', ')} to your price book.`, 'port', true, 'routine');
   }
+  onDock(portId); // the law: havens, prizes, a port shut to you (lawview.js)
   const shut = Events.closure(S, portId);
   if (shut) toast(`<b>${p.name} is closed:</b> ${Events.template(shut).title.toLowerCase()}. You may anchor, but not trade.`, '');
   const galleysHeard = Pirates.portReports(S, p);

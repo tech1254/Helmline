@@ -762,3 +762,41 @@ table.store th, table.store td { padding: 5px 6px; border-bottom: 1px solid rgba
 table.store .num { text-align: right; font-variant-numeric: tabular-nums; }
 table.store .acts { display: flex; gap: 6px; justify-content: flex-end; }
 ul.empire { margin: 6px 0; padding-left: 18px; font-size: 14.5px; }
+
+/* ---- Fights at sea (fightview.js), spoils and prizes (huntview.js, lawview.js) ---- */
+#modal[data-kind="fight"] .card { width: min(640px, 100%); }
+.fight { display: grid; gap: 10px; }
+.fintro p { margin: 0; }
+.fsides { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.fside { border: 1px solid rgba(90, 70, 40, 0.3); border-radius: 6px; padding: 8px 10px; display: grid; gap: 4px; min-width: 0; }
+.fside.you { border-color: var(--gold); background: rgba(255, 250, 238, 0.5); }
+.fside h3 { font-family: var(--display); font-weight: 400; font-size: 17px; margin: 0; overflow-wrap: anywhere; }
+.fside p { margin: 0; }
+.fbar { display: grid; grid-template-columns: 3.6em 1fr 2em; align-items: center; gap: 6px; font-size: 13px; }
+.fbar i { height: 7px; border-radius: 4px; background: linear-gradient(90deg, var(--ink-2) var(--v), rgba(90, 70, 40, 0.15) var(--v)); }
+.fbar.low i { background: linear-gradient(90deg, var(--red) var(--v), rgba(90, 70, 40, 0.15) var(--v)); }
+.fbar b { font-weight: 600; text-align: right; font-variant-numeric: tabular-nums; }
+.frange { list-style: none; display: grid; grid-template-columns: repeat(4, 1fr); margin: 0; padding: 0; gap: 3px; font-size: 13px; text-align: center; }
+.frange li { padding: 4px 2px; border-bottom: 3px solid rgba(90, 70, 40, 0.2); color: var(--muted); }
+.frange li.on { border-color: var(--red); color: var(--ink); font-weight: 600; }
+.flog { margin: 0; padding-left: 18px; font-size: 14.5px; }
+.fround { margin: 0; }
+.fintent { font-style: italic; color: var(--red); }
+.facts-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 6px; }
+.facts-grid .fact { text-align: left; display: grid; gap: 2px; min-height: 44px; padding: 7px 9px; }
+.facts-grid .fact small { font-size: 12.5px; line-height: 1.25; opacity: 0.85; }
+.facts-grid .fact .odds { font-variant-numeric: tabular-nums; font-weight: 400; }
+.fauto { margin: 0; text-align: center; }
+ul.spoils { list-style: none; margin: 8px 0 0; padding: 0; display: grid; gap: 6px; }
+ul.spoils button { width: 100%; text-align: left; display: grid; gap: 2px; min-height: 44px; padding: 7px 10px; }
+ul.spoils small { font-size: 12.5px; opacity: 0.85; }
+.banner.prize button, .banner button { margin-left: 6px; }
+@media (max-width: 480px) {
+  .fsides { grid-template-columns: 1fr; gap: 6px; }
+  .fside { padding: 6px 9px; gap: 2px; }
+  .fside p.fine { display: none; }
+  .facts-grid .fact small { font-size: 12px; }
+  .fbar { grid-template-columns: 3.2em 1fr 1.8em; }
+  .facts-grid { grid-template-columns: 1fr 1fr; }
+}
+#modal .fauto button.link { background: none; border: 0; box-shadow: none; color: var(--red); padding: 0; min-height: 0; text-shadow: none; }

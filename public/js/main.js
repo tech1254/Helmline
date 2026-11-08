@@ -10,6 +10,13 @@ import { S, market, ui } from './state.js';
 import { DAYS_PER_SEC } from './config.js';
 import { storyTick } from './storyview.js';
 import { ambitionsTick, initAmbitions } from './ambitionsview.js';
+import { lawTick } from './lawview.js';
+import { skipTick } from './timeskip.js';
+import * as Hunt from './hunt.js';
+import * as Houses from './houses.js';
+import * as Law from './law.js';
+import * as War from './war.js';
+import * as Fight from './fight.js';
 import { initPlaylog, playlogTick, plog, flushPlaylog } from './playlog.js';
 import { setRecordHook } from './accounts.js';
 import { load, newGame, save } from './save.js';
@@ -81,6 +88,8 @@ function frame(t) {
   if (ui.pendingSummary && free && ui.introDone) { const sm = ui.pendingSummary; ui.pendingSummary = null; showSummary(sm); }
   if (ui.pendingEncounter && free && ui.introDone) { const e = ui.pendingEncounter; ui.pendingEncounter = null; openEncounter(e); }
   if (free && ui.introDone && !ui.pendingSummary && !ui.pendingEncounter) storyTick(dt); // letters and chapter cards (storyview.js)
+  if (ui.introDone) lawTick(!ui.modal && !ui.screen && !ui.arrival && !ui.pendingSummary && !ui.pendingEncounter); // the marque, a mutiny (lawview.js)
+  if (ui.introDone) skipTick(!ui.modal && !ui.screen && !ui.arrival && !ui.pendingSummary && !ui.pendingEncounter); // the act break (timeskip.js)
   if (ui.introDone) ambitionsTick(dt, free && !ui.modal && !ui.pendingSummary && !ui.pendingEncounter); // callings and ambitions (ambitionsview.js)
   if (ui.introDone) playlogTick();
   saveClock += dt;
@@ -168,6 +177,12 @@ window.helmline = {
   flushLog: () => flushPlaylog(),
   panel: (mode) => { ui.panelMode = mode; renderPanel(); },
   tickGalleys: (days) => Pirates.tickGalleys(S, days),
+  // phase 4: the rival ships at sea, a chase, the law, the war
+  prey: () => Houses.positions(S).map((v) => ({ key: v.key, house: v.house, hull: v.hull, lon: v.lon, lat: v.lat, armed: v.armed })),
+  chase: (key) => { const v = Houses.positions(S).find((x) => x.key === key); if (v) Hunt.startChase(S, v); return !!v; },
+  engage: (key) => { const v = Houses.positions(S).find((x) => x.key === key); if (v) ui.pendingEncounter = { kind: 'prey', v }; return !!v; },
+  defend: (kind = 'hunter', crown = 'castile') => { ui.pendingEncounter = { kind, crown, armed: 0, where: crown }; },
+  law: () => Law, war: () => War, fight: () => Fight,
   huntCheck: () => { const e = Pirates.contact(S, S.ship.lon, S.ship.lat); if (e) ui.pendingEncounter = e; return !!e; },
   fleetStatus: (id) => Fleet.statusText(S, S.fleet.ships.find((x) => x.id === id)),
   // sail on for some days of game time, as the frame loop would (stops for dialogs and arrivals)

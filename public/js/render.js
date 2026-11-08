@@ -320,39 +320,21 @@ export function drawFleet() {
 }
 
 // The rival houses' ships at work between their ports (houses.js), in their colours, where the
-// chart is known. Their passages follow the sea routes.
-const housePaths = new Map();
-function pathFor(from, to) {
-  const key = `${from}>${to}`;
-  if (!housePaths.has(key)) {
-    const a = PORTS.find((p) => p.id === from), b = PORTS.find((p) => p.id === to);
-    let pts = a && b ? findPath(a.lon, a.lat, b.lon, b.lat, 1, false, false) : null;
-    if (a && b && !(pts?.length >= 2)) pts = [[a.lon, a.lat], [b.lon, b.lat]];
-    let run = 0;
-    const cum = pts ? pts.map((p, i) => (run += i ? distNm(pts[i - 1][0], pts[i - 1][1], p[0], p[1]) : 0)) : [];
-    housePaths.set(key, pts && { pts, cum, len: run });
-  }
-  return housePaths.get(key);
-}
+// chart is known. Their passages follow the sea routes. The ship you are chasing is ringed.
 export function drawHouses() {
   if (!S?.houses) return;
   ctx.save();
   ctx.font = 'italic 12px "IM Fell English", Georgia, serif';
   ctx.textAlign = 'center';
-  for (const v of Houses.vessels(S)) {
-    const P = pathFor(v.from, v.to);
-    if (!P) continue;
-    const at = v.t * P.len;
-    let i = 1;
-    while (i < P.pts.length - 1 && P.cum[i] < at) i++;
-    const [x0, y0] = P.pts[i - 1], [x1, y1] = P.pts[i];
-    const seg = P.cum[i] - P.cum[i - 1] || 1, f = Math.max(0, Math.min(1, (at - P.cum[i - 1]) / seg));
-    const lon = x0 + (x1 - x0) * f, lat = y0 + (y1 - y0) * f;
-    if (!isRevealed(lon, lat)) continue;
-    const heading = Math.atan2((x1 - x0) * Math.cos(lat * D2R), y1 - y0) / D2R;
-    drawShipAt(lon, lat, heading, '#e9dcc0', v.colour, 0.8);
-    if (cam.scale > 22) {
-      const [sx, sy] = toScreen(lon, lat);
+  for (const v of Houses.positions(S)) {
+    if (!isRevealed(v.lon, v.lat)) continue;
+    drawShipAt(v.lon, v.lat, v.heading, '#e9dcc0', v.colour, 0.8);
+    const [sx, sy] = toScreen(v.lon, v.lat);
+    if (S.chase?.key === v.key) {
+      ctx.strokeStyle = RED; ctx.lineWidth = 2; ctx.setLineDash([4, 3]);
+      ctx.beginPath(); ctx.arc(sx, sy, 16, 0, Math.PI * 2); ctx.stroke(); ctx.setLineDash([]);
+    }
+    if (cam.scale > 22 || S.chase?.key === v.key) {
       ctx.lineWidth = 3;
       ctx.strokeStyle = 'rgba(236,223,192,0.9)';
       ctx.strokeText(v.name, sx, sy + 19);

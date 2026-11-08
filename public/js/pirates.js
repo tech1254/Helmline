@@ -1,6 +1,8 @@
 import * as Works from './works.js';
 import * as Accounts from './accounts.js';
 import * as Lending from './lending.js';
+import * as Fight from './fight.js';
+import * as Law from './law.js';
 // Barbary corsairs: the first danger at sea.
 // Corsair galleys from the Moroccan coast raided shipping and the Algarve in the 1450s.
 // In their waters the captain may be challenged: run, fight or pay tribute.
@@ -236,6 +238,77 @@ export function resolve(S, enc, choice, knots) {
     return { ...r, lines: ['The galley runs you down. There is no escape: you must fight.', ...r.lines] };
   }
   return fight(S, enc, o.fight);
+}
+
+// ---- The round-based fight (fight.js) --------------------------------------------------------
+// A corsair attack as a fight: the galley, and the tribute she would take to let you pass.
+export function startFight(S, enc) {
+  const foe = Fight.foeSide(enc.big ? 'biggalley' : 'galley');
+  if (enc.hunted) return Fight.start(S, 'attack', foe, { range: Fight.CLOSE, surprise: true });
+  return Fight.start(S, 'defend', foe, { range: Fight.FAR, tribute: tribute(S, enc) });
+}
+
+// What the fight came to, applied: { kind, lines, spoils? }. The same names and records as resolve().
+export function settleFight(S, enc, F) {
+  const P = ensurePirates(S);
+  const res = F.done?.result;
+  const dmg = Fight.damageTo(F);
+  const hullAfter = () => { S.hull = Math.max(10, (S.hull ?? 100) - dmg); };
+  if (res === 'paid') {
+    const t = F.tribute;
+    S.purse -= t;
+    Accounts.record(S, { kind: 'corsairs', amount: -t, port: null, text: `Tribute to corsairs off ${enc.where}` });
+    P.caution += 3; P.paid++;
+    return { kind: '', lines: [`You pay the corsairs ${t} cz to go in peace.`] };
+  }
+  if (res === 'escaped') {
+    hullAfter(); P.caution += 2; P.fled++;
+    return { kind: 'port', lines: [`You have escaped the corsairs.${dmg >= 3 ? ` Your hull is damaged (${Math.round(S.hull)}%).` : ''}`] };
+  }
+  if (res === 'taken' || res === 'beaten') {
+    hullAfter(); P.notoriety += 1; P.won++;
+    return { kind: 'discover', lines: [`${enc.big ? 'The great galley' : 'The galley'} is beaten, her rowers broken.${dmg >= 3 ? ` Your hull is damaged (${Math.round(S.hull)}%).` : ''}`], spoils: spoilsOf(enc) };
+  }
+  if (res === 'sheered') {
+    hullAfter(); P.notoriety += 1; P.won++;
+    return { kind: 'discover', lines: ['The corsairs have had enough of you and pull away for the coast.'] };
+  }
+  if (res === 'struck' || res === 'boarded') {
+    const r = strip(S, enc, res === 'struck' ? 0.2 : 0.3, dmg + (res === 'boarded' ? 10 : 0));
+    P.notoriety += res === 'struck' ? 0 : 1; P.lost++;
+    return r;
+  }
+  hullAfter(); // she got away, or your boarders were thrown back
+  return { kind: '', lines: [`The galley gets away.${dmg >= 3 ? ` Your hull is damaged (${Math.round(S.hull)}%).` : ''}`] };
+}
+
+// Boarded and stripped: a share of the cargo (from `base`, up to twice that), some coin, and
+// the hull battered. Boarding nets keep some of it.
+export function strip(S, enc, base, dmg) {
+  const guard = S.ship?.hull ? Ships.flagStats(S).guard || 0 : 0;
+  const share = (base + Math.random() * base) * (1 - guard);
+  const lostGoods = [];
+  let lostValue = 0;
+  for (const [g, n] of Object.entries(S.cargo)) {
+    const take = Math.round(n * share);
+    if (take > 0) {
+      lostValue += (S.paid[g] || 0) * take / n;
+      S.paid[g] = n - take ? S.paid[g] * (n - take) / n : 0;
+      S.cargo[g] = n - take;
+      const good = GOODS.find((x) => x.id === g);
+      lostGoods.push(`${take} ${take === 1 ? good.one : good.unit} of ${good.name.toLowerCase()}`);
+    }
+  }
+  const cash = Math.round(Math.min(300, Math.max(0, S.purse - LEAVE_PURSE) * 0.2) * (1 - guard));
+  S.purse -= cash;
+  Accounts.record(S, { kind: 'corsairs', amount: -cash, port: null, text: `Seized by corsairs off ${enc.where}` });
+  S.hull = battered(S.hull, Math.max(8, dmg));
+  const lines = [`The corsairs strip the ship: ${lostGoods.length ? lostGoods.join(', ') : 'no cargo'}${cash ? ` and ${cash} cz` : ''}. The hull is damaged (${Math.round(S.hull)}%).`];
+  const prizes = Law.losePrizes(S);
+  if (prizes) lines.push(`They take your ${prizes === 1 ? 'prize' : 'prizes'} too.`);
+  const off = Lending.seaLoss(S, lostValue + cash, S.ship?.lat ?? 90);
+  if (off) lines.push(`Your sea loan bears the loss: ${off.toLocaleString()} cz comes off what you owe.`);
+  return { kind: '', lines };
 }
 
 // `forced`: he tried to run and was caught. Beating them off then makes less of a name than

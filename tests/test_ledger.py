@@ -3,6 +3,15 @@ from playwright.async_api import async_playwright
 import os
 URL = os.environ.get('HELMLINE_URL', 'http://localhost:8787/')
 SP = sys.argv[1] if len(sys.argv) > 1 else os.environ.get('HELMLINE_OUT', '.')
+async def finish_fight(pg):
+    """Play out an open fight (fightview.js): the sailing master fights it, then Continue."""
+    for _ in range(12):
+        acts = await pg.evaluate("() => document.getElementById('modal').hidden ? [] : [...document.querySelectorAll('#modal-body [data-modal-action]')].map(b => b.dataset.modalAction)")
+        if 'done' in acts: await pg.click('#modal-body [data-modal-action="done"]'); await pg.wait_for_timeout(200); return True
+        if 'auto' in acts: await pg.click('#modal-body [data-modal-action="auto"]'); await pg.wait_for_timeout(200); continue
+        return False
+    return False
+
 async def main():
     async with async_playwright() as p:
         b = await p.chromium.launch(); pg = await b.new_page(viewport={'width':1280,'height':1000})
@@ -50,7 +59,9 @@ async def main():
             a = await A(); toast = await J("() => [...document.querySelectorAll('#toast .t')].map(t => t.innerText).filter(t => /factor/.test(t)).pop() || ''")
             print(f'docked {port}: unaccounted {round(a["unaccounted"])}, pending {round(a["pending"])}, due {round(a["due"])} |', toast[:160])
         await J("() => window.helmline.state.pirates && (window.helmline.state.pirates.cooldown = 9999)")
-        if await J("() => !document.getElementById('modal').hidden"): await click('[data-modal-action="pay"]'); await pg.wait_for_timeout(200)
+        if await J("() => !document.getElementById('modal').hidden && !!document.querySelector('[data-modal-action=\"pay\"]')"): await click('[data-modal-action="pay"]'); await pg.wait_for_timeout(200)
+        await finish_fight(pg)
+        if await J("() => !document.getElementById('modal').hidden && !document.getElementById('modal-ok').hidden"): await pg.click('#modal-ok'); await pg.wait_for_timeout(100)
         await click('#btn-ledger'); await pg.wait_for_timeout(200)
         pass
         await pg.screenshot(path=f'{SP}/40-ledger.png', full_page=True)
