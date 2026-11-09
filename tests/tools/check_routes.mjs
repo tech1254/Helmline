@@ -25,7 +25,8 @@ for (const a of PORTS) for (const b of PORTS) {
     const key = routeKey(a.lon, a.lat, b.lon, b.lat, skill) + (coastal ? 'c' : '');
     keys.add(key);
     if (!(key in table)) { bad++; if (bad <= 5) console.log('missing:', key); continue; }
-    if (k++ % SAMPLE) continue;
+    const ext = owner[a.id] || owner[b.id];
+    if (k++ % (ext ? SAMPLE * 4 : SAMPLE)) continue; // an expansion's routes: every key listed, fewer replanned
     n++;
     const want = planRoute(a.lon, a.lat, b.lon, b.lat, skill, coastal);
     const got = table[key];
