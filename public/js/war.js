@@ -169,6 +169,21 @@ function campaignTick(S, msgs) {
   });
 }
 
+// The Castilian Guinea fleet of 1478: thirty-five caravels went to the Mina for gold in the
+// middle of the war, and the Portuguese took most of them on the coast. In the game its flagship
+// sails home from the Mina to Sanlúcar from August to October 1478, laden with gold, in company:
+// for a Portuguese captain with a letter of marque, the richest prize of the war.
+export const GUINEA_FLEET = { from: date(1478, 8, 1), days: 75 };
+export function specialVessels(S) {
+  const W = S.war;
+  if (mine(S) !== 'portugal' || W?.guineaTaken || W?.averted?.succession) return [];
+  const { from, days } = GUINEA_FLEET;
+  if (S.day < from || S.day >= from + days) return [];
+  return [{ house: 'guineafleet', name: 'Castilian Guinea fleet', colour: '#b8860b', i: 0, from: 'mina', to: 'sanlucar', start: from, days,
+    hull: 'carrack', armed: 2, t: (S.day - from) / days, key: 'guineafleet', special: true,
+    cargo: [{ good: 'gold', qty: 60 }, { good: 'ivory', qty: 30 }, { good: 'pepper', qty: 40 }] }];
+}
+
 export const SERVICE_REWARD = 500; // cz the crown pays at the peace, for each action in its service
 export const SERVICE_CAP = 12;
 
@@ -262,6 +277,10 @@ export function tick(S) {
     }
   }
   campaignTick(S, msgs);
+  if (mine(S) === 'portugal' && !W.guineaTold && S.day >= GUINEA_FLEET.from && S.day < GUINEA_FLEET.from + GUINEA_FLEET.days && current(S)) {
+    W.guineaTold = true;
+    msgs.push({ html: '<b>News:</b> spies in Sanlúcar report that Castile\'s Guinea fleet is loading gold at the Mina and will sail home past Cape Verde and the Canaries. Its flagship is <b>marked on your chart</b>: the richest prize of the war, if you can take her from her escort.', kind: 'danger', log: 'The Castilian Guinea fleet sails from the Mina.' });
+  }
   return msgs;
 }
 

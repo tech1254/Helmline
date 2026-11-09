@@ -4,6 +4,7 @@
 
 import { PORTS, distNm } from './world.js';
 import * as War from './war.js';
+import * as Law from './law.js';
 
 const CHANCE_PER_DAY = 1 / 24; // about one new event every three to four weeks
 const MAX_ACTIVE = 2;
@@ -142,6 +143,8 @@ export function applyToMarket(S, market) {
     }
     for (const port of t.close || []) market.closedPorts.add(port);
   }
+  // ports shut to you by war or your infamy (law.js): your captains and contracts keep clear too
+  for (const p of PORTS) if (Law.closedTo(S, p.id)) market.closedPorts.add(p.id);
   // a campaign's demand (war.js: the army on La Gomera wants wheat)
   for (const [port, goods] of Object.entries(War.campaignEffects(S) || {})) {
     market.effects[port] = market.effects[port] || {};

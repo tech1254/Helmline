@@ -83,7 +83,7 @@ export function initActions() {
     if (t.dataset.menu && menuAction(t.dataset.menu)) return;
     if (t.hasAttribute('data-feedback-close')) { closeFeedback(); return; }
     const pid = S.ship.docked;
-    if ((t.dataset.buy || t.dataset.sell) && pid && market.closed(pid)) {
+    if ((t.dataset.buy || t.dataset.sell) && pid && market.closed(pid) && !Law.closedTo(S, pid)) {
       hint('The port is closed to trade.');
       return;
     }
