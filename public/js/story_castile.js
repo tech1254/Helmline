@@ -171,7 +171,7 @@ export const BEATS = [
       body: `<p><i>Segovia, December 1474.</i> King Enrique is dead, and his half-sister Isabella has had herself proclaimed Queen of Castile. Portugal backs the dead king's daughter, Juana, and her uncle Afonso of Portugal means to marry her. There will be war, and it will be fought at sea as well as on land.</p>
         <p>The Guinea men of Palos are already sharpening their knives.</p>
         <p class="fine">${actOneSummary(S)}</p>
-        <p class="fine">Act II, <i>The war at sea</i>, comes in a later update. Your voyages go on meanwhile.</p>`,
+        <p class="fine">Act II, <i>The war of the queens</i>, begins when Portugal invades in the spring.</p>`,
       ok: 'Sail on',
     }),
     choose: () => 'Isabella proclaimed queen. The end of Act I.',

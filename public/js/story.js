@@ -9,6 +9,7 @@
 import { yearOf, dayOfYear } from './ships.js';
 import * as Accounts from './accounts.js';
 import * as Castile from './story_castile.js';
+import * as Acts from './story_acts.js';
 
 export const DEBT = 250; // Joao Vaz owed Salvago's house
 export const DEBT_FORCED = 300; // what Salvago takes if you let it run past New Year
@@ -23,9 +24,9 @@ const HENRY_DIES = date(1460, 11, 13);
 // The rutter's pages: what Joao Vaz wrote, and what it turns out to mean. Page 1 is Act I's.
 export const PAGES = [
   { n: 1, title: 'The river of gold', riddle: '"South of the Cape of Masts the coast is low and green. A river comes out of the east there, wide as the Tagus, with a bar of three fathoms at high water. Nine days up, at a place they call Cantor, the caravans bring gold to trade for salt."', found: 'The Gambia, and Cantor upriver. Your father\'s soundings of the bar are good.' },
-  { n: 2, title: 'The island of sugar', riddle: '"An island under the line, high and wooded, with no people on it. The soil is red and the rain falls every day. Cane would grow there as it grows in Madeira."', found: '' },
-  { n: 3, title: 'The river that sweetens the sea', riddle: '"A river so great that the sea is sweet twenty leagues out from its mouth. The king of that country, they say, has a court like a Christian king\'s."', found: '' },
-  { n: 4, title: 'The last page', riddle: 'Torn out. Only the edge of a drawing of the coast remains, turning east.', found: '' },
+  { n: 2, title: 'The island of sugar', riddle: '"An island under the line, high and wooded, with no people on it. The soil is red and the rain falls every day. Cane would grow there as it grows in Madeira."', found: 'São Tomé, on the line. Cane will grow there.' },
+  { n: 3, title: 'The river that sweetens the sea', riddle: '"A river so great that the sea is sweet twenty leagues out from its mouth. The king of that country, they say, has a court like a Christian king\'s."', found: 'The Zaire, and the court of the Manikongo.' },
+  { n: 4, title: 'The last page', riddle: 'Torn out. Only the edge of a drawing of the coast remains, turning east.', found: 'São Brás, round the end of Africa: the coast turns east.' },
 ];
 
 export function ensureStory(S, fresh = false) {
@@ -188,7 +189,7 @@ export const BEATS = [
       body: `<p><i>Sagres, November 1460.</i> Prince Henry is dead. The man who sent ships past Bojador for forty years leaves debts, a school of pilots, and a coast charted to the mountains of Serra Leoa. The commissions from Sagres end with him.</p>
         <p>Your mother writes: "Now we find out who our friends were."</p>
         <p class="fine">${actOneSummary(S)}</p>
-        <p class="fine">Act II, <i>The Guinea lease</i>, comes in a later update. Sail on year by year, or, in Lisbon, let the years pass to the eve of the war with Castile in 1475.</p>`,
+        <p class="fine">Act II, <i>The war for Guinea</i>, begins in 1469 with the Guinea lease. Sail on year by year, or, in Lisbon, let the years pass to the eve of the war with Castile in 1475.</p>`,
       ok: 'Sail on',
     }),
     choose: () => 'Prince Henry died at Sagres. The end of Act I.',
@@ -205,7 +206,7 @@ function actOneSummary(S) {
 }
 
 // The story for this house's nation, and its debt (nations.js).
-export const beatsFor = (S) => (S.nation === 'castile' ? Castile.BEATS : BEATS);
+export const beatsFor = (S) => [...(S.nation === 'castile' ? Castile.BEATS : BEATS), ...Acts.actsFor(S)];
 export const debtOf = (S) => (S.nation === 'castile'
   ? { amount: Castile.DEBT, due: Castile.DEBT_DUE, early: Castile.EARLY_BY, port: 'seville', who: 'Bernardo Salvago', father: 'Alonso' }
   : { amount: DEBT, due: DEBT_DUE, early: EARLY_BY, port: 'lisbon', who: 'Salvago', father: 'João Vaz' });
@@ -216,6 +217,7 @@ export function due(S) {
   if (st.off) return null;
   for (const b of beatsFor(S)) {
     if (st.fired[b.id] != null) continue; // fired[id] is the day it fired (0 for the prologue)
+    if (b.until != null && S.day > b.until) { st.fired[b.id] = -1; continue; } // its moment passed (the years were let pass)
     let ok = false;
     try { ok = !!b.when(S); } catch { /* not readable yet */ }
     if (ok) return b;
