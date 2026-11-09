@@ -20,6 +20,7 @@ for (const a of PORTS) for (const b of PORTS) {
   if (a.river || b.river) continue; // river ports are reached through their mouths
   if (a === b) continue;
   if (owner[a.id] && owner[b.id] && owner[a.id] !== owner[b.id]) continue; // two expansions' ports
+  if (a.lon === b.lon && a.lat === b.lat) continue; // two ports in one place (beyond the chart)
   for (const skill of ROUTE_SKILLS) for (const coastal of [false, true]) {
     const key = routeKey(a.lon, a.lat, b.lon, b.lat, skill) + (coastal ? 'c' : '');
     keys.add(key);
