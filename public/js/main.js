@@ -10,7 +10,7 @@ import * as Pirates from './pirates.js';
 import * as Accounts from './accounts.js';
 import { S, market, ui } from './state.js';
 import { DAYS_PER_SEC } from './config.js';
-import { storyTick } from './storyview.js';
+import { storyTick, storyOn } from './storyview.js';
 import { ambitionsTick, initAmbitions } from './ambitionsview.js';
 import { lawTick } from './lawview.js';
 import { skipTick } from './timeskip.js';
@@ -71,7 +71,9 @@ document.querySelectorAll('#intro-nation [data-nation]').forEach((b) => b.addEve
 function beginPlay() {
   $('intro').hidden = true;
   ui.introDone = true;
-  if (S.ship.docked) { ui.panelMode = 'port'; renderPanel(); }
+  // a new game opens on the chart, with the prologue over it; the market follows (storyview.js)
+  const prologue = storyOn() && S.story && S.story.fired?.prologue == null && S.day < 30;
+  if (S.ship.docked && !prologue) { ui.panelMode = 'port'; renderPanel(); }
   centerOn(S.ship.lon, S.ship.lat);
   setTimeout(unlockContracts, 600);
   if (startSummary) { ui.pendingSummary = startSummary; startSummary = null; }
