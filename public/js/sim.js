@@ -24,7 +24,7 @@ import * as Wear from './wear.js';
 import * as Lending from './lending.js';
 import * as Sight from './navsight.js';
 import * as Pilots from './pilots.js';
-import { DAYS_PER_SEC, OFFLINE_DAYS_PER_DOUBLING, OFFLINE_FULL_DAYS, OFFLINE_MAX_DAYS, OFFLINE_MIN_SECONDS, OFFLINE_RATE, SIGHT, STANDING_FADES_AFTER_HOURS } from './config.js';
+import { DAYS_PER_SEC, OFFLINE_DAYS_PER_DOUBLING, OFFLINE_FULL_DAYS, OFFLINE_MAX_DAYS, OFFLINE_MIN_SECONDS, OFFLINE_MAX_HOURS, OFFLINE_RATE, SIGHT, STANDING_FADES_AFTER_HOURS } from './config.js';
 import { S, market, ui } from './state.js';
 import { timeScale } from './cloud.js';
 import { save } from './save.js';
@@ -171,7 +171,8 @@ export function catchUp() {
   const seen = S.lastSeen;
   S.lastSeen = Date.now();
   if (!seen) return null;
-  const awaySec = (Date.now() - seen) / 1000;
+  const realSec = (Date.now() - seen) / 1000;
+  const awaySec = Math.min(realSec, OFFLINE_MAX_HOURS * 3600); // after a day, the world waits
   if (awaySec < OFFLINE_MIN_SECONDS || !S.fleet?.ships.length || !S.ship.docked) return null;
   const want = awaySec * DAYS_PER_SEC * OFFLINE_RATE;
   const days = offlineDays(want);
@@ -211,7 +212,7 @@ export function catchUp() {
   const wages = (S.fleet.wagesPaid || 0) - paidBefore;
   const sales = ships.reduce((n, x) => n + x.profit, 0);
   const cargo = ships.reduce((n, x) => n + x.cargoChange, 0);
-  return { awaySec, days, capped: days >= OFFLINE_MAX_DAYS, slowed: want > OFFLINE_FULL_DAYS, purse: S.purse - before.purse, sales, wages, cargo, ships, msgs, strayed, standingLost, contractsHeld };
+  return { awaySec: realSec, waited: realSec > OFFLINE_MAX_HOURS * 3600, days, capped: days >= OFFLINE_MAX_DAYS, slowed: want > OFFLINE_FULL_DAYS, purse: S.purse - before.purse, sales, wages, cargo, ships, msgs, strayed, standingLost, contractsHeld };
 }
 
 // Days that pass for a given amount of offline time: full value at first, then tapering.
@@ -244,7 +245,7 @@ export function showSummary(sum) {
         ${Math.abs(sum.cargo) >= 1 ? `<dt>Counting the cargo aboard</dt><dd class="${sum.purse + sum.cargo < 0 ? 'warn' : ''}">${sum.purse + sum.cargo >= 0 ? '+' : ''}${Math.round(sum.purse + sum.cargo).toLocaleString()} cz</dd>` : ''}
         <dt>Your purse now</dt><dd class="${S.purse < 0 ? 'warn' : ''}">${Math.round(S.purse).toLocaleString()} cz</dd>
       </dl>
-      <p class="fine">${sum.capped ? `That is the most that passes in one absence (${OFFLINE_MAX_DAYS} days).` : sum.slowed ? 'After the first few weeks, longer absences add time more slowly.' : 'The world moves at a tenth of its usual pace while you are gone.'}</p>
+      <p class="fine">${sum.waited ? `After the first ${OFFLINE_MAX_HOURS} hours the world waited for you: a long break never costs you an event.` : sum.capped ? `That is the most that passes in one absence (${OFFLINE_MAX_DAYS} days).` : sum.slowed ? 'After the first few weeks, longer absences add time more slowly.' : 'The world moves at a tenth of its usual pace while you are gone.'}</p>
       ${sum.contractsHeld ? `<p class="fine">Your ${sum.contractsHeld === 1 ? 'contract waited' : `${sum.contractsHeld} contracts waited`} for you: deadlines moved back by ${Math.round(sum.days)} days.</p>` : ''}
       ${sum.strayed.length ? `<p class="warn">Your captains missed you: ${sum.strayed.map((x) => `Captain ${x.captain} is now ${Fleet.loyaltyText(x.after)}`).join('; ')}.</p>` : ''}
       ${sum.standingLost ? `<p class="warn">The merchants of ${homeName(S)} are starting to forget you: standing −${sum.standingLost}.</p>` : ''}

@@ -15,10 +15,12 @@ export const START_DATE = new Date(Date.UTC(1451, 2, 1));
 // captains and his own ship is in port), up to a cap so the calendar can't run off overnight.
 export const OFFLINE_RATE = 0.1; // a tenth of normal speed (tune in the playtest pass)
 // The first 90 days come at the full offline rate; after that each doubling of the time away
-// adds 30 more days, up to OFFLINE_MAX_DAYS. A night or a working day gives about 200 days.
+// adds 23 more days, up to OFFLINE_MAX_DAYS, reached at 24 hours away. After 24 hours the world
+// waits for you (Nov 2026): a week off is worth no more than a day, and you miss no events.
 export const OFFLINE_FULL_DAYS = 90;
-export const OFFLINE_DAYS_PER_DOUBLING = 30;
+export const OFFLINE_DAYS_PER_DOUBLING = 22.8;
 export const OFFLINE_MAX_DAYS = 210;
+export const OFFLINE_MAX_HOURS = 24;
 export const STANDING_FADES_AFTER_HOURS = 24;
 export const OFFLINE_MIN_SECONDS = 60;
 

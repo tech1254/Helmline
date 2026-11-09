@@ -19,7 +19,7 @@ async def main():
         state = lambda: J("() => { const s = window.helmline.state; const c = s.contracts.active.find(c => c.kind === 'deliver'); return {day: Math.round(s.day), dueInDays: c ? Math.round(c.deadline - s.day) : null, contracts: s.contracts.active.length, loyalty: Math.round(s.fleet.ships[0].captain.loyalty), standing: s.contracts.standing}; }")
         first = await state()
         print('before:', first)
-        for label, minutes in [('8 h asleep', 480), ('9 h at work', 540), ('20 h away', 1200), ('30 h away', 1800)]:
+        for label, minutes in [('8 h asleep', 480), ('9 h at work', 540), ('20 h away', 1200), ('30 h away', 1800), ('a week away', 10080)]:
             purse0 = await J("() => window.helmline.state.purse")
             r = await J(f"() => window.helmline.away({minutes})"); await pg.wait_for_timeout(300)
             if await J("() => window.helmline.state.purse") < purse0 - 0.5: errs.append(f'{label}: time away cost money')
@@ -27,6 +27,12 @@ async def main():
             print(f'{label}: {r} -> {await state()}'); print('   summary notes:', body)
             if label == '9 h at work': await pg.screenshot(path=f'{SP}/34-away-work.png')
             await pg.click('#modal-ok')
+        # a week away is worth no more than a day: the world waits after 24 hours
+        wk = await J("() => window.helmline.away(10080)"); await pg.wait_for_timeout(200)
+        day = await J("() => window.helmline.away(1440)"); await pg.wait_for_timeout(200)
+        print('a week:', wk, 'a day:', day)
+        if round(wk['days']) != round(day['days']): errs.append(f"a week away gave {wk['days']} days, a day {day['days']}")
+        await pg.keyboard.press('Escape')
         last = await state()
         # time away is only good news: no lost standing, no straying captains
         if last['standing'] < first['standing']: errs.append(f"standing fell while away: {first['standing']} -> {last['standing']}")
