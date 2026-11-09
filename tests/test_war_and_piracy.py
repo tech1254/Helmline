@@ -130,6 +130,16 @@ async def main():
         if fined <= 0 or L['prizes']: errs.append('striking to the hunters did not fine you or take the prizes')
         await ok_modals(pg)
 
+        # a raided house hits back: its armed merchantman comes after you
+        await J("() => { window.helmline.ui.pendingEncounter = { kind: 'reprisal', house: 'salvago', crown: 'genoa', armed: 1, where: 'Salvago' }; }"); await pg.wait_for_timeout(500)
+        t = await J("() => document.getElementById('modal').hidden ? null : document.getElementById('modal-title').textContent")
+        print('reprisal:', t)
+        if not t or 'Salvago' not in t: errs.append(f'no reprisal fight: {t}')
+        else:
+            await pg.click('[data-modal-action="auto"]'); await pg.wait_for_timeout(300)
+            await pg.click('[data-modal-action="done"]'); await pg.wait_for_timeout(300)
+        await ok_modals(pg)
+
         # 5. A pirate crew on shares mutinies after long without a prize
         await J("() => { const L = window.helmline.state.law; L.shares = true; L.dry = 139; }")
         await J("() => window.helmline.sailFor(2)"); await pg.wait_for_timeout(600)

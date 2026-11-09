@@ -36,7 +36,11 @@ export const PHOTOS = {
     "sale",
     "santodomingo",
     "stjohns",
-    "valencia"
+    "valencia",
+    "marseille",
+    "naples",
+    "palermo",
+    "santacruz"
   ],
   "ships": {
     "caravel": {
@@ -1014,6 +1018,86 @@ export const PHOTOS = {
         170,
         150,
         116
+      ]
+    },
+    "marseille": {
+      "light": [
+        255,
+        242,
+        220
+      ],
+      "shade": [
+        30,
+        34,
+        44
+      ],
+      "bright": 1.0,
+      "sat": 1.0,
+      "haze": 0.03,
+      "hazeColour": [
+        117,
+        111,
+        108
+      ]
+    },
+    "naples": {
+      "light": [
+        255,
+        214,
+        168
+      ],
+      "shade": [
+        40,
+        32,
+        30
+      ],
+      "bright": 0.92,
+      "sat": 1.0,
+      "haze": 0.07,
+      "hazeColour": [
+        126,
+        116,
+        105
+      ]
+    },
+    "palermo": {
+      "light": [
+        255,
+        220,
+        170
+      ],
+      "shade": [
+        42,
+        32,
+        24
+      ],
+      "bright": 0.95,
+      "sat": 1.0,
+      "haze": 0.06,
+      "hazeColour": [
+        113,
+        93,
+        57
+      ]
+    },
+    "santacruz": {
+      "light": [
+        255,
+        240,
+        215
+      ],
+      "shade": [
+        24,
+        24,
+        30
+      ],
+      "bright": 1.0,
+      "sat": 1.0,
+      "haze": 0.03,
+      "hazeColour": [
+        99,
+        93,
+        92
       ]
     }
   }

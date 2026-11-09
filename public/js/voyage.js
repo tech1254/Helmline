@@ -38,7 +38,7 @@ import * as Law from './law.js';
 
 export function openEncounter(enc) {
   if (enc.kind === 'prey') { engagePrey(enc.v); return; } // a rival's ship you have run down (huntview.js)
-  if (enc.kind === 'hunter' || enc.kind === 'warship') { openDefence(enc); return; } // the law, or the enemy (lawview.js)
+  if (['hunter', 'warship', 'reprisal', 'search'].includes(enc.kind)) { openDefence(enc); return; } // the law, the enemy, a rival, a search (lawview.js)
   const { knots } = shipWind();
   const o = Pirates.odds(S, enc, knots);
   const pct = (x) => `${Math.round(x * 100)}%`;
