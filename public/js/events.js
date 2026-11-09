@@ -3,6 +3,7 @@
 // once enough days have passed for word to reach it.
 
 import { PORTS, distNm } from './world.js';
+import * as X from './x/index.js';
 import * as War from './war.js';
 import * as Law from './law.js';
 
@@ -150,6 +151,12 @@ export function applyToMarket(S, market) {
     market.effects[port] = market.effects[port] || {};
     for (const [g, m] of Object.entries(goods)) market.effects[port][g] = (market.effects[port][g] || 1) * m;
   }
+  // the expansions' own demand and plenty (x/index.js): a fair, a fleet in port
+  for (const [port, goods] of Object.entries(X.effectsAll(S))) {
+    market.effects[port] = market.effects[port] || {};
+    for (const [g, m] of Object.entries(goods)) market.effects[port][g] = (market.effects[port][g] || 1) * m;
+  }
+  for (const port of X.closedAll(S)) market.closedPorts.add(port);
 }
 
 // What the captain knows: news heard, newest first.
