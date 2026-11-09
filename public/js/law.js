@@ -56,7 +56,16 @@ export const HAVENS = ['sale', 'algiers', 'cove'];
 export const isHaven = (pid) => HAVENS.includes(pid);
 export const COVE = 'cove';
 // The rival houses sail under these flags (houses.js).
-export const HOUSE_CROWN = { guineafleet: 'castile', salvago: 'genoa', santangel: 'castile', gomes: 'portugal', marchionni: 'portugal', thorne: 'england', schetz: 'burgundy' };
+export const HOUSE_CROWN = { guineafleet: 'castile', treasure: 'castile', salvago: 'genoa', santangel: 'castile', gomes: 'portugal', marchionni: 'portugal', thorne: 'england', schetz: 'burgundy' };
+
+export const FRENCH_FROM = 1521; // Jean Fleury takes Cortés's treasure off Cape St Vincent in 1523
+const FRENCH_ZONES = [
+  { w: -32, e: -24, s: 36, n: 40.5, d: 1, name: 'the Azores' },
+  { w: -12, e: -7, s: 36, n: 44, d: 1, name: 'the Portuguese coast' },
+  { w: -19, e: -12.5, s: 27, n: 30, d: 0.6, name: 'the Canaries' },
+  { w: -8, e: -5.5, s: 35.5, n: 37.5, d: 0.8, name: 'Cape St Vincent' },
+];
+export const FRENCH_BOUNTY = 300;
 
 export const WANTED = 6; // infamy at which a crown's hunters come looking
 export const CLOSED = 12; // and its ports are shut to you
@@ -193,6 +202,13 @@ export function hunters(S, days, lon, lat, rand = Math.random) {
   if (carrying && War.neutralIn(S).some((w) => w.waters.some((z) => lon >= z.w && lon <= z.e && lat >= z.s && lat <= z.n)) && rand() < 1 - Math.exp(-0.02 * days)) {
     L.cooldown = COOLDOWN;
     return { kind: 'search', crown: 'castile', contract: carrying.id, good: carrying.good, where: 'the western Mediterranean' };
+  }
+  // French corsairs (from 1521): heavy armed ships cruising the Atlantic approaches for anyone's
+  // cargo, the Portuguese most of all. Driving one off is the crown's business: it pays.
+  const fz = FRENCH_ZONES.find((z) => yearOf(S.day) >= FRENCH_FROM && lon >= z.w && lon <= z.e && lat >= z.s && lat <= z.n);
+  if (fz && !War.atWarWith(S, 'france') && rand() < 1 - Math.exp(-0.006 * fz.d * (mine(S) === 'portugal' && yearOf(S.day) < 1540 ? 1.5 : 1) * days)) {
+    L.cooldown = COOLDOWN;
+    return { kind: 'frenchcorsair', crown: null, armed: rand() < 0.4 ? 1 : 0, where: fz.name };
   }
   if (War.inWarWaters(S, lon, lat) && rand() < 1 - Math.exp(-0.012 * days)) {
     L.cooldown = COOLDOWN;

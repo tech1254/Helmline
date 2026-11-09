@@ -87,6 +87,10 @@ export const HISTORY = [
   { year: 1501, port: 'antwerp', size: 1.5, text: 'The King of Portugal makes Antwerp the staple of the spice trade: Portuguese pepper and cinnamon are sold there to all the north.' },
   { year: 1516, port: 'algiers', size: 1.3, text: 'The corsair Aruj Barbarossa has taken Algiers. It is a corsairs\' stronghold now.' },
   { year: 1497, port: 'santacruz', opens: true, text: 'Santa Cruz on Tenerife is open to trade: the conquerors are planting sugar cane and vines on the island, and want everything else from Castile.' },
+  { year: 1503, port: 'seville', size: 1.2, text: 'The Catholic Monarchs found the House of Trade in Seville: every ship to and from the Indies must sail from here, and pay here.' },
+  { year: 1525, port: 'antwerp', size: 1.3, text: 'Antwerp is the market of the world: English cloth, German silver and copper, Portuguese spices, all change hands on its bourse. The Fuggers and the Schetz keep their factors there.' },
+  { year: 1529, port: 'algiers', size: 1.2, text: 'Hayreddin Barbarossa has taken the Peñón from the Spanish and built a mole: Algiers is a port of the Sultan now, full of galleys.' },
+  { year: 1531, port: 'lisbon', size: 0.92, text: 'An earthquake has shaken Lisbon: houses down along the river, ships torn from their moorings. The city rebuilds.' },
 ];
 // Harbour works a port builds once it is big enough: quays and moles that deepen the berth.
 export const WORKS = {

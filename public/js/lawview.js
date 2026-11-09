@@ -31,6 +31,7 @@ export function openDefence(enc) {
   const C = Law.CROWNS[enc.crown];
   if (enc.kind === 'reprisal') { openReprisal(enc); return; }
   if (enc.kind === 'search') { openSearch(enc); return; }
+  if (enc.kind === 'frenchcorsair') { openFrench(enc); return; }
   const hunter = enc.kind === 'hunter';
   const foe = Fight.foeSide(hunter ? 'hunter' : 'warship', enc.armed || 0, hunter ? `${C.adj} armed caravel` : `${C.adj} warship`);
   const F = Fight.start(S, 'defend', foe, { range: Fight.FAR });
@@ -40,6 +41,35 @@ export function openDefence(enc) {
       ? `<p>An armed caravel flying the arms of ${C.name} bears down on you. Her captain carries a warrant: your piracy against ${C.adj} ships has caught up with you. If she takes you, your prizes are forfeit and you pay a heavy fine.</p>`
       : `<p>A ${C.adj} warship, her decks full of soldiers, has sighted you. She means to take you as a prize of war.</p>`,
     onDone: (done) => settleDefence(enc, done),
+  });
+}
+
+// A French corsair, in the Atlantic approaches from 1521: no tribute, no quarter for the cargo.
+function openFrench(enc) {
+  const F = Fight.start(S, 'defend', Fight.foeSide('merchantman', enc.armed || 0, 'French corsair'), { range: Fight.FAR });
+  openFight(F, {
+    title: 'A French corsair!',
+    intro: `<p>A tall ship with no flag but a French cut to her sails is bearing down on you off ${enc.where}, her gun ports open. The corsairs of Dieppe and La Rochelle are out for any Iberian cargo, and they do not take tribute.</p>`,
+    onDone: (done) => {
+      const res = done.done.result, dmg = Fight.damageTo(done);
+      let lines, kind = '';
+      if (res === 'struck' || res === 'boarded') {
+        lines = Pirates.strip(S, { where: 'the French corsair' }, 0.35, dmg + 8).lines.map((l) => l.replace('The corsairs strip', 'The French strip'));
+      } else {
+        S.hull = Math.max(10, (S.hull ?? 100) - dmg);
+        if (res === 'beaten' || res === 'sheered') {
+          kind = 'discover';
+          S.purse += Law.FRENCH_BOUNTY;
+          Accounts.record(S, { kind: 'bounty', amount: Law.FRENCH_BOUNTY, port: null, text: 'The crown\'s reward for driving off a French corsair' });
+          if (S.pirates) { S.pirates.notoriety += 1; S.pirates.won++; }
+          lines = [`You drive off the French corsair. The crown pays ${Law.FRENCH_BOUNTY} cz for it when you next make port.`];
+        } else lines = ['You are clear of the French corsair.'];
+        if (dmg >= 3) lines.push(`Your hull is damaged (${Math.round(S.hull)}%).`);
+      }
+      plog('defence', { kind: 'frenchcorsair', result: res });
+      for (const l of lines) addNotice(l, kind); log(lines[0]);
+      afterEncounter({ kind, lines, title: kind ? 'Beaten off' : res === 'struck' || res === 'boarded' ? 'Taken' : 'Clear of them' }); renderPanel(); save();
+    },
   });
 }
 

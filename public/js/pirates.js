@@ -20,7 +20,14 @@ const ZONES = [
   { w: -12.5, e: -5.2, s: 29.5, n: 36.2, d: 1.0, name: 'the Barbary coast' },
   { w: -10.2, e: -6.0, s: 36.0, n: 37.6, d: 0.6, name: 'the Algarve' },
   { w: -18.5, e: -12.8, s: 27.2, n: 29.8, d: 0.45, name: 'the Canaries' },
+  // Barbarossa's Algiers (from 1516): the western Mediterranean becomes corsair water
+  { w: -1.5, e: 9.5, s: 35.8, n: 40.5, d: 0.8, name: 'the waters off Algiers', from: 1516 },
+  { w: 9.5, e: 16.6, s: 36.6, n: 41, d: 0.5, name: 'the Tyrrhenian Sea', from: 1520 },
 ];
+// From 1529 the Ottoman sultan backs Algiers: more of the galleys are great galleys.
+const OTTOMAN_FROM = 1529;
+const zones = (year) => ZONES.filter((z) => !z.from || year >= z.from);
+const bigChance = (S, P) => 0.25 + P.notoriety / 200 + (Ships.yearOf(S.day ?? 0) >= OTTOMAN_FROM ? 0.15 : 0);
 
 const BASE_CHANCE = 0.035; // per day in the most dangerous waters
 const COOLDOWN_DAYS = 12;
@@ -40,9 +47,9 @@ export function ensurePirates(S) {
   return S.pirates;
 }
 
-export function danger(lon, lat) {
+export function danger(lon, lat, year = 1451) {
   let d = 0, where = null;
-  for (const z of ZONES) {
+  for (const z of zones(year)) {
     if (lon >= z.w && lon <= z.e && lat >= z.s && lat <= z.n && z.d > d) { d = z.d; where = z.name; }
   }
   return { d, where };
@@ -84,7 +91,7 @@ export function roll(S, days, lon, lat) {
   P.caution *= fade;
   P.cooldown = Math.max(0, P.cooldown - days);
   if (P.cooldown > 0) return null;
-  const { d, where } = danger(lon, lat);
+  const { d, where } = danger(lon, lat, Ships.yearOf(S.day));
   if (!d) return null;
   // galleys think twice about a big ship, and hardly bother with a poor little coaster
   const st = S.ship?.hull ? Ships.flagStats(S) : { shy: 1, lure: 1 };
@@ -92,7 +99,7 @@ export function roll(S, days, lon, lat) {
   if (Math.random() > chance) return null;
   P.cooldown = COOLDOWN_DAYS;
   P.encounters++;
-  const big = Math.random() < 0.25 + P.notoriety / 200; // notorious captains draw bigger galleys
+  const big = Math.random() < bigChance(S, P); // notorious captains draw bigger galleys (and Algiers sends them)
   return { where, big, strength: big ? 1.35 : 1 };
 }
 
@@ -127,13 +134,13 @@ export function tickGalleys(S, days) {
   const P = S.pirates;
   if (P.cooldown > CALM) return;
   for (let i = G.length - 1; i >= 0; i--) if (S.day > G[i].until) G.splice(i, 1);
-  for (const z of ZONES) {
+  for (const z of zones(Ships.yearOf(S.day))) {
     if (G.length >= GALLEYS.max) break;
     if (Math.random() > 1 - Math.exp(-GALLEYS.perDay * z.d * days)) continue;
     for (let k = 0; k < 20; k++) { // a point at sea in the zone
       const lon = rand(z.w, z.e), lat = rand(z.s, z.n);
       if (isLand(lon, lat)) continue;
-      G.push({ id: P.galleyId++, lon, lat, heading: rand(0, 360), big: Math.random() < 0.25 + P.notoriety / 200, zone: z.name, until: S.day + rand(...GALLEYS.life), seen: null });
+      G.push({ id: P.galleyId++, lon, lat, heading: rand(0, 360), big: Math.random() < bigChance(S, P), zone: z.name, until: S.day + rand(...GALLEYS.life), seen: null });
       break;
     }
   }
