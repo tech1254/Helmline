@@ -72,6 +72,9 @@ export const PATRONS = {
   galway: 'The tribes of Galway',
   valencia: 'The bankers of Valencia',
   genoa: 'The Salvago of Genoa',
+  marseille: 'The king\'s galley masters',
+  naples: 'The Aragonese court of Naples',
+  palermo: 'The wheat merchants of Palermo',
   sale: 'The governor of Salé',
   algiers: 'The emir\'s factor at Algiers',
   angra: 'The captain-donee of Terceira',
@@ -247,8 +250,9 @@ export function offersAt(S, market, portId) {
     o.list = fillOffers(S, market, portId, want);
   }
   // A campaign's supply contract (war.js: the conquest of Tenerife), one at a time in its ports.
-  const camp = War.activeCampaign(S);
-  if (camp && (S.nation || 'portugal') === camp.crown && camp.ports.includes(portId) && !o.list.some((x) => x.campaign) && !C.active.some((x) => x.campaign)) {
+  for (const camp of War.activeCampaigns(S)) {
+    if (!War.campaignFor(S, camp) || !camp.ports.includes(portId) || portId === camp.to_port) continue;
+    if (o.list.some((x) => x.campaign === camp.id) || C.active.some((x) => x.campaign === camp.id)) continue;
     const c = campaignOffer(S, market, portId, camp);
     if (c) o.list.unshift(c);
   }
@@ -270,8 +274,8 @@ function campaignOffer(S, market, portId, camp) {
   const unit = market.basePrice(camp.to_port, g.id);
   return {
     id: C.nextId++, kind: 'deliver', good: g.id, qty, to: dest.id, source: portId,
-    patron: 'The crown\'s purveyors', campaign: camp.id,
-    title: `For Lugo's army: carry ${qty} ${g.unit} of ${g.name.toLowerCase()} to ${dest.name}`,
+    patron: camp.patron || 'The crown\'s purveyors', campaign: camp.id, contraband: !!camp.contraband,
+    title: `${camp.title || 'For Lugo\'s army'}: carry ${qty} ${g.unit} of ${g.name.toLowerCase()} to ${dest.name}`,
     reward: Math.round(qty * unit * 1.9 * perks(S).payMult), standing: 4,
     offeredDays: 40 + Math.round(Math.random() * 10), spare: 0,
   };

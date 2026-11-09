@@ -1,0 +1,77 @@
+{
+ "note": "The Italian Wars: harbours for Marseille, Naples and Palermo, and Santa Cruz on Tenerife.",
+ "items": [
+  {
+   "id": "marseille-a",
+   "model": "black-forest-labs/flux-2-pro-preview",
+   "width": 1600,
+   "height": 896,
+   "seed": 7601,
+   "refs": [],
+   "prompt": "A photorealistic still from a big-budget historical film set in 1495, natural light, shot on a 35mm lens, meticulous period detail. Marseille in Provence: the narrow Old Port, a long inlet between low limestone hills, its mouth guarded by the square stone tower of Saint-Jean and a chain across the entrance. On the north shore the old town of pale stone houses with low terracotta roofs climbs the hill to the fortified Romanesque church of the Accoules and windmills on the ridge; the fortified abbey of Saint-Victor stands on the south shore. Long red-and-gold French galleys with their oars shipped and a few round merchant ships lie inside. Bare white limestone hills and scrubby pines behind, a dry Mediterranean blue sky, clear bright morning light. Camera on the water about 250 to 300 metres from the shore, at water level, horizon exactly at mid-height. The lower half of the frame is calm open water with soft ripples and long reflections, completely empty in the near water and across the left two-thirds: no boats, no quay, no posts, no rocks, nothing close to the camera. The shore and everything on it sit in the middle distance, small with distance. Nothing later than 1495 anywhere: no cars, street lamps, power lines, tyres, concrete, plastic, glass windows, motorboats, ferries, modern clothing, Baroque spires, modern bridges. No text, no border, no watermark."
+  },
+  {
+   "id": "marseille-b",
+   "model": "black-forest-labs/flux-2-pro-preview",
+   "width": 1600,
+   "height": 896,
+   "seed": 7602,
+   "refs": [],
+   "prompt": "A photorealistic still from a big-budget historical film set in 1495, natural light, shot on a 35mm lens, meticulous period detail. Marseille in Provence: the narrow Old Port, a long inlet between low limestone hills, its mouth guarded by the square stone tower of Saint-Jean and a chain across the entrance. On the north shore the old town of pale stone houses with low terracotta roofs climbs the hill to the fortified Romanesque church of the Accoules and windmills on the ridge; the fortified abbey of Saint-Victor stands on the south shore. Long red-and-gold French galleys with their oars shipped and a few round merchant ships lie inside. Bare white limestone hills and scrubby pines behind, a dry Mediterranean blue sky, clear bright morning light. Camera on the water about 250 to 300 metres from the shore, at water level, horizon exactly at mid-height. The lower half of the frame is calm open water with soft ripples and long reflections, completely empty in the near water and across the left two-thirds: no boats, no quay, no posts, no rocks, nothing close to the camera. The shore and everything on it sit in the middle distance, small with distance. Nothing later than 1495 anywhere: no cars, street lamps, power lines, tyres, concrete, plastic, glass windows, motorboats, ferries, modern clothing, Baroque spires, modern bridges. No text, no border, no watermark."
+  },
+  {
+   "id": "naples-a",
+   "model": "black-forest-labs/flux-2-pro-preview",
+   "width": 1600,
+   "height": 896,
+   "seed": 7603,
+   "refs": [],
+   "prompt": "A photorealistic still from a big-budget historical film set in 1495, natural light, shot on a 35mm lens, meticulous period detail. Naples on its bay: a great crowded city of pale tufa and ochre houses with tile roofs along the curve of the shore, the massive grey stone Castel Nuovo with its round towers and white marble triumphal arch beside the harbour, the Castel dell'Ovo on its little island at the right, the Carthusian monastery and the Castel Sant'Elmo on the hill above, and the broad cone of Vesuvius, with a thin plume of smoke, across the bay at the left. Carracks and galleys moored along the mole. Soft hazy warm late-afternoon light. Camera on the water about 250 to 300 metres from the shore, at water level, horizon exactly at mid-height. The lower half of the frame is calm open water with soft ripples and long reflections, completely empty in the near water and across the left two-thirds: no boats, no quay, no posts, no rocks, nothing close to the camera. The shore and everything on it sit in the middle distance, small with distance. Nothing later than 1495 anywhere: no cars, street lamps, power lines, tyres, concrete, plastic, glass windows, motorboats, ferries, modern clothing, Baroque spires, modern bridges. No text, no border, no watermark."
+  },
+  {
+   "id": "naples-b",
+   "model": "black-forest-labs/flux-2-pro-preview",
+   "width": 1600,
+   "height": 896,
+   "seed": 7604,
+   "refs": [],
+   "prompt": "A photorealistic still from a big-budget historical film set in 1495, natural light, shot on a 35mm lens, meticulous period detail. Naples on its bay: a great crowded city of pale tufa and ochre houses with tile roofs along the curve of the shore, the massive grey stone Castel Nuovo with its round towers and white marble triumphal arch beside the harbour, the Castel dell'Ovo on its little island at the right, the Carthusian monastery and the Castel Sant'Elmo on the hill above, and the broad cone of Vesuvius, with a thin plume of smoke, across the bay at the left. Carracks and galleys moored along the mole. Soft hazy warm late-afternoon light. Camera on the water about 250 to 300 metres from the shore, at water level, horizon exactly at mid-height. The lower half of the frame is calm open water with soft ripples and long reflections, completely empty in the near water and across the left two-thirds: no boats, no quay, no posts, no rocks, nothing close to the camera. The shore and everything on it sit in the middle distance, small with distance. Nothing later than 1495 anywhere: no cars, street lamps, power lines, tyres, concrete, plastic, glass windows, motorboats, ferries, modern clothing, Baroque spires, modern bridges. No text, no border, no watermark."
+  },
+  {
+   "id": "palermo-a",
+   "model": "black-forest-labs/flux-2-pro-preview",
+   "width": 1600,
+   "height": 896,
+   "seed": 7605,
+   "refs": [],
+   "prompt": "A photorealistic still from a big-budget historical film set in 1495, natural light, shot on a 35mm lens, meticulous period detail. Palermo in Sicily: the small harbour of the Cala inside a stone mole, a crowded city of golden stone houses with flat roofs and tile roofs behind it, the domes and towers of the great Norman cathedral and red Arab-Norman domes rising among them, palm trees and orange groves at the edges, and the great bare rock of Monte Pellegrino at the right. Round merchant ships loading sacks of wheat on the quay and a few galleys. A golden haze over the Conca d'Oro valley and the mountains behind, warm afternoon light. Camera on the water about 250 to 300 metres from the shore, at water level, horizon exactly at mid-height. The lower half of the frame is calm open water with soft ripples and long reflections, completely empty in the near water and across the left two-thirds: no boats, no quay, no posts, no rocks, nothing close to the camera. The shore and everything on it sit in the middle distance, small with distance. Nothing later than 1495 anywhere: no cars, street lamps, power lines, tyres, concrete, plastic, glass windows, motorboats, ferries, modern clothing, Baroque spires, modern bridges. No text, no border, no watermark."
+  },
+  {
+   "id": "palermo-b",
+   "model": "black-forest-labs/flux-2-pro-preview",
+   "width": 1600,
+   "height": 896,
+   "seed": 7606,
+   "refs": [],
+   "prompt": "A photorealistic still from a big-budget historical film set in 1495, natural light, shot on a 35mm lens, meticulous period detail. Palermo in Sicily: the small harbour of the Cala inside a stone mole, a crowded city of golden stone houses with flat roofs and tile roofs behind it, the domes and towers of the great Norman cathedral and red Arab-Norman domes rising among them, palm trees and orange groves at the edges, and the great bare rock of Monte Pellegrino at the right. Round merchant ships loading sacks of wheat on the quay and a few galleys. A golden haze over the Conca d'Oro valley and the mountains behind, warm afternoon light. Camera on the water about 250 to 300 metres from the shore, at water level, horizon exactly at mid-height. The lower half of the frame is calm open water with soft ripples and long reflections, completely empty in the near water and across the left two-thirds: no boats, no quay, no posts, no rocks, nothing close to the camera. The shore and everything on it sit in the middle distance, small with distance. Nothing later than 1495 anywhere: no cars, street lamps, power lines, tyres, concrete, plastic, glass windows, motorboats, ferries, modern clothing, Baroque spires, modern bridges. No text, no border, no watermark."
+  },
+  {
+   "id": "santacruz-a",
+   "model": "black-forest-labs/flux-2-pro-preview",
+   "width": 1600,
+   "height": 896,
+   "seed": 7607,
+   "refs": [],
+   "prompt": "A photorealistic still from a big-budget historical film set in 1497, natural light, shot on a 35mm lens, meticulous period detail. Santa Cruz on Tenerife in 1497, a brand-new Castilian settlement only a year old: a small cluster of low whitewashed stone houses with flat roofs and a few thatched huts, a small plain chapel with a wooden cross, a short timber jetty and a stony black volcanic beach with fishing boats pulled up, on the dry rocky shore under steep bare brown volcanic mountains cut by ravines. One caravel lies at anchor in the open roadstead. Far above, the snow-capped cone of the Teide volcano in the clouds. Bright clear Atlantic light. Camera on the water about 250 to 300 metres from the shore, at water level, horizon exactly at mid-height. The lower half of the frame is calm open water with soft ripples and long reflections, completely empty in the near water and across the left two-thirds: no boats, no quay, no posts, no rocks, nothing close to the camera. The shore and everything on it sit in the middle distance, small with distance. Nothing later than 1497 anywhere: no cars, street lamps, power lines, tyres, concrete, plastic, glass windows, motorboats, ferries, modern clothing, Baroque spires, modern bridges. No text, no border, no watermark."
+  },
+  {
+   "id": "santacruz-b",
+   "model": "black-forest-labs/flux-2-pro-preview",
+   "width": 1600,
+   "height": 896,
+   "seed": 7608,
+   "refs": [],
+   "prompt": "A photorealistic still from a big-budget historical film set in 1497, natural light, shot on a 35mm lens, meticulous period detail. Santa Cruz on Tenerife in 1497, a brand-new Castilian settlement only a year old: a small cluster of low whitewashed stone houses with flat roofs and a few thatched huts, a small plain chapel with a wooden cross, a short timber jetty and a stony black volcanic beach with fishing boats pulled up, on the dry rocky shore under steep bare brown volcanic mountains cut by ravines. One caravel lies at anchor in the open roadstead. Far above, the snow-capped cone of the Teide volcano in the clouds. Bright clear Atlantic light. Camera on the water about 250 to 300 metres from the shore, at water level, horizon exactly at mid-height. The lower half of the frame is calm open water with soft ripples and long reflections, completely empty in the near water and across the left two-thirds: no boats, no quay, no posts, no rocks, nothing close to the camera. The shore and everything on it sit in the middle distance, small with distance. Nothing later than 1497 anywhere: no cars, street lamps, power lines, tyres, concrete, plastic, glass windows, motorboats, ferries, modern clothing, Baroque spires, modern bridges. No text, no border, no watermark."
+  }
+ ]
+}

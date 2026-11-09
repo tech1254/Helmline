@@ -8,7 +8,8 @@ export const OLD_BOUNDS = { west: -32, east: 0, south: 8, north: 44 };
 // east of Tunis, and the inside of South America. Treated as land by the pathfinder and drawn
 // as the bare margin of the parchment.
 export const OFF_CHART = [
-  { w: 12.6, e: 24, s: 12, n: 56 },
+  { w: 16.6, e: 24, s: 12, n: 56 },
+  { w: 12.6, e: 16.6, s: 12, n: 36.6 }, // south of Sicily (the chart reached Naples in Nov 2026)
   { w: -86, e: -52, s: -36, n: 4 },
 ];
 // The parts of the chart that were off it before the chart grew north and west (Nov 2026):
@@ -17,8 +18,10 @@ export const LEGACY_OFF_CHART = [
   { w: -42, e: -32, s: 2, n: 44 },
   { w: 4.6, e: 24, s: 12, n: 44 },
 ];
+// Off the chart before it reached Naples and Sicily (Nov 2026, the Italian Wars).
+export const ITALY_ADDED = { w: 12.6, e: 16.6, s: 36.6, n: 56 };
 // The edge of the chart, going round: the bounds less the parts off the chart.
-export const CHART_OUTLINE = [[-86, 56], [12.6, 56], [12.6, 12], [24, 12], [24, -36], [-52, -36], [-52, 4], [-86, 4]];
+export const CHART_OUTLINE = [[-86, 56], [16.6, 56], [16.6, 36.6], [12.6, 36.6], [12.6, 12], [24, 12], [24, -36], [-52, -36], [-52, 4], [-86, 4]];
 export const offChart = (lon, lat) => OFF_CHART.some((r) => lon >= r.w && lon <= r.e && lat >= r.s && lat <= r.n);
 export const D2R = Math.PI / 180;
 // Equirectangular projection centred near the Canaries.
@@ -52,8 +55,12 @@ const IBERIA = [
   [0.15, 49.45], [0.6, 49.85], [1.4, 50.1], [1.6, 50.4], [1.65, 50.9], [2.3, 51.05], [2.9, 51.2], [3.35, 51.36],
   [3.55, 51.42], [3.8, 51.75], [4.05, 52.0], [4.45, 52.4], [4.65, 52.85], [4.75, 53.05], [5.35, 53.3], [6.2, 53.45],
   [7.0, 53.55], [8.0, 53.6], [8.6, 53.85], [8.85, 54.3], [8.6, 54.6], [8.55, 55.0], [8.1, 55.6], [8.2, 56.5], [8.2, 57],
-  // round the back of the chart (Germany and the Alps) to the Italian coast at Ostia
-  [12.6, 57], [12.6, 41.6], [12.2, 41.7], [11.65, 42.15], [11.1, 42.4], [10.55, 42.95], [10.5, 43.3], [10.3, 43.6],
+  // round the back of the chart (Germany, the Alps and Italy) to the toe of Calabria, then up
+  // the Tyrrhenian coast past Naples and Gaeta to Ostia
+  [16.6, 57], [16.6, 38.45], [16.3, 38.3], [16.05, 38.0], [15.65, 37.93], [15.63, 38.25], [15.85, 38.62],
+  [16.2, 38.85], [16.05, 39.35], [15.8, 39.7], [15.62, 40.05], [15.25, 40.1], [14.95, 40.35], [14.78, 40.66],
+  [14.45, 40.62], [14.35, 40.65], [14.3, 40.8], [14.08, 40.82], [13.95, 41.05], [13.6, 41.22], [13.05, 41.24],
+  [12.6, 41.45], [12.2, 41.7], [11.65, 42.15], [11.1, 42.4], [10.55, 42.95], [10.5, 43.3], [10.3, 43.6],
   [10.05, 44.0], [9.6, 44.12], [9.2, 44.3], [8.9, 44.41], [8.4, 44.2], [8.1, 43.9], [7.5, 43.75], [7.0, 43.55],
   [6.6, 43.15], [6.0, 43.05], [5.4, 43.2], [4.85, 43.35], [4.5, 43.45], [3.6, 43.5], [3.0, 43.1], [3.2, 42.3], [3.2, 41.9], [2.2, 41.35], [1.0, 41.05], [0.0, 40.0], [-0.3, 39.4], [0.1, 38.8], [-0.5, 38.3], [-0.8, 37.6],
   [-1.6, 37.3], [-2.1, 36.73], [-2.9, 36.75], [-4.4, 36.7], [-5.0, 36.45],
@@ -128,6 +135,9 @@ const IRELAND = [
   [-8.6, 54.65], [-8.5, 55.0], [-7.6, 55.25],
 ];
 
+const SICILY = [[12.42, 37.8], [12.5, 38.08], [12.8, 38.1], [13.08, 38.2], [13.35, 38.12], [13.6, 38.08], [14.0, 38.02],
+  [14.5, 38.05], [15.05, 38.15], [15.6, 38.28], [15.4, 37.95], [15.2, 37.55], [15.1, 37.3], [15.25, 37.05], [15.1, 36.7],
+  [14.55, 36.75], [14.2, 36.95], [13.75, 37.15], [13.2, 37.4], [12.65, 37.55]];
 const CORSICA = [[9.4, 43.0], [9.55, 42.6], [9.55, 42.1], [9.4, 41.6], [9.15, 41.38], [8.75, 41.6], [8.6, 41.9], [8.55, 42.35], [8.75, 42.6], [9.3, 42.7]];
 const SARDINIA = [[9.2, 41.25], [9.65, 40.9], [9.8, 40.4], [9.6, 39.95], [9.6, 39.2], [9.05, 39.1], [8.6, 38.9], [8.4, 39.2], [8.4, 39.75], [8.5, 40.3], [8.2, 40.6], [8.25, 40.95], [8.65, 40.9]];
 
@@ -226,6 +236,7 @@ export const LANDS = [
   { group: 'ireland', pts: IRELAND },
   { group: 'tyrrhenian', pts: CORSICA },
   { group: 'tyrrhenian', pts: SARDINIA },
+  { group: 'tyrrhenian', pts: SICILY },
   { group: 'mainland', pts: NORTH_AMERICA },
   { group: 'newfoundland', pts: NEWFOUNDLAND },
   { group: 'antilles', pts: CUBA },
@@ -267,7 +278,7 @@ export const LAND_GROUPS = {
   noronha: 'Fernão de Noronha',
   britain: 'England',
   ireland: 'Ireland',
-  tyrrhenian: 'Corsica and Sardinia',
+  tyrrhenian: 'Corsica, Sardinia and Sicily',
   flores: 'Flores and Corvo',
   mainland: 'a great land in the west',
   newfoundland: 'the New Found Land',
@@ -371,6 +382,13 @@ export const PORTS = [
     blurb: 'The richest city of the Crown of Aragon. Its beach at the Grau ships wine and the sugar of Gandia; its bankers and silk merchants want gold, wheat and spices.' },
   { id: 'genoa', name: 'Genoa', lon: 8.9, lat: 44.41, known: true,
     blurb: 'Home of the Salvago and the great Genoese houses: bankers to every crown in Europe. Spices come in from the Levant cheaper than anywhere in the west; gold, sugar and dyes fetch high prices.' },
+  // The Italian Wars (Nov 2026): France's Mediterranean port, and the kingdoms of Naples and Sicily.
+  { id: 'marseille', label: 'n', name: 'Marseille', lon: 5.3, lat: 43.17, known: true,
+    blurb: 'The French king\'s port on the Mediterranean since 1481, its galleys and its Levant trade behind the chain across the Old Port. Salt from the Camargue is cheap; French cloth and Provençal wine go out.' },
+  { id: 'naples', label: 'n', name: 'Naples', lon: 14.22, lat: 40.8, known: true,
+    blurb: 'The greatest city in Italy, capital of a kingdom ruled by a branch of the house of Aragon, on its bay under Vesuvius. Greco wine is cheap; everything else is bought, and dear.' },
+  { id: 'palermo', label: 'e', name: 'Palermo', lon: 13.38, lat: 38.18, known: true,
+    blurb: 'The capital of Sicily, the King of Aragon\'s granary: wheat is cheaper here than anywhere in the Mediterranean, and Sicilian sugar and Trapani salt go out with it.' },
   { id: 'sale', name: 'Salé', lon: -6.94, lat: 34.07, known: true,
     blurb: 'A Moroccan port behind a dangerous bar at the mouth of the Bou Regreg. Wheat and Moorish cloth are cheap, and nobody asks where a cargo came from.' },
   { id: 'algiers', name: 'Algiers', lon: 3.06, lat: 36.77, known: true,
@@ -429,6 +447,9 @@ export const HARBOURS = {
   galway: { depth: 3.5, kind: 'a small harbour at the mouth of the Corrib' },
   valencia: { depth: 3.0, kind: 'an open beach at the Grau, with ships anchored off' },
   genoa: { depth: 9, kind: 'a deep harbour behind the mole' },
+  marseille: { depth: 7, kind: 'the Old Port, behind its chain' },
+  naples: { depth: 8, kind: 'a broad bay under Vesuvius' },
+  palermo: { depth: 6, kind: 'the Cala, inside the mole' },
   sale: { depth: 2.4, kind: 'a river mouth behind a dangerous bar' },
   algiers: { depth: 5, kind: 'an anchorage sheltered by a chain of islets' },
   angra: { depth: 6, kind: 'a sheltered bay under Monte Brasil' },

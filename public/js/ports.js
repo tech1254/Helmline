@@ -40,6 +40,9 @@ export const START = {
   galway: { size: 3000, grow: 0.005 },
   valencia: { size: 40000, grow: 0.01 },
   genoa: { size: 60000, grow: 0.003 },
+  marseille: { size: 15000, grow: 0.006 },
+  naples: { size: 100000, grow: 0.006 },
+  palermo: { size: 45000, grow: 0.004 },
   sale: { size: 10000, grow: 0.004 },
   algiers: { size: 15000, grow: 0.006 },
   angra: { size: 300, grow: 0.04 }, // settled from 1450

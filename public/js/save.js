@@ -47,7 +47,7 @@ export function freshState(nation = 'portugal') {
 
 // ---- Save / load ------------------------------------------------------------
 export function payload() {
-  return JSON.stringify({ S, market: market.toJSON(), fog: fogToString(), fogBounds: BOUNDS });
+  return JSON.stringify({ S, market: market.toJSON(), fog: fogToString(), fogBounds: BOUNDS, fogItaly: true });
 }
 
 export function save() {
@@ -70,7 +70,7 @@ export function load() {
 export function applySaveData(d) {
   try {
     setGame(d.S, new Market(d.market));
-    initFog(d.fog, d.fogBounds);
+    initFog(d.fog, d.fogBounds, !!d.fogItaly);
     markFogDirty();
     if (S.contracts && S.contracts.unlocked === undefined) S.contracts.unlocked = true;
     Contracts.ensureContracts(S);

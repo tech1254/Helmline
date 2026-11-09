@@ -11,6 +11,7 @@ import * as Pirates from './pirates.js';
 import * as Houses from './houses.js';
 import * as Accounts from './accounts.js';
 import { PORTS } from './world.js';
+import { GOODS } from './economy.js';
 import { S, ui } from './state.js';
 import { confirmDialog } from './dialog.js';
 import { openFight } from './fightview.js';
@@ -29,6 +30,7 @@ const portName = (id) => PORTS.find((p) => p.id === id)?.name || id;
 export function openDefence(enc) {
   const C = Law.CROWNS[enc.crown];
   if (enc.kind === 'reprisal') { openReprisal(enc); return; }
+  if (enc.kind === 'search') { openSearch(enc); return; }
   const hunter = enc.kind === 'hunter';
   const foe = Fight.foeSide(hunter ? 'hunter' : 'warship', enc.armed || 0, hunter ? `${C.adj} armed caravel` : `${C.adj} warship`);
   const F = Fight.start(S, 'defend', foe, { range: Fight.FAR });
@@ -38,6 +40,49 @@ export function openDefence(enc) {
       ? `<p>An armed caravel flying the arms of ${C.name} bears down on you. Her captain carries a warrant: your piracy against ${C.adj} ships has caught up with you. If she takes you, your prizes are forfeit and you pay a heavy fine.</p>`
       : `<p>A ${C.adj} warship, her decks full of soldiers, has sighted you. She means to take you as a prize of war.</p>`,
     onDone: (done) => settleDefence(enc, done),
+  });
+}
+
+// Neutral, carrying for the French: a League galley stops you to search the hold.
+function openSearch(enc) {
+  const g = GOODS.find((x) => x.id === enc.good);
+  const n = S.cargo[enc.good] || 0;
+  setSpeed(0);
+  confirmDialog({
+    title: 'Stopped by a League galley',
+    body: `<p>A Spanish galley of the Holy League runs up alongside and hails you: neutral or not, any cargo bound for the French is contraband, and they mean to search your hold.</p>
+      <p>Your ${n} ${g.unit} of ${g.name.toLowerCase()} for the French king's victuallers would be seized.</p>
+      <p class="fine">Submit, and you lose that cargo but go on in peace. Run for it, and you fight the galley; whatever comes of it, Castile will not forget.</p>
+      <div class="row choice"><button data-modal-action="run">Run for it</button><button class="primary" data-modal-action="submit">Submit to the search</button></div>`,
+    ok: null, cancel: false, kind: 'encounter',
+    actions: {
+      submit: () => {
+        const lost = S.cargo[enc.good] || 0;
+        S.paid[enc.good] = 0; S.cargo[enc.good] = 0;
+        const line = `The League's men take your ${lost} ${g.unit} of ${g.name.toLowerCase()} as contraband, and let you go.`;
+        addNotice(line, 'alert'); log(line); plog('search', { result: 'submit', good: enc.good, qty: lost });
+        afterEncounter({ kind: '', lines: [line], title: 'Searched' }); renderPanel(); save();
+      },
+      run: () => {
+        Law.ensureLaw(S).infamy.castile = Law.infamy(S, 'castile') + 3;
+        const F = Fight.start(S, 'defend', Fight.foeSide('galley', 1, 'League galley'), { range: Fight.CLOSE });
+        F.foe.tribute = false;
+        openFight(F, { title: 'Running from the League galley', onDone: (done) => {
+          const res = done.done.result, dmg = Fight.damageTo(done);
+          let lines;
+          if (res === 'struck' || res === 'boarded') {
+            const lost = S.cargo[enc.good] || 0; S.cargo[enc.good] = 0; S.paid[enc.good] = 0;
+            S.hull = Math.max(10, (S.hull ?? 100) - dmg - 8);
+            lines = [`The galley takes you. Your ${lost} ${g.unit} of ${g.name.toLowerCase()} are seized, and your hull is battered (${Math.round(S.hull)}%).`];
+          } else {
+            S.hull = Math.max(10, (S.hull ?? 100) - dmg);
+            lines = ['You are clear of the League galley, cargo and all. Castile will remember it.'];
+          }
+          for (const l of lines) addNotice(l, ''); log(lines[0]); plog('search', { result: res });
+          afterEncounter({ kind: '', lines, title: res === 'struck' || res === 'boarded' ? 'Taken' : 'Clear of them' }); renderPanel(); save();
+        } });
+      },
+    },
   });
 }
 
@@ -116,13 +161,13 @@ function settleDefence(enc, F) {
 export function lawTick(free) {
   if (!free) return;
   const W = War.ensureWar(S);
-  if (W.offer && War.current(S)?.id === W.offer) { openMarque(); return; }
+  if (W.offer && War.yourWars(S).some((w) => w.id === W.offer)) { openMarque(); return; }
   if (ui.mutiny) { ui.mutiny = false; openMutiny(); }
 }
 
 function openMarque() {
-  const w = War.current(S);
-  const e = Law.CROWNS[War.enemyOf(S)];
+  const w = War.WARS.find((x) => x.id === War.ensureWar(S).offer);
+  const e = Law.CROWNS[War.enemyIn(S, w)];
   setSpeed(0);
   confirmDialog({
     title: `War with ${e.name}`,
