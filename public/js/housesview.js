@@ -55,7 +55,7 @@ export function renderHouses(el) {
     ${historyBox()}
     ${XV.VIEWS.map((v) => v.houseBox?.() || '').join('')}
     ${Skip.actOver(S) && S.day < Skip.SKIP_TO - 30 ? `<h3>The years ahead</h3><p class="fine">Let the years to 1474 pass at once, to the eve of the war: your captains and factors trade through them.</p><div class="row"><button data-timeskip>Let the years pass…</button></div>` : ''}
-    <p class="fine">Every port's trade is shared between its own merchants, the houses that work it and you. Buy and sell in a port and your share grows; a ring round a port on the chart shows who leads it. Where the houses hold sway, prices are narrower. Weaken a house enough and it is ruined; once your house is worth twice as much, you can buy it out and take its custom.</p>`;
+    <p class="fine">Every port's trade is shared between its own merchants, the houses that work it and you. Buy and sell in a port and your share grows; a ring round a port on the chart shows who leads it. Where the houses hold sway, prices are narrower. Weaken a house enough and it is ruined; once your house is worth three times as much, and the house has traded ten years, you can buy it out and take its custom (each one dearer than the last).</p>`;
 }
 
 // Your name at sea: infamy with each crown, a letter of marque, the Guinea licence, prizes,
