@@ -22,7 +22,7 @@ export const BUILDINGS = {
   warehouse: { id: 'warehouse', name: 'Warehouse', cost: (S, pid) => round(1200 + size(S, pid) * 0.03), upkeep: 12, days: 30, standing: 0, weight: 0.8, store: 200,
     does: 'Store up to 200 units of cargo here, and sell when the price is right.' },
   post: { id: 'post', name: 'Trading post (feitoria)', cost: (S, pid) => Investments.feitoriaCost(S, pid), upkeep: 0 /* the factor's daily wage is its upkeep (investments.js) */, days: 0, standing: Investments.FEITORIA_STANDING, weight: 1.5,
-    does: `A factor of your own: prices ${Math.round(Investments.FEITORIA_EDGE * 100)}% better here, an extra contract, and a share of the trade he does between your visits.` },
+    does: `A factor of your own: prices ${Math.round(Investments.FEITORIA_EDGE * 100)}% better here, an extra contract, and a monthly income: more in a busy port, and a twentieth of what you sell there yourself.` },
   fort: { id: 'fort', name: 'Fort', cost: (S, pid) => round(5000 + size(S, pid) * 0.08), upkeep: 45, days: 120, standing: 40, weight: 1.2,
     does: 'Corsairs give the waters within 300 miles a wide berth, and the rival houses hold half the sway here.' },
   yard: { id: 'yard', name: 'Shipyard', cost: (S, pid) => round(3500 + size(S, pid) * 0.05), upkeep: 30, days: 90, standing: 30, weight: 1,
@@ -154,6 +154,14 @@ export function takeGoods(S, pid, good, n) {
   return n;
 }
 
+// What a trading post earns in a month: more in a busy port, and a twentieth of what you sold
+// there yourself in the last month (Nov 2026: so a house that works its home waters keeps growing).
+export const POST_SHARE = 0.05;
+export function postEarnings(S, pid) {
+  const sold = (S.accounts?.entries || []).filter((e) => e.kind === 'sale' && e.port === pid && e.day > S.day - MONTH).reduce((t, e) => t + e.amount, 0);
+  return Math.round(25 + size(S, pid) / 1000 * 6 + sold * POST_SHARE);
+}
+
 // ---- Upkeep and the trading posts' earnings, monthly -----------------------------------------
 // Returns { msgs, upkeep, income } for the accounts.
 export function tick(S, away = false) {
@@ -181,7 +189,7 @@ export function tick(S, away = false) {
         (lapsed[b.pid] = lapsed[b.pid] || []).push(BUILDINGS[b.id].name.toLowerCase());
       }
       if (b.id === 'post' && !rec.neglected) {
-        const earn = Math.round(15 + size(S, b.pid) / 1000 * 3);
+        const earn = postEarnings(S, b.pid);
         S.purse += earn; income += earn;
       }
     }

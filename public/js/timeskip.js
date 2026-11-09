@@ -47,7 +47,7 @@ export function canSkip(S) {
 function factorsYear(S) {
   const sold = (S.accounts?.entries || []).filter((e) => e.kind === 'sale' && e.day > S.day - 365).reduce((t, e) => t + e.amount, 0);
   const ports = new Set((S.works ? Object.keys(S.works.at) : [])).size;
-  return Math.round(Math.min(8000, 300 + sold * 0.07 + ports * 150));
+  return Math.round(Math.min(16000, 600 + sold * 0.14 + ports * 300)); // doubled after the balance runs (Nov 2026)
 }
 
 // Let the years pass. Returns the summary.
