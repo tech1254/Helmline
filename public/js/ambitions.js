@@ -13,6 +13,7 @@ import * as Callings from './callings.js';
 import * as Houses from './houses.js';
 import * as Works from './works.js';
 import * as Law from './law.js';
+import * as Race from './race.js';
 import * as War from './war.js';
 
 const SLOTS = 3;
@@ -21,18 +22,8 @@ const fmt = (n) => Math.round(n).toLocaleString('en-GB');
 const round = (n, to) => Math.max(to, Math.round(n / to) * to);
 
 // Places history reaches on a known date: beat the explorer there (crown's captains).
-const RACES = [
-  { port: 'flores', year: 1452, who: 'Diogo de Teive' },
-  { port: 'gambia', year: 1455, who: 'Cadamosto' },
-  { port: 'ribeiragrande', year: 1462, who: 'António de Noli' },
-  { port: 'mina', year: 1471, who: 'João de Santarém' },
-  { port: 'saotome', year: 1471, who: 'Pêro Escobar' },
-  { port: 'mpinda', year: 1483, who: 'Diogo Cão' },
-  { port: 'saobras', year: 1488, who: 'Bartolomeu Dias' },
-  { port: 'santodomingo', year: 1492, who: 'Columbus' },
-  { port: 'stjohns', year: 1497, who: 'John Cabot' },
-  { port: 'portoseguro', year: 1500, who: 'Cabral' },
-];
+// The races are in race.js.
+// (read lazily: race.js imports houses.js, which imports this module)
 
 // The house's rough worth: its purse, what its cargo cost, and its ships.
 export function worth(S) {
@@ -174,12 +165,20 @@ export const KINDS = {
   race: { calling: 'crown',
     make(S, big) {
       const y = yearOf(S.day);
-      const r = RACES.filter((x) => !S.discovered[x.port] && x.year > y + (big ? 1 : 0)).sort((a, b) => a.year - b.year)[0];
+      const r = Race.RACES.filter((x) => !S.discovered[x.port] && !S.race?.firsts?.[x.port] && x.year > y + (big ? 1 : 0)).sort((a, b) => a.year - b.year)[0];
       if (!r || (!big && r.year - y > 12)) return null;
       return { text: `Reach ${portById(r.port).name} before ${r.who} (${r.year})`, target: 1, port: r.port, year: r.year, who: r.who, base: 0, big: true };
     },
-    value: (S, a) => (S.discovered[a.port] ? 1 : 0),
-    lost: (S, a) => yearOf(S.day) >= a.year && !S.discovered[a.port] },
+    value: (S, a) => (S.race?.firsts?.[a.port]?.by === 'you' || (S.discovered[a.port] && !S.race?.firsts?.[a.port]) ? 1 : 0),
+    lost: (S, a) => (yearOf(S.day) >= a.year && !S.discovered[a.port]) || (S.race?.firsts?.[a.port] && S.race.firsts[a.port].by !== 'you') },
+  legend: { calling: 'crown',
+    make(S, big, rand = Math.random) {
+      const left = Object.keys(Race.LEGENDS).filter((id) => !Race.ensureRace(S).legends[id]?.found);
+      if (!left.length || !S.voyages || (S.voyages < 4 && !big)) return null;
+      const id = big ? (left.includes('antillia') ? 'antillia' : left[0]) : left[Math.floor(rand() * left.length)];
+      return { text: `Search for ${Race.LEGENDS[id].name} (marked on your chart)`, target: 1, legend: id, base: 0, big };
+    },
+    value: (S, a) => (Race.ensureRace(S).legends[a.legend]?.found ? 1 : 0) },
   corsairs: { calling: 'privateer',
     make(S, big) {
       const target = big ? 4 : 1;

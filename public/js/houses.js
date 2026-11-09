@@ -7,6 +7,7 @@
 // The Houses of the Sea ledger ranks them all. Pure rules: no browser modules.
 
 import * as Works from './works.js';
+import * as Race from './race.js';
 import { PORTS, distNm, findPath, D2R } from './world.js';
 import { yearOf } from './ships.js';
 import { worth as yourWorth } from './ambitions.js';
@@ -68,12 +69,15 @@ export function aggression(S) {
 function weights(S, pid) {
   const H = ensureHouses(S);
   const w = { local: TUNE.local, you: (H.you[pid] || 0) / TUNE.youPer + (H.held[pid] || 0) + Works.weight(S, pid) };
+  const g = Race.grant(S, pid); // a discovery grant (race.js): the discoverer's trade for ten years
   for (const id of active(S)) {
     const d = defOf(id), h = H.h[id];
-    if (!d.ports.includes(pid)) continue;
+    if (!d.ports.includes(pid) && g !== id) continue;
     const spread = TUNE.perShip * h.ships / d.ports.length;
-    w[id] = spread * (pid === d.home ? 2.5 : 1) * aggression(S) * Works.houseDamp(S, pid); // a fort of yours halves their sway
+    w[id] = spread * (pid === d.home ? 2.5 : 1) * aggression(S) * Works.houseDamp(S, pid) // a fort of yours halves their sway
+      * (g === 'you' ? 0.3 : g === id ? 1.5 : 1);
   }
+  if (g === 'you') w.you += 1.5;
   return w;
 }
 

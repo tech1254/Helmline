@@ -9,6 +9,9 @@ import { $ } from './util.js';
 import { warmRoutes } from './panels.js';
 import { log } from './pricebook.js';
 import { toast } from './notices.js';
+import * as Race from './race.js';
+import * as Accounts from './accounts.js';
+import { report } from './sim.js';
 
 export let fog; // Uint8Array, 1 = unknown
 export let fogDirty = true;
@@ -149,12 +152,15 @@ export function revealAt(lon, lat, r, quiet = false) {
   if (changed) fogDirty = true;
   if (quiet || !S) return;
   for (const p of PORTS) {
-    if (!S.discovered[p.id] && !p.beyond && !p.hidden && portOpen(p.id, yearOf(S.day)) && distNm(lon, lat, p.lon, p.lat) <= r * 55) {
+    if (!S.discovered[p.id] && !p.beyond && !p.hidden && (portOpen(p.id, yearOf(S.day)) || Race.isRace(p.id)) && distNm(lon, lat, p.lon, p.lat) <= r * 55) {
       S.discovered[p.id] = true;
       S.unpaidCharts.push(p.name);
       warmRoutes();
       toast(`New port charted: <b>${p.name}</b>`, 'discover');
       log(`Charted the port of ${p.name}.`);
+      const won = Race.charted(S, p.id); // first to chart it? (race.js)
+      for (const m of won) if (m.prize) Accounts.record(S, { kind: 'discovery', amount: m.prize, port: p.id, text: `The crown's prize for charting ${p.name}` });
+      report(won);
     }
   }
   for (const l of LANDS) {

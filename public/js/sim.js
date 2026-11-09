@@ -5,6 +5,7 @@ import { findPath } from './world.js';
 import * as Hunt from './hunt.js';
 import * as Law from './law.js';
 import * as War from './war.js';
+import * as Race from './race.js';
 import { D2R, PORTS, isLand, windAt, sailFactor, bearing, distNm, angleDiff, isRiverLeg, RIVER_KNOTS, shoalDepth, SHOALS, isBeyond, compassPoint } from './world.js';
 import * as Ports from './ports.js';
 import { GOODS, PORTUGUESE_PORTS } from './economy.js';
@@ -306,6 +307,7 @@ export function advanceTime(dd, atSea, away = false) {
   report(Taxes.tick(S, House.renown(S)));
   report(Competition.tick(S, dd, market));
   report(Houses.tick(S)); // the rival houses (houses.js)
+  report(Race.tick(S)); // the explorers and the rival houses' voyages (race.js)
   const war = War.tick(S); // the wars between the crowns (war.js)
   for (const m of war) if (m.reward) Accounts.record(S, { kind: 'war', amount: m.reward, text: 'The crown\'s thanks for service in the war' });
   report(war);
@@ -331,6 +333,7 @@ export function advanceTime(dd, atSea, away = false) {
       const enc = Pirates.roll(S, dd, S.ship.lon, S.ship.lat);
       if (enc) ui.pendingEncounter = enc;
     }
+    report(Race.searchAt(S, S.ship.lon, S.ship.lat)); // a legend's place on the chart (race.js)
     if (!ui.modal && !ui.pendingEncounter && !away) { // the crown's hunters, the enemy's warships (law.js)
       const enc = Law.hunters(S, dd, S.ship.lon, S.ship.lat);
       if (enc) ui.pendingEncounter = enc;

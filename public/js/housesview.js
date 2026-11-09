@@ -8,6 +8,7 @@ import { tabs } from './panels.js';
 import * as Law from './law.js';
 import * as War from './war.js';
 import * as Skip from './timeskip.js';
+import { historyBox } from './raceview.js';
 
 const fmt = (n) => Math.round(n).toLocaleString('en-GB');
 const pct = (x) => `${Math.round(x * 100)}%`;
@@ -50,6 +51,7 @@ export function renderHouses(el) {
     <div class="scroll"><table class="houses"><thead><tr><th class="num">#</th><th>House</th><th class="num">Worth, cz</th><th class="num">Ships</th><th class="num">Ports led</th></tr></thead><tbody>${body}</tbody></table></div>
     ${here ? `<h3>${portName(S.ship.docked)}</h3>${here}` : ''}
     ${nameAtSea()}
+    ${historyBox()}
     ${Skip.actOver(S) && S.day < Skip.SKIP_TO - 30 ? `<h3>The years ahead</h3><p class="fine">Let the years to 1474 pass at once, to the eve of the war: your captains and factors trade through them.</p><div class="row"><button data-timeskip>Let the years pass…</button></div>` : ''}
     <p class="fine">Every port's trade is shared between its own merchants, the houses that work it and you. Buy and sell in a port and your share grows; a ring round a port on the chart shows who leads it. Where the houses hold sway, prices are narrower. Weaken a house enough and it is ruined; once your house is worth twice as much, you can buy it out and take its custom.</p>`;
 }
