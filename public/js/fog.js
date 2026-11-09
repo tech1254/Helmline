@@ -1,6 +1,6 @@
 // The fog of war: which cells of the chart are known, and the soft image drawn over the map.
 
-import { BOUNDS, OLD_BOUNDS, LEGACY_OFF_CHART, D2R, LANDS, LAND_GROUPS, PORTS, isLand, distNm, portOpen } from './world.js';
+import { ITALY_ADDED, BOUNDS, OLD_BOUNDS, LEGACY_OFF_CHART, D2R, LANDS, LAND_GROUPS, PORTS, isLand, distNm, portOpen } from './world.js';
 import { yearOf } from './ships.js';
 import { FH, FOG_CELL, FW } from './config.js';
 import { S } from './state.js';
@@ -15,7 +15,7 @@ import { report } from './sim.js';
 
 export let fog; // Uint8Array, 1 = unknown
 export let fogDirty = true;
-export function initFog(saved, savedBounds) {
+export function initFog(saved, savedBounds, fogItaly = false) {
   fog = new Uint8Array(FW * FH).fill(1);
   if (saved) {
     const bin = decodeFog(saved);
@@ -23,6 +23,8 @@ export function initFog(saved, savedBounds) {
     const ow = Math.round((b.east - b.west) / FOG_CELL), oh = Math.round((b.north - b.south) / FOG_CELL);
     if (ow === FW && oh === FH && b.west === BOUNDS.west && b.south === BOUNDS.south) {
       for (let i = 0; i < fog.length && i < bin.length; i++) fog[i] = bin.charCodeAt(i);
+      // Naples and Sicily, added to the chart in Nov 2026: known to every captain of 1451.
+      if (!fogItaly) { const r = ITALY_ADDED; chartKnownEurope((x, y) => x >= r.w && x <= r.e && y >= r.s && y <= r.n); }
     } else {
       // Copy each charted cell of the old chart onto the same place on the new one.
       for (let j = 0; j < oh; j++) {
@@ -79,7 +81,7 @@ function chartKnownEurope(only = null) {
     for (let i = 0; i < FW; i++) {
       const x = BOUNDS.west + (i + 0.5) * FOG_CELL, y = BOUNDS.south + (j + 0.5) * FOG_CELL;
       if (only && !only(x, y)) continue;
-      if ((x > -6.5 && y > 33.5 && x < 13) || (x > -5.5 && y > 48.3)) fog[j * FW + i] = 0; // the Mediterranean, the Channel and the North Sea
+      if ((x > -6.5 && y > 33.5 && x < 16.7) || (x > -5.5 && y > 48.3)) fog[j * FW + i] = 0; // the Mediterranean, the Channel and the North Sea
     }
   }
 }

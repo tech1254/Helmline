@@ -21,7 +21,7 @@ export const REGIONS = {
     news: 'The Guinea trade is no longer a secret: Fernão Gomes\'s men, Castilian interlopers and every captain in Lagos are buying on the African coast. Its prices are narrowing.' },
   south: { ports: ['mpinda', 'saotome', 'saobras', 'portoseguro'], from: 1505, full: 1540,
     news: 'São Tomé\'s planters and the brazilwood contractors have ships of their own now, and the Kongo trade is crowded. Prices in the far south are narrowing.' },
-  north: { ports: ['bruges', 'antwerp', 'bristol', 'galway', 'valencia', 'genoa'], from: 1451, full: 1480,
+  north: { ports: ['bruges', 'antwerp', 'bristol', 'galway', 'valencia', 'genoa', 'marseille', 'naples', 'palermo'], from: 1451, full: 1480,
     news: 'Hanse, Flemish, Genoese and English merchants work the northern and Mediterranean markets as they always have: their prices are narrow.' },
   barbary: { ports: ['sale', 'algiers'], from: 1470, full: 1520,
     news: 'More Christian traders slip into the Barbary ports, and the corsairs sell there openly. Prices on that coast are narrowing.' },

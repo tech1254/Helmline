@@ -67,6 +67,9 @@ export const MARKETS = {
   galway:    { k: 0.035, p: { wine: [17], cloth: [14], sugar: [30], dye: [26], gold: [110], ivory: [50], pepper: [46], wheat: [13], salt: [11], alquices: [18], copper: [20], brazilwood: [30], spices: [150] } },
   // The western Mediterranean: Valencia's wine and sugar, Genoa's Levant spices, the Barbary ports.
   valencia:  { k: 0.015, p: { wine: [9, 1], cloth: [13], sugar: [15, 1], dye: [24], gold: [125], ivory: [54], pepper: [46], wheat: [17], salt: [6], alquices: [14], copper: [18], brazilwood: [30], spices: [150] } },
+  marseille: { k: 0.015, p: { wine: [13, 1], cloth: [15, 1], sugar: [31], dye: [27], gold: [128], ivory: [55], pepper: [46], wheat: [19], salt: [5, 1], alquices: [16], copper: [18], brazilwood: [30], spices: [118] } },
+  naples:    { k: 0.01, p: { wine: [9, 1], cloth: [21], sugar: [32], dye: [29], gold: [134], ivory: [60], pepper: [50], wheat: [18], salt: [9], alquices: [17], copper: [19], brazilwood: [33], spices: [122] } },
+  palermo:   { k: 0.015, p: { wine: [12], cloth: [21], sugar: [16, 1], dye: [27], gold: [130], ivory: [56], pepper: [48], wheat: [9, 1], salt: [5, 1], alquices: [16], copper: [19], brazilwood: [31], spices: [120] } },
   genoa:     { k: 0.01, p: { wine: [12], cloth: [11, 1], sugar: [30], dye: [28], gold: [132], ivory: [58], pepper: [48], wheat: [20], salt: [8], alquices: [15], copper: [17], brazilwood: [32], spices: [120, 1] } },
   sale:      { k: 0.025, p: { wine: [20], cloth: [20], sugar: [22], dye: [18], gold: [92], ivory: [42], pepper: [34], wheat: [6, 1], salt: [7], alquices: [9, 1], copper: [25], brazilwood: [24], spices: [110] } },
   algiers:   { k: 0.025, p: { wine: [20], cloth: [21], sugar: [24], dye: [20], gold: [98], ivory: [44], pepper: [36], wheat: [8, 1], salt: [7], alquices: [10, 1], copper: [26], brazilwood: [26], spices: [115] } },
@@ -84,7 +87,7 @@ const FISH = {
   lisbon: [14], porto: [12], lagos: [13], cadiz: [14], sanlucar: [14], palos: [12], seville: [16], gomera: [16], santacruz: [16], ceuta: [18],
   safi: [16], funchal: [17], lanzarote: [14], arguin: [9], gambia: [18], serraleoa: [18], cestos: [18], mina: [20], mpinda: [20],
   saotome: [20], saobras: [22], portoseguro: [20], calicut: [25], cantor: [24],
-  bruges: [11], antwerp: [11], bristol: [8, 1], galway: [6, 1], valencia: [16], genoa: [17], sale: [14], algiers: [15],
+  bruges: [11], antwerp: [11], bristol: [8, 1], galway: [6, 1], valencia: [16], genoa: [17], marseille: [16], naples: [18], palermo: [17], sale: [14], algiers: [15],
   angra: [12], flores: [14], cove: [15], ribeiragrande: [14], stjohns: [3, 1], santodomingo: [22],
 };
 for (const [pid, f] of Object.entries(FISH)) MARKETS[pid].p.fish = f;

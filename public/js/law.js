@@ -11,7 +11,7 @@
 // Pure rules: no browser modules.
 
 import { PORTS, distNm } from './world.js';
-import { yearOf } from './ships.js';
+import { yearOf, dayOfYear } from './ships.js';
 import * as War from './war.js';
 import * as Callings from './callings.js';
 import * as Works from './works.js';
@@ -26,16 +26,32 @@ export const CROWNS = {
   england: { id: 'england', name: 'England', adj: 'English', court: 'bristol' },
   burgundy: { id: 'burgundy', name: 'Burgundy', adj: 'Flemish', court: 'bruges' },
   genoa: { id: 'genoa', name: 'Genoa', adj: 'Genoese', court: 'genoa' },
+  france: { id: 'france', name: 'France', adj: 'French', court: 'marseille' },
+  naples: { id: 'naples', name: 'Naples', adj: 'Neapolitan', court: 'naples' },
 };
 const PORT_CROWN = {
   lisbon: 'portugal', porto: 'portugal', lagos: 'portugal', funchal: 'portugal', ceuta: 'portugal', arguin: 'portugal',
   saotome: 'portugal', angra: 'portugal', flores: 'portugal', ribeiragrande: 'portugal', mina: 'portugal', portoseguro: 'portugal',
   cadiz: 'castile', sanlucar: 'castile', palos: 'castile', seville: 'castile', lanzarote: 'castile', gomera: 'castile', santacruz: 'castile',
   valencia: 'castile', santodomingo: 'castile',
-  bruges: 'burgundy', antwerp: 'burgundy', bristol: 'england', galway: 'england', genoa: 'genoa',
+  bruges: 'burgundy', antwerp: 'burgundy', bristol: 'england', galway: 'england', genoa: 'genoa', marseille: 'france', naples: 'naples', palermo: 'castile',
 };
-// A treaty may move a port to another crown (war.js, the War of the Line): S.law.crowns.
-export const crownOf = (pid, S = null) => S?.law?.crowns?.[pid] || PORT_CROWN[pid] || null;
+// History moves ports between crowns (the Italian Wars): Charles VIII held Naples from February
+// to July 1495; Louis XII took Genoa in 1499 and held it to 1528; Naples was Spain's from 1504.
+const d8 = (y, m, d) => dayOfYear(y) + Math.round((Date.UTC(y, m - 1, d) - Date.UTC(y, 0, 1)) / 86400000);
+export const DATED_CROWNS = [
+  { pid: 'naples', crown: 'france', from: d8(1495, 2, 22), to: d8(1495, 7, 7) },
+  { pid: 'genoa', crown: 'france', from: d8(1499, 10, 1), to: d8(1528, 9, 12) },
+  { pid: 'naples', crown: 'castile', from: d8(1504, 1, 1), to: Infinity },
+];
+// A treaty may also move a port to another crown (war.js, the War of the Line): S.law.crowns.
+export function crownOf(pid, S = null) {
+  if (S?.law?.crowns?.[pid]) return S.law.crowns[pid];
+  if (S) for (const d of DATED_CROWNS) if (d.pid === pid && S.day >= d.from && S.day < d.to) return d.crown;
+  return PORT_CROWN[pid] || null;
+}
+// A house sails under its home city's flag: the Salvago's Genoa is French from 1499.
+export const houseCrown = (S, id) => (HOUSE_CROWN[id] === 'genoa' ? crownOf('genoa', S) : HOUSE_CROWN[id]) || null;
 export const HAVENS = ['sale', 'algiers', 'cove'];
 export const isHaven = (pid) => HAVENS.includes(pid);
 export const COVE = 'cove';
@@ -80,7 +96,7 @@ export const canBuyLicence = (S) => mine(S) === 'portugal' && !licensed(S) && ye
 export function lawful(S, crown, lat) {
   if (!crown) return { ok: true, text: 'Corsairs are fair game for any Christian captain.' };
   if (War.atWarWith(S, crown)) {
-    if (War.hasMarque(S)) return { ok: true, war: true, text: `Lawful prize under your letter of marque against ${CROWNS[crown].adj} shipping.` };
+    if (War.hasMarque(S, crown)) return { ok: true, war: true, text: `Lawful prize under your letter of marque against ${CROWNS[crown].adj} shipping.` };
     return { ok: false, war: true, text: `Your crown is at war with ${CROWNS[crown].name}, but you carry no letter of marque: without one, this is piracy.` };
   }
   if (crown !== mine(S) && mine(S) === 'portugal' && lat < GUINEA_LAT && yearOf(S.day) >= GUINEA_FROM) {
@@ -168,12 +184,18 @@ export function hunters(S, days, lon, lat, rand = Math.random) {
     if (!d.ports.some((pid) => { const p = portById(pid); return p && distNm(lon, lat, p.lon, p.lat) < 250; })) continue;
     if (rand() < 1 - Math.exp(-Math.min(0.02, 0.004 * h.raids) * days)) {
       L.cooldown = COOLDOWN;
-      return { kind: 'reprisal', house: id, crown: HOUSE_CROWN[id], armed: Math.min(2, h.armed || 1), where: d.name };
+      return { kind: 'reprisal', house: id, crown: houseCrown(S, id), armed: Math.min(2, h.armed || 1), where: d.name };
     }
+  }
+  // A neutral carrying for the French: the League's galleys stop and search ships bound that way.
+  const carrying = (S.contracts?.active || []).find((c) => c.contraband && (S.cargo?.[c.good] || 0) > 0);
+  if (carrying && War.neutralIn(S).some((w) => w.waters.some((z) => lon >= z.w && lon <= z.e && lat >= z.s && lat <= z.n)) && rand() < 1 - Math.exp(-0.02 * days)) {
+    L.cooldown = COOLDOWN;
+    return { kind: 'search', crown: 'castile', contract: carrying.id, good: carrying.good, where: 'the western Mediterranean' };
   }
   if (War.inWarWaters(S, lon, lat) && rand() < 1 - Math.exp(-0.012 * days)) {
     L.cooldown = COOLDOWN;
-    const e = War.enemyOf(S);
+    const e = War.enemyHere(S, lon, lat);
     return { kind: 'warship', crown: e, armed: rand() < 0.3 ? 1 : 0, where: CROWNS[e].name };
   }
   return null;

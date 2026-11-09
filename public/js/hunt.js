@@ -51,7 +51,7 @@ export function cargoOf(v) {
 // Everything the screen shows about a rival ship, and what the law says about taking her.
 export function preyInfo(S, v) {
   const d = Houses.defOf(v.house);
-  const crown = Law.HOUSE_CROWN[v.house] || null;
+  const crown = Law.houseCrown(S, v.house);
   const cargo = cargoOf(v);
   const shipValue = Math.round((HULLS[v.hull]?.price || 3000) * SHIP_SHARE);
   const cargoValue = cargo.reduce((t, c) => t + c.value, 0);
