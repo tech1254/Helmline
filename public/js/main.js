@@ -1,5 +1,7 @@
 // Helmline: start-up, the intro, and the main loop. The game itself lives in the modules.
 
+import * as X from './x/index.js'; // first: the expansions add their ports before anything reads the tables
+import * as XV from './x/views.js';
 import { PORTS, findPath, loadRoutes, shoalDepth } from './world.js';
 import * as Fleet from './fleet.js';
 import * as Contracts from './contracts.js';
@@ -103,6 +105,8 @@ function frame(t) {
 
 // The sea routes between ports come ready-made; without them they are planned as needed.
 try { loadRoutes(await (await fetch('data/routes.json')).json()); } catch (e) { /* plan them as needed */ }
+for (const f of X.routeFiles()) { try { loadRoutes(await (await fetch(f)).json()); } catch (e) { /* plan them as needed */ } }
+for (const v of XV.VIEWS) v.init?.();
 initInput();
 initActions();
 initDialog();
@@ -183,6 +187,7 @@ window.helmline = {
   engage: (key) => { const v = Houses.positions(S).find((x) => x.key === key); if (v) ui.pendingEncounter = { kind: 'prey', v }; return !!v; },
   defend: (kind = 'hunter', crown = 'castile') => { ui.pendingEncounter = { kind, crown, armed: 0, where: crown }; },
   law: () => Law, war: () => War, fight: () => Fight,
+  x: (id) => X.RULES.find((r) => r.id === id), xv: (id) => XV.VIEWS.find((v) => v.id === id),
   huntCheck: () => { const e = Pirates.contact(S, S.ship.lon, S.ship.lat); if (e) ui.pendingEncounter = e; return !!e; },
   fleetStatus: (id) => Fleet.statusText(S, S.fleet.ships.find((x) => x.id === id)),
   // sail on for some days of game time, as the frame loop would (stops for dialogs and arrivals)

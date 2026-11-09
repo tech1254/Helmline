@@ -22,7 +22,8 @@
 // Not simulated: the crown's chart rewards, refits, loyalty troubles (he is always "present"),
 // and exploring beyond Serra Leoa.
 
-import { readFileSync } from 'node:fs';
+import { readFileSync, existsSync } from 'node:fs';
+import * as X from '../../public/js/x/index.js'; // first: the expansions add their ports
 import { Market, GOODS, PORTUGUESE_PORTS } from '../../public/js/economy.js';
 import * as Fleet from '../../public/js/fleet.js';
 import * as Captains from '../../public/js/captains.js';
@@ -50,6 +51,7 @@ import * as Hunt from '../../public/js/hunt.js';
 import * as Fight from '../../public/js/fight.js';
 
 loadRoutes(JSON.parse(readFileSync(new URL('../../public/data/routes.json', import.meta.url))));
+for (const f of X.routeFiles()) { const u = new URL(`../../public/${f}`, import.meta.url); if (existsSync(u)) loadRoutes(JSON.parse(readFileSync(u))); }
 
 const arg = (name, dflt) => {
   const i = process.argv.indexOf(`--${name}`);
@@ -727,6 +729,7 @@ function career(persona) {
     if (wk.income) Accounts.record(S, { kind: 'post', amount: wk.income, text: 'trading posts' });
     for (const m of War.tick(S)) { if (m.reward) Accounts.record(S, { kind: 'war', amount: m.reward, text: 'war service' }); if (m.grantPost) { const I = Investments.ensureInvest(S); if (!I.feitorias[m.grantPost]) I.feitorias[m.grantPost] = { since: S.day, cost: 0 }; } if (m.log) note(m.log); }
     Race.tick(S);
+    for (const m of X.tickAll(S, STEP, { market, atSea: !!fl()?.leg, away: false, sim: true })) if (m.log) note(m.log);
     for (const m of Law.tick(S, STEP, !!fl()?.leg)) if (m.mutiny) { const d = Law.payMutineers(S); Accounts.record(S, { kind: 'wages', amount: -d, text: 'mutineers' }); note(`pays mutineers ${d} cz`); }
     const f = fl();
     if (f) {

@@ -5,6 +5,7 @@ import { lawClick } from './lawview.js';
 import * as Law from './law.js';
 import { offerSkip } from './timeskip.js';
 import { seekIndiaClick, commissionClick } from './raceview.js';
+import * as XV from './x/views.js';
 import { home, homeName } from './nations.js';
 import { PORTS, findPath } from './world.js';
 import { GOODS } from './economy.js';
@@ -372,6 +373,8 @@ export function initActions() {
       // port works: building, the warehouse (worksview.js)
     } else if (t.dataset.seekIndia !== undefined) {
       seekIndiaClick();
+    } else if (XV.VIEWS.some((v) => v.click?.(t))) {
+      // the expansions' buttons (x/views.js)
     } else if (t.dataset.exploreCommission !== undefined) {
       commissionClick();
     } else if (t.dataset.timeskip !== undefined) {

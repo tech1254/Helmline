@@ -6,6 +6,7 @@ import * as Hunt from './hunt.js';
 import * as Law from './law.js';
 import * as War from './war.js';
 import * as Race from './race.js';
+import * as X from './x/index.js';
 import { D2R, PORTS, isLand, windAt, sailFactor, bearing, distNm, angleDiff, isRiverLeg, RIVER_KNOTS, shoalDepth, SHOALS, isBeyond, compassPoint } from './world.js';
 import * as Ports from './ports.js';
 import { GOODS, PORTUGUESE_PORTS } from './economy.js';
@@ -326,6 +327,7 @@ export function advanceTime(dd, atSea, away = false) {
     if (m.finished?.id === 'church') { if (S.contracts) S.contracts.standing = (S.contracts.standing || 0) + 8; House.ensureHouse(S).renown += 2; }
   }
   report(works.msgs.filter((m) => m.html));
+  report(X.tickAll(S, dd, { market, atSea, away })); // the expansions (x/index.js)
   syncMarket();
   Pirates.tickGalleys(S, dd); // corsair galleys cruising their waters, to be hunted
   if (atSea) {

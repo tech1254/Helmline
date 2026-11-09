@@ -13,6 +13,7 @@ import { S, ui } from './state.js';
 import { FOG_PAD, fogSoft, isRevealed, refreshFog } from './fog.js';
 import { DPR, H, W, cam, ctx, toScreen, toWorld } from './view.js';
 import { $ } from './util.js';
+import * as XV from './x/views.js';
 
 // ---- Rendering --------------------------------------------------------------
 export const INK = '#4a3622';
@@ -599,6 +600,7 @@ export function render() {
   drawReported();
   drawRumours();
   drawHouses();
+  for (const v of XV.VIEWS) v.draw?.();
   drawFleet();
   drawGalleys();
   drawShip();

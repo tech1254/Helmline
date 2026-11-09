@@ -48,7 +48,7 @@ export const DATED_CROWNS = [
 export function crownOf(pid, S = null) {
   if (S?.law?.crowns?.[pid]) return S.law.crowns[pid];
   if (S) for (const d of DATED_CROWNS) if (d.pid === pid && S.day >= d.from && S.day < d.to) return d.crown;
-  return PORT_CROWN[pid] || null;
+  return PORT_CROWN[pid] || PORTS.find((p) => p.id === pid)?.crown || null; // an expansion's port carries its crown
 }
 // A house sails under its home city's flag: the Salvago's Genoa is French from 1499.
 export const houseCrown = (S, id) => id?.startsWith('convoy_') ? id.slice(7) : (HOUSE_CROWN[id] === 'genoa' ? crownOf('genoa', S) : HOUSE_CROWN[id]) || null;

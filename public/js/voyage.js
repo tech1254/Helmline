@@ -32,6 +32,8 @@ import { home, homeName } from './nations.js';
 import { openFight } from './fightview.js';
 import { engagePrey } from './huntview.js';
 import { openDefence, onDock } from './lawview.js';
+import * as X from './x/index.js';
+import * as XV from './x/views.js';
 import * as Law from './law.js';
 
 // ---- Corsairs ----------------------------------------------------------------------
@@ -532,6 +534,8 @@ export function dock(portId) {
   } else if (prices.length) {
     toast(`Your captains' notes bring fresh prices from ${prices.map((x) => PORTS.find((q) => q.id === x).name).join(', ')} to your price book.`, 'port', true, 'routine');
   }
+  report(X.dockAll(S, portId)); // the expansions (x/index.js)
+  for (const v of XV.VIEWS) v.onDock?.(portId);
   onDock(portId); // the law: havens, prizes, a port shut to you (lawview.js)
   const shut = Events.closure(S, portId);
   if (shut) toast(`<b>${p.name} is closed:</b> ${Events.template(shut).title.toLowerCase()}. You may anchor, but not trade.`, '');

@@ -42,6 +42,7 @@ import { ensureFirst, firstActive, firstAtSea, firstBox } from './firstvoyage.js
 import * as Law from './law.js';
 import { lawBox } from './lawview.js';
 import { indiaBox, commissionBox } from './raceview.js';
+import * as XV from './x/views.js';
 
 // ---- HUD & panels -----------------------------------------------------------
 
@@ -259,6 +260,7 @@ export function renderPort(el) {
     ${lawBox(pid)}
     ${indiaBox(pid)}
     ${commissionBox(pid)}
+    ${XV.VIEWS.map((v) => v.portBox?.(pid) || '').join('')}
     ${shut ? `<p class="banner warn"><b>Closed to trade:</b> ${Events.template(shut).title.toLowerCase()}. Expected to reopen around ${fmtDate(shut.end)}.</p>` : ''}
     <table class="market">
       <thead><tr><th>Good</th><th class="num">Buy</th><th class="num">Sell</th><th class="num">Hold</th><th></th></tr></thead>
