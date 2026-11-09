@@ -362,6 +362,8 @@ function career(persona) {
     if (plan1.loop !== f.loop && !f.leg && !busy && (plan1.loop !== 'deep' || f.realHull === 'nau')) {
       f.loop = plan1.loop; Fleet.setRoute(S, market, f, route(plan1.loop));
     }
+    // halted (its route lost money two reports running, fleet.js): he gives it fresh orders, as a player would
+    if (!f.route && !f.leg && f.halted) { f.halted = null; Fleet.setRoute(S, market, f, route(f.loop)); note('gives the flagship fresh orders'); }
     // hire captains, as many as he wants and his standing allows, for loops already charted
     const room = Math.min(P.hires + (P.indies && S.discovered.calicut ? 1 : 0), Contracts.perks(S).maxShips) - hireds.length;
     if (room > 0) {
