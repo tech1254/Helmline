@@ -38,6 +38,8 @@ function showBeat(beat) {
       delete S.story.reveal;
     }
     if (line) log(line);
+    // the market opens once the prologue is read: the chart, not a table of prices, behind it
+    if (beat.id === 'prologue' && S.ship.docked) ui.panelMode = 'port';
     renderPanel();
     save();
   };
@@ -79,6 +81,7 @@ export function renderRutter(el) {
 // For the Lisbon market panel: the debt, while it is owed.
 export function debtBox() {
   if (!Story.canPayDebt(S) || !storyOn()) return '';
+  if (!S.voyages && S.day < 120) return ''; // the first voyage comes first; the debt is not due for months
   const D = Story.debtOf(S);
   return `<div class="note story-debt"><p>${D.father} owed ${D.who} <b>${D.amount} cz</b>, due ${fmtDate(D.due)}.</p><div class="row"><button data-pay-debt ${S.purse < D.amount ? 'disabled' : ''}>Pay ${D.who} ${D.amount} cz</button></div></div>`;
 }
