@@ -502,7 +502,7 @@ function career(persona) {
     const enc = Law.hunters(S, STEP, pos.lon, pos.lat);
     if (!enc) return;
     R.ng.defences++;
-    const foe = enc.kind === 'hunter' ? 'hunter' : enc.kind === 'reprisal' ? 'merchantman' : enc.kind === 'search' ? 'galley' : 'warship';
+    const foe = enc.kind === 'hunter' ? 'hunter' : enc.kind === 'reprisal' ? 'merchantman' : enc.kind === 'search' ? 'galley' : enc.kind === 'frenchcorsair' ? 'merchantman' : 'warship';
     const F = Fight.start(S, 'defend', Fight.foeSide(foe, enc.armed || 0), { range: Fight.FAR });
     Fight.autoplay(F);
     f.hullPct = Math.max(10, (f.hullPct ?? 100) - Fight.damageTo(F));
@@ -510,6 +510,7 @@ function career(persona) {
     if (enc.kind === 'hunter' && lost) { const a = Law.arrested(S, enc.crown); R.ng.arrested++; R.ng.fines += a.fine; Accounts.record(S, { kind: 'fines', amount: -a.fine, text: 'fined' }); note(`taken by the ${enc.crown} hunters: fined ${a.fine} cz`); }
     else if (lost) { for (const l of Object.values(f.hold)) { l.qty = Math.round(l.qty * 0.7); l.paid *= 0.7; } Law.losePrizes(S); }
     else if (enc.kind === 'warship' && ['beaten', 'sheered'].includes(F.done.result)) { War.serve(S); R.ng.warFights++; }
+    else if (enc.kind === 'frenchcorsair' && ['beaten', 'sheered'].includes(F.done.result)) { S.purse += Law.FRENCH_BOUNTY; Accounts.record(S, { kind: 'bounty', amount: Law.FRENCH_BOUNTY, text: 'French corsair' }); R.ng.french = (R.ng.french || 0) + 1; }
   };
 
   // ---- Contracts at the flagship's port of call ----

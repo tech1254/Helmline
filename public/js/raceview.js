@@ -11,6 +11,9 @@ import { report } from './sim.js';
 import { save } from './save.js';
 import { fmtDate } from './util.js';
 import { hint } from './notices.js';
+import { yearOf } from './ships.js';
+
+const fmt = (n) => Math.round(n).toLocaleString('en-GB');
 
 // The rumour or legend under a tap on the chart, if any.
 export function markAt(sx, sy, finger = false) {
@@ -57,6 +60,39 @@ export function seekIndiaClick() {
       report(won.length ? won : [{ html: 'The way to <b>Calicut</b> is on your chart: sail to the chart\'s edge beyond the Cape, and on.', kind: 'discover', log: 'Charted the way to India.' }]);
       save();
     },
+  });
+}
+
+// The crown's commission to explore, offered in your home port.
+export function commissionBox(pid) {
+  const R = S.race;
+  if (R?.commission && pid === S.ship.docked) {
+    const r = Race.raceOf(R.commission.port);
+    return `<p class="harbour">You hold the crown's commission to find <b>${r.what}</b>, before ${r.who} does (history says ${yearOf(R.commission.by)}). Its rumour is marked on your chart.</p>`;
+  }
+  const o = Race.commissionOffer(S, pid);
+  if (!o) return '';
+  return `<p class="harbour">The crown is looking for a captain to find ${o.what}, before ${o.who} does.</p><div class="row invest"><button data-explore-commission>Hear the commission</button></div>`;
+}
+export function commissionClick() {
+  const pid = S.ship.docked;
+  const o = Race.commissionOffer(S, pid);
+  if (!o) return;
+  confirmDialog({
+    title: 'A commission from the crown',
+    body: `<p>The crown wants ${o.what} found and charted, and it wants it done by one of its own captains before ${o.who} gets there (history says ${o.byYear}). It pays <b>${fmt(o.stipend)} cz</b> now towards the voyage, and <b>${fmt(o.bonus)} cz</b> on top of the discovery prize if you chart it first.</p><p class="fine">The pilots' word of where to look goes on your chart. If you are beaten to it, the stipend is yours but the crown will remember.</p>`,
+    ok: 'Take the commission',
+    cancel: 'Decline',
+    kind: 'rumour',
+    onOk: () => {
+      const t = Race.takeCommission(S, pid, true);
+      if (t) {
+        Accounts.record(S, { kind: 'discovery', amount: t.stipend, port: pid, text: `The crown's stipend to find ${t.what}` });
+        report([{ html: `You take the crown's commission to find <b>${t.what}</b>. Its rumour is marked on your chart.`, kind: 'discover', log: `Commissioned to find ${t.what}.` }]);
+      }
+      save();
+    },
+    onCancel: () => { Race.takeCommission(S, pid, false); save(); },
   });
 }
 

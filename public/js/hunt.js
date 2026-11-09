@@ -57,9 +57,9 @@ export function preyInfo(S, v) {
   const shipValue = Math.round((HULLS[v.hull]?.price || 3000) * SHIP_SHARE);
   const cargoValue = cargo.reduce((t, c) => t + c.value, 0);
   return {
-    key: v.key, house: v.house, houseName: d?.name || v.name, of: d?.of, colour: v.colour, crown, special: !!v.special,
+    key: v.key, house: v.house, houseName: d?.name || v.name, convoy: !!v.convoy, of: d?.of, colour: v.colour, crown, special: !!v.special,
     crownName: crown ? Law.CROWNS[crown].name : null, adj: crown ? Law.CROWNS[crown].adj : '',
-    hull: v.hull, hullName: v.special ? 'flagship' : Fight.FOES[v.hull]?.name || HULLS[v.hull]?.name?.toLowerCase() || v.hull, armed: v.armed || 0,
+    hull: v.hull, hullName: v.special ? (v.house === 'treasure' ? 'carrack' : 'flagship') : Fight.FOES[v.hull]?.name || HULLS[v.hull]?.name?.toLowerCase() || v.hull, armed: v.armed || 0,
     from: v.from, to: v.to, cargo, cargoValue, shipValue, value: shipValue + cargoValue,
     law: Law.lawful(S, crown, v.lat), enemy: War.atWarWith(S, crown),
   };
@@ -145,6 +145,8 @@ export function spoils(S, info, how, free = 0) {
   }
   S.purse += cz;
   if (info.house === 'guineafleet') War.ensureWar(S).guineaTaken = S.day; // history's prize, taken once
+  else if (info.convoy) { const W = War.ensureWar(S); W.convoysTaken = { ...(W.convoysTaken || {}), [info.key]: S.day }; }
+  else if (info.house === 'treasure') { const W = War.ensureWar(S); W.treasureTaken = { ...(W.treasureTaken || {}), [info.key.split(':')[1]]: S.day }; }
   else Houses.raided(S, info.house, taken, how === 'prize', info.key);
   Law.prizeTaken(S);
   const L = Law.ensureLaw(S);

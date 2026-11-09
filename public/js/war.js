@@ -96,6 +96,38 @@ WARS.push(
     'France and Spain agreed to share the Kingdom of Naples, and have fallen out over the share. It is war with France again, in Italy and at sea, and Genoa, French since 1499, is the enemy\'s port.',
     'Peace at Lyon: the Kingdom of Naples is Spain\'s. The French ports open to you again.'),
 );
+// The Habsburg-Valois wars: the Emperor Charles, King of Spain, against Francis of France, in
+// Italy and Flanders, and at sea from the Channel to the Canaries. For Castile, war with France.
+const VALOIS_WATERS = [{ w: -12, e: -5.5, s: 35.5, n: 48 }, { w: -32, e: -24, s: 36, n: 40.5 }, { w: -1.5, e: 16.6, s: 36.6, n: 44.6 }];
+const valois = (id, from, to, peace, start, end) => ({ id, name: 'the war with France', sides: [['france'], ['castile', 'naples']], from, to, peace, waters: VALOIS_WATERS, start: { castile: start }, end: { castile: end } });
+WARS.push(
+  valois('valois1', date(1521, 6, 1), date(1526, 1, 14), 'the Treaty of Madrid',
+    'The Emperor Charles, our king, and King Francis of France are at war, in Navarre, in Flanders and in Italy. France is the enemy: its ports are shut to you, its corsairs are licensed against our shipping, and the crown grants letters of marque against the French.',
+    'Peace at Madrid: King Francis, taken at Pavia, signs away his claims in Italy to buy his freedom. The French ports open to you again.'),
+  valois('valois2', date(1527, 1, 1), date(1529, 8, 5), 'the Peace of Cambrai',
+    'King Francis has broken the Treaty of Madrid the moment he was free: war with France again.',
+    'The Ladies\' Peace at Cambrai: France gives up Italy again.'),
+  valois('valois3', date(1536, 4, 1), date(1538, 6, 18), 'the Truce of Nice',
+    'King Francis has invaded Savoy and made a pact with the Turk: war with France again, and French galleys sail with Barbarossa\'s.',
+    'A truce at Nice, for ten years, the Pope says. Nobody believes it.'),
+  valois('valois4', date(1542, 7, 12), date(1544, 9, 18), 'the Peace of Crépy',
+    'War with France again: King Francis and the Turk together. A Turkish fleet winters at Toulon.',
+    'Peace at Crépy. The French ports open to you again.'),
+);
+// The Indies treasure: from the 1520s a ship of the Indies trade comes home to Sanlúcar each
+// summer with gold and pearls. For a Portuguese captain at peace, taking her is piracy of the
+// worst kind; the French take them when they can (Jean Fleury, 1523).
+export const TREASURE_FROM = 1522;
+function treasureShip(S) {
+  const y = yearOf(S.day);
+  if (y < TREASURE_FROM || mine(S) === 'castile') return null;
+  const from = date(y, 5, 15), days = 60;
+  if (S.day < from || S.day >= from + days || S.war?.treasureTaken?.[y]) return null;
+  return { house: 'treasure', name: 'Indies treasure ship', colour: '#c9a227', i: 0, from: 'santodomingo', to: 'sanlucar', start: from, days,
+    hull: 'carrack', armed: 2, t: (S.day - from) / days, key: `treasure:${y}`, special: true, year: y,
+    cargo: [{ good: 'gold', qty: 80 }, { good: 'sugar', qty: 40 }, { good: 'dye', qty: 30 }] };
+}
+
 const leagueBeats1 = [
   { day: date(1494, 9, 3), text: 'King Charles VIII of France has crossed the Alps with an army and a train of bronze cannon, to claim the Kingdom of Naples.' },
   { day: date(1495, 2, 22), text: 'Charles VIII has entered Naples without a fight; its Aragonese king has fled to Sicily. Wheat is dear all down the Tyrrhenian coast.' },
@@ -129,6 +161,23 @@ CAMPAIGNS.push(
     for: neutral, patron: 'The French king\'s victuallers', title: 'For the French at Genoa', contraband: true,
     ports: ['lisbon', 'porto', 'lagos'], to_port: 'genoa', goods: ['wheat', 'cloth', 'salt'], effects: {}, beats: [] },
 );
+// The Indies trade, for Castile: from 1522 the crown wants the outbound fleets victualled and
+// the colonists supplied; cargoes from Seville and Sanlúcar to Santo Domingo.
+CAMPAIGNS.push({ id: 'indies', crown: 'castile', name: 'the Indies fleets', from: date(1522, 1, 1), to: date(1552, 1, 1),
+  patron: 'The House of Trade', title: 'For the Indies fleet', ports: ['seville', 'sanlucar', 'cadiz'], to_port: 'santodomingo',
+  goods: ['wine', 'cloth', 'wheat'], effects: { santodomingo: { wine: 1.15, cloth: 1.15 } }, beats: [] });
+
+// News of the late years, for everyone: the Barbary corsairs and the French at sea.
+export const NEWS = [
+  { day: date(1516, 5, 1), text: 'The corsair Oruç Barbarossa has taken Algiers. His galleys now raid from the Balearics to Valencia: the waters off Algiers are dangerous.', danger: true },
+  { day: date(1520, 6, 1), text: 'Barbary galleys are raiding the coasts of Sicily and Naples: the Tyrrhenian Sea is no longer safe.', danger: true },
+  { day: date(1521, 7, 1), text: 'King Francis of France has licensed the corsairs of Dieppe and La Rochelle. French ships cruise off the Azores, Cape St Vincent and the Canaries for Iberian cargoes; the crown pays a reward for any driven off.', danger: true },
+  { day: date(1523, 6, 1), text: 'Jean Fleury of Dieppe has taken two ships of Cortés\'s off Cape St Vincent, carrying the treasure of Moctezuma for the Emperor: gold, jade, feathers. The whole of Europe is talking of it.', danger: true },
+  { day: date(1529, 5, 27), text: 'Hayreddin Barbarossa has taken the Peñón of Algiers from the Spanish, and sworn himself the Sultan\'s man. Turkish war galleys sail with the corsairs now: bigger, and more of them.', danger: true },
+  { day: date(1535, 7, 21), text: 'The Emperor Charles has taken Tunis from Barbarossa with a great fleet. The corsair escaped to Algiers.' },
+  { day: date(1541, 10, 25), text: 'The Emperor\'s fleet against Algiers has been wrecked by a storm in the bay, with a hundred and fifty ships lost. Barbarossa\'s Algiers stands.', danger: true },
+];
+
 // The campaigns on today, and the ones you may take contracts for.
 export const activeCampaigns = (S) => CAMPAIGNS.filter((c) => S.day >= c.from && S.day < c.to);
 export const activeCampaign = (S) => activeCampaigns(S)[0] || null;
@@ -176,13 +225,58 @@ function campaignTick(S, msgs) {
 export const GUINEA_FLEET = { from: date(1478, 8, 1), days: 75 };
 export function specialVessels(S) {
   const W = S.war;
-  if (mine(S) !== 'portugal' || W?.guineaTaken || W?.averted?.succession) return [];
-  const { from, days } = GUINEA_FLEET;
-  if (S.day < from || S.day >= from + days) return [];
-  return [{ house: 'guineafleet', name: 'Castilian Guinea fleet', colour: '#b8860b', i: 0, from: 'mina', to: 'sanlucar', start: from, days,
-    hull: 'carrack', armed: 2, t: (S.day - from) / days, key: 'guineafleet', special: true,
-    cargo: [{ good: 'gold', qty: 60 }, { good: 'ivory', qty: 30 }, { good: 'pepper', qty: 40 }] }];
+  const out = convoys(S);
+  const t = treasureShip(S);
+  if (t) out.push(t);
+  if (mine(S) !== 'portugal' || W?.guineaTaken || W?.averted?.succession) return out;
+  const g = guineaFleet(S);
+  return g ? [...out, g] : out;
 }
+function guineaFleet(S) {
+  const { from, days } = GUINEA_FLEET;
+  if (S.day < from || S.day >= from + days) return null;
+  return { house: 'guineafleet', name: 'Castilian Guinea fleet', colour: '#b8860b', i: 0, from: 'mina', to: 'sanlucar', start: from, days,
+    hull: 'carrack', armed: 2, t: (S.day - from) / days, key: 'guineafleet', special: true,
+    cargo: [{ good: 'gold', qty: 60 }, { good: 'ivory', qty: 30 }, { good: 'pepper', qty: 40 }] };
+}
+
+// The enemy's merchant shipping, in your wars: a ship sails every CONVOY_EVERY days on one of
+// the enemy's own lanes, so there is always something for a captain with a letter of marque to
+// hunt. Taking one is lawful (and service in the war); taking one without a letter is not.
+export const CONVOY_EVERY = 9;
+const CONVOY_DAYS = 26;
+export const LANES = {
+  castile: [['sanlucar', 'lanzarote'], ['seville', 'gomera'], ['cadiz', 'valencia'], ['sanlucar', 'santodomingo'], ['palos', 'gomera'], ['cadiz', 'santacruz']],
+  portugal: [['lisbon', 'funchal'], ['lagos', 'arguin'], ['lisbon', 'mina'], ['lisbon', 'antwerp'], ['porto', 'angra'], ['lisbon', 'ribeiragrande']],
+  france: [['marseille', 'genoa'], ['marseille', 'lisbon'], ['genoa', 'lisbon'], ['marseille', 'antwerp']],
+};
+const CONVOY_OPEN = { santacruz: 1497, santodomingo: 1496, naples: 1495 };
+const CONVOY_HULLS = ['caravel', 'nau', 'merchantman', 'caravel'];
+function convoys(S) {
+  const out = [];
+  for (const w of yourWars(S)) {
+    if (w.if && S.war?.averted?.[w.id]) continue;
+    for (const crown of others(w, mine(S))) {
+      const lanes = (LANES[crown] || []).filter(([a, b]) => yearOf(S.day) >= (CONVOY_OPEN[a] || 0) && yearOf(S.day) >= (CONVOY_OPEN[b] || 0));
+      if (!lanes.length) continue;
+      const k1 = Math.floor((S.day - w.from) / CONVOY_EVERY);
+      for (let k = Math.max(0, k1 - Math.ceil(CONVOY_DAYS / CONVOY_EVERY)); k <= k1; k++) {
+        const start = w.from + k * CONVOY_EVERY;
+        if (S.day < start || S.day >= start + CONVOY_DAYS || start >= w.to) continue;
+        const key = `convoy:${w.id}:${crown}:${k}`;
+        if (S.war?.convoysTaken?.[key]) continue;
+        const h = (k * 2654435761 + crown.length * 97) >>> 0;
+        let [from, to] = lanes[h % lanes.length];
+        if ((h >>> 8) & 1) [from, to] = [to, from];
+        out.push({ house: `convoy_${crown}`, name: CROWN_ADJ[crown] || crown, colour: CROWN_COLOUR[crown] || '#777', i: k, from, to, start, days: CONVOY_DAYS,
+          hull: CONVOY_HULLS[(h >>> 12) % CONVOY_HULLS.length], armed: (h >>> 16) % 3 === 0 ? 1 : 0, t: (S.day - start) / CONVOY_DAYS, key, convoy: true, crown });
+      }
+    }
+  }
+  return out;
+}
+const CROWN_ADJ = { castile: 'Castilian', portugal: 'Portuguese', france: 'French' };
+const CROWN_COLOUR = { castile: '#a33a2a', portugal: '#2a5a8a', france: '#3a4f9a' };
 
 export const SERVICE_REWARD = 500; // cz the crown pays at the peace, for each action in its service
 export const SERVICE_CAP = 12;
@@ -199,6 +293,7 @@ const others = (w, c) => { const i = sideOf(w, c); if (i < 0) return []; const o
 const mine = (S) => S.nation || 'portugal';
 const live = (S, w) => S.day >= w.from && S.day < w.to && !S.war?.averted?.[w.id];
 // Every war going on today; the ones your crown is in.
+const War_atPeace = (S) => !atWarWith(S, 'castile');
 export const enemyIn = (S, w) => others(w, mine(S))[0] || null;
 export const activeWars = (S) => WARS.filter((w) => live(S, w));
 export const yourWars = (S) => activeWars(S).filter((w) => sideOf(w, mine(S)) >= 0);
@@ -277,6 +372,20 @@ export function tick(S) {
     }
   }
   campaignTick(S, msgs);
+  W.news = W.news || {};
+  NEWS.forEach((n, i) => {
+    if (S.day < n.day || W.news[i]) return;
+    W.news[i] = true;
+    if (S.day - n.day <= 60) msgs.push({ html: `<b>News:</b> ${n.text}`, kind: n.danger ? 'danger' : 'discover', log: n.text });
+  });
+  const ts = treasureShip(S);
+  if (ts) {
+    W.treasureTold = W.treasureTold || {};
+    if (!W.treasureTold[ts.year]) {
+      W.treasureTold[ts.year] = true;
+      msgs.push({ html: `<b>News:</b> the Indies ship of ${ts.year} is on her way home from Santo Domingo to Sanlúcar with gold of the Indies. She is <b>marked on your chart</b>, sailing in company. ${War_atPeace(S) ? 'Castile is at peace with your crown: taking her would be piracy, and Castile would never forget it.' : ''}`, kind: 'discover', log: `The Indies treasure ship of ${ts.year} sails.` });
+    }
+  }
   if (mine(S) === 'portugal' && !W.guineaTold && S.day >= GUINEA_FLEET.from && S.day < GUINEA_FLEET.from + GUINEA_FLEET.days && current(S)) {
     W.guineaTold = true;
     msgs.push({ html: '<b>News:</b> spies in Sanlúcar report that Castile\'s Guinea fleet is loading gold at the Mina and will sail home past Cape Verde and the Canaries. Its flagship is <b>marked on your chart</b>: the richest prize of the war, if you can take her from her escort.', kind: 'danger', log: 'The Castilian Guinea fleet sails from the Mina.' });

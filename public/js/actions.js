@@ -4,7 +4,7 @@ import { worksClick } from './worksview.js';
 import { lawClick } from './lawview.js';
 import * as Law from './law.js';
 import { offerSkip } from './timeskip.js';
-import { seekIndiaClick } from './raceview.js';
+import { seekIndiaClick, commissionClick } from './raceview.js';
 import { home, homeName } from './nations.js';
 import { PORTS, findPath } from './world.js';
 import { GOODS } from './economy.js';
@@ -372,6 +372,8 @@ export function initActions() {
       // port works: building, the warehouse (worksview.js)
     } else if (t.dataset.seekIndia !== undefined) {
       seekIndiaClick();
+    } else if (t.dataset.exploreCommission !== undefined) {
+      commissionClick();
     } else if (t.dataset.timeskip !== undefined) {
       offerSkip(false);
     } else if (t.dataset.buyout) {
