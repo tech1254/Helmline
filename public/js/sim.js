@@ -24,7 +24,7 @@ import * as Wear from './wear.js';
 import * as Lending from './lending.js';
 import * as Sight from './navsight.js';
 import * as Pilots from './pilots.js';
-import { DAYS_PER_SEC, OFFLINE_DAYS_PER_DOUBLING, OFFLINE_FULL_DAYS, OFFLINE_MAX_DAYS, OFFLINE_MIN_SECONDS, OFFLINE_RATE, SIGHT, STANDING_FADES_AFTER_HOURS } from './config.js';
+import { DAYS_PER_SEC, OFFLINE_DAYS_PER_DOUBLING, OFFLINE_FULL_DAYS, OFFLINE_MAX_DAYS, OFFLINE_MIN_SECONDS, OFFLINE_MAX_HOURS, OFFLINE_RATE, SIGHT, STANDING_FADES_AFTER_HOURS } from './config.js';
 import { S, market, ui } from './state.js';
 import { timeScale } from './cloud.js';
 import { save } from './save.js';
@@ -171,21 +171,17 @@ export function catchUp() {
   const seen = S.lastSeen;
   S.lastSeen = Date.now();
   if (!seen) return null;
-  const awaySec = (Date.now() - seen) / 1000;
+  const realSec = (Date.now() - seen) / 1000;
+  const awaySec = Math.min(realSec, OFFLINE_MAX_HOURS * 3600); // after a day, the world waits
   if (awaySec < OFFLINE_MIN_SECONDS || !S.fleet?.ships.length || !S.ship.docked) return null;
   const want = awaySec * DAYS_PER_SEC * OFFLINE_RATE;
   const days = offlineDays(want);
   const before = { purse: S.purse, day: S.day, ships: Object.fromEntries(S.fleet.ships.map((x) => [x.id, { trips: x.trips, profit: x.profit, cargo: Fleet.holdPaid(x), paid: x.paidTotal || 0 }])) };
-  // Long absences: captains stray (so they may skim or go ashore during it), and Lisbon's
-  // merchants start to forget you.
-  const hours = awaySec / 3600;
-  const strayed = Fleet.strayWhileAway(S, hours);
-  let standingLost = 0;
-  if (hours > STANDING_FADES_AFTER_HOURS && S.contracts?.unlocked) {
-    standingLost = Math.min(5, Math.floor((hours - STANDING_FADES_AFTER_HOURS) / 12) + 1);
-    S.contracts.standing -= standingLost;
-    log(`Away too long: standing fell by ${standingLost}.`);
-  }
+  // Time away is only good news (Nov 2026): captains do not stray, standing does not fade, no
+  // ship is lost, loans and contracts wait, and the purse never comes back smaller than it was.
+  const strayed = [];
+  const standingLost = 0;
+  if (S.lending?.loan?.due != null) S.lending.loan.due += days;
   const paidBefore = S.fleet.wagesPaid || 0; // your own crew is paid off in port; only captains draw pay
   // Contracts wait for the captain: time away never makes one lapse.
   let contractsHeld = 0;
@@ -196,7 +192,8 @@ export function catchUp() {
   let msgs;
   try {
     const steps = Math.max(1, Math.ceil(days * 4));
-    for (let i = 0; i < steps; i++) advanceTime(days / steps, false, true);
+    Fleet.setAway(true);
+    try { for (let i = 0; i < steps; i++) advanceTime(days / steps, false, true); } finally { Fleet.setAway(false); }
     observe(S.ship.docked);
     report(Events.hearNews(S, S.ship.docked));
   } finally {
@@ -207,12 +204,15 @@ export function catchUp() {
     const b = before.ships[x.id] || { trips: 0, profit: 0, cargo: 0, paid: 0 };
     return { name: x.name, trips: x.trips - b.trips, profit: x.profit - b.profit, cargoChange: Fleet.holdPaid(x) - b.cargo, wages: Math.round((x.paidTotal || 0) - (b.paid || 0)), status: Fleet.statusText(S, x) };
   });
+  // Wages and upkeep are covered by what the house earned: a run of bad luck never costs you.
+  let covered = 0;
+  if (S.purse < before.purse) { covered = before.purse - S.purse; S.purse = before.purse; Accounts.record(S, { kind: 'post', amount: covered, text: 'Your factors covered the costs while you were away' }); }
   log(`Away ${awayText(awaySec)}: ${Math.round(days)} days passed; purse ${S.purse - before.purse >= 0 ? '+' : ''}${Math.round(S.purse - before.purse)} cz.`);
   save();
   const wages = (S.fleet.wagesPaid || 0) - paidBefore;
   const sales = ships.reduce((n, x) => n + x.profit, 0);
   const cargo = ships.reduce((n, x) => n + x.cargoChange, 0);
-  return { awaySec, days, capped: days >= OFFLINE_MAX_DAYS, slowed: want > OFFLINE_FULL_DAYS, purse: S.purse - before.purse, sales, wages, cargo, ships, msgs, strayed, standingLost, contractsHeld };
+  return { awaySec: realSec, waited: realSec > OFFLINE_MAX_HOURS * 3600, days, capped: days >= OFFLINE_MAX_DAYS, slowed: want > OFFLINE_FULL_DAYS, purse: S.purse - before.purse, sales, wages, cargo, ships, msgs, strayed, standingLost, contractsHeld };
 }
 
 // Days that pass for a given amount of offline time: full value at first, then tapering.
@@ -245,7 +245,7 @@ export function showSummary(sum) {
         ${Math.abs(sum.cargo) >= 1 ? `<dt>Counting the cargo aboard</dt><dd class="${sum.purse + sum.cargo < 0 ? 'warn' : ''}">${sum.purse + sum.cargo >= 0 ? '+' : ''}${Math.round(sum.purse + sum.cargo).toLocaleString()} cz</dd>` : ''}
         <dt>Your purse now</dt><dd class="${S.purse < 0 ? 'warn' : ''}">${Math.round(S.purse).toLocaleString()} cz</dd>
       </dl>
-      <p class="fine">${sum.capped ? `That is the most that passes in one absence (${OFFLINE_MAX_DAYS} days).` : sum.slowed ? 'After the first few weeks, longer absences add time more slowly.' : 'The world moves at a tenth of its usual pace while you are gone.'}</p>
+      <p class="fine">${sum.waited ? `After the first ${OFFLINE_MAX_HOURS} hours the world waited for you: a long break never costs you an event.` : sum.capped ? `That is the most that passes in one absence (${OFFLINE_MAX_DAYS} days).` : sum.slowed ? 'After the first few weeks, longer absences add time more slowly.' : 'The world moves at a tenth of its usual pace while you are gone.'}</p>
       ${sum.contractsHeld ? `<p class="fine">Your ${sum.contractsHeld === 1 ? 'contract waited' : `${sum.contractsHeld} contracts waited`} for you: deadlines moved back by ${Math.round(sum.days)} days.</p>` : ''}
       ${sum.strayed.length ? `<p class="warn">Your captains missed you: ${sum.strayed.map((x) => `Captain ${x.captain} is now ${Fleet.loyaltyText(x.after)}`).join('; ')}.</p>` : ''}
       ${sum.standingLost ? `<p class="warn">The merchants of ${homeName(S)} are starting to forget you: standing −${sum.standingLost}.</p>` : ''}
@@ -309,10 +309,17 @@ export function advanceTime(dd, atSea, away = false) {
   report(Houses.tick(S)); // the rival houses (houses.js)
   report(Race.tick(S)); // the explorers and the rival houses' voyages (race.js)
   const war = War.tick(S); // the wars between the crowns (war.js)
-  for (const m of war) if (m.reward) Accounts.record(S, { kind: 'war', amount: m.reward, text: 'The crown\'s thanks for service in the war' });
+  for (const m of war) {
+    if (m.reward) Accounts.record(S, { kind: 'war', amount: m.reward, text: 'The crown\'s thanks for service in the war' });
+    if (m.grantPost) { // land granted for service: a trading post, without cost
+      const I = Investments.ensureInvest(S);
+      if (!I.feitorias[m.grantPost]) I.feitorias[m.grantPost] = { since: S.day, cost: 0, granted: true };
+      Works.ensureWorks(S);
+    }
+  }
   report(war);
   for (const m of Law.tick(S, dd, atSea)) { if (m.mutiny) ui.mutiny = true; else report([m]); } // infamy fades; a pirate crew counts the dry days
-  const works = Works.tick(S); // your port works: upkeep, the trading posts' earnings (works.js)
+  const works = Works.tick(S, away); // your port works: upkeep, the trading posts' earnings (works.js)
   if (works.upkeep) Accounts.record(S, { kind: 'works', amount: -works.upkeep, text: 'Upkeep of your port works' });
   if (works.income) Accounts.record(S, { kind: 'post', amount: works.income, text: 'Your factors\' trade' });
   for (const m of works.msgs) {

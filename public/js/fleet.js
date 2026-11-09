@@ -84,6 +84,10 @@ export function buyShip(S, captainId, maxShips, hullId = 'caravel') {
 // Time away wears down a captain's loyalty: nothing for a night's sleep or a working day,
 // then steadily.
 export const STRAY_AFTER_HOURS = 16;
+// While the owner is away (sim.js catchUp) no ship of his is lost: time away is only good news.
+let away = false;
+export const setAway = (on) => { away = !!on; };
+
 export function strayWhileAway(S, hoursAway) {
   const F = ensureFleet(S);
   const out = [];
@@ -631,7 +635,10 @@ export function tick(S, market, days, ownerPresent = true) {
     }
   }
   if (F.ships.some((x) => x.sunk)) F.ships = F.ships.filter((x) => !x.sunk);
-  for (const ship of F.ships) { const ask = Captains.considerRaise(S, ship); if (ask) msgs.push(ask); }
+  for (const ship of F.ships) { // a raise asked for waits while you are away: no answer is not a no
+    if (away) { if (ship.captain.asks) ship.captain.asks.day += days; continue; }
+    const ask = Captains.considerRaise(S, ship); if (ask) msgs.push(ask);
+  }
   return msgs;
 }
 
@@ -680,7 +687,8 @@ function wearOnPassage(S, ship, leg, lat, lon) {
   const storm = Wear.storms(leg.days, Math.random, Wear.galeFactor(lon, lat, S.day)) * fx.peril;
   ship.hullPct = Math.max(5, before - Wear.wearPerDay(lat, ship.hull, years, fx.tropicWear) * leg.days - storm);
   const share = Wear.leakShare(ship.hullPct, fx.leak);
-  if (share) for (const [g, lot] of Object.entries(holdOf(ship))) { lot.qty -= Math.round(lot.qty * share); if (lot.qty <= 0) delete holdOf(ship)[g]; }
+  if (share && !away) for (const [g, lot] of Object.entries(holdOf(ship))) { lot.qty -= Math.round(lot.qty * share); if (lot.qty <= 0) delete holdOf(ship)[g]; }
+  if (away) ship.hullPct = Math.max(Wear.DANGER_BELOW, ship.hullPct);
   if (ship.hullPct < Wear.DANGER_BELOW && Math.random() < 0.1) {
     ship.sunk = true;
     return { html: `<b>${ship.name} is lost.</b> Her hull gave way on the passage to ${port(leg.to).name}; Captain ${ship.captain.name} and the crew got off in the boat, but the ship and her cargo are gone.`, kind: 'alert', level: 'alert', log: `${ship.name} foundered on the way to ${port(leg.to).name}.` };
@@ -696,7 +704,7 @@ function beyondHazards(S, ship, leg) {
   const p = Indies.passage(leg.start, leg.post ? 'out' : 'home');
   const hz = Indies.hazards({ ...p, days: (leg.pre || 0) + (leg.post || 0) });
   ship.hullPct = Math.max(5, (ship.hullPct ?? 100) - hz.hullLoss);
-  if (hz.lost) {
+  if (hz.lost && !away) {
     ship.sunk = true;
     return { html: `<b>${ship.name} is lost</b> beyond the Cape, on the passage ${leg.post ? 'to' : 'from'} Calicut. Of Captain ${ship.captain.name} and her crew there is no word.`, kind: 'alert', level: 'alert', log: `${ship.name} was lost on the India passage.` };
   }

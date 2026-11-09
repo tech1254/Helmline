@@ -30,11 +30,12 @@ export const CROWNS = {
 const PORT_CROWN = {
   lisbon: 'portugal', porto: 'portugal', lagos: 'portugal', funchal: 'portugal', ceuta: 'portugal', arguin: 'portugal',
   saotome: 'portugal', angra: 'portugal', flores: 'portugal', ribeiragrande: 'portugal', mina: 'portugal', portoseguro: 'portugal',
-  cadiz: 'castile', sanlucar: 'castile', palos: 'castile', seville: 'castile', lanzarote: 'castile', gomera: 'castile',
+  cadiz: 'castile', sanlucar: 'castile', palos: 'castile', seville: 'castile', lanzarote: 'castile', gomera: 'castile', santacruz: 'castile',
   valencia: 'castile', santodomingo: 'castile',
   bruges: 'burgundy', antwerp: 'burgundy', bristol: 'england', galway: 'england', genoa: 'genoa',
 };
-export const crownOf = (pid) => PORT_CROWN[pid] || null;
+// A treaty may move a port to another crown (war.js, the War of the Line): S.law.crowns.
+export const crownOf = (pid, S = null) => S?.law?.crowns?.[pid] || PORT_CROWN[pid] || null;
 export const HAVENS = ['sale', 'algiers', 'cove'];
 export const isHaven = (pid) => HAVENS.includes(pid);
 export const COVE = 'cove';
@@ -64,7 +65,7 @@ export const isPirate = (S) => totalInfamy(S) >= WANTED;
 
 // Why you cannot trade in a port, if you cannot: at war with its crown, or wanted there.
 export function closedTo(S, pid) {
-  const c = crownOf(pid);
+  const c = crownOf(pid, S);
   if (!c) return null;
   if (War.atWarWith(S, c)) return { why: 'war', text: `${CROWNS[c].name} is at war with your crown: no merchant here will deal with you, and the harbour master will not let you work cargo.` };
   if (infamy(S, c) >= CLOSED) return { why: 'wanted', text: `Your name is known here as a pirate. No merchant of ${CROWNS[c].name} will deal with you until you have bought the king's pardon${CROWNS[c].court ? ` at ${portById(CROWNS[c].court).name}` : ''}.` };
@@ -118,7 +119,7 @@ export const canSendPrize = (S) => ensureLaw(S).prizes.length < MAX_PRIZES;
 export function prizeOffers(S, pid) {
   const L = ensureLaw(S);
   const out = [];
-  const court = crownOf(pid) === mine(S) && !closedTo(S, pid);
+  const court = crownOf(pid, S) === mine(S) && !closedTo(S, pid);
   const haven = isHaven(pid);
   const ownHaven = pid === COVE && Works.has(S, COVE, 'stockade');
   for (const p of L.prizes) {
@@ -149,7 +150,7 @@ export function hunters(S, days, lon, lat, rand = Math.random) {
   let best = null;
   for (const [c, n] of Object.entries(L.infamy)) {
     if (n < WANTED) continue;
-    const near = PORTS.some((p) => crownOf(p.id) === c && distNm(lon, lat, p.lon, p.lat) < 350);
+    const near = PORTS.some((p) => crownOf(p.id, S) === c && distNm(lon, lat, p.lon, p.lat) < 350);
     if (!near) continue;
     const chance = Math.min(0.045, 0.006 * n / WANTED);
     if (!best || chance > best.chance) best = { crown: c, chance };

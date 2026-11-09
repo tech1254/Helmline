@@ -40,6 +40,7 @@ export const MARKETS = {
   palos:     { k: 0.025, p: { wine: [8, 1], cloth: [13], sugar: [26], dye: [23], gold: [112], ivory: [48], pepper: [42], wheat: [14], salt: [4, 1], alquices: [15], copper: [19], brazilwood: [28], spices: [130] } },
   seville:   { k: 0.012, p: { wine: [9, 1], cloth: [12, 1], sugar: [28], dye: [26], gold: [124], ivory: [54], pepper: [46], wheat: [12, 1], salt: [5], alquices: [12, 1], copper: [16, 1], brazilwood: [31], spices: [145] } },
   gomera:    { k: 0.035, p: { wine: [17], cloth: [19], sugar: [18], dye: [10, 1], gold: [95], ivory: [38], pepper: [30], wheat: [16], salt: [8], alquices: [16], copper: [24], brazilwood: [20], spices: [85] } },
+  santacruz: { k: 0.04, p: { wine: [14, 1], cloth: [22], sugar: [13, 1], dye: [12, 1], gold: [95], ivory: [38], pepper: [30], wheat: [21], salt: [9], alquices: [16], copper: [25], brazilwood: [22], spices: [90] } },
   ceuta:     { k: 0.025, p: { wine: [16], cloth: [18], sugar: [24], dye: [22], gold: [105], ivory: [44], pepper: [40], wheat: [18], salt: [6], alquices: [14], copper: [22], brazilwood: [24], spices: [115] } },
   safi:      { k: 0.022, p: { wine: [18], cloth: [20], sugar: [20], dye: [16], gold: [90], ivory: [40], pepper: [32], wheat: [6, 1], salt: [6], alquices: [10, 1], copper: [26], brazilwood: [22], spices: [105] } },
   funchal:   { k: 0.03, p: { wine: [16], cloth: [18], sugar: [11, 1], dye: [20], gold: [100], ivory: [40], pepper: [34], wheat: [15], salt: [8], alquices: [15], copper: [22], brazilwood: [22], spices: [120] } },
@@ -80,7 +81,7 @@ export const MARKETS = {
 };
 // Salt cod in each port: [base price, sold here?].
 const FISH = {
-  lisbon: [14], porto: [12], lagos: [13], cadiz: [14], sanlucar: [14], palos: [12], seville: [16], gomera: [16], ceuta: [18],
+  lisbon: [14], porto: [12], lagos: [13], cadiz: [14], sanlucar: [14], palos: [12], seville: [16], gomera: [16], santacruz: [16], ceuta: [18],
   safi: [16], funchal: [17], lanzarote: [14], arguin: [9], gambia: [18], serraleoa: [18], cestos: [18], mina: [20], mpinda: [20],
   saotome: [20], saobras: [22], portoseguro: [20], calicut: [25], cantor: [24],
   bruges: [11], antwerp: [11], bristol: [8, 1], galway: [6, 1], valencia: [16], genoa: [17], sale: [14], algiers: [15],

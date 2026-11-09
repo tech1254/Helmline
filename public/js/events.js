@@ -3,6 +3,7 @@
 // once enough days have passed for word to reach it.
 
 import { PORTS, distNm } from './world.js';
+import * as War from './war.js';
 
 const CHANCE_PER_DAY = 1 / 24; // about one new event every three to four weeks
 const MAX_ACTIVE = 2;
@@ -140,6 +141,11 @@ export function applyToMarket(S, market) {
       for (const [g, m] of Object.entries(goods)) market.effects[port][g] = (market.effects[port][g] || 1) * m;
     }
     for (const port of t.close || []) market.closedPorts.add(port);
+  }
+  // a campaign's demand (war.js: the army on La Gomera wants wheat)
+  for (const [port, goods] of Object.entries(War.campaignEffects(S) || {})) {
+    market.effects[port] = market.effects[port] || {};
+    for (const [g, m] of Object.entries(goods)) market.effects[port][g] = (market.effects[port][g] || 1) * m;
   }
 }
 
