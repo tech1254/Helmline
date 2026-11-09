@@ -58,8 +58,11 @@ async def main():
         after = await J(f"() => {H}.then((M) => [M.shares(window.helmline.state, 'lisbon').you, M.leader(window.helmline.state, 'lisbon')])")
         print('your share of Lisbon:', round(before, 2), '->', [round(after[0], 2), after[1]])
         if after[0] <= before or after[1] != 'you': errs.append(f'trading did not win you Lisbon: {after}')
-        # buy out a house
+        # buy out a house: not while it is young (its founders will not sell for ten years)
         await J("() => { const s = window.helmline.state; s.purse = 200000; }")
+        await J("() => { window.helmline.panel(null); window.helmline.panel('houses'); }"); await pg.wait_for_timeout(300)
+        if await J("() => !!document.querySelector('[data-buyout=\"santangel\"]')"): errs.append('a house in its first ten years can be bought out')
+        await J("() => { const s = window.helmline.state; s.day = Math.max(s.day, window.helmline.yearDay(1462)); }")
         await J("() => { window.helmline.panel(null); window.helmline.panel('houses'); }"); await pg.wait_for_timeout(300)
         btn = await J("() => !!document.querySelector('[data-buyout=\"santangel\"]')")
         if not btn: errs.append('no buy-out offered for a much smaller house')
