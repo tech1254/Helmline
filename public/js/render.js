@@ -546,6 +546,7 @@ export function render() {
   const goals = Contracts.targets(S);
   for (const p of PORTS) {
     if (!S.discovered[p.id]) continue;
+    if (p.beyond && p.via) continue; // an expansion's port reached through another, beyond the chart (x/)
     const [sx, sy] = toScreen(p.lon, p.lat);
     if (goals.has(p.id)) {
       // a contract waits here: a gold ring that pulses gently
