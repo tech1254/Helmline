@@ -22,7 +22,7 @@ export const RULES = [];
 
 import colonies from './colonies.js'; RULES.push(colonies);
 
-// import heir from './heir.js'; RULES.push(heir);
+import heir from './heir.js'; RULES.push(heir);
 
 // import silver from './silver.js'; RULES.push(silver);
 
