@@ -741,10 +741,16 @@ body.panel-open #ambitions { width: min(320px, calc(100vw - min(520px, 100vw - 2
 table.houses { width: 100%; border-collapse: collapse; font-size: 15px; }
 table.houses th, table.houses td { padding: 6px 6px; border-bottom: 1px solid rgba(90, 70, 40, 0.25); vertical-align: top; text-align: left; }
 table.houses .num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
-table.houses small { display: block; color: var(--ink-2); font-size: 12.5px; }
+table.houses small { display: block; color: var(--ink-2); font-size: 12.5px; white-space: normal; }
 table.houses tr.you td { font-weight: 600; }
 table.houses tr.gone td { opacity: 0.55; }
 table.houses tr.act td { border-bottom-style: dashed; padding-top: 0; }
+table.houses td { overflow-wrap: anywhere; }
+/* on a phone the ships and ports-led columns give way, so the names and buy-out lines can wrap */
+@media (max-width: 560px) {
+  table.houses th:nth-child(4), table.houses td:nth-child(4), table.houses th:nth-child(5), table.houses td:nth-child(5) { display: none; }
+  table.houses tr.act td[colspan] { white-space: normal; }
+}
 .house-sw { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 6px; vertical-align: 0; }
 p.shares { font-size: 14px; margin: 6px 0 0; color: var(--ink); }
 p.shares .sw-you { color: #8a5a0a; }

@@ -40,6 +40,9 @@ import { YARDS } from './shipyard.js';
 import { moneyBox } from './lendingview.js';
 import { ensureFirst, firstActive, firstAtSea, firstBox } from './firstvoyage.js';
 import * as Law from './law.js';
+import * as War from './war.js';
+import * as Race from './race.js';
+import * as Houses from './houses.js';
 import { lawBox } from './lawview.js';
 import { indiaBox, commissionBox } from './raceview.js';
 
@@ -241,7 +244,7 @@ export function renderPort(el) {
       <td class="num">${have || '<span class="muted">0</span>'}${avg ? `<small>paid ~${avg}</small>` : ''}</td>
       <td class="acts">
         ${sells ? `<button data-buy="${g.id}" data-n="1" ${buy > S.purse || !free ? 'disabled' : ''}>+1</button><button data-buy="${g.id}" data-n="10" ${buy > S.purse || !free ? 'disabled' : ''}>+10</button><button data-buy="${g.id}" data-n="max" ${buy > S.purse || !free ? 'disabled' : ''}>Max</button>` : ''}
-        ${have && !shut && !barred ? `<button data-sell="${g.id}" data-n="1">−1</button><button data-sell="${g.id}" data-n="all">All</button>` : ''}
+        ${have && !shut && !barred ? `<button data-sell="${g.id}" data-n="1">−1</button>${have >= 15 ? `<button data-sell="${g.id}" data-n="10">−10</button>` : ''}<button data-sell="${g.id}" data-n="all">All</button>` : ''}
       </td></tr>`;
   }).join('');
   el.innerHTML = `
@@ -714,6 +717,15 @@ const NOTES = [
   ['age', () => Ships.lifeShare(S.ship.hull, Ships.serviceYears(S.ship, S.day)) >= 0.7, `Your ship is growing old: the yards can no longer make her fully sound. A great rebuild in ${homeName(S)} gives back years, twice at most; in the end she must be replaced.`],
   ['house', () => S.ship.docked === home(S) && S.purse >= 5000, `Rich enough for honours: Your house, in the ${homeName(S)} market panel. A house, a knighthood, a chapel: renown, and a smaller share for the crown.`],
   ['history', () => S.discovered.mpinda || S.discovered.saotome, 'History moves on: as the explorers come home, new ports open and appear on your chart. Watch the notices.'],
+  // the systems of Nov 2026: one note each, the first time it matters
+  ['rumours', () => Race.marks(S).some((m) => m.kind === 'rumour'), 'A dashed red ring with a question mark is a rumour: word of a coast nobody has charted. Sail into it to look. Chart a coast before history does and the crown pays a prize, and your house gets ten years of its trade.'],
+  ['legends', () => S.voyages >= 6 && Race.marks(S).some((m) => m.kind === 'legend'), 'The legendary islands of the old charts (Antillia, the Seven Cities, Brasil) are marked too. Most are empty sea, but sailing to one is never wasted: some point further west.'],
+  ['rivalships', () => S.voyages >= 4 && S.contracts?.unlocked && Houses.positions(S).length > 0, 'The small ships in other colours are the rival houses\' traders. Tap one to see what she carries. In wartime, with a letter of marque, the enemy\'s ships are lawful prizes; otherwise taking one is piracy.'],
+  ['war', () => !!War.current(S), 'Your crown is at war. The enemy\'s ports are shut to you and his warships cruise the contested waters. Take the crown\'s letter of marque and his merchant ships are yours to take lawfully; the crown rewards service at the peace.'],
+  ['infamy', () => Object.values(S.law?.infamy || {}).some((n) => n > 0), 'Piracy is remembered, crown by crown (the Houses tab shows your name at sea). Wanted, and that crown\'s hunters look for you near its ports; worse, and its ports close to you. A pardon can be bought at court; it fades with honest years.'],
+  ['prizes', () => (S.law?.prizes || []).length > 0, 'A prize crew is bringing your capture in. A lawful prize sells at a prize court, in any port of your crown (the crown takes a fifth); anything else must go to a haven like Salé or Algiers, for much less.'],
+  ['works', () => S.voyages >= 8 && S.purse >= 3000 && !Works.list(S).length, 'Money can build now. In any port, Port works: a trading post earns from its trade while you sail; a quay, a warehouse or a yard earns more in a busy port. A port where you build is yours to lead.'],
+  ['french', () => Ships.yearOf(S.day) >= 1521, 'French corsairs are out, from the Azores to the Canaries. They take no tribute: run, or fight her off, and the crown pays for every one you drive off.'],
   ['indies', () => S.discovered.calicut, 'The way to the Indies is open. Sail to the edge of the chart beyond the Cape, and on to Calicut. Go with the monsoon: round the Cape June to August, leave India December to February.'],
 ];
 
