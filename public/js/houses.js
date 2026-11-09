@@ -173,14 +173,20 @@ export function ledger(S) {
   return rows.sort((a, b) => (b.status === 'trading') - (a.status === 'trading') || b.worth - a.worth);
 }
 
-// Buying out a house: possible once your house is worth twice as much; the price is its worth
-// and a tenth more. Its share of every port becomes yours.
+// Buying out a house: possible once your house is worth three times as much, and the house has
+// been trading ten years (a young house's founders will not sell). The price is its worth and a
+// half again for its custom and its factors, and each house bought before makes the next dearer:
+// the rest have heard. Its share of every port becomes yours.
+export const BUYOUT_YEARS = 10;
 export function buyOutPrice(S, id) {
-  const h = ensureHouses(S).h[id];
+  const H = ensureHouses(S), h = H.h[id], d = defOf(id);
   if (!h || h.status !== 'trading') return null;
-  const price = Math.round(houseWorth(h) * 1.1 / 100) * 100;
-  const ok = yourWorth(S) >= 2 * houseWorth(h);
-  return { price, ok, why: ok ? (S.purse < price ? `you need ${fmt(price)} cz in your purse` : '') : 'your house must be worth twice theirs' };
+  const bought = Object.values(H.h).filter((x) => x.status === 'bought').length;
+  const price = Math.round(houseWorth(h) * (1.5 + 0.25 * bought) / 100) * 100;
+  const young = (d?.from || 1451) + BUYOUT_YEARS > yearOf(S.day ?? 0);
+  const rich = yourWorth(S) >= 3 * houseWorth(h);
+  const ok = rich && !young;
+  return { price, ok, why: young ? `its founders will not sell before ${(d?.from || 1451) + BUYOUT_YEARS}` : !rich ? 'your house must be worth three times theirs' : S.purse < price ? `you need ${fmt(price)} cz in your purse` : '' };
 }
 
 export function buyOut(S, id) {

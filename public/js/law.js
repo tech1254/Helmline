@@ -51,7 +51,7 @@ export function crownOf(pid, S = null) {
   return PORT_CROWN[pid] || null;
 }
 // A house sails under its home city's flag: the Salvago's Genoa is French from 1499.
-export const houseCrown = (S, id) => (HOUSE_CROWN[id] === 'genoa' ? crownOf('genoa', S) : HOUSE_CROWN[id]) || null;
+export const houseCrown = (S, id) => id?.startsWith('convoy_') ? id.slice(7) : (HOUSE_CROWN[id] === 'genoa' ? crownOf('genoa', S) : HOUSE_CROWN[id]) || null;
 export const HAVENS = ['sale', 'algiers', 'cove'];
 export const isHaven = (pid) => HAVENS.includes(pid);
 export const COVE = 'cove';

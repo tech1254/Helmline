@@ -41,7 +41,7 @@ import { moneyBox } from './lendingview.js';
 import { ensureFirst, firstActive, firstAtSea, firstBox } from './firstvoyage.js';
 import * as Law from './law.js';
 import { lawBox } from './lawview.js';
-import { indiaBox } from './raceview.js';
+import { indiaBox, commissionBox } from './raceview.js';
 
 // ---- HUD & panels -----------------------------------------------------------
 
@@ -258,6 +258,7 @@ export function renderPort(el) {
     ${barred ? `<p class="banner warn"><b>Shut to you:</b> ${barred.text}</p>` : ''}
     ${lawBox(pid)}
     ${indiaBox(pid)}
+    ${commissionBox(pid)}
     ${shut ? `<p class="banner warn"><b>Closed to trade:</b> ${Events.template(shut).title.toLowerCase()}. Expected to reopen around ${fmtDate(shut.end)}.</p>` : ''}
     <table class="market">
       <thead><tr><th>Good</th><th class="num">Buy</th><th class="num">Sell</th><th class="num">Hold</th><th></th></tr></thead>

@@ -225,15 +225,58 @@ function campaignTick(S, msgs) {
 export const GUINEA_FLEET = { from: date(1478, 8, 1), days: 75 };
 export function specialVessels(S) {
   const W = S.war;
+  const out = convoys(S);
   const t = treasureShip(S);
-  if (t) return [t];
-  if (mine(S) !== 'portugal' || W?.guineaTaken || W?.averted?.succession) return [];
-  const { from, days } = GUINEA_FLEET;
-  if (S.day < from || S.day >= from + days) return [];
-  return [{ house: 'guineafleet', name: 'Castilian Guinea fleet', colour: '#b8860b', i: 0, from: 'mina', to: 'sanlucar', start: from, days,
-    hull: 'carrack', armed: 2, t: (S.day - from) / days, key: 'guineafleet', special: true,
-    cargo: [{ good: 'gold', qty: 60 }, { good: 'ivory', qty: 30 }, { good: 'pepper', qty: 40 }] }];
+  if (t) out.push(t);
+  if (mine(S) !== 'portugal' || W?.guineaTaken || W?.averted?.succession) return out;
+  const g = guineaFleet(S);
+  return g ? [...out, g] : out;
 }
+function guineaFleet(S) {
+  const { from, days } = GUINEA_FLEET;
+  if (S.day < from || S.day >= from + days) return null;
+  return { house: 'guineafleet', name: 'Castilian Guinea fleet', colour: '#b8860b', i: 0, from: 'mina', to: 'sanlucar', start: from, days,
+    hull: 'carrack', armed: 2, t: (S.day - from) / days, key: 'guineafleet', special: true,
+    cargo: [{ good: 'gold', qty: 60 }, { good: 'ivory', qty: 30 }, { good: 'pepper', qty: 40 }] };
+}
+
+// The enemy's merchant shipping, in your wars: a ship sails every CONVOY_EVERY days on one of
+// the enemy's own lanes, so there is always something for a captain with a letter of marque to
+// hunt. Taking one is lawful (and service in the war); taking one without a letter is not.
+export const CONVOY_EVERY = 9;
+const CONVOY_DAYS = 26;
+export const LANES = {
+  castile: [['sanlucar', 'lanzarote'], ['seville', 'gomera'], ['cadiz', 'valencia'], ['sanlucar', 'santodomingo'], ['palos', 'gomera'], ['cadiz', 'santacruz']],
+  portugal: [['lisbon', 'funchal'], ['lagos', 'arguin'], ['lisbon', 'mina'], ['lisbon', 'antwerp'], ['porto', 'angra'], ['lisbon', 'ribeiragrande']],
+  france: [['marseille', 'genoa'], ['marseille', 'lisbon'], ['genoa', 'lisbon'], ['marseille', 'antwerp']],
+};
+const CONVOY_OPEN = { santacruz: 1497, santodomingo: 1496, naples: 1495 };
+const CONVOY_HULLS = ['caravel', 'nau', 'merchantman', 'caravel'];
+function convoys(S) {
+  const out = [];
+  for (const w of yourWars(S)) {
+    if (w.if && S.war?.averted?.[w.id]) continue;
+    for (const crown of others(w, mine(S))) {
+      const lanes = (LANES[crown] || []).filter(([a, b]) => yearOf(S.day) >= (CONVOY_OPEN[a] || 0) && yearOf(S.day) >= (CONVOY_OPEN[b] || 0));
+      if (!lanes.length) continue;
+      const k1 = Math.floor((S.day - w.from) / CONVOY_EVERY);
+      for (let k = Math.max(0, k1 - Math.ceil(CONVOY_DAYS / CONVOY_EVERY)); k <= k1; k++) {
+        const start = w.from + k * CONVOY_EVERY;
+        if (S.day < start || S.day >= start + CONVOY_DAYS || start >= w.to) continue;
+        const key = `convoy:${w.id}:${crown}:${k}`;
+        if (S.war?.convoysTaken?.[key]) continue;
+        const h = (k * 2654435761 + crown.length * 97) >>> 0;
+        let [from, to] = lanes[h % lanes.length];
+        if ((h >>> 8) & 1) [from, to] = [to, from];
+        out.push({ house: `convoy_${crown}`, name: CROWN_ADJ[crown] || crown, colour: CROWN_COLOUR[crown] || '#777', i: k, from, to, start, days: CONVOY_DAYS,
+          hull: CONVOY_HULLS[(h >>> 12) % CONVOY_HULLS.length], armed: (h >>> 16) % 3 === 0 ? 1 : 0, t: (S.day - start) / CONVOY_DAYS, key, convoy: true, crown });
+      }
+    }
+  }
+  return out;
+}
+const CROWN_ADJ = { castile: 'Castilian', portugal: 'Portuguese', france: 'French' };
+const CROWN_COLOUR = { castile: '#a33a2a', portugal: '#2a5a8a', france: '#3a4f9a' };
 
 export const SERVICE_REWARD = 500; // cz the crown pays at the peace, for each action in its service
 export const SERVICE_CAP = 12;

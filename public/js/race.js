@@ -39,6 +39,11 @@ export const RACES = [
   { port: 'portoseguro', year: 1500, who: 'Cabral', what: 'the Land of the Holy Cross', prize: 2000 },
 ];
 export const raceOf = (pid) => RACES.find((r) => r.port === pid) || null;
+// Where a commission may send you: India and the land of the Holy Cross are their own story.
+const COMMISSION_NOT = ['calicut'];
+export const COMMISSION_LEAD = 12; // years before history's date the crown starts to look for a captain
+export const COMMISSION_STIPEND = 0.25, COMMISSION_BONUS = 1; // of the prize: up front, and on success
+export const COMMISSION_STANDING = 25;
 export const isRace = (pid) => !!raceOf(pid);
 
 // Where pilots speak of each uncharted coast, from which year, and what they say.
@@ -120,8 +125,17 @@ export function charted(S, pid) {
   R.grants[pid] = { by: 'you', until: S.day + GRANT_YEARS * YEAR };
   S.purse += r.prize;
   if (S.contracts) S.contracts.standing = (S.contracts.standing || 0) + 5;
+  const won = [];
+  if (R.commission?.port === pid) {
+    const bonus = Math.round(r.prize * COMMISSION_BONUS);
+    S.purse += bonus;
+    if (S.contracts) S.contracts.standing = (S.contracts.standing || 0) + 5;
+    R.commission = null;
+    R.commissionsDone = (R.commissionsDone || 0) + 1;
+    won.push({ html: `<b>Your commission is fulfilled.</b> The crown pays the reward it promised for ${r.what}: <b>${fmt(bonus)} cz</b> more, and your name is spoken at court.`, kind: 'discover', log: `Commission fulfilled: ${r.what} (${bonus} cz).`, prize: bonus, port: pid });
+  }
   R.history.push({ day: S.day, text: `charted ${r.what} at ${portById(pid).name}, ${aheadText(d.year - yearOf(S.day))} ${r.who}` });
-  return [{ html: `<b>A discovery!</b> No ${S.nation === 'castile' ? 'Castilian' : 'Portuguese'} ship has been here before: you are the first to chart <b>${r.what}</b>, ${aheadText(d.year - yearOf(S.day))} ${r.who}. The crown pays <b>${fmt(r.prize)} cz</b> for the news and grants your house the trade of ${portById(pid).name} for ${GRANT_YEARS} years.`, kind: 'discover', log: `First to chart ${r.what} (${portById(pid).name}): a prize of ${r.prize} cz and a ${GRANT_YEARS}-year grant.`, prize: r.prize, port: pid }];
+  return [{ html: `<b>A discovery!</b> No ${S.nation === 'castile' ? 'Castilian' : 'Portuguese'} ship has been here before: you are the first to chart <b>${r.what}</b>, ${aheadText(d.year - yearOf(S.day))} ${r.who}. The crown pays <b>${fmt(r.prize)} cz</b> for the news and grants your house the trade of ${portById(pid).name} for ${GRANT_YEARS} years.`, kind: 'discover', log: `First to chart ${r.what} (${portById(pid).name}): a prize of ${r.prize} cz and a ${GRANT_YEARS}-year grant.`, prize: r.prize, port: pid }, ...won];
 }
 const aheadText = (n) => (n <= 0 ? 'ahead of' : n === 1 ? 'a year before' : `${n} years before`);
 
@@ -132,10 +146,43 @@ export function grant(S, pid) {
   return g && S.day < g.until ? g.by : null;
 }
 
+// The crown's commission to explore: offered in your home port to a captain of standing, for the
+// next coast history has not yet reached. Half a stipend now, the prize doubled if you chart it
+// first; if history gets there before you, the commission lapses.
+export function commissionOffer(S, pid) {
+  const R = ensureRace(S);
+  if (R.commission || (S.contracts?.standing || 0) < COMMISSION_STANDING) return null;
+  if (pid !== (S.nation === 'castile' ? 'seville' : 'lisbon') && pid !== 'sanlucar' && pid !== 'lagos') return null;
+  if (R.commissionDeclined && S.day - R.commissionDeclined < 3 * YEAR) return null;
+  const y = yearOf(S.day);
+  const next = RACES.filter((r) => !COMMISSION_NOT.includes(r.port) && !R.firsts[r.port] && !R.told[r.port] && !S.discovered[r.port] && !R.commissioned?.[r.port])
+    .map((r) => ({ r, d: dateOf(S, r.port) })).filter(({ d }) => d.day > S.day + YEAR && d.year - y <= COMMISSION_LEAD)
+    .sort((a, b) => a.d.day - b.d.day)[0];
+  if (!next) return null;
+  return { port: next.r.port, what: next.r.what, who: next.r.who, by: next.d.day, byYear: next.d.year, stipend: Math.round(next.r.prize * COMMISSION_STIPEND / 10) * 10, bonus: Math.round(next.r.prize * COMMISSION_BONUS) };
+}
+export function takeCommission(S, pid, yes) {
+  const R = ensureRace(S);
+  const o = commissionOffer(S, pid);
+  if (!o) return null;
+  if (!yes) { R.commissionDeclined = S.day; return null; }
+  R.commission = { port: o.port, since: S.day, by: o.by };
+  R.commissioned = { ...(R.commissioned || {}), [o.port]: true };
+  S.purse += o.stipend;
+  if (!R.rumours[o.port]) addRumour(S, o.port, HEARD[o.port]?.text || `The crown's pilots believe ${o.what} lies about here.`, 1.4);
+  return o;
+}
+
 // Days pass: the races' dates come round. Returns messages.
 export function tick(S) {
   const R = ensureRace(S);
   const msgs = [];
+  if (R.commission && S.day >= R.commission.by && !R.firsts[R.commission.port]) {
+    const r = raceOf(R.commission.port);
+    R.commission = null;
+    if (S.contracts) S.contracts.standing = Math.max(0, (S.contracts.standing || 0) - 3);
+    msgs.push({ html: `Your commission to find ${r.what} has lapsed: ${r.who} got there first. The crown keeps its reward, and remembers.`, kind: 'danger', log: `Commission lapsed: ${r.what}.` });
+  }
   for (const r of RACES) {
     const d = dateOf(S, r.port);
     if (S.day < d.day || R.told[r.port]) continue;
