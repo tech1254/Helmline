@@ -16,11 +16,20 @@
 //   closed(S)           ports closed to trade now
 // Pure rules: no browser modules.
 
-import india from './india.js';
+// The expansions, one line each, a blank line between them so that branches merge cleanly.
+// Uncomment a line to turn an expansion on (its branch does).
+export const RULES = [];
 
-export const RULES = [
-  india,
-].filter(Boolean);
+// import colonies from './colonies.js'; RULES.push(colonies);
+
+// import heir from './heir.js'; RULES.push(heir);
+
+// import silver from './silver.js'; RULES.push(silver);
+
+// import cod from './cod.js'; RULES.push(cod);
+
+import india from './india.js'; RULES.push(india);
+
 
 export const state = (S, id) => { S.x = S.x || {}; S.x[id] = S.x[id] || {}; return S.x[id]; };
 export function tickAll(S, dd, ctx) { const out = []; for (const x of RULES) if (x.tick) out.push(...(x.tick(S, dd, ctx) || [])); return out; }
