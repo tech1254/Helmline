@@ -153,6 +153,8 @@ export function spoils(S, info, how, free = 0) {
     if (info.enemy) { War.serve(S); lines.push('Your crown counts it as service in the war.'); }
     if (S.contracts) S.contracts.standing = (S.contracts.standing || 0) + 1;
   } else {
+    // taking a ship of the other crown of Iberia in the 1490s provokes the crisis of 1493 (war.js)
+    if (['portugal', 'castile'].includes(info.crown) && info.crown !== (S.nation || 'portugal') && S.day >= War.WARS[0].to + 3600) War.ensureWar(S).provoked = true;
     const n = Law.piracy(S, info.crown, how === 'cargo' || how === 'prize' ? 'taken' : how);
     lines.push(`This is piracy: ${Law.CROWNS[info.crown].name} will remember it (infamy +${n}).`);
   }

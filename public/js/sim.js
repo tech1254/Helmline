@@ -176,16 +176,11 @@ export function catchUp() {
   const want = awaySec * DAYS_PER_SEC * OFFLINE_RATE;
   const days = offlineDays(want);
   const before = { purse: S.purse, day: S.day, ships: Object.fromEntries(S.fleet.ships.map((x) => [x.id, { trips: x.trips, profit: x.profit, cargo: Fleet.holdPaid(x), paid: x.paidTotal || 0 }])) };
-  // Long absences: captains stray (so they may skim or go ashore during it), and Lisbon's
-  // merchants start to forget you.
-  const hours = awaySec / 3600;
-  const strayed = Fleet.strayWhileAway(S, hours);
-  let standingLost = 0;
-  if (hours > STANDING_FADES_AFTER_HOURS && S.contracts?.unlocked) {
-    standingLost = Math.min(5, Math.floor((hours - STANDING_FADES_AFTER_HOURS) / 12) + 1);
-    S.contracts.standing -= standingLost;
-    log(`Away too long: standing fell by ${standingLost}.`);
-  }
+  // Time away is only good news (Nov 2026): captains do not stray, standing does not fade, no
+  // ship is lost, loans and contracts wait, and the purse never comes back smaller than it was.
+  const strayed = [];
+  const standingLost = 0;
+  if (S.lending?.loan?.due != null) S.lending.loan.due += days;
   const paidBefore = S.fleet.wagesPaid || 0; // your own crew is paid off in port; only captains draw pay
   // Contracts wait for the captain: time away never makes one lapse.
   let contractsHeld = 0;
@@ -196,7 +191,8 @@ export function catchUp() {
   let msgs;
   try {
     const steps = Math.max(1, Math.ceil(days * 4));
-    for (let i = 0; i < steps; i++) advanceTime(days / steps, false, true);
+    Fleet.setAway(true);
+    try { for (let i = 0; i < steps; i++) advanceTime(days / steps, false, true); } finally { Fleet.setAway(false); }
     observe(S.ship.docked);
     report(Events.hearNews(S, S.ship.docked));
   } finally {
@@ -207,6 +203,9 @@ export function catchUp() {
     const b = before.ships[x.id] || { trips: 0, profit: 0, cargo: 0, paid: 0 };
     return { name: x.name, trips: x.trips - b.trips, profit: x.profit - b.profit, cargoChange: Fleet.holdPaid(x) - b.cargo, wages: Math.round((x.paidTotal || 0) - (b.paid || 0)), status: Fleet.statusText(S, x) };
   });
+  // Wages and upkeep are covered by what the house earned: a run of bad luck never costs you.
+  let covered = 0;
+  if (S.purse < before.purse) { covered = before.purse - S.purse; S.purse = before.purse; Accounts.record(S, { kind: 'post', amount: covered, text: 'Your factors covered the costs while you were away' }); }
   log(`Away ${awayText(awaySec)}: ${Math.round(days)} days passed; purse ${S.purse - before.purse >= 0 ? '+' : ''}${Math.round(S.purse - before.purse)} cz.`);
   save();
   const wages = (S.fleet.wagesPaid || 0) - paidBefore;
@@ -309,10 +308,17 @@ export function advanceTime(dd, atSea, away = false) {
   report(Houses.tick(S)); // the rival houses (houses.js)
   report(Race.tick(S)); // the explorers and the rival houses' voyages (race.js)
   const war = War.tick(S); // the wars between the crowns (war.js)
-  for (const m of war) if (m.reward) Accounts.record(S, { kind: 'war', amount: m.reward, text: 'The crown\'s thanks for service in the war' });
+  for (const m of war) {
+    if (m.reward) Accounts.record(S, { kind: 'war', amount: m.reward, text: 'The crown\'s thanks for service in the war' });
+    if (m.grantPost) { // land granted for service: a trading post, without cost
+      const I = Investments.ensureInvest(S);
+      if (!I.feitorias[m.grantPost]) I.feitorias[m.grantPost] = { since: S.day, cost: 0, granted: true };
+      Works.ensureWorks(S);
+    }
+  }
   report(war);
   for (const m of Law.tick(S, dd, atSea)) { if (m.mutiny) ui.mutiny = true; else report([m]); } // infamy fades; a pirate crew counts the dry days
-  const works = Works.tick(S); // your port works: upkeep, the trading posts' earnings (works.js)
+  const works = Works.tick(S, away); // your port works: upkeep, the trading posts' earnings (works.js)
   if (works.upkeep) Accounts.record(S, { kind: 'works', amount: -works.upkeep, text: 'Upkeep of your port works' });
   if (works.income) Accounts.record(S, { kind: 'post', amount: works.income, text: 'Your factors\' trade' });
   for (const m of works.msgs) {

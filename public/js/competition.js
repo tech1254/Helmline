@@ -15,7 +15,7 @@ import { PORTS } from './world.js';
 import { GOODS } from './economy.js';
 
 export const REGIONS = {
-  home: { ports: ['lisbon', 'porto', 'lagos', 'cadiz', 'sanlucar', 'palos', 'seville', 'ceuta', 'safi', 'funchal', 'lanzarote', 'gomera'], from: 1455, full: 1490,
+  home: { ports: ['lisbon', 'porto', 'lagos', 'cadiz', 'sanlucar', 'palos', 'seville', 'ceuta', 'safi', 'funchal', 'lanzarote', 'gomera', 'santacruz'], from: 1455, full: 1490,
     news: 'Genoese and Florentine merchants crowd the Lisbon quays, and Castilian ships trade along the Moroccan coast and in the Canaries. Prices on the home routes are narrowing.' },
   guinea: { ports: ['arguin', 'gambia', 'cantor', 'serraleoa', 'cestos', 'mina'], from: 1468, full: 1505,
     news: 'The Guinea trade is no longer a secret: Fernão Gomes\'s men, Castilian interlopers and every captain in Lagos are buying on the African coast. Its prices are narrowing.' },

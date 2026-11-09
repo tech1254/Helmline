@@ -18,6 +18,7 @@ export const START = {
   palos: { size: 3000, grow: 0.006 },
   seville: { size: 45000, grow: 0.012 },
   gomera: { size: 600, grow: 0.01 },
+  santacruz: { size: 300, grow: 0.04 }, // a new town from 1497
   ceuta: { size: 4000, grow: -0.004 }, // a garrison town, cut off from its hinterland
   safi: { size: 5000, grow: 0.006 },
   funchal: { size: 3000, grow: 0.04 }, // Madeira's sugar boom
@@ -82,6 +83,7 @@ export const HISTORY = [
     beaten: 'John Cabot is home in Bristol from the New Found Land, the land your ships have fished for years. England claims it all the same.' },
   { year: 1501, port: 'antwerp', size: 1.5, text: 'The King of Portugal makes Antwerp the staple of the spice trade: Portuguese pepper and cinnamon are sold there to all the north.' },
   { year: 1516, port: 'algiers', size: 1.3, text: 'The corsair Aruj Barbarossa has taken Algiers. It is a corsairs\' stronghold now.' },
+  { year: 1497, port: 'santacruz', opens: true, text: 'Santa Cruz on Tenerife is open to trade: the conquerors are planting sugar cane and vines on the island, and want everything else from Castile.' },
 ];
 // Harbour works a port builds once it is big enough: quays and moles that deepen the berth.
 export const WORKS = {

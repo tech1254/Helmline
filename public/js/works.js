@@ -156,7 +156,7 @@ export function takeGoods(S, pid, good, n) {
 
 // ---- Upkeep and the trading posts' earnings, monthly -----------------------------------------
 // Returns { msgs, upkeep, income } for the accounts.
-export function tick(S) {
+export function tick(S, away = false) {
   const W = ensureWorks(S);
   const msgs = [];
   let upkeep = 0, income = 0;
@@ -173,7 +173,7 @@ export function tick(S) {
       if (!b.done) continue;
       const rec = W.at[b.pid][b.id];
       const due = BUILDINGS[b.id].upkeep;
-      if (!due) { /* nothing to pay */ } else if (S.purse >= due) {
+      if (!due) { /* nothing to pay */ } else if (S.purse >= due || away) { // away, the house covers it (sim.js catchUp)
         S.purse -= due; upkeep += due;
         if (rec.neglected) { rec.neglected = false; (revived[b.pid] = revived[b.pid] || []).push(BUILDINGS[b.id].name.toLowerCase()); }
       } else if (!rec.neglected) {

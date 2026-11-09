@@ -1,6 +1,7 @@
 import * as Accounts from './accounts.js';
 import * as Ships from './ships.js';
 import * as Callings from './callings.js';
+import * as War from './war.js';
 // Contracts: jobs from the crown and the merchant houses that give each voyage a goal.
 // Two kinds for now:
 //  - discover: chart and anchor at a port no one in Lisbon trades with yet, then report home.
@@ -47,6 +48,8 @@ export const PATRONS = {
   sanlucar: 'The Duke of Medina Sidonia\'s factor',
   palos: 'The pilots of Palos',
   gomera: 'The lord of La Gomera',
+  santacruz: 'The Adelantado\'s factor',
+  cove: 'A man with no name',
   ceuta: 'The captain of Ceuta',
   safi: 'The Portuguese factor at Safi',
   lagos: 'The Casa de Lagos',
@@ -243,6 +246,12 @@ export function offersAt(S, market, portId) {
     o = C.offers[portId] = { day: S.day, list: [], refill: [] };
     o.list = fillOffers(S, market, portId, want);
   }
+  // A campaign's supply contract (war.js: the conquest of Tenerife), one at a time in its ports.
+  const camp = War.activeCampaign(S);
+  if (camp && (S.nation || 'portugal') === camp.crown && camp.ports.includes(portId) && !o.list.some((x) => x.campaign) && !C.active.some((x) => x.campaign)) {
+    const c = campaignOffer(S, market, portId, camp);
+    if (c) o.list.unshift(c);
+  }
   // Replace taken offers once their week is up.
   const due = o.refill.filter((d) => S.day >= d);
   if (due.length && o.list.length < want) {
@@ -250,6 +259,22 @@ export function offersAt(S, market, portId) {
     o.list.push(...fillOffers(S, market, portId, Math.min(due.length, want - o.list.length)));
   }
   return o.list;
+}
+
+function campaignOffer(S, market, portId, camp) {
+  const C = ensureContracts(S);
+  const g = good(camp.goods[Math.floor(Math.random() * camp.goods.length)]);
+  const hold = S.ship?.hull ? Ships.flagStats(S).hold : 40;
+  const qty = Math.max(5, Math.min(10 + 5 * Math.floor(Math.random() * 4), Math.floor(hold * HOLD_SHARE)));
+  const dest = PORTS.find((p) => p.id === camp.to_port);
+  const unit = market.basePrice(camp.to_port, g.id);
+  return {
+    id: C.nextId++, kind: 'deliver', good: g.id, qty, to: dest.id, source: portId,
+    patron: 'The crown\'s purveyors', campaign: camp.id,
+    title: `For Lugo's army: carry ${qty} ${g.unit} of ${g.name.toLowerCase()} to ${dest.name}`,
+    reward: Math.round(qty * unit * 1.9 * perks(S).payMult), standing: 4,
+    offeredDays: 40 + Math.round(Math.random() * 10), spare: 0,
+  };
 }
 
 export function nextOfferDay(S, portId) {
@@ -310,6 +335,7 @@ function complete(S, c, what) {
   C.active = C.active.filter((x) => x.id !== c.id);
   C.done++;
   C.standing += c.standing;
+  if (c.campaign) War.campaignServe(S, c.campaign); // service in a campaign (war.js)
   const pay = Math.round(c.reward * Callings.perk(S, 'contract')); // a crown's captain is paid more
   S.purse += pay;
   Accounts.record(S, { kind: 'contract', amount: pay, text: `${c.title} (${c.patron})` });
