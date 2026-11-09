@@ -24,7 +24,7 @@ import colonies from './colonies.js'; RULES.push(colonies);
 
 import heir from './heir.js'; RULES.push(heir);
 
-// import silver from './silver.js'; RULES.push(silver);
+import silver from './silver.js'; RULES.push(silver);
 
 // import cod from './cod.js'; RULES.push(cod);
 

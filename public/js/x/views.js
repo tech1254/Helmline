@@ -16,7 +16,7 @@ import colonies from './coloniesview.js'; VIEWS.push(colonies);
 
 import heir from './heirview.js'; VIEWS.push(heir);
 
-// import silver from './silverview.js'; VIEWS.push(silver);
+import silver from './silverview.js'; VIEWS.push(silver);
 
 // import cod from './codview.js'; VIEWS.push(cod);
 
