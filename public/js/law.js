@@ -56,7 +56,7 @@ export const HAVENS = ['sale', 'algiers', 'cove'];
 export const isHaven = (pid) => HAVENS.includes(pid);
 export const COVE = 'cove';
 // The rival houses sail under these flags (houses.js).
-export const HOUSE_CROWN = { salvago: 'genoa', santangel: 'castile', gomes: 'portugal', marchionni: 'portugal', thorne: 'england', schetz: 'burgundy' };
+export const HOUSE_CROWN = { guineafleet: 'castile', salvago: 'genoa', santangel: 'castile', gomes: 'portugal', marchionni: 'portugal', thorne: 'england', schetz: 'burgundy' };
 
 export const WANTED = 6; // infamy at which a crown's hunters come looking
 export const CLOSED = 12; // and its ports are shut to you
@@ -108,12 +108,13 @@ export function lawful(S, crown, lat) {
 }
 
 // Piracy against a crown's ship: `how` is 'taken' (cargo or the ship), 'ransom' or 'toll'.
-export function piracy(S, crown, how) {
+export function piracy(S, crown, how, attempt = false) {
   const L = ensureLaw(S);
   const n = how === 'toll' ? 3 : how === 'ransom' ? 5 : 8;
   L.infamy[crown] = (L.infamy[crown] || 0) + n;
   if (crown !== mine(S)) L.infamy[mine(S)] = (L.infamy[mine(S)] || 0) + Math.round(n / 3); // your own king disowns you
   else L.infamy[crown] += 2;
+  if (attempt) return n; // an attack that failed: infamy, but no prize to share
   L.pirated++;
   if (!L.shares) { L.shares = true; L.dry = 0; }
   return n;

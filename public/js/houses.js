@@ -8,6 +8,7 @@
 
 import * as Works from './works.js';
 import * as Race from './race.js';
+import * as War from './war.js';
 import { PORTS, distNm, findPath, D2R } from './world.js';
 import { yearOf } from './ships.js';
 import { worth as yourWorth } from './ambitions.js';
@@ -255,6 +256,11 @@ export function positions(S) {
     if (v.t >= 1) continue;
     const at = vesselAt(v);
     if (at) out.push({ ...v, ...at, key: `${v.house}:${v.i}:${Math.round(v.start * 100)}` });
+  }
+  // History's own prizes at sea (war.js): the Castilian Guinea fleet coming home in 1478
+  for (const v of War.specialVessels(S)) {
+    const at = vesselAt(v);
+    if (at) out.push({ ...v, ...at });
   }
   return out;
 }

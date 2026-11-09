@@ -60,6 +60,12 @@ export function list(S) {
   return out;
 }
 
+// What a building earns a month: harbour dues at your quay, rent from your warehouse, fees at your
+// yard, all from the port's other merchants, so more in a busy port (Nov 2026: works had cost
+// upkeep and earned nothing, and a house that built ruined itself). Per thousand people.
+const EARNS = { quay: 4, warehouse: 3, yard: 4 };
+export const earnsMonthly = (S, pid, id) => (EARNS[id] ? Math.round(size(S, pid) / 1000 * EARNS[id]) : 0);
+
 // Whether a building can be put up here, and if not, why not.
 export function canBuild(S, pid, id) {
   const B = BUILDINGS[id], p = portById(pid);
@@ -188,6 +194,7 @@ export function tick(S, away = false) {
         rec.neglected = true;
         (lapsed[b.pid] = lapsed[b.pid] || []).push(BUILDINGS[b.id].name.toLowerCase());
       }
+      if (EARNS[b.id] && !rec.neglected) { const e = earnsMonthly(S, b.pid, b.id); S.purse += e; income += e; }
       if (b.id === 'post' && !rec.neglected) {
         const earn = postEarnings(S, b.pid);
         S.purse += earn; income += earn;

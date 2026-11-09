@@ -37,6 +37,17 @@ import * as House from '../../public/js/house.js';
 import * as Taxes from '../../public/js/taxes.js';
 import * as Competition from '../../public/js/competition.js';
 import { PORTS, HARBOURS, distNm, findPath, loadRoutes } from '../../public/js/world.js';
+// The game since November 2026: callings and ambitions, rival houses, port works, the law, wars,
+// the race (the design doc, phases 1-5 and the wars of the 1490s).
+import * as Callings from '../../public/js/callings.js';
+import * as Ambitions from '../../public/js/ambitions.js';
+import * as Houses from '../../public/js/houses.js';
+import * as Works from '../../public/js/works.js';
+import * as War from '../../public/js/war.js';
+import * as Law from '../../public/js/law.js';
+import * as Race from '../../public/js/race.js';
+import * as Hunt from '../../public/js/hunt.js';
+import * as Fight from '../../public/js/fight.js';
 
 loadRoutes(JSON.parse(readFileSync(new URL('../../public/data/routes.json', import.meta.url))));
 
@@ -129,7 +140,21 @@ Object.assign(PERSONAS, {
   indies: { ...steady, prestige: true, label: 'The Indies: India runs, investments and honours (else Steady)', hires: 3, indies: true, invest: true, feitorias: 3,
     ladder: [...steady.ladder, 'galeao', 'naudaindia'] },
 });
-export const GROUPS = { castilians: ['castile', 'castnovice', 'steady'], home: ['novice', 'homebody', 'steady'], late: ['steady', 'grandee', 'indies'], styles: ['cautious', 'steady', 'bold', 'reckless'], corsairs: ['runner', 'fighter', 'armed', 'payer'], contracts: ['merchant', 'courier'], fleet: ['bigships'] };
+// The callings (Nov 2026): each plays his calling's path through the new game, on Steady's trade.
+// calling: the calling he takes after his first voyage (everyone else takes the merchant's)
+// build:   puts up port works where his ships call most; buyout: buys out rival houses
+// marque:  takes the crown's letter of marque in a war; licence: buys Portugal's Guinea licence
+// hunt:    'lawful' takes only lawful prizes; 'any' takes any ship he catches (piracy)
+// pardon:  buys the king's pardon when a crown shuts its ports to him; skip: lets 1461-1474 pass
+const armed = PERSONAS.armed;
+Object.assign(PERSONAS, {
+  housebuilder: { ...steady, label: 'Merchant house: builds port works, buys out rivals', calling: 'merchant', build: true, buyout: true },
+  crownsman: { ...PERSONAS.courier, label: 'Crown\'s captain: contracts, the marque, war service', calling: 'crown', marque: true, arms: armed.arms, corsair: 'bold' },
+  privateer: { ...armed, label: 'Privateer: corsairs and lawful prizes', calling: 'privateer', marque: true, licence: true, hunt: 'lawful' },
+  pirate: { ...armed, label: 'Pirate: takes any ship, ransoms, buys pardons', calling: 'privateer', marque: true, hunt: 'any', pardon: true },
+  skipper: { ...steady, label: 'Lets 1461-1474 pass (else Steady)', skip: true },
+});
+export const GROUPS = { callings: ['steady', 'housebuilder', 'crownsman', 'privateer', 'pirate', 'skipper'], castilians: ['castile', 'castnovice', 'steady'], home: ['novice', 'homebody', 'steady'], late: ['steady', 'grandee', 'indies'], styles: ['cautious', 'steady', 'bold', 'reckless'], corsairs: ['runner', 'fighter', 'armed', 'payer'], contracts: ['merchant', 'courier'], fleet: ['bigships'] };
 
 // ---- Routes --------------------------------------------------------------------------------
 const stop = (port, ...orders) => ({ port, orders });
@@ -185,6 +210,8 @@ function career(persona) {
     contracts: { taken: 0, done: 0, failed: 0, reward: 0, cost: 0, detours: 0 },
     corsairs: { met: 0, pay: 0, run: 0, fight: 0, won: 0, lost: 0, cash: 0, cargo: 0, plundered: 0 },
     byDecade: {}, attention: {}, series: [], riverWaitDays: 0, boatDays: 0, firstHire: null, explored: null, nau: null,
+    ng: { works: 0, worksCost: 0, buyouts: 0, hunts: 0, taken: 0, lawful: 0, piracy: 0, prizeCz: 0, ransomCz: 0, pardons: 0, pardonCz: 0,
+      defences: 0, arrested: 0, fines: 0, warFights: 0, raceFirsts: 0, racePrize: 0, ambitionCz: 0, skipCz: 0 },
   };
   const note = (s) => R.log.push(`${yearOf(S.day).toFixed(1)} ${s}`);
   let nextId = 1;
@@ -265,6 +292,8 @@ function career(persona) {
     if (P.arms && !f.leg && ['lisbon', 'lagos', 'funchal', 'seville', 'palos'].includes(f.at)) {
       for (const [g, c] of P.arms) {
         if (f.fit[g] === c || Ships.choicesFor(Ships.group(g), f.realHull).every((x) => x.id !== c)) continue;
+        // never back down the list: a later choice for the same thing already fitted is better
+        if (P.arms.slice(P.arms.findIndex(([g2, c2]) => g2 === g && c2 === c) + 1).some(([g2, c2]) => g2 === g && f.fit[g] === c2)) continue;
         if (g === 'crew' && c === 'crossbows' && f.fit.crew === 'menatarms') continue;
         S.ship.hull = f.realHull; S.ship.fit = f.fit;
         const fit = { ...f.fit, [g]: c };
@@ -327,6 +356,7 @@ function career(persona) {
     if (plan0.hull && plan0.hull !== f.realHull) upgrade(f, plan0.hull);
     // change loops in port, with no contract goods aboard or promised
     const plan1 = flagPlan();
+    if (skipping()) return ownerNew(f);
     if (plan1.loop !== f.loop && !f.leg && !busy && (plan1.loop !== 'deep' || f.realHull === 'nau')) {
       f.loop = plan1.loop; Fleet.setRoute(S, market, f, route(plan1.loop));
     }
@@ -373,6 +403,113 @@ function career(persona) {
         if (c.ok && affordable(c.cost * 3)) { Investments.found(S, pid); R.feitorias = (R.feitorias || 0) + 1; note(`founds a feitoria at ${pid} (${c.cost} cz)`); break; }
       }
     }
+    ownerNew(f);
+  };
+
+  // ---- The new game: callings, ambitions, works, the law, wars, the race (Nov 2026) ----
+  const SKIP_FROM = Ships.dayOfYear(1461) + 30, SKIP_TO = Ships.dayOfYear(1474) + 59;
+  const skipping = () => P.skip && S.day >= SKIP_FROM && S.day < SKIP_TO;
+  let skipPerYear = 0, skipYear = 0;
+  const ownerNew = (f) => {
+    // his calling, after the first voyage; then the ambitions he is offered (he takes the first)
+    if (!S.calling && S.day > 45) { Callings.choose(S, P.calling || 'merchant'); Ambitions.onCallingChanged(S); }
+    for (const m of Ambitions.checkAmbitions(S)) { if (m.cz) R.ng.ambitionCz += m.cz; if (m.log) note(m.log); }
+    const A = Ambitions.ensureAmbitions(S);
+    while (Ambitions.needsChoice(S) && A.offers?.length) Ambitions.accept(S, A.offers[0].id);
+    // the time skip: the flagship lies up at home from 1461 to 1474; his factors keep his custom
+    if (P.skip && S.day >= SKIP_FROM && S.day < SKIP_TO) {
+      if (!skipPerYear) {
+        const sold = Accounts.ensureAccounts(S).entries.filter((e) => e.kind === 'sale' && e.day > S.day - 365).reduce((t, e) => t + e.amount, 0);
+        const ports = Object.keys(S.works?.at || {}).length;
+        skipPerYear = Math.round(Math.min(16000, 600 + sold * 0.14 + ports * 300));
+        skipYear = Ships.yearOf(S.day);
+        note(`lets the years pass to 1474 (${skipPerYear} cz a year)`);
+      }
+      if (f.route && !f.leg && f.at === HOME) { f.route = null; f.status = 'idle'; } // laid up at home once she is in
+      if (Ships.yearOf(S.day) > skipYear) {
+        skipYear = Ships.yearOf(S.day);
+        S.purse += skipPerYear; R.ng.skipCz += skipPerYear;
+        Accounts.record(S, { kind: 'post', amount: skipPerYear, text: 'factors through the years' });
+      }
+    }
+    if (P.skip && S.day >= SKIP_TO && !f.route) { Fleet.setRoute(S, market, f, route(f.loop)); note('takes up the story in 1474'); }
+    // port works where his ships call most, one at a time, when he can pay for it three times over
+    if (P.build) {
+      const calls = {};
+      for (const x of S.fleet.ships) for (const st of x.route?.stops || []) calls[st.port] = (calls[st.port] || 0) + 1;
+      const order = ['warehouse', 'quay', 'post', 'church', 'fort', 'yard'];
+      const sz = (pid) => S.ports?.[pid]?.size || 1000; // busy ports first: there a building pays
+      outer: for (const pid of Object.keys(calls).filter((pid) => sz(pid) >= 4000).sort((a, b) => calls[b] * sz(b) - calls[a] * sz(a)).slice(0, 4)) {
+        for (const id of order) {
+          const c = Works.canBuild(S, pid, id);
+          if (!c.ok || !affordable(c.cost * 1.5)) continue;
+          if (Works.build(S, pid, id) != null) {
+            if (id !== 'post') Accounts.record(S, { kind: 'build', amount: -c.cost, port: pid, text: `${id} at ${pid}` });
+            R.ng.works++; R.ng.worksCost += c.cost; note(`builds a ${id} at ${pid} (${c.cost} cz)`);
+            break outer;
+          }
+        }
+      }
+    }
+    if (P.buyout) for (const id of Houses.active(S)) {
+      const q = Houses.buyOutPrice(S, id);
+      if (q?.ok && affordable(q.price)) { if (Houses.buyOut(S, id)) { R.ng.buyouts++; note(`buys out the house of ${Houses.defOf(id).name} (${q.price} cz)`); } }
+    }
+    if (P.licence && f.at === HOME && Law.canBuyLicence(S) && affordable(Law.LICENCE_PRICE)) { if (Law.buyLicence(S)) note('buys the Guinea licence'); }
+    const W = War.ensureWar(S);
+    if (W.offer) { War.takeMarque(S, !!P.marque); if (P.marque) note('takes a letter of marque'); }
+  };
+
+  // In port: race prizes, prizes sold, pardons bought, the pilots' rumours.
+  const portCall = (here) => {
+    for (const m of Race.charted(S, here)) if (m.prize) { R.ng.raceFirsts++; R.ng.racePrize += m.prize; Accounts.record(S, { kind: 'discovery', amount: m.prize, port: here, text: 'a race won' }); note(m.log); }
+    for (const o of Law.prizeOffers(S, here)) { const r = Law.sellPrize(S, here, o.prize.id); if (r) { R.ng.prizeCz += r.price; Accounts.record(S, { kind: 'prizes', amount: r.price, port: here, text: 'a prize sold' }); } }
+    if (P.pardon) for (const pd of Law.pardonsHere(S, here)) {
+      if (Law.infamy(S, pd.crown) >= Law.WANTED && S.purse > pd.price + 300) { const c = Law.buyPardon(S, pd.crown); if (c) { R.ng.pardons++; R.ng.pardonCz += c; Accounts.record(S, { kind: 'fines', amount: -c, text: 'a pardon' }); note(`buys the ${pd.crown} pardon (${c} cz)`); } }
+    }
+    Law.ashore(S, here);
+  };
+
+  // At sea: hunting the rival houses' ships; the crown's hunters, enemy warships, reprisals.
+  const hunted = new Set();
+  const atSea = (f) => {
+    if (f.status !== 'sailing' || !f.leg) return;
+    const pos = Fleet.position(S, f);
+    S.ship.hull = f.realHull; S.ship.fit = f.fit; S.hull = f.hullPct ?? 100;
+    S.ship.lon = pos.lon; S.ship.lat = pos.lat;
+    const armedEnough = Ships.HULLS[f.realHull].hold >= 40 && f.fit.guns && f.fit.guns !== Ships.DEFAULT_FIT.guns;
+    if (P.hunt && armedEnough) {
+      for (const v of Houses.positions(S)) {
+        if (hunted.has(v.key) || distNm(pos.lon, pos.lat, v.lon, v.lat) > 40) continue;
+        hunted.add(v.key);
+        const info = Hunt.preyInfo(S, v);
+        if (P.hunt === 'lawful' && !info.law.ok) continue;
+        if (Math.random() > 0.6) continue; // she is not always worth the chase, or catchable
+        R.ng.hunts++;
+        const { F } = Hunt.engage(S, v);
+        Fight.autoplay(F);
+        f.hullPct = Math.max(10, (f.hullPct ?? 100) - Fight.damageTo(F));
+        if (F.done.result !== 'taken') { Hunt.escaped(S, info); continue; }
+        R.ng.taken++;
+        if (info.law.ok) R.ng.lawful++; else R.ng.piracy++;
+        const how = info.law.ok && Law.canSendPrize(S) ? 'prize' : 'ransom';
+        const r = Hunt.spoils(S, info, how, 0);
+        if (r.cz) { R.ng.ransomCz += r.cz; Accounts.record(S, { kind: 'prizes', amount: r.cz, text: 'a ransom' }); }
+        note(`takes the ${info.houseName} ${info.hullName} (${info.law.ok ? 'lawful' : 'piracy'}, ${how})`);
+        break;
+      }
+    }
+    const enc = Law.hunters(S, STEP, pos.lon, pos.lat);
+    if (!enc) return;
+    R.ng.defences++;
+    const foe = enc.kind === 'hunter' ? 'hunter' : enc.kind === 'reprisal' ? 'merchantman' : enc.kind === 'search' ? 'galley' : 'warship';
+    const F = Fight.start(S, 'defend', Fight.foeSide(foe, enc.armed || 0), { range: Fight.FAR });
+    Fight.autoplay(F);
+    f.hullPct = Math.max(10, (f.hullPct ?? 100) - Fight.damageTo(F));
+    const lost = ['struck', 'boarded'].includes(F.done.result);
+    if (enc.kind === 'hunter' && lost) { const a = Law.arrested(S, enc.crown); R.ng.arrested++; R.ng.fines += a.fine; Accounts.record(S, { kind: 'fines', amount: -a.fine, text: 'fined' }); note(`taken by the ${enc.crown} hunters: fined ${a.fine} cz`); }
+    else if (lost) { for (const l of Object.values(f.hold)) { l.qty = Math.round(l.qty * 0.7); l.paid *= 0.7; } Law.losePrizes(S); }
+    else if (enc.kind === 'warship' && ['beaten', 'sheered'].includes(F.done.result)) { War.serve(S); R.ng.warFights++; }
   };
 
   // ---- Contracts at the flagship's port of call ----
@@ -432,6 +569,7 @@ function career(persona) {
     S.ship.hull = f.realHull; S.ship.fit = f.fit;
     // discovery and reporting home (Prince Henry's contract)
     for (const m of Contracts.onDock(S, here)) if (m.log) note(m.log);
+    portCall(here);
     Pirates.collectBounty(S, here); // the crown's bounty for galleys taken, in a Portuguese port
     const C = Contracts.ensureContracts(S);
     // deliver what is aboard for this port
@@ -581,6 +719,14 @@ function career(persona) {
     House.tick(S, STEP);
     if (!NO_TAX) Taxes.tick(S, House.renown(S));
     if (!NO_RIVALS) { Competition.tick(S, STEP, market); market.rival = Competition.factors(S, market); }
+    // the new game's clocks: houses, works, wars and campaigns, the race, the law
+    Houses.tick(S);
+    const wk = Works.tick(S);
+    if (wk.upkeep) Accounts.record(S, { kind: 'works', amount: -wk.upkeep, text: 'upkeep' });
+    if (wk.income) Accounts.record(S, { kind: 'post', amount: wk.income, text: 'trading posts' });
+    for (const m of War.tick(S)) { if (m.reward) Accounts.record(S, { kind: 'war', amount: m.reward, text: 'war service' }); if (m.grantPost) { const I = Investments.ensureInvest(S); if (!I.feitorias[m.grantPost]) I.feitorias[m.grantPost] = { since: S.day, cost: 0 }; } if (m.log) note(m.log); }
+    Race.tick(S);
+    for (const m of Law.tick(S, STEP, !!fl()?.leg)) if (m.mutiny) { const d = Law.payMutineers(S); Accounts.record(S, { kind: 'wages', amount: -d, text: 'mutineers' }); note(`pays mutineers ${d} cz`); }
     const f = fl();
     if (f) {
       if (f.leg && f.leg !== f.lastLeg) { // a new passage: remember how long it takes
@@ -589,6 +735,7 @@ function career(persona) {
         learned.set(k, learned.has(k) ? 0.7 * learned.get(k) + 0.3 * f.leg.days : f.leg.days);
       }
       corsairs(f);
+      atSea(f);
       // arriving this half-day: deal with the contract board before the fleet code trades
       if (f.status === 'sailing' && f.leg && S.day >= f.leg.start + f.leg.days) atPort(f, f.leg.to);
     }
@@ -665,6 +812,14 @@ function career(persona) {
   R.arms = fl() ? Object.entries(fl().fit).filter(([g, c]) => c !== Ships.DEFAULT_FIT[g]).map(([, c]) => c).join(', ') : '';
   R.fleet = S.fleet.ships.map((x) => `${x.role === 'flagship' ? 'you' : x.loop}: ${Ships.HULLS[x.realHull].name}`).join(', ');
   R.pirates = { ...Pirates.ensurePirates(S) };
+  R.ng.calling = S.calling?.id || null;
+  R.ng.rank = Callings.rankName(S);
+  R.ng.ambitions = Ambitions.ensureAmbitions(S).done;
+  R.ng.infamy = Law.totalInfamy(S);
+  R.ng.service = War.service(S);
+  R.ng.houseRank = Houses.ledger(S).findIndex((r) => r.id === 'you') + 1;
+  R.ng.housesLeft = Houses.active(S).length;
+  R.ng.worksNow = Works.list(S).length;
   const caps = S.fleet.ships.filter((x) => x.role !== 'flagship').map((x) => x.captain);
   R.caps = caps.length ? { nav: caps.reduce((t, c) => t + c.nav, 0) / caps.length, trade: caps.reduce((t, c) => t + c.trade, 0) / caps.length, wage: caps.reduce((t, c) => t + c.wage, 0) / caps.length } : null;
   return R;
@@ -726,6 +881,14 @@ export function summarise(list) {
         perYear: { crown: flow('crown'), house: flow('house'), trade: flow('sale') + flow('purchase'), contracts: flow('contract') + flow('contractGoods'), wages: flow('wages'), repairs: flow('repairs'), ships: flow('ships'), invest: flow('invest'), other: flow('charts') + flow('corsairs') + flow('bounty') + flow('boats') } };
     }),
     standing: med(list.map((r) => r.standing)),
+    ng: (() => {
+      const k = Object.keys(list[0].ng).filter((x) => typeof list[0].ng[x] === 'number');
+      const o = Object.fromEntries(k.map((x) => [x, avg(list.map((r) => r.ng[x] || 0))]));
+      o.rank = list.map((r) => r.ng.rank).sort().reduce((m, x, i, a) => (a.filter((y) => y === x).length > a.filter((y) => y === m).length ? x : m), list[0].ng.rank);
+      o.calling = list[0].ng.calling;
+      o.houseRankMed = med(list.map((r) => r.ng.houseRank));
+      return o;
+    })(),
     caps: (() => { const l = list.filter((r) => r.caps); return l.length ? { nav: avg(l.map((r) => r.caps.nav)), trade: avg(l.map((r) => r.caps.trade)), wage: avg(l.map((r) => r.caps.wage)), raises: avg(list.map((r) => r.raises || 0)) } : null; })(), fleet: list[0].fleet + (list[0].arms ? ` (fitted: ${list[0].arms})` : ''),
   };
 }
@@ -753,6 +916,13 @@ export function printSummary(s) {
   console.log(`  first captain: hired in ${Math.round(s.hired * 100)}% of careers (earliest ${q(0)}, median ${q(0.5)}, latest ${q(1)}); ruined before hiring one: ${Math.round(s.ruinedBeforeHire * 100)}%; neither, still without one at the end: ${Math.round((1 - s.hired - s.ruinedBeforeHire) * 100)}%`);
   console.log(`  at sea: ships lost ${s.shipsLost.toFixed(1)}, ruined ${Math.round(s.broke * 100)}% · ${cz(s.boatDays)} ship-days with the boats, ${cz(s.riverWaitDays)} waiting for the river`);
   console.log(`  fleet at the end (one career): ${s.fleet}`);
+  const N = s.ng;
+  if (N) {
+    console.log(`  calling: ${N.calling} · rank most often ${N.rank} · ambitions done ${N.ambitions.toFixed(1)} (${per(N.ambitionCz)} paid) · house ${N.houseRankMed} of the ledger, ${N.housesLeft.toFixed(1)} rival houses still trading`);
+    console.log(`  works: ${N.worksNow.toFixed(1)} buildings (${cz(N.worksCost)} cz) · buy-outs ${N.buyouts.toFixed(1)} · race firsts ${N.raceFirsts.toFixed(1)} (${cz(N.racePrize)} cz) · war service ${N.service.toFixed(1)}, warships beaten ${N.warFights.toFixed(1)}`);
+    if (N.hunts || N.defences) console.log(`  at sea: ${N.hunts.toFixed(1)} ships chased, ${N.taken.toFixed(1)} taken (${N.lawful.toFixed(1)} lawful, ${N.piracy.toFixed(1)} piracy) · prizes sold ${cz(N.prizeCz)} cz, ransoms ${cz(N.ransomCz)} cz · infamy ${N.infamy.toFixed(1)}, pardons ${N.pardons.toFixed(1)} (${cz(N.pardonCz)} cz) · attacked ${N.defences.toFixed(1)} times, arrested ${N.arrested.toFixed(1)} (fines ${cz(N.fines)} cz)`);
+    if (N.skipCz) console.log(`  the years 1461-1474: ${cz(N.skipCz)} cz from his factors`);
+  }
 }
 
 // Each persona runs in its own process, side by side (--serial to run them one after another).

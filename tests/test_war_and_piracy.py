@@ -200,6 +200,11 @@ async def main():
         if not await J("() => window.helmline.state.accounts.totals.war"): errs.append('no reward for service in the war')
         await ok_modals(pg)
 
+        # the Castilian Guinea fleet of 1478 (a Portuguese game in the war): a special prize on the chart
+        gf = await J("() => import('./js/war.js').then((W) => { const s = window.helmline.state; const d0 = s.day; s.day = W.GUINEA_FLEET.from + 20; const v = window.helmline.prey().find((x) => x.house === 'guineafleet'); s.day = d0; return v || null; })")
+        print('the Guinea fleet in 1478:', gf and (round(gf['lon'], 1), round(gf['lat'], 1)))
+        if not gf: errs.append('no Castilian Guinea fleet on the chart in 1478')
+
         # 8. Phone: the fight fits
         await pg.set_viewport_size({'width': 390, 'height': 800})
         await J("() => window.helmline.sail('lagos')"); await pg.wait_for_timeout(200); await ok_modals(pg)

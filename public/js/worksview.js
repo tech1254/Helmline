@@ -35,7 +35,8 @@ export function renderWorks(el) {
       const c = Works.canBuild(S, pid, id);
       state = c.ok ? `<button class="primary" data-build="${id}">Build: ${fmt(cost)} cz</button>` : `<span class="fine">${fmt(cost)} cz. ${c.why && !c.why.startsWith('It would cost') ? c.why : ''}</span>`;
     }
-    const upkeep = id === 'post' ? 'its factor draws 1 cz a day' : `${B.upkeep} cz a month to keep up`;
+    const earns = Works.earnsMonthly(S, pid, id);
+    const upkeep = id === 'post' ? 'its factor draws 1 cz a day' : `${B.upkeep} cz a month to keep up${earns ? `; earns about ${earns} cz a month here` : ''}`;
     const months = Math.round(B.days / 30);
     return `<li class="work${b ? ' have' : ''}"><div><b>${B.name}</b><span class="fine">${B.days ? `${months} ${months === 1 ? 'month' : 'months'} to build · ` : ''}${upkeep}</span></div><p>${B.does}</p><div class="row">${state}</div></li>`;
   }).join('');

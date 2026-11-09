@@ -32,6 +32,7 @@ function seeded(key) {
 
 // What she carries: the goods cheapest where she loaded, for where she is bound.
 export function cargoOf(v) {
+  if (v.cargo) return v.cargo.map((c) => ({ ...c, value: Math.round(c.qty * (MARKETS[v.to]?.p[c.good]?.[0] || 20)) }));
   const rand = seeded(v.key || `${v.house}${v.from}${v.to}${v.start}`);
   const from = MARKETS[v.from]?.p, to = MARKETS[v.to]?.p;
   if (!from || !to) return [];
@@ -56,9 +57,9 @@ export function preyInfo(S, v) {
   const shipValue = Math.round((HULLS[v.hull]?.price || 3000) * SHIP_SHARE);
   const cargoValue = cargo.reduce((t, c) => t + c.value, 0);
   return {
-    key: v.key, house: v.house, houseName: d?.name || v.name, of: d?.of, colour: v.colour, crown,
+    key: v.key, house: v.house, houseName: d?.name || v.name, of: d?.of, colour: v.colour, crown, special: !!v.special,
     crownName: crown ? Law.CROWNS[crown].name : null, adj: crown ? Law.CROWNS[crown].adj : '',
-    hull: v.hull, hullName: Fight.FOES[v.hull]?.name || HULLS[v.hull]?.name?.toLowerCase() || v.hull, armed: v.armed || 0,
+    hull: v.hull, hullName: v.special ? 'flagship' : Fight.FOES[v.hull]?.name || HULLS[v.hull]?.name?.toLowerCase() || v.hull, armed: v.armed || 0,
     from: v.from, to: v.to, cargo, cargoValue, shipValue, value: shipValue + cargoValue,
     law: Law.lawful(S, crown, v.lat), enemy: War.atWarWith(S, crown),
   };
@@ -143,7 +144,8 @@ export function spoils(S, info, how, free = 0) {
     lines.push(`Her master pays you ${fmt(cz)} cz to be let go on her way.`);
   }
   S.purse += cz;
-  Houses.raided(S, info.house, taken, how === 'prize', info.key);
+  if (info.house === 'guineafleet') War.ensureWar(S).guineaTaken = S.day; // history's prize, taken once
+  else Houses.raided(S, info.house, taken, how === 'prize', info.key);
   Law.prizeTaken(S);
   const L = Law.ensureLaw(S);
   L.byHouse = L.byHouse || {};
@@ -165,5 +167,5 @@ export function spoils(S, info, how, free = 0) {
 export function escaped(S, info) {
   const h = Houses.ensureHouses(S).h[info.house];
   if (h) h.raids = (h.raids || 0) + 0.5;
-  if (!info.law.ok) Law.piracy(S, info.crown, 'toll'); // she will tell of it in port
+  if (!info.law.ok) Law.piracy(S, info.crown, 'toll', true); // she will tell of it in port
 }

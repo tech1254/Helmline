@@ -48,7 +48,7 @@ export function openShip(v) {
   const cargo = info.cargo.map((c) => `${c.qty} ${goodName(c.good)}`).join(' and ') || 'nothing you can see';
   confirmDialog({
     title: `The ${info.houseName} ${info.hullName}`,
-    body: `<p>A ${info.hullName} of the house of <b>${info.houseName}</b> of ${info.of}${info.crownName ? `, under the flag of ${info.crownName}` : ''}, bound from ${portName(info.from)} for ${portName(info.to)}.</p>
+    body: `<p>${info.special ? 'The flagship of Castile\'s Guinea fleet, home from the Mina with the gold of the Gold Coast, sailing in company with armed caravels: the richest prize of the war' : `A ${info.hullName} of the house of <b>${info.houseName}</b> of ${info.of}${info.crownName ? `, under the flag of ${info.crownName}` : ''}`}, bound from ${portName(info.from)} for ${portName(info.to)}.</p>
       <dl class="facts">
         <dt>Likely cargo</dt><dd>${cargo}, worth about ${fmt(info.cargoValue)} cz where she is bound</dd>
         <dt>The ship</dt><dd>worth about ${fmt(info.shipValue)} cz as a prize</dd>
