@@ -8,6 +8,8 @@
 //   onDock(pid)      you make port (after the rules' onDock messages are reported)
 //   draw()           draw on the chart (after the rival houses' ships)
 
-// import colonies from './coloniesview.js';
+import india from './indiaview.js';
 
-export const VIEWS = [].filter(Boolean);
+export const VIEWS = [
+  india,
+].filter(Boolean);
