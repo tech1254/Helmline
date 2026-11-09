@@ -20,5 +20,5 @@ import silver from './silverview.js'; VIEWS.push(silver);
 
 import cod from './codview.js'; VIEWS.push(cod);
 
-// import india from './indiaview.js'; VIEWS.push(india);
+import india from './indiaview.js'; VIEWS.push(india);
 

@@ -28,7 +28,7 @@ import silver from './silver.js'; RULES.push(silver);
 
 import cod from './cod.js'; RULES.push(cod);
 
-// import india from './india.js'; RULES.push(india);
+import india from './india.js'; RULES.push(india);
 
 
 export const state = (S, id) => { S.x = S.x || {}; S.x[id] = S.x[id] || {}; return S.x[id]; };
