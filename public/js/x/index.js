@@ -16,9 +16,11 @@
 //   closed(S)           ports closed to trade now
 // Pure rules: no browser modules.
 
-// import colonies from './colonies.js';
+import silver from './silver.js';
 
-export const RULES = [].filter(Boolean);
+export const RULES = [
+  silver,
+].filter(Boolean);
 
 export const state = (S, id) => { S.x = S.x || {}; S.x[id] = S.x[id] || {}; return S.x[id]; };
 export function tickAll(S, dd, ctx) { const out = []; for (const x of RULES) if (x.tick) out.push(...(x.tick(S, dd, ctx) || [])); return out; }
