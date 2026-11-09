@@ -18,7 +18,7 @@ import heir from './heirview.js'; VIEWS.push(heir);
 
 import silver from './silverview.js'; VIEWS.push(silver);
 
-// import cod from './codview.js'; VIEWS.push(cod);
+import cod from './codview.js'; VIEWS.push(cod);
 
 // import india from './indiaview.js'; VIEWS.push(india);
 

@@ -26,7 +26,7 @@ import heir from './heir.js'; RULES.push(heir);
 
 import silver from './silver.js'; RULES.push(silver);
 
-// import cod from './cod.js'; RULES.push(cod);
+import cod from './cod.js'; RULES.push(cod);
 
 // import india from './india.js'; RULES.push(india);
 
