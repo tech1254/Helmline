@@ -181,21 +181,23 @@ export const KINDS = {
     value: (S, a) => (Race.ensureRace(S).legends[a.legend]?.found ? 1 : 0) },
   corsairs: { calling: 'privateer',
     make(S, big) {
-      const target = big ? 4 : 1;
-      return { text: target === 1 ? 'Take a corsair galley' : `Take ${target} corsair galleys`, target, base: S.pirates?.won || 0 };
+      const won = S.pirates?.won || 0; // a famous corsair-hunter is asked for more
+      const target = big ? 4 + Math.floor(won / 3) : 1 + Math.floor(won / 6);
+      return { text: target === 1 ? 'Take a corsair galley' : `Take ${target} corsair galleys`, target, base: won };
     },
     value: (S, a) => (S.pirates?.won || 0) - a.base },
   bounty: { calling: 'privateer',
     make(S, big) {
-      const target = big ? 1200 : 300;
       const now = (S.pirates?.bountyPaid || 0) + (S.pirates?.bounty || 0);
+      const target = Math.round(Math.max(big ? 1200 : 300, now * (big ? 0.8 : 0.3)) / 50) * 50;
       return { text: `Earn ${fmt(target)} cz in the crown's bounties`, target, base: now };
     },
     value: (S, a) => (S.pirates?.bountyPaid || 0) + (S.pirates?.bounty || 0) - a.base },
   plunder: { calling: 'privateer',
     make(S, big) {
-      const target = big ? 3 : 1;
-      return { text: target === 1 ? 'Strip a beaten galley of her plunder' : `Plunder ${target} beaten galleys`, target, base: S.pirates?.plundered || 0 };
+      const done = S.pirates?.plundered || 0;
+      const target = big ? 3 + Math.floor(done / 3) : 1 + Math.floor(done / 6);
+      return { text: target === 1 ? 'Strip a beaten galley of her plunder' : `Plunder ${target} beaten galleys`, target, base: done };
     },
     value: (S, a) => (S.pirates?.plundered || 0) - a.base },
   notoriety: { calling: 'privateer',
@@ -262,7 +264,8 @@ function build(S, kind, big, rand) {
   const w = worth(S);
   return {
     id: A.nextId++, kind, calling: K.calling, big: isBig, ...a,
-    reward: { cz: round(Math.max(isBig ? 400 : 120, w * (isBig ? 0.18 : 0.06)), 10), standing: isBig ? 6 : 2, merit: isBig ? 7 : 3 },
+    // a share of what the house is worth, capped (Nov 2026: rich houses were paid thousands for small goals)
+    reward: { cz: round(Math.min(isBig ? 5000 : 1500, Math.max(isBig ? 400 : 120, w * (isBig ? 0.18 : 0.06))), 10), standing: isBig ? 6 : 2, merit: isBig ? 7 : 3 },
     taken: S.day,
   };
 }

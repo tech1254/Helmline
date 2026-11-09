@@ -292,6 +292,8 @@ function career(persona) {
     if (P.arms && !f.leg && ['lisbon', 'lagos', 'funchal', 'seville', 'palos'].includes(f.at)) {
       for (const [g, c] of P.arms) {
         if (f.fit[g] === c || Ships.choicesFor(Ships.group(g), f.realHull).every((x) => x.id !== c)) continue;
+        // never back down the list: a later choice for the same thing already fitted is better
+        if (P.arms.slice(P.arms.findIndex(([g2, c2]) => g2 === g && c2 === c) + 1).some(([g2, c2]) => g2 === g && f.fit[g] === c2)) continue;
         if (g === 'crew' && c === 'crossbows' && f.fit.crew === 'menatarms') continue;
         S.ship.hull = f.realHull; S.ship.fit = f.fit;
         const fit = { ...f.fit, [g]: c };
@@ -434,9 +436,10 @@ function career(persona) {
     // port works where his ships call most, one at a time, when he can pay for it three times over
     if (P.build) {
       const calls = {};
-      for (const x of S.fleet.ships) for (const st of x.route?.stops || []) if (st.port !== HOME) calls[st.port] = (calls[st.port] || 0) + 1;
+      for (const x of S.fleet.ships) for (const st of x.route?.stops || []) calls[st.port] = (calls[st.port] || 0) + 1;
       const order = ['warehouse', 'quay', 'post', 'church', 'fort', 'yard'];
-      outer: for (const pid of Object.keys(calls).sort((a, b) => calls[b] - calls[a]).slice(0, 4)) {
+      const sz = (pid) => S.ports?.[pid]?.size || 1000; // busy ports first: there a building pays
+      outer: for (const pid of Object.keys(calls).filter((pid) => sz(pid) >= 4000).sort((a, b) => calls[b] * sz(b) - calls[a] * sz(a)).slice(0, 4)) {
         for (const id of order) {
           const c = Works.canBuild(S, pid, id);
           if (!c.ok || !affordable(c.cost * 1.5)) continue;
