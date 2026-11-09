@@ -13,9 +13,11 @@
 //   routes              true if it ships data/routes-<id>.json (routes to its own ports)
 // Pure rules: no browser modules.
 
-// import colonies from './colonies.js';
+import heir from './heir.js';
 
-export const RULES = [].filter(Boolean);
+export const RULES = [
+  heir,
+].filter(Boolean);
 
 export const state = (S, id) => { S.x = S.x || {}; S.x[id] = S.x[id] || {}; return S.x[id]; };
 export function tickAll(S, dd, ctx) { const out = []; for (const x of RULES) if (x.tick) out.push(...(x.tick(S, dd, ctx) || [])); return out; }
