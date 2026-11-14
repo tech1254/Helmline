@@ -37,6 +37,8 @@ import { confirmDialog } from './dialog.js';
 import { addNotice, toast } from './notices.js';
 import { plog } from './playlog.js';
 import { home, homeName } from './nations.js';
+import * as CallArms from './callarms.js';
+import { callOn } from './callarmsview.js';
 
 // ---- Simulation -------------------------------------------------------------
 
@@ -308,6 +310,7 @@ export function advanceTime(dd, atSea, away = false) {
   report(Competition.tick(S, dd, market));
   report(Houses.tick(S)); // the rival houses (houses.js)
   report(Race.tick(S)); // the explorers and the rival houses' voyages (race.js)
+  report(CallArms.tick(S, { on: callOn() })); // the crown's call to arms, from the first voyage (callarms.js)
   const war = War.tick(S); // the wars between the crowns (war.js)
   for (const m of war) {
     if (m.reward) Accounts.record(S, { kind: 'war', amount: m.reward, text: 'The crown\'s thanks for service in the war' });
@@ -334,6 +337,8 @@ export function advanceTime(dd, atSea, away = false) {
     for (const g of Pirates.lookout(S, S.ship.lon, S.ship.lat)) {
       toast(`<b>${g.big ? 'A great corsair galley' : 'A corsair galley'}</b> in sight off ${g.zone}, bearing ${compassPoint(bearing(S.ship.lon, S.ship.lat, g.lon, g.lat))}, ${Math.round(distNm(S.ship.lon, S.ship.lat, g.lon, g.lat))} miles. Sail onto her to give chase, or keep clear.`, 'alert');
     }
+    const call = !ui.modal && !ui.pendingEncounter && callOn() ? CallArms.contact(S, S.ship.lon, S.ship.lat) : null; // the crown's fight at its mark
+    if (call) ui.pendingEncounter = call;
     const hunt = !ui.modal && !ui.pendingEncounter ? Pirates.contact(S, S.ship.lon, S.ship.lat) : null;
     if (hunt) ui.pendingEncounter = hunt;
     if (!ui.modal && !ui.pendingEncounter) {

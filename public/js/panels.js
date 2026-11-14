@@ -44,6 +44,7 @@ import * as War from './war.js';
 import * as Race from './race.js';
 import * as Houses from './houses.js';
 import { lawBox } from './lawview.js';
+import { callBox, callAtSea } from './callarmsview.js';
 import { indiaBox, commissionBox } from './raceview.js';
 
 // ---- HUD & panels -----------------------------------------------------------
@@ -255,6 +256,7 @@ export function renderPort(el) {
       : `<p class="blurb">${p.blurb}</p>${harbourLine(pid)}`}
     ${shareLine(pid)}
     ${firstBox()}
+    ${callBox(pid)}
     ${debtBox()}
     ${moneyBox()}
     ${hullBanner(pid)}
@@ -735,6 +737,7 @@ export function tipText() {
   const sh = S.ship;
   const seen = S.tips.seen || {};
   if (firstActive()) return sh.docked ? null : firstAtSea(); // the first voyage box says it in port
+  if (!sh.docked && callAtSea()) return callAtSea(); // the crown's call: the mark to sail for (callarmsview.js)
   if (!S.contracts?.unlocked) {
     if (seen.early) return null;
     ui.tipKey = 'early';

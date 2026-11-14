@@ -39,6 +39,7 @@ import { log, passage, quote, tradeFacts } from './pricebook.js';
 import { confirmDialog } from './dialog.js';
 import { hint, toast } from './notices.js';
 import { endFirst } from './firstvoyage.js';
+import { callClick } from './callarmsview.js';
 
 // Route editor: keep the draft in step with the selects.
 
@@ -370,6 +371,8 @@ export function initActions() {
       // prizes, pardons, the licence (lawview.js)
     } else if (ui.panelMode === 'works' && worksClick(t)) {
       // port works: building, the warehouse (worksview.js)
+    } else if (callClick(t)) {
+      // the crown's call to arms (callarmsview.js)
     } else if (t.dataset.seekIndia !== undefined) {
       seekIndiaClick();
     } else if (t.dataset.exploreCommission !== undefined) {

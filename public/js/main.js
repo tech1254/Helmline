@@ -1,6 +1,7 @@
 // Helmline: start-up, the intro, and the main loop. The game itself lives in the modules.
 
 import { PORTS, findPath, loadRoutes, shoalDepth } from './world.js';
+import * as CallArms from './callarms.js';
 import * as Fleet from './fleet.js';
 import * as Contracts from './contracts.js';
 import * as Cloud from './cloud.js';
@@ -184,7 +185,7 @@ window.helmline = {
   chase: (key) => { const v = Houses.positions(S).find((x) => x.key === key); if (v) Hunt.startChase(S, v); return !!v; },
   engage: (key) => { const v = Houses.positions(S).find((x) => x.key === key); if (v) ui.pendingEncounter = { kind: 'prey', v }; return !!v; },
   defend: (kind = 'hunter', crown = 'castile') => { ui.pendingEncounter = { kind, crown, armed: 0, where: crown }; },
-  law: () => Law, war: () => War, fight: () => Fight,
+  law: () => Law, war: () => War, fight: () => Fight, call: () => CallArms,
   huntCheck: () => { const e = Pirates.contact(S, S.ship.lon, S.ship.lat); if (e) ui.pendingEncounter = e; return !!e; },
   fleetStatus: (id) => Fleet.statusText(S, S.fleet.ships.find((x) => x.id === id)),
   // sail on for some days of game time, as the frame loop would (stops for dialogs and arrivals)
