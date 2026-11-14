@@ -31,12 +31,14 @@ import { addNotice, hint, toast } from './notices.js';
 import { home, homeName } from './nations.js';
 import { openFight } from './fightview.js';
 import { engagePrey } from './huntview.js';
+import { openCall, callSettled } from './callarmsview.js';
 import { openDefence, onDock } from './lawview.js';
 import * as Law from './law.js';
 
 // ---- Corsairs ----------------------------------------------------------------------
 
 export function openEncounter(enc) {
+  if (enc.call && !enc.opened) { enc.opened = true; openCall(enc); return; } // the crown's call to arms (callarmsview.js)
   if (enc.kind === 'prey') { engagePrey(enc.v); return; } // a rival's ship you have run down (huntview.js)
   if (['hunter', 'warship', 'reprisal', 'search', 'frenchcorsair'].includes(enc.kind)) { openDefence(enc); return; } // the law, the enemy, a rival, a search (lawview.js)
   const { knots } = shipWind();
@@ -71,7 +73,7 @@ export function openEncounter(enc) {
 }
 
 // The corsairs, round by round (fight.js): attacked, or attacking a galley you have run down.
-function fightCorsairs(enc) {
+export function fightCorsairs(enc) {
   const F = Pirates.startFight(S, enc);
   const t = F.tribute;
   openFight(F, {
@@ -84,6 +86,7 @@ function fightCorsairs(enc) {
 export function settleEncounter(enc, F) {
   plog('corsairs', { result: F.done?.result, hunted: !!enc.hunted, big: !!enc.big, where: enc.where, rounds: F.round });
   const r = Pirates.settleFight(S, enc, F);
+  if (enc.call) callSettled(enc, F.done?.result);
   if (enc.hunted) Pirates.endHunt(S, enc, 'fought'); // beaten or not, she goes home
   log(r.lines[r.lines.length - 1]);
   for (const line of r.lines) addNotice(line, r.kind);

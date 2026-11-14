@@ -161,6 +161,28 @@ CAMPAIGNS.push(
     for: neutral, patron: 'The French king\'s victuallers', title: 'For the French at Genoa', contraband: true,
     ports: ['lisbon', 'porto', 'lagos'], to_port: 'genoa', goods: ['wheat', 'cloth', 'salt'], effects: {}, beats: [] },
 );
+// The wars of the 1450s, after the crown's call to arms (callarms.js). Portugal: Afonso V's crusade
+// in Morocco, which sailed from Lisbon in October 1458 and took Alcácer Ceguer; Ceuta is its base,
+// fed from Lisbon, Lagos and Porto. Castile: Henry IV's summer campaigns against Granada, 1455-57,
+// the frontier fed through Cádiz.
+CAMPAIGNS.push({ id: 'alcacer', crown: 'portugal', name: 'the king\'s crusade in Morocco', from: date(1458, 3, 1), to: date(1458, 11, 1),
+  patron: 'The king\'s purveyors', title: 'For the king\'s army at Ceuta', ports: ['lisbon', 'lagos', 'porto'], to_port: 'ceuta',
+  goods: ['wheat', 'wine', 'cloth'], effects: { ceuta: { wheat: 1.6, wine: 1.4, cloth: 1.3 } },
+  beats: [
+    { day: date(1458, 3, 1), text: 'King Afonso has taken the cross: he will sail for Morocco this year with the whole nobility of Portugal. The army gathers at Ceuta, and the crown wants wheat, wine and cloth carried there.' },
+    { day: date(1458, 10, 2), text: 'The king\'s fleet has sailed from Lisbon for Morocco, two hundred ships and more.' },
+    { day: date(1458, 10, 24), text: 'Alcácer Ceguer has fallen to King Afonso after a short siege: the corsairs\' harbour on the Strait is Portugal\'s. He is called "the African" for it.' },
+  ],
+  reward: { per: 250, cap: 8, min: 2, text: (n, cz) => `For your ${n} cargoes to the army at Ceuta the king pays <b>${fmt(cz)} cz</b>, and his thanks.` } });
+CAMPAIGNS.push({ id: 'granada', crown: 'castile', name: 'the war on Granada', from: date(1455, 4, 1), to: date(1457, 9, 1),
+  patron: 'The king\'s purveyors', title: 'For the Granada frontier', ports: ['seville', 'sanlucar', 'palos'], to_port: 'cadiz',
+  goods: ['wheat', 'wine', 'cloth'], effects: { cadiz: { wheat: 1.4, wine: 1.3 } },
+  beats: [
+    { day: date(1455, 4, 1), text: 'King Henry rides against Granada with a great army, to burn the Moors\' fields from Málaga to Granada itself. The frontier wants wheat and wine, through Cádiz.' },
+    { day: date(1456, 5, 1), text: 'The king\'s army is in the vega of Granada again this summer, burning the crops. The Moors will not meet it in the field.' },
+    { day: date(1457, 8, 1), text: 'King Henry has made a truce with Granada for tribute, and gone home. The war of the frontier is over for now.' },
+  ],
+  reward: { per: 250, cap: 8, min: 2, text: (n, cz) => `For your ${n} cargoes to the frontier the king pays <b>${fmt(cz)} cz</b>, and his thanks.` } });
 // The Indies trade, for Castile: from 1522 the crown wants the outbound fleets victualled and
 // the colonists supplied; cargoes from Seville and Sanlúcar to Santo Domingo.
 CAMPAIGNS.push({ id: 'indies', crown: 'castile', name: 'the Indies fleets', from: date(1522, 1, 1), to: date(1552, 1, 1),
