@@ -54,12 +54,12 @@ export function openCallingChoice() {
       : `<p>Leaving your calling now costs <b>${cost.standing} standing</b> and <b>${cost.meritLost} of your ${Callings.meritOf(S)} merit</b> as a ${Callings.CALLINGS[now].short.toLowerCase()}. The longer you follow a path, the more it costs to leave.</p>`)
     : `<p>Your first voyage is behind you. How will you make your name? You can change course in the first year without cost; after that, the path sets.</p>`;
   const actions = Object.fromEntries(Callings.CALLING_IDS.map((id) => [id, () => takeCalling(id)]));
-  confirmDialog({
+  const shown = confirmDialog({
     title: now ? 'Change your calling' : 'Choose your calling', kind: 'calling', ok: null,
     cancel: now ? 'Keep my calling' : 'Decide later', actions,
     body: `${intro}<div class="calling-cards">${cards}</div>`,
   });
-  if (!now) Callings.snooze(S); // closing it asks again in three weeks
+  if (shown && !now) Callings.snooze(S); // closing it asks again in three weeks
 }
 
 function takeCalling(id) {
@@ -139,7 +139,8 @@ export function initAmbitions() {
   $('ambitions')?.addEventListener('click', (e) => {
     const b = e.target.closest('[data-amb]');
     if (!b) return;
-    if (b.dataset.amb === 'fold') { ui.ambFolded = !ui.ambFolded; renderAmbitions(true); }
+    if (b.dataset.amb === 'fold') { ui.ambFolded = !ui.ambFolded; renderAmbitions(true); return; }
+    if (ui.modal || ui.screen) return; // finish what is on screen first (a fight, a letter): never a dialog over it
     else if (b.dataset.amb === 'calling') openCallingChoice();
     else if (b.dataset.amb === 'choose') openAmbitionChoice();
   });
