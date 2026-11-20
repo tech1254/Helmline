@@ -29,5 +29,15 @@ fx.ships = [];
 for (const hull of Object.keys(Sh.HULLS)) for (const fit of fits) fx.ships.push({ hull, fit, stats: Sh.stats({ hull, fit }) });
 // distances
 fx.dist = [['lisbon', 'ceuta'], ['lisbon', 'cantor'], ['seville', 'calicut']].map(([a, b]) => { const A = W.PORTS.find((p) => p.id === a), B = W.PORTS.find((p) => p.id === b); return { a, b, nm: W.distNm(A.lon, A.lat, B.lon, B.lat) }; });
+// routes between ports from the ready-made table, rivers included
+const { readFileSync } = await import('node:fs');
+W.loadRoutes(JSON.parse(readFileSync(root + 'public/data/routes.json')));
+const P = (id) => W.PORTS.find((p) => p.id === id);
+fx.routes = [];
+for (const [a, b] of [['lisbon', 'ceuta'], ['lisbon', 'cantor'], ['seville', 'lisbon'], ['lagos', 'seville'], ['seville', 'cantor'], ['palos', 'antwerp'], ['lisbon', 'calicut'], ['cadiz', 'funchal']])
+  for (const skill of [0, 0.5, 1]) for (const coastal of [false, true]) {
+    const r = W.findPath(P(a).lon, P(a).lat, P(b).lon, P(b).lat, skill, coastal);
+    fx.routes.push({ a, b, skill, coastal, route: r });
+  }
 writeFileSync(root + 'godot/tests/fixtures.json', JSON.stringify(fx));
 console.log('fixtures', Object.keys(fx).map((k) => `${k}:${fx[k].length ?? ''}`).join(' '));

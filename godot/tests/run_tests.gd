@@ -13,6 +13,9 @@ func _initialize() -> void:
 		data.name = "Data"
 		root.add_child(data)
 	data.load_all()
+	# every script compiles
+	for path in scripts_under("res://scripts"):
+		check(load(path) != null, "compiles: " + path)
 	var dir := DirAccess.open("res://tests")
 	var names: Array = []
 	for f in dir.get_files():
@@ -39,3 +42,13 @@ func check(ok: bool, what: String) -> void:
 	if not ok:
 		failures += 1
 		print("  FAIL: " + what)
+
+func scripts_under(path: String) -> Array:
+	var out: Array = []
+	var d := DirAccess.open(path)
+	for f in d.get_files():
+		if f.ends_with(".gd"):
+			out.append(path + "/" + f)
+	for sub in d.get_directories():
+		out += scripts_under(path + "/" + sub)
+	return out

@@ -7,7 +7,7 @@ config_version=5
 
 config/name="Helmline"
 config/description="Age-of-exploration trading and sea fights, 1451-1551."
-run/main_scene="res://scenes/main.tscn"
+run/main_scene="res://scenes/chart.tscn"
 config/features=PackedStringArray("4.7", "GL Compatibility")
 
 [autoload]
