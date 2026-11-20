@@ -83,9 +83,10 @@ export function openCall(enc) {
   if (enc.call === 'patrol') {
     confirmDialog({
       title: `A corsair galley off ${R.name}`,
-      body: `<p>There she is: a Barbary galley, low and fast, oars flashing, coming out to look at you. This is what the crown sent you for.</p>
-        <dl class="facts"><dt>See her off</dt><dd>${R.win} cz from the crown, and the bounty and her plunder if you take her</dd><dt>If she gets the better of you</dt><dd>${R.lose} cz for the work all the same</dd><dt>Pay her off</dt><dd>nothing from the crown: you will have to come back</dd></dl>`,
-      ok: 'Stand to the guns', cancel: false, kind: 'encounter',
+      body: `<p>There she is: a Barbary galley lying close under the shore, half her oars idle, her crew sleeping off a long night's rowing. She has not seen you. This is what the crown sent you for.</p>
+        <dl class="facts"><dt>Take her</dt><dd>${R.win} cz from the crown, and the bounty and her plunder</dd><dt>If she gets away</dt><dd>${R.lose} cz for the work all the same</dd></dl>
+        <p class="fine">You have the surprise, and the king's guns on your rails.</p>`,
+      ok: 'Attack', cancel: false, kind: 'encounter',
       onOk: () => fightCorsairs(enc),
     });
     return;

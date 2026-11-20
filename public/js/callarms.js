@@ -140,8 +140,9 @@ export function contact(S, lon, lat) {
   if (!m || x.near === S.voyages || S.ship?.docked || distNm(lon, lat, m.lon, m.lat) > REACH) return null;
   x.near = S.voyages;
   const R = callOf(S)[m.stage];
-  if (m.stage === 'patrol') return { call: 'patrol', where: R.name, big: false, strength: 1 };
-  return { call: 'raid', where: R.where, big: true, strength: 1.15, hunted: true };
+  // both are the crown's fights: you attack, by surprise, a weakened galley (pirates.js CALL_FOES)
+  if (m.stage === 'patrol') return { call: 'patrol', where: R.name, big: false, strength: 0.8, hunted: true };
+  return { call: 'raid', where: R.where, big: false, strength: 1, hunted: true };
 }
 
 // After the fight (voyage.js settleEncounter): the crown pays for the work, won or not, but not

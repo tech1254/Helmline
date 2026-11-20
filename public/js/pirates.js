@@ -249,7 +249,19 @@ export function resolve(S, enc, choice, knots) {
 
 // ---- The round-based fight (fight.js) --------------------------------------------------------
 // A corsair attack as a fight: the galley, and the tribute she would take to let you pass.
+// The crown's fights of the call to arms (callarms.js) are a new captain's first: they should be won.
+// Players who were boarded in the first one quit on the spot (Nov 2026). The patrol meets a ragged
+// galley, short of rowers, that you come on by surprise; the raid's galleys are caught looking at
+// the shore. Both still have to be fought.
+export const CALL_FOES = {
+  patrol: { name: 'ragged corsair galley', hull: 45, men: 0.8, morale: 26, guns: 0.02 },
+  raid: { name: 'corsair galley', hull: 60, men: 1.5, morale: 44 },
+};
 export function startFight(S, enc) {
+  if (enc.call && CALL_FOES[enc.call]) {
+    const foe = { ...Fight.foeSide('galley'), ...CALL_FOES[enc.call], tribute: false };
+    return Fight.start(S, 'attack', foe, { range: Fight.CLOSE, surprise: true });
+  }
   const foe = Fight.foeSide(enc.big ? 'biggalley' : 'galley');
   if (enc.hunted) return Fight.start(S, 'attack', foe, { range: Fight.CLOSE, surprise: true });
   return Fight.start(S, 'defend', foe, { range: Fight.FAR, tribute: tribute(S, enc) });
