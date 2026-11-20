@@ -87,13 +87,15 @@ function frame(t) {
   if (ui.introDone) sightTick(dt); // the bonus sight at sea, when one can be taken
   // back wages are paid the moment there is money in the purse in port (a sale, a contract)
   if (ui.introDone && S?.ship?.docked && S.crewOwed > 0 && S.purse >= 1) { payCrew(); renderHud(); }
-  const free = !ui.modal && !ui.screen && !ui.arrival;
-  if (ui.pendingSummary && free && ui.introDone) { const sm = ui.pendingSummary; ui.pendingSummary = null; showSummary(sm); }
-  if (ui.pendingEncounter && free && ui.introDone) { const e = ui.pendingEncounter; ui.pendingEncounter = null; openEncounter(e); }
-  if (free && ui.introDone && !ui.pendingSummary && !ui.pendingEncounter) storyTick(dt); // letters and chapter cards (storyview.js)
+  // nothing on screen: asked afresh before each thing that may open a dialog, since one may have
+  // opened a moment ago in this same frame (a summary, then a corsair, then a letter over it)
+  const isFree = () => !ui.modal && !ui.screen && !ui.arrival;
+  if (ui.pendingSummary && isFree() && ui.introDone) { const sm = ui.pendingSummary; ui.pendingSummary = null; showSummary(sm); }
+  if (ui.pendingEncounter && isFree() && ui.introDone) { const e = ui.pendingEncounter; ui.pendingEncounter = null; openEncounter(e); }
+  if (isFree() && ui.introDone && !ui.pendingSummary && !ui.pendingEncounter) storyTick(dt); // letters and chapter cards (storyview.js)
   if (ui.introDone) lawTick(!ui.modal && !ui.screen && !ui.arrival && !ui.pendingSummary && !ui.pendingEncounter); // the marque, a mutiny (lawview.js)
   if (ui.introDone) skipTick(!ui.modal && !ui.screen && !ui.arrival && !ui.pendingSummary && !ui.pendingEncounter); // the act break (timeskip.js)
-  if (ui.introDone) ambitionsTick(dt, free && !ui.modal && !ui.pendingSummary && !ui.pendingEncounter); // callings and ambitions (ambitionsview.js)
+  if (ui.introDone) ambitionsTick(dt, isFree() && !ui.pendingSummary && !ui.pendingEncounter); // callings and ambitions (ambitionsview.js)
   if (ui.introDone) playlogTick();
   saveClock += dt;
   if (saveClock > 5 && ui.introDone) { saveClock = 0; save(); }
