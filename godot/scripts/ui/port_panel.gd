@@ -3,7 +3,8 @@
 extends PanelContainer
 
 @onready var pic: TextureRect = $Box/Picture
-@onready var title: Label = $Box/Title
+@onready var title: Label = $Box/Head/Title
+@onready var fold: Button = $Box/Head/Fold
 @onready var blurb: Label = $Box/Blurb
 @onready var hold: Label = $Box/Hold
 @onready var rows: GridContainer = $Box/Scroll/Market
@@ -11,7 +12,20 @@ extends PanelContainer
 func _ready() -> void:
 	theme = Look.theme
 	Game.changed.connect(refresh, CONNECT_DEFERRED)
-	Game.docked.connect(func(_id): refresh())
+	Game.docked.connect(func(_id): set_folded(false))
+	fold.pressed.connect(func(): set_folded(not folded))
+	refresh()
+
+# Folded, the panel is only its title bar, so the ports behind it (Ceuta, Valencia) can be clicked.
+var folded := false
+
+func set_folded(f: bool) -> void:
+	folded = f
+	for n in [pic, blurb, hold, $Box/Scroll]:
+		n.visible = not f
+	fold.text = "Market" if f else "Fold"
+	anchor_bottom = 0.0 if f else 1.0
+	offset_bottom = offset_top + 52 if f else -64.0
 	refresh()
 
 func refresh() -> void:
@@ -22,7 +36,7 @@ func refresh() -> void:
 	var p := Data.port(id)
 	var path := "res://art/ports/%s.webp" % id
 	pic.texture = load(path) if ResourceLoader.exists(path) else null
-	pic.visible = pic.texture != null
+	pic.visible = pic.texture != null and not folded
 	title.text = p.name
 	blurb.text = p.get("blurb", "")
 	hold.text = "Hold %d / %d · purse %d cz" % [Game.held(), int(Game.stats().hold), int(Game.S.purse)]

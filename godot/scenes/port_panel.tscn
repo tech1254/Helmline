@@ -23,10 +23,19 @@ layout_mode = 2
 expand_mode = 1
 stretch_mode = 6
 
-[node name="Title" type="Label" parent="Box"]
+[node name="Head" type="HBoxContainer" parent="Box"]
 layout_mode = 2
+
+[node name="Title" type="Label" parent="Box/Head"]
+layout_mode = 2
+size_flags_horizontal = 3
 theme_override_font_sizes/font_size = 22
 text = "Port"
+
+[node name="Fold" type="Button" parent="Box/Head"]
+layout_mode = 2
+tooltip_text = "Fold the port away to see the chart behind it"
+text = "Fold"
 
 [node name="Blurb" type="Label" parent="Box"]
 layout_mode = 2
