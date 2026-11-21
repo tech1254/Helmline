@@ -16,7 +16,7 @@ var follow := true
 
 func _ready() -> void:
 	var p := Data.port(Game.here())
-	cam.position = chart.to_px(p.lon, p.lat) + Vector2(0, 200)
+	cam.position = chart.to_px(p.lon, p.lat) + Vector2(140, 160)  # the port panel takes the right side
 	cam.zoom = Vector2(1.6, 1.6)
 	info.text = "You are in %s. Click a port to plan a course." % p.name
 	Game.changed.connect(_on_changed, CONNECT_DEFERRED)

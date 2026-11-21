@@ -12,6 +12,7 @@ const DAYS_PER_SEC := 0.4  # at 1x: a year in about 15 minutes of sailing, as th
 var S: Dictionary = {}
 var market: Market
 var speed := 1
+var speed_before_clip := 1
 
 func _ready() -> void:
 	new_game("portugal")
