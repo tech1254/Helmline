@@ -14,6 +14,7 @@ config/features=PackedStringArray("4.7", "GL Compatibility")
 
 Data="*res://scripts/core/data.gd"
 Game="*res://scripts/core/game.gd"
+Look="*res://scripts/ui/look.gd"
 
 [display]
 
@@ -28,3 +29,11 @@ window/handheld/orientation=4
 renderer/rendering_method="gl_compatibility"
 renderer/rendering_method.mobile="gl_compatibility"
 textures/vram_compression/import_etc2_astc=true
+
+[importer_defaults]
+
+texture={
+"compress/mode": 1,
+"compress/lossy_quality": 0.8,
+"mipmaps/generate": false
+}

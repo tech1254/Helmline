@@ -1,0 +1,48 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/ui/port_panel.gd" id="1"]
+
+[node name="PortPanel" type="PanelContainer"]
+anchors_preset = 11
+anchor_left = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -440.0
+offset_top = 56.0
+offset_right = -12.0
+offset_bottom = -64.0
+script = ExtResource("1")
+
+[node name="Box" type="VBoxContainer" parent="."]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="Picture" type="TextureRect" parent="Box"]
+custom_minimum_size = Vector2(0, 180)
+layout_mode = 2
+expand_mode = 1
+stretch_mode = 6
+
+[node name="Title" type="Label" parent="Box"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 22
+text = "Port"
+
+[node name="Blurb" type="Label" parent="Box"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 13
+autowrap_mode = 3
+text = "..."
+
+[node name="Hold" type="Label" parent="Box"]
+layout_mode = 2
+text = "Hold"
+
+[node name="Scroll" type="ScrollContainer" parent="Box"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="Market" type="GridContainer" parent="Box/Scroll"]
+layout_mode = 2
+size_flags_horizontal = 3
+columns = 6

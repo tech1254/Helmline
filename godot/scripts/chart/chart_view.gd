@@ -19,7 +19,7 @@ func _ready() -> void:
 	cam.position = chart.to_px(p.lon, p.lat) + Vector2(0, 200)
 	cam.zoom = Vector2(1.6, 1.6)
 	info.text = "You are in %s. Click a port to plan a course." % p.name
-	Game.changed.connect(_on_changed)
+	Game.changed.connect(_on_changed, CONNECT_DEFERRED)
 	Game.docked.connect(_on_docked)
 	for b in $UI/Bar/Speeds.get_children():
 		b.pressed.connect(func(): Game.speed = int(b.name.trim_prefix("x")); _on_changed())

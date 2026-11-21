@@ -1,7 +1,8 @@
-[gd_scene load_steps=3 format=3]
+[gd_scene load_steps=4 format=3]
 
 [ext_resource type="Script" path="res://scripts/chart/chart_view.gd" id="1"]
 [ext_resource type="Script" path="res://scripts/chart/chart.gd" id="2"]
+[ext_resource type="PackedScene" path="res://scenes/port_panel.tscn" id="3"]
 
 [node name="ChartView" type="Node2D"]
 script = ExtResource("1")
@@ -72,3 +73,5 @@ text = "4×"
 [node name="SeaView" type="Button" parent="UI/Bar"]
 layout_mode = 2
 text = "Sea view"
+
+[node name="PortPanel" parent="UI" instance=ExtResource("3")]
