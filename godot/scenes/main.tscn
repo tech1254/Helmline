@@ -1,12 +1,13 @@
-[gd_scene load_steps=12 format=3]
+[gd_scene load_steps=13 format=3]
 
 [ext_resource type="Shader" path="res://shaders/sea.gdshader" id="1"]
 [ext_resource type="Script" path="res://scripts/ship.gd" id="2"]
 [ext_resource type="Script" path="res://scripts/camera.gd" id="3"]
+[ext_resource type="PackedScene" path="res://art/ships/caravel.glb" id="4"]
 
 [sub_resource type="ProceduralSkyMaterial" id="sky_mat"]
-sky_top_color = Color(0.36, 0.55, 0.78, 1)
-sky_horizon_color = Color(0.78, 0.80, 0.78, 1)
+sky_top_color = Color(0.22, 0.42, 0.72, 1)
+sky_horizon_color = Color(0.70, 0.78, 0.84, 1)
 ground_horizon_color = Color(0.60, 0.66, 0.68, 1)
 sun_angle_max = 20.0
 
@@ -20,7 +21,8 @@ ambient_light_source = 3
 tonemap_mode = 2
 fog_enabled = true
 fog_light_color = Color(0.72, 0.76, 0.78, 1)
-fog_density = 0.004
+fog_density = 0.0012
+fog_sky_affect = 0.15
 
 [sub_resource type="ShaderMaterial" id="sea_mat"]
 shader = ExtResource("1")
@@ -59,20 +61,26 @@ sea_path = NodePath("../Sea")
 [node name="Hull" type="Node3D" parent="Ship"]
 
 [node name="Body" type="MeshInstance3D" parent="Ship/Hull"]
+visible = false
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.3, 0)
 mesh = SubResource("hull_mesh")
 surface_material_override/0 = SubResource("wood")
 
 [node name="Mast" type="MeshInstance3D" parent="Ship/Hull"]
+visible = false
 transform = Transform3D(0.12, 0, 0, 0, 3.2, 0, 0, 0, 0.12, 0, 2.6, 0)
 mesh = SubResource("hull_mesh")
 surface_material_override/0 = SubResource("wood")
 
 [node name="Sail" type="MeshInstance3D" parent="Ship/Hull"]
+visible = false
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.6, 0.2)
 mesh = SubResource("sail_mesh")
 
+[node name="Model" parent="Ship/Hull" instance=ExtResource("4")]
+transform = Transform3D(7, 0, 0, 0, 7, 0, 0, 0, 7, 0, 2.6, 0)
+
 [node name="Camera" type="Camera3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 0.92, 0.39, 0, -0.39, 0.92, 0, 7, 16)
+transform = Transform3D(1, 0, 0, 0, 0.92, 0.39, 0, -0.39, 0.92, 6, 3.5, 10)
 script = ExtResource("3")
 target = NodePath("../Ship")

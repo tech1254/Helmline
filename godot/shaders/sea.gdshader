@@ -3,8 +3,8 @@
 shader_type spatial;
 render_mode cull_disabled;
 
-uniform vec4 deep : source_color = vec4(0.03, 0.16, 0.24, 1.0);
-uniform vec4 shallow : source_color = vec4(0.10, 0.36, 0.42, 1.0);
+uniform vec4 deep : source_color = vec4(0.02, 0.09, 0.14, 1.0);
+uniform vec4 shallow : source_color = vec4(0.05, 0.22, 0.27, 1.0);
 uniform vec4 foam : source_color = vec4(0.86, 0.90, 0.88, 1.0);
 uniform float height = 0.6;
 
@@ -41,7 +41,7 @@ void fragment() {
 	vec3 col = mix(deep.rgb, shallow.rgb, clamp(crest * 0.6 + 0.4, 0.0, 1.0));
 	col = mix(col, foam.rgb, smoothstep(0.75, 1.1, crest) * 0.7);
 	ALBEDO = col;
-	ROUGHNESS = 0.08;
+	ROUGHNESS = 0.18;
 	METALLIC = 0.0;
-	SPECULAR = 0.6 + fres * 0.4;
+	SPECULAR = 0.35 + fres * 0.4;
 }
