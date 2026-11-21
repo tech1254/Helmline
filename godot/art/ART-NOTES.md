@@ -90,3 +90,15 @@ the right third ... wake trailing behind her stern to the right" (seed 333 of 11
 bow-left), and the LTX prompt "her bow and bowsprit pointing to the left, sails slowly forward
 toward the left of the picture, bow first ... She moves the way she points." 96 s. She comes in
 from the right and grows a little as she nears: an arrival.
+
+## The five ships through the runner (2026-11-21)
+
+barca 111, nau 111, carrack 444, galley 333, great galley 222 (Klein picks), one batch through
+the standalone runner: about 2 minutes each to generate plus 16 s an extract, all five in 13
+minutes. 7,500-7,800 triangles, 3-3.7 MB each. In game: art/ships/<hull>.glb, set up in
+scripts/ship.gd MODELS (scale, waterline, yaw).
+
+Trellis does not keep a fixed facing: each model is one unit along its longest axis, which may be
+X or Z, and the bow may be at either end. Check every new model side-on with an arrow along -Z
+before trusting it (the barca fooled a small render; a close side-on view showed the stem).
+Found: caravel and nau 0, carrack 180, barca, galley and great galley -90.
