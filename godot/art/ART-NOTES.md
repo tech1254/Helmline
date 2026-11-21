@@ -66,3 +66,10 @@ The Lisbon arrival (2026-11-20) worked first time:
    perfectly still. The camera is fixed and steady." About 2 minutes. The town holds still; the ship
    crosses with her wake.
 In game: art/clips/lisbon_arrival.ogv (Theora, which Godot plays natively).
+
+Lesson from the first Lisbon arrival: the ship sailed BACKWARDS. The ship still had her bow to the
+left (as all our ship stills), Klein kept that, and LTX moved her left to right, stern first and a
+little sideways. Next time: say which way she points AND which way she moves, and make them the
+same: "bow pointing to the right, sailing to the right", or keep bow-left and sail her right to
+left. Check the first frame's bow before animating. A side-on hull also crabs less than a
+three-quarter one when LTX moves it across the frame.
