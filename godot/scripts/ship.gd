@@ -9,10 +9,20 @@ const KNOT := 1.4  # metres a second on screen for each knot: brisk enough to se
 
 # Each hull's model (Trellis, art/ships/<file>.glb), its size and how it sits. A hull with no
 # model of its own uses the nearest one.
+# (Each model is one unit long; `yaw` turns her bow to -Z; `y` sets her waterline.)
 const MODELS := {
 	"caravel": {"file": "caravel", "scale": 7.0, "y": 2.6, "yaw": 0.0},
+	"barca": {"file": "barca", "scale": 5.5, "y": 2.0, "yaw": -90.0},
+	"nau": {"file": "nau", "scale": 9.0, "y": 3.15, "yaw": 0.0},
+	"carrack": {"file": "carrack", "scale": 10.0, "y": 3.25, "yaw": 180.0},
+	"galley": {"file": "galley", "scale": 11.0, "y": 3.6, "yaw": -90.0},
+	"greatgalley": {"file": "greatgalley", "scale": 13.0, "y": 3.25, "yaw": -90.0},
 }
-const STANDS_IN := {"barca": "caravel", "largecaravel": "caravel", "armedcaravel": "caravel", "barinel": "caravel"}
+const STANDS_IN := {
+	"largecaravel": "caravel", "armedcaravel": "caravel", "barinel": "caravel", "redonda": "caravel", "naovizcaina": "caravel",
+	"holk": "nau", "urca": "nau", "merchantman": "nau", "naudaindia": "nau", "naocarrera": "nau",
+	"galeon": "carrack", "galeao": "carrack",
+}
 var shown := ""
 
 # Swap the model when the flagship's hull changes.
