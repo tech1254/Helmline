@@ -7,7 +7,39 @@ extends Node3D
 @export var sea_path: NodePath = ^"../Sea"
 const KNOT := 1.4  # metres a second on screen for each knot: brisk enough to see
 
+# Each hull's model (Trellis, art/ships/<file>.glb), its size and how it sits. A hull with no
+# model of its own uses the nearest one.
+const MODELS := {
+	"caravel": {"file": "caravel", "scale": 7.0, "y": 2.6, "yaw": 0.0},
+}
+const STANDS_IN := {"barca": "caravel", "largecaravel": "caravel", "armedcaravel": "caravel", "barinel": "caravel"}
+var shown := ""
+
+# Swap the model when the flagship's hull changes.
+func show_hull(hull_id: String) -> void:
+	var id := hull_id
+	if not MODELS.has(id):
+		id = STANDS_IN.get(hull_id, "caravel")
+	if id == shown:
+		return
+	var m: Dictionary = MODELS[id]
+	var path := "res://art/ships/%s.glb" % m.file
+	if not ResourceLoader.exists(path):
+		return
+	shown = id
+	var old := $Hull.get_node_or_null("Model")
+	if old:
+		$Hull.remove_child(old)
+		old.queue_free()
+	var model: Node3D = load(path).instantiate()
+	model.name = "Model"
+	model.scale = Vector3.ONE * float(m.scale)
+	model.position.y = float(m.y)
+	model.rotation.y = deg_to_rad(float(m.yaw))
+	$Hull.add_child(model)
+
 func _process(delta: float) -> void:
+	show_hull(String(Game.S.ship.hull))
 	var t := Time.get_ticks_msec() / 1000.0
 	var speed := 0.0
 	if Game.at_sea():
