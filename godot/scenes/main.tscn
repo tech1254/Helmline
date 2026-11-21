@@ -54,6 +54,7 @@ material_override = SubResource("sea_mat")
 
 [node name="Ship" type="Node3D" parent="."]
 script = ExtResource("2")
+sea_path = NodePath("../Sea")
 
 [node name="Hull" type="Node3D" parent="Ship"]
 

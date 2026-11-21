@@ -39,5 +39,29 @@ for (const [a, b] of [['lisbon', 'ceuta'], ['lisbon', 'cantor'], ['seville', 'li
     const r = W.findPath(P(a).lon, P(a).lat, P(b).lon, P(b).lat, skill, coastal);
     fx.routes.push({ a, b, skill, coastal, route: r });
   }
+// winds, sailing speeds, and passages
+fx.wind = [];
+for (const [lon, lat] of [[-9.4, 38.6], [-20, 30], [-30, 15], [-15, 5], [-5, 36], [10, -20], [-40, -35], [-60, 20], [0, 50]])
+  for (const day of [0, 37.5, 400]) fx.wind.push({ lon, lat, day, w: W.windAt(lon, lat, day) });
+fx.sail = [0, 30, 45, 60, 89, 100, 130, 160, 180].map((off) => ({ off, f: W.sailFactor(off) }));
+fx.knots = [];
+for (const hull of ['barca', 'caravel', 'nau', 'galley']) for (const off of [20, 70, 100, 150]) {
+  const st = Sh.stats({ hull, fit: {} }); fx.knots.push({ hull, off, f: 0.7, k: Sh.knotsAt(st, off, 0.7, 0.9) });
+}
+const Vy = { estimate: (st, route, lon, lat, day) => {
+  let nm = 0, hot = 0, d = day; const hf = 1;
+  for (const pt of route) { const [tl, ta] = pt;
+    for (let g = 0; g < 20000; g++) { const rem = W.distNm(lon, lat, tl, ta); if (rem < 0.5) break;
+      const b = W.bearing(lon, lat, tl, ta), w = W.windAt(lon, lat, d), off = W.angleDiff(b, w.from), f = W.sailFactor(off) * (0.45 + 0.55 * w.strength);
+      const perDay = (W.isRiverLeg(pt) ? W.RIVER_KNOTS * hf : Sh.knotsAt(st, off, f, hf)) * 24, step = Math.min(perDay * 0.1, rem);
+      lat += (step * Math.cos(b * W.D2R)) / 60; lon += (step * Math.sin(b * W.D2R)) / (60 * Math.cos(lat * W.D2R)); d += step / perDay; if (lat < 26) hot += step / perDay; nm += step; }
+    lon = tl; lat = ta; }
+  return { days: d - day, nm, hot, cost: Math.ceil((d - day) * st.upkeep) }; } };
+fx.passages = [];
+for (const [a, b, hull] of [['lisbon', 'ceuta', 'barca'], ['lisbon', 'cantor', 'caravel'], ['seville', 'lisbon', 'caravel'], ['lagos', 'funchal', 'nau']]) {
+  const st = Sh.stats({ hull, fit: {} }), A = P(a), B = P(b);
+  const r = W.findPath(A.lon, A.lat, B.lon, B.lat, 0.5, !!Sh.HULLS[hull].coastal);
+  fx.passages.push({ a, b, hull, day: 12.3, route: r, est: Vy.estimate(st, r, A.lon, A.lat, 12.3) });
+}
 writeFileSync(root + 'godot/tests/fixtures.json', JSON.stringify(fx));
 console.log('fixtures', Object.keys(fx).map((k) => `${k}:${fx[k].length ?? ''}`).join(' '));

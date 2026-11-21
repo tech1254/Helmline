@@ -16,8 +16,59 @@ script = ExtResource("2")
 [node name="Info" type="Label" parent="UI"]
 offset_left = 16.0
 offset_top = 12.0
-offset_right = 900.0
+offset_right = 1100.0
 offset_bottom = 44.0
 theme_override_colors/font_color = Color(0.2, 0.14, 0.08, 1)
 theme_override_font_sizes/font_size = 18
 text = "..."
+
+[node name="Bar" type="HBoxContainer" parent="UI"]
+anchors_preset = 12
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 12.0
+offset_top = -52.0
+offset_right = -12.0
+offset_bottom = -12.0
+theme_override_constants/separation = 12
+
+[node name="Status" type="Label" parent="UI/Bar"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.2, 0.14, 0.08, 1)
+theme_override_font_sizes/font_size = 16
+text = "..."
+vertical_alignment = 1
+
+[node name="Sail" type="Button" parent="UI/Bar"]
+visible = false
+layout_mode = 2
+text = "Set sail"
+
+[node name="Speeds" type="HBoxContainer" parent="UI/Bar"]
+layout_mode = 2
+
+[node name="x0" type="Button" parent="UI/Bar/Speeds"]
+layout_mode = 2
+toggle_mode = true
+text = "Pause"
+
+[node name="x1" type="Button" parent="UI/Bar/Speeds"]
+layout_mode = 2
+toggle_mode = true
+text = "1×"
+
+[node name="x2" type="Button" parent="UI/Bar/Speeds"]
+layout_mode = 2
+toggle_mode = true
+text = "2×"
+
+[node name="x4" type="Button" parent="UI/Bar/Speeds"]
+layout_mode = 2
+toggle_mode = true
+text = "4×"
+
+[node name="SeaView" type="Button" parent="UI/Bar"]
+layout_mode = 2
+text = "Sea view"

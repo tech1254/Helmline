@@ -15,7 +15,6 @@ var known_groups: Dictionary = {}
 var known_ports: Dictionary = {}
 var route: Array = []
 var route_from := ""
-var here := "lisbon"
 var font: Font
 
 static func to_px(lon: float, lat: float) -> Vector2:
@@ -68,10 +67,26 @@ func _draw() -> void:
 		if not known_ports.has(p.id):
 			continue
 		var at := to_px(p.lon, p.lat)
-		var r := 5.0 if p.id == here else 3.5
+		var is_here: bool = p.id == Game.S.ship.docked
+		var r := 5.0 if is_here else 3.5
 		draw_circle(at, r + 1.5, INK)
-		draw_circle(at, r, RED if p.id == here else LAND)
+		draw_circle(at, r, RED if is_here else LAND)
 		draw_string(font, at + Vector2(7, 4), p.name, HORIZONTAL_ALIGNMENT_LEFT, -1, 13, INK)
+	# her wake, and the ship herself
+	var trail := PackedVector2Array()
+	for t in Game.S.trail:
+		trail.append(to_px(t[0], t[1]))
+	trail.append(to_px(Game.S.ship.lon, Game.S.ship.lat))
+	if trail.size() > 1:
+		draw_polyline(trail, Color(INK, 0.35), 1.5, true)
+	if Game.at_sea():
+		var at := to_px(Game.S.ship.lon, Game.S.ship.lat)
+		var h := deg_to_rad(float(Game.S.ship.heading))
+		var fwd := Vector2(sin(h), -cos(h))
+		var side := Vector2(-fwd.y, fwd.x)
+		var hull := PackedVector2Array([at + fwd * 9, at + side * 4 - fwd * 6, at - side * 4 - fwd * 6])
+		draw_colored_polygon(hull, RED)
+		draw_polyline(PackedVector2Array([hull[0], hull[1], hull[2], hull[0]]), INK, 1.2, true)
 
 # The known port nearest a point on the chart, within `px` pixels.
 func port_at(pos: Vector2, px := 14.0) -> String:
