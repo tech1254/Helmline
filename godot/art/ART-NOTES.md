@@ -45,6 +45,16 @@ installed). Runner: S:\Trellis\run-browser\wm-watch.bat waits for code\wm_go\<na
 code\wm_exp.py <name>: jobs from code\wm_<name>q\jobs.json, models into code\wm_<name>\.
 Helmline uses the name `hl`. Settings as Warp Miner: 1024_cascade, seed 42.
 
+ComfyUI's own Trellis template (3d_pixal3d_trellis2_image_to_model) was tried on the same
+caravel still on 2026-11-21. It works now that its four models are installed (trellis_2,
+pixal3d, moge_2, birefnet), but: about 7 minutes against the runner's 5, and out of the box a
+700,000-triangle, 64 MB model with 4096 textures. With DecimateMesh at 16,000 faces, the texture
+size (the PrimitiveInt) at 1024 and the normal bake at 1024 it gives a 4.7 MB model with a normal
+map, but the ship came out stubby: a short, boxy hull with one sail, where the runner's model
+has her length and both masts. Verdict: keep the standalone runner for ships. To queue the
+template by API, copy its prompt from /history and change nodes 122 (LoadImage), 186
+(DecimateMesh), 288 (texture size), 224 (normal bake) and 322 (Save3DAdvanced prefix).
+
 ## LTX-2.5 (clips)
 
 The official LTX-2.5 Image to Video template, 736x416 (0.3 MP), 3 s: about 97 s a clip. Lisbon
@@ -73,3 +83,10 @@ little sideways. Next time: say which way she points AND which way she moves, an
 same: "bow pointing to the right, sailing to the right", or keep bow-left and sail her right to
 left. Check the first frame's bow before animating. A side-on hull also crabs less than a
 three-quarter one when LTX moves it across the frame.
+
+The redo (2026-11-21) sailed right: the Klein prompt said "seen exactly from the side, her bow
+pointing to the LEFT and her stern to the right, sailing toward the left of the picture. She is on
+the right third ... wake trailing behind her stern to the right" (seed 333 of 111/222/333, all
+bow-left), and the LTX prompt "her bow and bowsprit pointing to the left, sails slowly forward
+toward the left of the picture, bow first ... She moves the way she points." 96 s. She comes in
+from the right and grows a little as she nears: an arrival.
