@@ -49,3 +49,20 @@ Helmline uses the name `hl`. Settings as Warp Miner: 1024_cascade, seed 42.
 
 The official LTX-2.5 Image to Video template, 736x416 (0.3 MP), 3 s: about 97 s a clip. Lisbon
 harbour test came out faithful, slow drift, moving water.
+
+## Port arrivals (Klein with two references, then LTX)
+
+The Lisbon arrival (2026-11-20) worked first time:
+1. Klein, 1280x720, two ReferenceLatent references chained on both the positive and the empty
+   negative (as Warp Miner's queue_redo10.py): the port's picture (scaled 1024x576) and the ship
+   still (768x768). Here, copying the references closely is what we want: the town stays exact
+   and our ship is put into it. Prompt: "The harbour of Lisbon in 1451, exactly as in the first
+   reference picture ... The caravel from the second reference picture ... is sailing in from the
+   left on the calm river in front of the town, under sail, seen from the side, about a quarter of
+   the picture wide, with a small white wake behind her. Wide cinematic view from the water, the
+   camera level and steady." Seed 333 was the best of four.
+2. LTX-2.5 Image to Video from that frame, 736x416, 4 s: "The small wooden caravel ... sails
+   slowly from left to right across the calm river ... The castle, the cathedral and the town stay
+   perfectly still. The camera is fixed and steady." About 2 minutes. The town holds still; the ship
+   crosses with her wake.
+In game: art/clips/lisbon_arrival.ogv (Theora, which Godot plays natively).
