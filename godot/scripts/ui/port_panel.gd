@@ -14,14 +14,26 @@ func _ready() -> void:
 	Game.changed.connect(refresh, CONNECT_DEFERRED)
 	Game.docked.connect(func(_id): set_folded(false))
 	fold.pressed.connect(func(): set_folded(not folded))
+	# The hull's line: her state and what putting her right would cost here.
+	var row := HBoxContainer.new()
+	hull_line.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	hull_line.add_theme_font_size_override("font_size", 13)
+	row.add_child(hull_line)
+	row.add_child(mend)
+	mend.pressed.connect(func(): Game.repair())
+	$Box.add_child(row)
+	$Box.move_child(row, hold.get_index() + 1)
 	refresh()
+
+var hull_line := Label.new()
+var mend := Button.new()
 
 # Folded, the panel is only its title bar, so the ports behind it (Ceuta, Valencia) can be clicked.
 var folded := false
 
 func set_folded(f: bool) -> void:
 	folded = f
-	for n in [pic, blurb, hold, $Box/Scroll]:
+	for n in [pic, blurb, hold, hull_line.get_parent(), $Box/Scroll]:
 		n.visible = not f
 	fold.text = "Market" if f else "Fold"
 	anchor_bottom = 0.0 if f else 1.0
@@ -40,6 +52,13 @@ func refresh() -> void:
 	title.text = p.name
 	blurb.text = p.get("blurb", "")
 	hold.text = "Hold %d / %d · purse %d cz" % [Game.held(), int(Game.stats().hold), int(Game.S.purse)]
+	var q := Game.repair_quote()
+	var hp := floori(Game.S.hull)
+	hull_line.text = "Hull %d%%%s" % [hp, " · leaking" if hp < Wear.LEAKS_BELOW else ""]
+	mend.visible = q.pts >= 3  # a scrape or two is not worth a day in the yard
+	mend.text = ("Repair: %d cz, %d days" if Game.has_yard() else "Careen: %d cz, %d days") % [q.cost, q.days]
+	mend.tooltip_text = "The yard makes her sound (to %d%%)" % q.to if Game.has_yard() else "No shipyard here: her crew careen her on the beach, to %d%%" % q.to
+	mend.disabled = Game.S.purse < q.cost
 	if built_for != id:
 		build(id)
 	var obs := Game.market.observe(id)

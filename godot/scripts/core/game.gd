@@ -22,7 +22,8 @@ func new_game(nation: String) -> void:
 	var p := Data.port(home)
 	S = {
 		"nation": nation, "day": 0.0, "purse": 300.0, "hull": 100.0, "voyages": 0,
-		"ship": {"hull": "barca", "fit": {}, "name": "Esperança", "lon": p.lon, "lat": p.lat, "heading": 0.0, "route": [], "docked": home, "dest": ""},
+		"ship": {"hull": "barca", "fit": {}, "name": "Esperança", "lon": p.lon, "lat": p.lat, "heading": 0.0, "route": [], "docked": home, "dest": "", "built": 0.0, "tropic": 0.0, "strain": 0.0},
+		"hull_warned": 0,
 		"cargo": {}, "paid": {}, "rot": {}, "trail": [[p.lon, p.lat]],
 	}
 	for g in Data.good_ids:
@@ -80,6 +81,7 @@ func advance(days: float) -> void:
 func pass_time(days: float) -> void:
 	if at_sea():
 		spoil(days)
+		wear_hull(days)
 	S.day += days
 	market.tick(days)
 	S.purse -= days * stats().upkeep  # the crew's wages, by the day
@@ -91,6 +93,7 @@ func arrive(port_id: String) -> void:
 	S.ship.lon = p.lon
 	S.ship.lat = p.lat
 	S.voyages += 1
+	leak(p)
 	docked.emit(port_id)
 	notice.emit("Dropped anchor at %s." % p.name)
 
@@ -159,3 +162,69 @@ func spoil(dd: float) -> void:
 		if S.cargo[g.id] == 0:
 			S.rot[g.id] = 0.0
 			S.paid[g.id] = 0.0
+
+# ---- The hull (wear.gd) ----------------------------------------------------------------------
+var rng := RandomNumberGenerator.new()
+
+func years() -> float:
+	return Wear.service_years(S.ship, S.day)
+
+# A little each day at sea, faster in the tropics; storms now and then. Word once as she starts
+# to leak and once when she is in danger.
+func wear_hull(dd: float) -> void:
+	var st := stats()
+	if S.ship.lat < Wear.TROPIC_LAT:
+		S.ship.tropic += dd * float(st.tropicWear)
+	if S.hull < Wear.LEAKS_BELOW:
+		S.ship.strain += dd
+	var gale := Wear.gale_factor(S.ship.lon, S.ship.lat, S.day)
+	var storm := Wear.storms(dd, rng, gale) * float(st.peril)
+	S.hull = maxf(5.0, S.hull - Wear.wear_per_day(S.ship.lat, S.ship.hull, years(), float(st.tropicWear)) * dd - storm)
+	if storm > 0:
+		notice.emit("%s batters the %s: her hull is at %d%%." % ["A gale" if gale > 2.5 else "A storm", S.ship.name, roundi(S.hull)])
+	if S.hull < Wear.DANGER_BELOW and S.hull_warned < 2:
+		S.hull_warned = 2
+		notice.emit("The %s is in danger: her hull is at %d%%. Make for a shipyard, or careen her on the nearest beach." % [S.ship.name, roundi(S.hull)])
+	elif S.hull < Wear.LEAKS_BELOW and S.hull_warned < 1:
+		S.hull_warned = 1
+		notice.emit("The %s is leaking: her hull is at %d%%, and wet cargo spoils." % [S.ship.name, roundi(S.hull)])
+
+func has_yard() -> bool:
+	return not at_sea() and Wear.YARDS.has(here())
+
+# What putting her right costs here: the yard if there is one, else her crew on a beach.
+func repair_quote() -> Dictionary:
+	if has_yard():
+		return Wear.yard_quote(S.ship.hull, S.hull, years())
+	return Wear.beach_quote(S.ship.hull, S.hull, years())
+
+# Pay, and the days pass in port while the work is done. False if there is nothing to do or no money.
+func repair() -> bool:
+	var q := repair_quote()
+	if at_sea() or q.pts <= 0 or S.purse < q.cost:
+		return false
+	S.purse -= q.cost
+	pass_time(float(q.days))
+	S.hull = maxf(S.hull, float(q.to))
+	S.hull_warned = 0
+	notice.emit("%s in %d days for %d cz: her hull is at %d%%." % ["The shipwrights made her sound" if has_yard() else "Her crew careened her on the beach", q.days, q.cost, roundi(S.hull)])
+	changed.emit()
+	return true
+
+# A leaking hull spoils cargo on the passage, counted as she makes port. What was paid stays paid.
+func leak(p: Dictionary) -> void:
+	var share := Wear.leak_share(S.hull, float(stats().leak))
+	if share <= 0:
+		return
+	var lost: PackedStringArray = []
+	for g in Data.goods:
+		var have: int = S.cargo[g.id]
+		var n := mini(have, int(Wear.js_round(have * share)))
+		if n == 0:
+			continue
+		S.cargo[g.id] -= n
+		if S.cargo[g.id] == 0:
+			S.paid[g.id] = 0.0
+		lost.append("%d %s of %s" % [n, g.one if n == 1 else g.unit, g.name.to_lower()])
+	if not lost.is_empty():
+		notice.emit("Sea water in the hold: %s ruined on the way to %s. Her hull is at %d%%." % [", ".join(lost), p.name, roundi(S.hull)])
