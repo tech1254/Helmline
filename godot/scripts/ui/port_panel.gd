@@ -63,16 +63,20 @@ func build(id: String) -> void:
 		var gid: String = g.id
 		var name := Label.new()
 		name.text = g.name
+		name.custom_minimum_size.x = 104
 		rows.add_child(name)
 		var b := Button.new()
+		b.custom_minimum_size.x = 48
 		b.tooltip_text = "Buy one"
 		b.pressed.connect(func(): Game.buy(gid, 1))
 		rows.add_child(b)
 		var s := Button.new()
+		s.custom_minimum_size.x = 48
 		s.tooltip_text = "Sell one"
 		s.pressed.connect(func(): Game.sell(gid, 1))
 		rows.add_child(s)
 		var hl := Label.new()
+		hl.custom_minimum_size.x = 76  # wide enough for "25 @ 120": the buttons beside it never shift
 		rows.add_child(hl)
 		var b10 := Button.new()
 		b10.text = "+10"
@@ -80,6 +84,7 @@ func build(id: String) -> void:
 		rows.add_child(b10)
 		var sa := Button.new()
 		sa.text = "Sell all"
+		sa.custom_minimum_size.x = 64
 		sa.pressed.connect(func(): Game.sell(gid, Game.S.cargo[gid]))
 		rows.add_child(sa)
 		cells[gid] = {"buy": b, "sell": s, "held": hl, "buy10": b10, "sellall": sa}
