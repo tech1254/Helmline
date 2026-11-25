@@ -10,20 +10,20 @@ func test_round_trip() -> void:
 	Game.S.paid.wine = 63.0
 	Game.S.hull = 81.25
 	Game.S.ship.hull = "caravel"
-	Game.S.ship.fit = {"guns": "bercos"}
+	Game.S.ship.fit.guns = "bercos"
 	Game.S.pirates.won = 2
 	Game.S.pirates.galleys = [{"id": 4, "lon": -8.0, "lat": 33.0, "heading": 10.0, "big": true, "zone": "the Barbary coast", "until": 40.0, "seen": null}]
 	Game.buy("wheat", 3)
-	var price := Game.market.buy_price("seville", "wheat")
+	var price := Game.market.buy_price("palos", "wheat")
 	runner.check(Game.save_game(), "saved")
 	var before := var_to_str(Game.S)
 	Game.new_game("portugal")
 	runner.check(Game.load_game(), "loaded")
 	runner.check(var_to_str(Game.S) == before, "the state comes back exactly")
 	runner.check(typeof(Game.S.cargo.wine) == TYPE_INT and Game.S.cargo.wine == 7, "ints stay ints")
-	runner.check(Game.market.buy_price("seville", "wheat") == price, "and the market where it was (%d)" % price)
+	runner.check(Game.market.buy_price("palos", "wheat") == price, "and the market where it was (%d)" % price)
 	var sum := Game.save_summary()
-	runner.check(sum.where == "in Seville" and sum.purse == int(Game.S.purse) and sum.nation == "castile", "the start screen's summary: %s" % [sum])
+	runner.check(sum.where == "in Palos" and sum.purse == int(Game.S.purse) and sum.nation == "castile", "the start screen's summary: %s" % [sum])
 
 func test_old_save_gets_new_fields() -> void:
 	Game.new_game("portugal")

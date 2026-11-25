@@ -15,6 +15,11 @@ var hull_order: PackedStringArray = []
 var groups: Array = []
 var default_fit: Dictionary = {}
 var tiers: Dictionary = {}
+var tier_names: Dictionary = {}
+var tabs: Array = []             # [[id, label]]: the shipyard's tabs
+var foreign_yards: PackedStringArray = []
+var nations: Dictionary = {}     # id -> {home, homeName, flagship, ladder, years}
+var price_rise := 1.0
 var routes: Dictionary = {}
 
 func _ready() -> void:
@@ -47,6 +52,11 @@ func load_all() -> void:
 	groups = s.groups
 	default_fit = s.defaultFit
 	tiers = s.tiers
+	tier_names = s.tierNames
+	tabs = s.tabs
+	foreign_yards = PackedStringArray(s.foreignYards)
+	nations = s.nations
+	price_rise = s.priceRise
 
 func load_routes() -> Dictionary:
 	if routes.is_empty():

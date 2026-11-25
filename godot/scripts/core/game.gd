@@ -22,12 +22,14 @@ func _ready() -> void:
 		new_game("portugal")
 
 func new_game(nation: String) -> void:
-	var home := "seville" if nation == "castile" else "lisbon"
+	var N: Dictionary = Data.nations.get(nation, Data.nations.portugal)
+	var home: String = N.start
 	var p := Data.port(home)
 	S = {
 		"nation": nation, "day": 0.0, "purse": 300.0, "hull": 100.0, "voyages": 0,
-		"ship": {"hull": "barca", "fit": {}, "name": "Esperança", "lon": p.lon, "lat": p.lat, "heading": 0.0, "route": [], "docked": home, "dest": "", "built": 0.0, "tropic": 0.0, "strain": 0.0},
+		"ship": {"hull": "barca", "fit": Data.default_fit.duplicate(), "name": N.flagship, "lon": p.lon, "lat": p.lat, "heading": 0.0, "route": [], "docked": home, "dest": "", "built": 0.0, "tropic": 0.0, "strain": 0.0},
 		"hull_warned": 0,
+		"yard": {"orders": [], "built": 0},
 		"pirates": {"notoriety": 0.0, "caution": 0.0, "cooldown": 0.0, "encounters": 0, "won": 0, "lost": 0, "fled": 0, "paid": 0, "plundered": 0, "bounty": 0, "bountyPaid": 0, "galleys": [], "galleyId": 1},
 		"cargo": {}, "paid": {}, "rot": {}, "trail": [[p.lon, p.lat]],
 	}
@@ -110,6 +112,8 @@ func arrive(port_id: String) -> void:
 	docked.emit(port_id)
 	notice.emit("Dropped anchor at %s." % p.name)
 	save_game.call_deferred()
+	if port_id == Shipyard.home(S) and not Shipyard.ready(S).is_empty():
+		notice.emit("The %s yard sends word: what you ordered is ready. Take delivery in the shipyard." % p.name)
 	var bounty := Pirates.collect_bounty(S, port_id)
 	if bounty != "":
 		notice.emit(bounty)
@@ -417,3 +421,116 @@ func delete_save() -> void:
 func _notification(what: int) -> void:
 	if what == NOTIFICATION_WM_CLOSE_REQUEST or what == NOTIFICATION_APPLICATION_PAUSED or what == NOTIFICATION_APPLICATION_FOCUS_OUT:
 		save_game()
+
+# ---- The shipyard (shipyard.gd) ------------------------------------------------------------------
+# Time stands still while the yard is open; the work itself takes days in port.
+
+func yard_here() -> String:
+	return here() if not at_sea() and Shipyard.is_yard(here()) else ""
+
+func home_yard() -> bool:
+	return here() == Shipyard.home(S)
+
+# Refit her to `draft` (a full fit). False, with word why, if it cannot be done.
+func commission(draft: Dictionary) -> bool:
+	var q := Shipyard.quote_fit(S, draft)
+	if yard_here() == "" or q.error != "" or q.lines.is_empty():
+		return false
+	var after: Dictionary = S.ship.fit.duplicate()
+	for l in q.lines:
+		if not l.get("order", false):
+			after[l.g.id] = l.c.id
+	var hold := int(Ships.stats({"hull": S.ship.hull, "fit": after}).hold)
+	if hold < held():
+		notice.emit("That leaves a hold of %d, and you carry %d. Sell some cargo first." % [hold, held()])
+		return false
+	var total: int = q.cost + q.down
+	if S.purse < total:
+		return false
+	S.purse -= total
+	Shipyard.apply_fit(S, q)
+	if q.days:
+		pass_time(float(q.days))
+	var done := PackedStringArray(q.lines.filter(func(l): return not l.get("order", false)).map(func(l): return String(l.c.name).to_lower()))
+	if not done.is_empty():
+		notice.emit("The %s comes out of the yard after %d days: %s." % [S.ship.name, q.days, ", ".join(done)])
+	if not q.ordered.is_empty():
+		notice.emit("Ordered for later: %s. The yard will send word when it is ready." % ", ".join(PackedStringArray(q.ordered.map(func(o): return String(Ships.choice(o.group, o.choice).name).to_lower()))))
+	changed.emit()
+	save_game()
+	return true
+
+# What the new hull costs after the old one goes in part exchange.
+func trade_up_price(hull_id: String) -> int:
+	return int(Data.hulls[hull_id].price) - Shipyard.trade_in_value(S)
+
+func trade_up(hull_id: String, ship_name := "") -> bool:
+	var H: Dictionary = Data.hulls[hull_id]
+	if not Shipyard.hulls_here(S, here()).has(hull_id) or Shipyard.availability(S, H).ok != "yes":
+		return false
+	var net := trade_up_price(hull_id)
+	if held() > int(Ships.stats({"hull": hull_id}).hold) or S.purse < net:
+		return false
+	S.purse -= net
+	Shipyard.trade_up(S, hull_id, ship_name)
+	notice.emit("The %s, a %s, is yours. Fit her out as you please." % [S.ship.name, String(H.name).to_lower()])
+	changed.emit()
+	save_game()
+	return true
+
+func order_hull(hull_id: String, ship_name := "") -> bool:
+	var H: Dictionary = Data.hulls[hull_id]
+	var down := int(Market.js_round(float(H.price) / 3.0))
+	if not home_yard() or Shipyard.availability(S, H).ok != "order" or Shipyard.has_order(S, "hull", hull_id) or S.purse < down:
+		return false
+	S.purse -= Shipyard.order_hull(S, hull_id, ship_name)
+	notice.emit("The keel of your %s is laid in %s. She will be ready in %d." % [String(H.name).to_lower(), Data.port(here()).name, Calendar.year_of(S.yard.orders[-1].due)])
+	changed.emit()
+	save_game()
+	return true
+
+# Take delivery of an order that is ready (in the home yard): a fitting is fitted, a hull replaces
+# the flagship (she goes in part exchange).
+func deliver(i: int) -> bool:
+	if i < 0 or i >= S.yard.orders.size() or not home_yard():
+		return false
+	var o: Dictionary = S.yard.orders[i]
+	if S.day < o.due:
+		return false
+	var due: int = o.price - o.paid
+	if o.kind == "fit":
+		var c := Ships.choice(o.group, o.choice)
+		if not Ships.groups_for(S.ship.hull).any(func(g): return g.id == o.group):
+			S.yard.orders.remove_at(i)
+			S.purse += o.paid
+			notice.emit("The %s does not fit the %s. The yard returns your %d cz." % [String(c.name).to_lower(), S.ship.name, o.paid])
+		else:
+			if S.purse < due:
+				return false
+			S.yard.orders.remove_at(i)
+			S.purse -= due
+			S.ship.fit[o.group] = o.choice
+			pass_time(float(c.get("days", 0)))
+			notice.emit("The %s comes out of the yard with her %s." % [S.ship.name, String(c.name).to_lower()])
+	else:
+		var net := due - Shipyard.trade_in_value(S)
+		if held() > int(Ships.stats({"hull": o.hull}).hold) or S.purse < net:
+			return false
+		S.yard.orders.remove_at(i)
+		S.purse -= net
+		Shipyard.trade_up(S, o.hull, String(o.get("name", "")) if o.get("name") else "")
+		notice.emit("The %s slides down the ways. Your %s is ready for sea." % [S.ship.name, String(Data.hulls[o.hull].name).to_lower()])
+	changed.emit()
+	save_game()
+	return true
+
+func rename(new_name: String) -> bool:
+	var n := new_name.replace("<", "").replace(">", "").strip_edges().left(28)
+	if n == "" or n == S.ship.name:
+		return false
+	var old: String = S.ship.name
+	S.ship.name = n
+	notice.emit("The %s is now the %s." % [old, n])
+	changed.emit()
+	save_game()
+	return true
