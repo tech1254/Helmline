@@ -8,6 +8,7 @@ signal notice(text: String)
 signal changed
 signal encounter(enc: Dictionary)  # a corsair comes at you, or you have run one down: stop and show it
 signal fight_over(result: Dictionary)
+signal started  # a new game begun, or a saved one loaded: the screens start over from S
 
 const DAYS_PER_SEC := 0.4  # at 1x: a year in about 15 minutes of sailing, as the browser game
 
@@ -17,7 +18,8 @@ var speed := 1
 var speed_before_clip := 1
 
 func _ready() -> void:
-	new_game("portugal")
+	if not load_game():
+		new_game("portugal")
 
 func new_game(nation: String) -> void:
 	var home := "seville" if nation == "castile" else "lisbon"
@@ -68,6 +70,9 @@ func set_sail(plan: Dictionary) -> void:
 	changed.emit()
 
 func _process(delta: float) -> void:
+	_autosave_clock += delta
+	if _autosave_clock > AUTOSAVE_SECS and at_sea():
+		save_game()
 	if speed == 0 or not at_sea() or S.ship.route.is_empty() or not pending.is_empty():
 		return
 	advance(delta * DAYS_PER_SEC * speed)
@@ -104,6 +109,7 @@ func arrive(port_id: String) -> void:
 	leak(p)
 	docked.emit(port_id)
 	notice.emit("Dropped anchor at %s." % p.name)
+	save_game.call_deferred()
 	var bounty := Pirates.collect_bounty(S, port_id)
 	if bounty != "":
 		notice.emit(bounty)
@@ -136,6 +142,7 @@ func buy(good: String, n: int) -> int:
 		S.cargo[good] += r.bought
 		S.paid[good] += r.cost
 		changed.emit()
+		save_game.call_deferred()
 	return r.bought
 
 # Sell up to n of a good here. Returns the income.
@@ -150,6 +157,7 @@ func sell(good: String, n: int) -> int:
 	S.paid[good] = S.paid[good] * (have - n) / have if have > n else 0.0
 	S.cargo[good] = have - n
 	changed.emit()
+	save_game.call_deferred()
 	return r.income
 
 # What a unit of a good in the hold cost her, on average.
@@ -220,6 +228,7 @@ func repair() -> bool:
 	pass_time(float(q.days))
 	S.hull = maxf(S.hull, float(q.to))
 	S.hull_warned = 0
+	save_game.call_deferred()
 	notice.emit("%s in %d days for %d cz: her hull is at %d%%." % ["The shipwrights made her sound" if has_yard() else "Her crew careened her on the beach", q.days, q.cost, roundi(S.hull)])
 	changed.emit()
 	return true
@@ -322,3 +331,89 @@ func _resume() -> void:
 	fight = {}
 	speed = speed_before_fight
 	changed.emit()
+	save_game()
+
+# ---- Saving on this device (save.js) ------------------------------------------------------------
+# One saved game, in user:// (on the web that is the browser's IndexedDB). Saved on making port, after
+# a fight, after repairs, every half minute at sea, and when the game is closed or put away. Not in the
+# middle of a fight: closed then, the game resumes from just before it. Godot's own text format keeps
+# ints as ints, so the state comes back exactly as it was.
+var save_path := "user://helmline.save"  # the tests use their own
+const SAVE_VERSION := 1
+const AUTOSAVE_SECS := 30.0
+var _autosave_clock := 0.0
+
+func has_save() -> bool:
+	return FileAccess.file_exists(save_path)
+
+func save_game() -> bool:
+	_autosave_clock = 0.0
+	if S.is_empty() or not pending.is_empty():
+		return false
+	var f := FileAccess.open(save_path, FileAccess.WRITE)
+	if f == null:
+		return false  # storage unavailable: play on without saving
+	S["savedAt"] = Time.get_unix_time_from_system()
+	f.store_string(var_to_str({"version": SAVE_VERSION, "S": S, "market": market.to_dict(), "rng": rng.state, "speed": speed}))
+	f.close()
+	return true
+
+# What the saved game is, for the start screen: {} if there is none.
+func save_summary() -> Dictionary:
+	var d := _read_save()
+	if d.is_empty():
+		return {}
+	var s: Dictionary = d.S
+	var where: String = ("in %s" % Data.port(s.ship.docked).name) if s.ship.docked != "" else "at sea"
+	return {"ship": s.ship.name, "where": where, "date": Calendar.fmt_date(s.day), "purse": int(s.purse), "nation": s.nation}
+
+func _read_save() -> Dictionary:
+	if not has_save():
+		return {}
+	var v = str_to_var(FileAccess.get_file_as_string(save_path))
+	if typeof(v) != TYPE_DICTIONARY or int(v.get("version", 0)) != SAVE_VERSION or typeof(v.get("S")) != TYPE_DICTIONARY:
+		return {}
+	return v
+
+# Load the saved game. Anything the save lacks (a newer edition adds to the state) comes from a fresh
+# game's state, so old saves keep working.
+func load_game() -> bool:
+	var d := _read_save()
+	if d.is_empty():
+		return false
+	var saved: Dictionary = d.S
+	new_game(saved.get("nation", "portugal"))
+	var fresh := S
+	S = _merge(fresh, saved)
+	market = Market.new(d.get("market", {}))
+	rng.state = int(d.get("rng", rng.state))
+	speed = 1
+	pending = {}
+	fight = {}
+	spoils = {}
+	started.emit()
+	changed.emit()
+	return true
+
+static func _merge(base: Dictionary, over: Dictionary) -> Dictionary:
+	var out := base.duplicate(true)
+	for k in over:
+		if typeof(over[k]) == TYPE_DICTIONARY and typeof(out.get(k)) == TYPE_DICTIONARY:
+			out[k] = _merge(out[k], over[k])
+		else:
+			out[k] = over[k]
+	return out
+
+func start_new(nation: String) -> void:
+	new_game(nation)
+	speed = 1
+	save_game()
+	started.emit()
+
+func delete_save() -> void:
+	if has_save():
+		DirAccess.remove_absolute(save_path)
+
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_WM_CLOSE_REQUEST or what == NOTIFICATION_APPLICATION_PAUSED or what == NOTIFICATION_APPLICATION_FOCUS_OUT:
+		save_game()

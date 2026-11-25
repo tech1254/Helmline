@@ -13,6 +13,11 @@ func _initialize() -> void:
 		data.name = "Data"
 		root.add_child(data)
 	data.load_all()
+	# the tests save to their own file, never over a game in play
+	var game = root.get_node_or_null("Game")
+	if game:
+		game.save_path = "user://tests.save"
+		game.delete_save()
 	# every script compiles
 	for path in scripts_under("res://scripts"):
 		check(load(path) != null, "compiles: " + path)

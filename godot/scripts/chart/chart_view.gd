@@ -15,16 +15,29 @@ var plan: Dictionary = {}
 var follow := true
 
 func _ready() -> void:
-	var p := Data.port(Game.here())
-	cam.position = chart.to_px(p.lon, p.lat) + Vector2(140, 160)  # the port panel takes the right side
-	cam.zoom = Vector2(1.6, 1.6)
-	info.text = "You are in %s. Click a port to plan a course." % p.name
+	_start()
+	Game.started.connect(_start)
 	Game.changed.connect(_on_changed, CONNECT_DEFERRED)
 	Game.docked.connect(_on_docked)
 	for b in $UI/Bar/Speeds.get_children():
 		b.pressed.connect(func(): Game.speed = int(b.name.trim_prefix("x")); _on_changed())
 	sail_btn.pressed.connect(func(): Game.set_sail(plan); plan = {}; follow = true)
 	$UI/Bar/SeaView.pressed.connect(func(): sea_view.emit())
+	_on_changed()
+
+# Look at where she lies: in port, with the port panel on the right; at sea, on the ship.
+func _start() -> void:
+	plan = {}
+	chart.set_route("", [])
+	follow = true
+	cam.zoom = Vector2(1.6, 1.6)
+	if Game.at_sea():
+		cam.position = chart.to_px(Game.S.ship.lon, Game.S.ship.lat)
+		info.text = "At sea, bound for %s." % Data.port(Game.S.ship.dest).name if Game.S.ship.dest != "" else "At sea."
+	else:
+		var p := Data.port(Game.here())
+		cam.position = chart.to_px(p.lon, p.lat) + Vector2(140, 160)  # the port panel takes the right side
+		info.text = "You are in %s. Click a port to plan a course." % p.name
 	_on_changed()
 
 func _process(_d: float) -> void:

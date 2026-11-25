@@ -24,17 +24,19 @@ func _ready() -> void:
 		if Game.pending.is_empty() and fight_scene.foe and not fight_scene.leaving:
 			fight_scene.finish()
 			sea.get_node("Camera").foe = null)
+	Game.started.connect(func(): show_sea(false))
 	show_sea(false)
-	_dev_start.call_deferred()
+	if OS.has_feature("web") and str(JavaScriptBridge.eval("location.search")).contains("dev="):
+		_dev_start.call_deferred()
+	else:
+		var menu := CanvasLayer.new()
+		menu.set_script(load("res://scripts/ui/start_menu.gd"))
+		add_child(menu)
 
 # Dev links for trying a scene straight away in the web build: ?dev=corsairs (a galley comes at
 # you off Barbary), ?dev=hunt (you have run one down), ?dev=greatgalley.
 func _dev_start() -> void:
-	if not OS.has_feature("web"):
-		return
 	var q := str(JavaScriptBridge.eval("location.search"))
-	if not q.contains("dev="):
-		return
 	Game.S.ship.docked = ""
 	Game.S.ship.lon = -9.0
 	Game.S.ship.lat = 33.2

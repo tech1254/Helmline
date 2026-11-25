@@ -26,9 +26,11 @@ func _init(saved: Dictionary = {}, seed_value: int = -1) -> void:
 		for g in Data.good_ids:
 			press[port][g] = saved.get("press", {}).get(port, {}).get(g, 0.0)
 			drift[port][g] = saved.get("drift", {}).get(port, {}).get(g, gauss() * 0.06)
+	vol = saved.get("vol", {}).duplicate(true)
+	volg = saved.get("volg", {}).duplicate(true)
 
 func to_dict() -> Dictionary:
-	return {"press": press, "drift": drift}
+	return {"press": press, "drift": drift, "vol": vol, "volg": volg}
 
 func gauss() -> float:
 	return rng.randfn(0.0, 1.0)
