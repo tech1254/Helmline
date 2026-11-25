@@ -70,6 +70,18 @@ func _draw() -> void:
 		draw_circle(at, r + 1.5, Look.ink)
 		draw_circle(at, r, Look.accent if is_here else Look.land)
 		draw_string(font, at + Vector2(7, 4), p.name, HORIZONTAL_ALIGNMENT_LEFT, -1, 13, Look.ink)
+	# corsair galleys your lookout (or word in port) has seen in the last few days, where last seen
+	for g in Game.S.get("pirates", {}).get("galleys", []):
+		if g.get("seen") == null or Game.S.day - float(g.seen) > 4:
+			continue
+		var at := to_px(g.seenLon, g.seenLat)
+		var fade := clampf(1.0 - (Game.S.day - float(g.seen)) / 4.0, 0.35, 1.0)
+		var red := Color(Look.accent, fade)
+		draw_circle(at, 7.0 if g.big else 5.5, Color(Look.land, 0.8 * fade))
+		draw_arc(at, 7.0 if g.big else 5.5, 0, TAU, 20, red, 1.6, true)
+		draw_line(at + Vector2(-4, -4), at + Vector2(4, 4), red, 1.8, true)
+		draw_line(at + Vector2(4, -4), at + Vector2(-4, 4), red, 1.8, true)
+		draw_string(font, at + Vector2(9, 4), "great galley" if g.big else "corsair", HORIZONTAL_ALIGNMENT_LEFT, -1, 12, red)
 	# her wake, and the ship herself
 	var trail := PackedVector2Array()
 	for t in Game.S.trail:

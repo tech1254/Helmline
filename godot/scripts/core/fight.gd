@@ -185,6 +185,7 @@ static func round_(F: Dictionary, act: String, rand: Callable) -> Array:
 	var f: Dictionary = F.foe
 	var lines: Array = []
 	var foe_act: String = F.plan
+	F.shots = []
 	F.lastYou = act
 	F.lastFoe = foe_act
 	var you_attack: bool = F.role == "attack"
@@ -327,7 +328,9 @@ static func _shoot(F: Dictionary, from: Dictionary, to: Dictionary, kind: String
 		to.men *= 1 - dmg / 300.0
 		var how := "a telling broadside" if dmg >= 14 else "some hits" if dmg >= 6 else "most of it wide"
 		lines.append("%s into %s%s: %s." % ["You fire" if by_you else "She fires", "her" if by_you else "you", " at long range" if F.r >= FAR else "", how])
-	F.lastShot = {"by_you": by_you, "kind": kind, "hit": k}  # for the sea view's smoke and splashes
+	if not F.has("shots"):
+		F.shots = []
+	F.shots.append({"by_you": by_you, "kind": kind, "hit": k})  # for the sea view's smoke and splashes
 
 static func _finish(F: Dictionary, lines: Array) -> Array:
 	F.log.append_array(lines)
