@@ -19,6 +19,9 @@ func _ready() -> void:
 	fight_panel.set_script(load("res://scripts/ui/fight_panel.gd"))
 	add_child(fight_panel)
 	Game.encounter.connect(_on_encounter)
+	var yard := CanvasLayer.new()
+	yard.set_script(load("res://scripts/ui/shipyard_screen.gd"))
+	add_child(yard)
 	fight_panel.acted.connect(func(_l): fight_scene.volley(Game.fight.get("shots", [])))
 	Game.changed.connect(func():
 		if Game.pending.is_empty() and fight_scene.foe and not fight_scene.leaving:
@@ -37,6 +40,14 @@ func _ready() -> void:
 # you off Barbary), ?dev=hunt (you have run one down), ?dev=greatgalley.
 func _dev_start() -> void:
 	var q := str(JavaScriptBridge.eval("location.search"))
+	if q.contains("dev=yard"):
+		# the yard, with the standing contracts would have earned and the money to spend
+		Game.S.contracts = {"unlocked": true, "standing": 25}
+		Game.S.purse = 6000.0
+		Game.S.day = float(Calendar.day_of_year(1480) + 60)
+		Game.changed.emit()
+		get_tree().call_group("yard_screen", "open")
+		return
 	Game.S.ship.docked = ""
 	Game.S.ship.lon = -9.0
 	Game.S.ship.lat = 33.2

@@ -14,6 +14,11 @@ func _ready() -> void:
 	Game.changed.connect(refresh, CONNECT_DEFERRED)
 	Game.docked.connect(func(_id): set_folded(false))
 	fold.pressed.connect(func(): set_folded(not folded))
+	yard_btn.text = "Shipyard"
+	yard_btn.tooltip_text = "Refit her, or trade her up for a bigger ship"
+	yard_btn.pressed.connect(func(): get_tree().call_group("yard_screen", "open"))
+	$Box/Head.add_child(yard_btn)
+	$Box/Head.move_child(yard_btn, fold.get_index())
 	# The hull's line: her state and what putting her right would cost here.
 	var row := HBoxContainer.new()
 	hull_line.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -25,6 +30,7 @@ func _ready() -> void:
 	$Box.move_child(row, hold.get_index() + 1)
 	refresh()
 
+var yard_btn := Button.new()
 var hull_line := Label.new()
 var mend := Button.new()
 
@@ -52,6 +58,7 @@ func refresh() -> void:
 	title.text = p.name
 	blurb.text = p.get("blurb", "")
 	hold.text = "Hold %d / %d · purse %d cz" % [Game.held(), int(Game.stats().hold), int(Game.S.purse)]
+	yard_btn.visible = Game.yard_here() != "" and not folded
 	var q := Game.repair_quote()
 	var hp := floori(Game.S.hull)
 	hull_line.text = "Hull %d%%%s" % [hp, " · leaking" if hp < Wear.LEAKS_BELOW else ""]
