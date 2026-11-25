@@ -20,3 +20,29 @@ static func port_dist(a: String, b: String) -> float:
 	var A := Data.port(a)
 	var B := Data.port(b)
 	return dist_nm(A.lon, A.lat, B.lon, B.lat)
+
+# Land, or off the chart (world.js isLand): the coastline polygons, each with its bounding box.
+static func is_land(lon: float, lat: float) -> bool:
+	for r in Data.world.offChart:
+		if lon >= r.w and lon <= r.e and lat >= r.s and lat <= r.n:
+			return true
+	for l in Data.world.lands:
+		var b: Dictionary = l.bbox
+		if lon < b.w or lon > b.e or lat < b.s or lat > b.n:
+			continue
+		if _in_poly(lon, lat, l.pts):
+			return true
+	return false
+
+static func _in_poly(x: float, y: float, pts: Array) -> bool:
+	var inside := false
+	var j := pts.size() - 1
+	for i in pts.size():
+		var xi: float = pts[i][0]
+		var yi: float = pts[i][1]
+		var xj: float = pts[j][0]
+		var yj: float = pts[j][1]
+		if (yi > y) != (yj > y) and x < (xj - xi) * (y - yi) / (yj - yi) + xi:
+			inside = not inside
+		j = i
+	return inside

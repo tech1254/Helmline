@@ -6,6 +6,8 @@ signal docked(port_id: String)
 signal sailed(dest_id: String)
 signal notice(text: String)
 signal changed
+signal encounter(enc: Dictionary)  # a corsair comes at you, or you have run one down: stop and show it
+signal fight_over(result: Dictionary)
 
 const DAYS_PER_SEC := 0.4  # at 1x: a year in about 15 minutes of sailing, as the browser game
 
@@ -24,12 +26,16 @@ func new_game(nation: String) -> void:
 		"nation": nation, "day": 0.0, "purse": 300.0, "hull": 100.0, "voyages": 0,
 		"ship": {"hull": "barca", "fit": {}, "name": "Esperança", "lon": p.lon, "lat": p.lat, "heading": 0.0, "route": [], "docked": home, "dest": "", "built": 0.0, "tropic": 0.0, "strain": 0.0},
 		"hull_warned": 0,
+		"pirates": {"notoriety": 0.0, "caution": 0.0, "cooldown": 0.0, "encounters": 0, "won": 0, "lost": 0, "fled": 0, "paid": 0, "plundered": 0, "bounty": 0, "bountyPaid": 0, "galleys": [], "galleyId": 1},
 		"cargo": {}, "paid": {}, "rot": {}, "trail": [[p.lon, p.lat]],
 	}
 	for g in Data.good_ids:
 		S.cargo[g] = 0
 		S.paid[g] = 0.0
 	market = Market.new()
+	pending = {}
+	fight = {}
+	spoils = {}
 	changed.emit()
 
 func stats() -> Dictionary:
@@ -62,7 +68,7 @@ func set_sail(plan: Dictionary) -> void:
 	changed.emit()
 
 func _process(delta: float) -> void:
-	if speed == 0 or not at_sea() or S.ship.route.is_empty():
+	if speed == 0 or not at_sea() or S.ship.route.is_empty() or not pending.is_empty():
 		return
 	advance(delta * DAYS_PER_SEC * speed)
 
@@ -76,6 +82,8 @@ func advance(days: float) -> void:
 		S.trail.append([S.ship.lon, S.ship.lat])
 	if S.ship.route.is_empty() and S.ship.dest != "":
 		arrive(S.ship.dest)
+	else:
+		corsairs(used)
 	changed.emit()
 
 func pass_time(days: float) -> void:
@@ -96,6 +104,11 @@ func arrive(port_id: String) -> void:
 	leak(p)
 	docked.emit(port_id)
 	notice.emit("Dropped anchor at %s." % p.name)
+	var bounty := Pirates.collect_bounty(S, port_id)
+	if bounty != "":
+		notice.emit(bounty)
+	for g in Pirates.port_reports(S, p):
+		notice.emit("Word in %s: %s seen off %s, cruising for prey." % [p.name, "a great corsair galley" if g.big else "a corsair galley", g.zone])
 
 # Wind and point of sail where she is, for the screens.
 func wind_now() -> Dictionary:
@@ -228,3 +241,84 @@ func leak(p: Dictionary) -> void:
 		lost.append("%d %s of %s" % [n, g.one if n == 1 else g.unit, g.name.to_lower()])
 	if not lost.is_empty():
 		notice.emit("Sea water in the hold: %s ruined on the way to %s. Her hull is at %d%%." % [", ".join(lost), p.name, roundi(S.hull)])
+
+# ---- Corsairs (pirates.gd, fight.gd) ------------------------------------------------------------
+var pending: Dictionary = {}   # the encounter on screen, until it is answered
+var fight: Dictionary = {}     # the fight in progress
+var spoils: Dictionary = {}    # a beaten galley's plunder, until you choose
+var speed_before_fight := 1
+
+func rand() -> float:
+	return rng.randf()
+
+# Days at sea: galleys cruise, the lookout sees them, you run one down or one comes at you.
+func corsairs(dd: float) -> void:
+	var R := Callable(self, "rand")
+	Pirates.tick_galleys(S, dd, R)
+	for g in Pirates.lookout(S, S.ship.lon, S.ship.lat):
+		notice.emit("Sail ho! %s off %s. Steer for her to attack." % ["A great corsair galley" if g.big else "A corsair galley", g.zone])
+	var enc := Pirates.contact(S, S.ship.lon, S.ship.lat)
+	if enc.is_empty():
+		enc = Pirates.roll(S, dd, S.ship.lon, S.ship.lat, R)
+	if not enc.is_empty():
+		meet(enc)
+
+# Stop and show it. A hunted galley asks first (attack, or let her go); an attack is a fight at once.
+func meet(enc: Dictionary) -> void:
+	pending = enc
+	if speed != 0:
+		speed_before_fight = speed
+	speed = 0
+	if not enc.get("hunted", false):
+		fight = Pirates.start_fight(S, enc, Callable(self, "rand"))
+	encounter.emit(enc)
+
+func hunt_odds() -> Dictionary:
+	return Pirates.odds(S, pending, float(wind_now().knots))
+
+func attack() -> void:
+	fight = Pirates.start_fight(S, pending, Callable(self, "rand"))
+	encounter.emit(pending)
+
+func let_go() -> void:
+	Pirates.end_hunt(S, pending, "pass")
+	notice.emit("You let the galley go. She pulls away toward the coast.")
+	_resume()
+
+func fight_act(id: String) -> Array:
+	var lines := Fight.round_(fight, id, Callable(self, "rand"))
+	changed.emit()
+	return lines
+
+func fight_auto() -> Array:
+	var before: int = fight.log.size()
+	Fight.autoplay(fight, Callable(self, "rand"))
+	return fight.log.slice(before)
+
+# The fight is over and the captain has read it: apply it. Returns {kind, lines, spoils?}.
+func settle_fight() -> Dictionary:
+	var enc := pending
+	var r := Pirates.settle_fight(S, enc, fight, Callable(self, "rand"))
+	if enc.get("hunted", false):
+		Pirates.end_hunt(S, enc, "fought")  # beaten or not, she goes home
+	for line in r.lines:
+		notice.emit(line)
+	spoils = r.get("spoils", {})
+	if spoils.is_empty():
+		_resume()
+	fight_over.emit(r)
+	changed.emit()
+	return r
+
+func plunder(take: bool) -> void:
+	var p := Pirates.plunder(S, pending, spoils, take, free_hold())
+	for line in p.lines:
+		notice.emit(line)
+	spoils = {}
+	_resume()
+
+func _resume() -> void:
+	pending = {}
+	fight = {}
+	speed = speed_before_fight
+	changed.emit()
